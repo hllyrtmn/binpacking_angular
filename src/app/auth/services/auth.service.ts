@@ -1,8 +1,9 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable, Signal } from '@angular/core';
 import { User } from '../models/user.model';
 import { catchError, map, Observable, throwError } from 'rxjs';
 import { Router } from '@angular/router';
+import { ApiService } from '../../services/api.service';
 
 @Injectable({
   providedIn: 'root'
@@ -13,16 +14,15 @@ export class AuthService {
   // TODO: gecici olarak localstorage kullan
   // daha sonra csrf token ile cookie kullan
 
-  private endpoint: string = 'http://localhost:8000/api';
   private headers = new HttpHeaders({ 'Content-Type': 'application/json' });
-  private _isLoggedIn: boolean = !!this.getToken();
   currentUser: User | null = null;
+  private apiService = inject(ApiService);
 
   constructor(private http: HttpClient, private router: Router) { }
 
   // Sign-up
   signUp(user: User): Observable<any> {
-    const api = `${this.endpoint}/register-user`;
+    const api = `${this.apiService.getApiUrl()}/register-user`;
     return this.http.post(api, user, { headers: this.headers }).pipe(
       catchError(this.handleError)
     );
@@ -30,13 +30,18 @@ export class AuthService {
 
   // Sign-in
   signIn(user: User): void {
-    this.http.post<{ access: string }>(`${this.endpoint}/token/`, user).subscribe({
+    this.http.post<{ access: string, refresh: string }>(`${this.apiService.getApiUrl()}/token/`, user).subscribe({
       next: (res) => {
-        console.log('res', res);
         localStorage.setItem('access_token', res.access);
+        localStorage.setItem('refresh_token', res.refresh);
+        const redirectUrlAfterLogin = localStorage.getItem('redirectUrlAfterLogin');
+        if (redirectUrlAfterLogin) {
+          localStorage.removeItem('redirectUrlAfterLogin');
+          this.router.navigate([redirectUrlAfterLogin]);
+        }
         this.router.navigate(['/admin/dashboard']);
       },
-      error: (error) => this.handleError(error),
+      error: this.handleError,
     });
   }
 
@@ -44,18 +49,24 @@ export class AuthService {
     return localStorage.getItem('access_token');
   }
 
-  get isLoggedIn(): boolean {
-    return this._isLoggedIn;
+  refreshAccessToken$(): Observable<{ access: string, refresh: string }> {
+    const refresh_token = localStorage.getItem('refresh_token');
+    return this.http.post<{ access: string, refresh: string }>(`${this.apiService.getApiUrl()}/token/refresh/`, { refresh: refresh_token });
+  }
+
+  getAccessToken(): string | null {
+    return localStorage.getItem('access_token');
   }
 
   doLogout(): void {
     localStorage.removeItem('access_token');
-    this.router.navigate(['log-in']);
+    localStorage.removeItem('refresh_token');
+    this.router.navigate(['/auth/login']);
   }
 
   // User profile
   getUserProfile(id: string | number): Observable<any> {
-    const api = `${this.endpoint}/user-profile/${id}`;
+    const api = `${this.apiService.getApiUrl()}/user-profile/${id}`;
     return this.http.get(api, { headers: this.headers }).pipe(
       map((res) => res || {}),
       catchError(this.handleError)

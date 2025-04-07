@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { ProductService } from '../../services/product.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -9,11 +8,4 @@ import { ProductService } from '../../services/product.service';
 })
 export class DashboardComponent {
 
-
-  constructor(private productService: ProductService) {
-  }
-
-  ngOnInit() {
-    this.productService.getProducts();
-  }
 }
