@@ -34,9 +34,9 @@ mat-list-item {
     max-width: 15em;
 }
 
-.is-expanded{
-    background-color: #EF9A9A;
-}
+//.is-expanded{
+//    background-color: #EF9A9A;
+//}
 
 
 
@@ -44,7 +44,7 @@ mat-list-item {
 @keyframes slide {
     0% {
         right: 0em;
-    } 
+    }
     100% {
         right: 10em;
     }

@@ -1,10 +1,11 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { MatMenuModule } from '@angular/material/menu';
+import { MatMenu, MatMenuModule } from '@angular/material/menu';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
+import { ThemeService } from '../../../../services/theme.service';
 
 @Component({
   selector: 'app-header',
@@ -14,10 +15,11 @@ import { MatButtonModule } from '@angular/material/button';
   standalone: true,
 })
 export class HeaderComponent {
+  @ViewChild('themeMenu') themeMenu!: MatMenu;
   @Input() isToggleButton!: Boolean;
   @Output() sidenavOpen: EventEmitter<any> = new EventEmitter();
 
-  constructor(private router: Router) {
+  constructor(private router: Router,public themeService: ThemeService) {
   }
 
   logout() {
