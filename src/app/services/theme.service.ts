@@ -1,4 +1,4 @@
-import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, signal } from '@angular/core';
 
 export interface AppTheme {
   name: 'light' | 'dark' | 'system';
@@ -32,7 +32,7 @@ export class ThemeService {
   constructor() {
     effect(() => {
       const appTheme = this.appTheme();
-      const colorScheme = appTheme === 'system' ? 'light dark' : appTheme;
+      const colorScheme = appTheme === 'system' ? 'light ' : appTheme;
       document.body.style.setProperty('color-scheme', colorScheme);
     });
   }

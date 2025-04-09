@@ -32,7 +32,7 @@
 --->
 
 <mat-sidenav-container>
-    <mat-sidenav #sidenav style="min-width: 13em;" [opened]="isOpen" [mode]="sidenavMode">
+    <mat-sidenav #sidenav style="min-width: 13em;border-right: 1px solid var(--mat-sys-outline-variant);" [opened]="isOpen" [mode]="sidenavMode">
         <mat-nav-list>
             <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="example-tree">
                 <mat-list-item *matTreeNodeDef="let node">
