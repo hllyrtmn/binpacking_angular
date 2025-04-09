@@ -39,7 +39,7 @@ export class AuthService {
           localStorage.removeItem('redirectUrlAfterLogin');
           this.router.navigate([redirectUrlAfterLogin]);
         }
-        this.router.navigate(['/admin/dashboard']);
+        this.router.navigate(['/admin']);
       },
       error: this.handleError,
     });

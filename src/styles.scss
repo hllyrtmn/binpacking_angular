@@ -1,4 +1,57 @@
 /* You can add global styles to this file, and also import other style files */
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; background-color: bisque; }
+@use '@angular/material' as mat;
+
+html {
+    color-scheme: light dark;
+    @include mat.theme((color: mat.$cyan-palette,
+            typography: Roboto,
+            density: 0));
+}
+
+body {
+    height: 100%;
+    color: var(--mat-sys-on-surface);
+    background: var(--mat-sys-surface);
+    margin: 0;
+    font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+table {
+    width: 100%;
+}
+
+.mat-mdc-form-field {
+    font-size: 14px;
+    width: 100%;
+}
+
+td,
+th {
+    width: 5%;
+}
+
+.container {
+    margin: 1.5em;
+}
+
+.container .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 1.5em 0;
+}
+
+.overflow {
+    overflow-x: auto;
+}
+
+.container .row .col {
+    max-width: max-content;
+}
+
+@media screen and (max-width:600px) {
+    .container .row {
+        display: inline;
+    }
+}

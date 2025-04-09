@@ -1,0 +1,19 @@
+<mat-toolbar color="primary">
+    <mat-toolbar-row>
+
+        <button *ngIf="isToggleButton" mat-icon-button (click)="sidenavOpen.emit(null);">
+            <mat-icon>menu</mat-icon>
+        </button>
+        <span>MAO</span>
+        <span class="spacer"></span>
+        <div mat-button [matMenuTriggerFor]="profileMenu" class="profile-menu">
+            <img src="../../../../assets/profile-photo.jpg" class="profile-photo" alt="">
+        </div>
+
+    </mat-toolbar-row>
+</mat-toolbar>
+
+<mat-menu #profileMenu="matMenu">
+    <button mat-menu-item [routerLink]="['/admin/profile']">Profile</button>
+    <button mat-menu-item (click)="logout()">Logout</button>
+</mat-menu>

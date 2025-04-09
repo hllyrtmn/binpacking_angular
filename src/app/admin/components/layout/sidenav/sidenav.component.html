@@ -1,0 +1,62 @@
+<!-- 
+    https://material.angular.io/cdk/layout/overview 
+    breakpoint icin kullanilacak api
+<mat-sidenav-container>
+    <mat-sidenav #sidenav style="min-width: 13em;" [opened]="isOpen" [mode]="sidenavMode">
+        <mat-nav-list>
+            <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="example-tree">
+                <mat-list-item *matTreeNodeDef="let node" [routerLink]="node.routerLink">
+                    <mat-icon *ngIf="node.icon" matListItemIcon>{{node.icon}}</mat-icon>
+                    <mat-icon *ngIf="node.iconSrc" [svgIcon]="node.iconSrc" matListItemIcon></mat-icon>
+                    <span [ngClass]="listItemClasses(node.title)" matListItemTitle>{{node.title}}</span>
+                </mat-list-item>
+                <mat-nested-tree-node *matTreeNodeDef="let node; when: hasChild">
+                    <div class="mat-tree-node">
+                        <mat-list-item [class.is-expanded]="treeControl.isExpanded(node)" [routerLink]="node.routerLink"
+                            (click)="treeControl.toggle(node);">
+                            <mat-icon matListItemIcon>{{node.icon}}</mat-icon>
+                            <span [class.slide-text]="node.title.length > 12" matListItemTitle>{{node.title}}</span>
+                        </mat-list-item>
+                    </div>
+                    <div [class.example-tree-invisible]="!treeControl.isExpanded(node)" role="group">
+                        <ng-container matTreeNodeOutlet></ng-container>
+                    </div>
+                </mat-nested-tree-node>
+            </mat-tree>
+        </mat-nav-list>
+    </mat-sidenav>
+    <mat-sidenav-content style="height: calc(94.9vh - 9em)" cdkScrollable>
+        <router-outlet></router-outlet>
+    </mat-sidenav-content>
+</mat-sidenav-container>
+--->
+
+<mat-sidenav-container>
+    <mat-sidenav #sidenav style="min-width: 13em;" [opened]="isOpen" [mode]="sidenavMode">
+        <mat-nav-list>
+            <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="example-tree">
+                <mat-list-item *matTreeNodeDef="let node">
+                    <mat-icon *ngIf="node.icon" matListItemIcon>{{ node.icon }}</mat-icon>
+                    <mat-icon *ngIf="node.iconSrc" [svgIcon]="node.iconSrc" matListItemIcon></mat-icon>
+                    <span [ngClass]="listItemClasses(node.title)" matListItemTitle>{{ node.title }}</span>
+                </mat-list-item>
+
+                <mat-nested-tree-node *matTreeNodeDef="let node; when: hasChild">
+                    <div class="mat-tree-node">
+                        <mat-list-item [class.is-expanded]="treeControl.isExpanded(node)" [routerLink]="node.routerLink"
+                            (click)="treeControl.toggle(node);">
+                            <mat-icon matListItemIcon>{{ node.icon }}</mat-icon>
+                            <span [class.slide-text]="node.title.length > 12" matListItemTitle>{{ node.title }}</span>
+                        </mat-list-item>
+                    </div>
+                    <div [class.example-tree-invisible]="!treeControl.isExpanded(node)" role="group">
+                        <ng-container matTreeNodeOutlet></ng-container>
+                    </div>
+                </mat-nested-tree-node>
+            </mat-tree>
+        </mat-nav-list>
+    </mat-sidenav>
+    <mat-sidenav-content style="height: calc(94.9vh - 9em)" cdkScrollable>
+        <router-outlet></router-outlet>
+    </mat-sidenav-content>
+</mat-sidenav-container>

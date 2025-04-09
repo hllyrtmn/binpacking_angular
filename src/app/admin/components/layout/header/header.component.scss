@@ -1,0 +1,31 @@
+.spacer {
+    flex: 1 1 auto;
+}
+
+.profile-menu:hover {
+    cursor: pointer;
+}
+
+.profile-photo {
+    border-radius: 50%;
+    border: 0.2em solid #90d12e;
+    height: 2.4em;
+    width: 2.4em;
+}
+
+/*
+TODO profile butonuna tiklandiginda animasyon olsun
+*/
+@keyframes profile {
+    0% {}
+
+    50% {
+        height: 3em;
+        width: 3em;
+    }
+
+    100% {
+        height: 2.4em;
+        width: 2.4em;
+    }
+}
