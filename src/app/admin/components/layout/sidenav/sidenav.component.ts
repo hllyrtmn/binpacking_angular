@@ -1,17 +1,16 @@
 import { NestedTreeControl } from '@angular/cdk/tree';
 import { Component, ViewChild } from '@angular/core';
 import { Input } from '@angular/core';
-import { MatIcon, MatIconModule, MatIconRegistry } from '@angular/material/icon';
+import { MatIconModule, MatIconRegistry } from '@angular/material/icon';
 import { MatSidenav, MatSidenavContent, MatSidenavModule } from '@angular/material/sidenav';
 import { MatDrawerMode } from '@angular/material/sidenav';
-import { MatNestedTreeNode, MatTreeModule, MatTreeNestedDataSource, MatTreeNode } from '@angular/material/tree';
-import { BrowserModule, DomSanitizer } from '@angular/platform-browser';
+import { MatNestedTreeNode, MatTreeModule, MatTreeNestedDataSource } from '@angular/material/tree';
+import { DomSanitizer } from '@angular/platform-browser';
 import { INavListItem } from '../../../interfaces/inav-list-item';
-import { RouterModule } from '@angular/router';
+import { RouterLink,RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatListModule, MatNavList } from "@angular/material/list";
 import { MatButtonModule } from '@angular/material/button';
-import { ɵBrowserAnimationBuilder } from '@angular/animations';
 
 const NAV_LIST_ITEM: INavListItem[] = [
   {
@@ -58,7 +57,7 @@ const NAV_LIST_ITEM: INavListItem[] = [
   selector: 'app-sidenav',
   templateUrl: './sidenav.component.html',
   styleUrls: ['./sidenav.component.scss'],
-  imports: [MatListModule, MatButtonModule, MatSidenavModule, MatSidenavContent, RouterModule, MatIconModule, MatNestedTreeNode, CommonModule, MatTreeModule, MatSidenavModule, MatNavList]
+  imports: [MatListModule, MatButtonModule, MatSidenavModule, MatSidenavContent, RouterLink, RouterOutlet, MatIconModule, MatNestedTreeNode, CommonModule, MatTreeModule, MatSidenavModule, MatNavList]
 })
 export class SidenavComponent {
   @Input('mode') sidenavMode!: MatDrawerMode;
