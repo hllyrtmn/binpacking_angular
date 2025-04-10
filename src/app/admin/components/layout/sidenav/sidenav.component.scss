@@ -38,7 +38,9 @@ mat-list-item {
 //    background-color: #EF9A9A;
 //}
 
-
+mat-divider[vertical] {
+  margin: 0 8px;
+}
 
 
 @keyframes slide {

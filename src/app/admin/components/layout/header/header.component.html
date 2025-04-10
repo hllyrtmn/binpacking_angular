@@ -1,36 +1,27 @@
 <mat-toolbar>
   <mat-toolbar-row color="primary">
-
     <button *ngIf="isToggleButton" mat-icon-button (click)="sidenavOpen.emit(null);">
       <mat-icon>menu</mat-icon>
     </button>
     <span>BIN PACKING</span>
+
+    <button mat-flat-button>Basic</button>
+    <mat-divider></mat-divider>
     <span class="spacer"></span>
-    <!-- <div class="profile-menu toggle-container">
-          <input type="checkbox" id="theme-toggle" class="toggle-input">
-          <label for="theme-toggle" class="toggle-label">
-              <div class="toggle-ball"></div>
-              <div class="toggle-icon sun">☀️</div>
-              <div class="toggle-icon moon">🌙</div>
-          </label>
-      </div> -->
-      <button mat-icon-button [mat-menu-trigger-for]="themeMenu">
-        <mat-icon>{{ themeService.selectedTheme()?.icon }}</mat-icon>
-      </button>
-      <mat-menu #themeMenu="matMenu">
-        @for (theme of themeService.getThemes(); track theme.name) {
-        <button
-          [class.selected-theme]="
+
+    <button mat-icon-button [mat-menu-trigger-for]="themeMenu">
+      <mat-icon>{{ themeService.selectedTheme()?.icon }}</mat-icon>
+    </button>
+    <mat-menu #themeMenu="matMenu">
+      @for (theme of themeService.getThemes(); track theme.name) {
+      <button [class.selected-theme]="
             themeService.selectedTheme()?.name === theme.name
-          "
-          mat-menu-item
-          (click)="themeService.setTheme(theme.name)"
-        >
-          <mat-icon>{{ theme.icon }}</mat-icon>
-          <span>{{ theme.name | titlecase }}</span>
-        </button>
-        }
-      </mat-menu>
+          " mat-menu-item (click)="themeService.setTheme(theme.name)">
+        <mat-icon>{{ theme.icon }}</mat-icon>
+        <span>{{ theme.name | titlecase }}</span>
+      </button>
+      }
+    </mat-menu>
     <div mat-button [matMenuTriggerFor]="profileMenu" class="profile-menu">
       <img src="https://cdn-icons-png.flaticon.com/512/219/219986.png" class="profile-photo" alt="">
     </div>

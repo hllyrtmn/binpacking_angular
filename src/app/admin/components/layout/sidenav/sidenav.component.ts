@@ -7,44 +7,45 @@ import { MatDrawerMode } from '@angular/material/sidenav';
 import { MatNestedTreeNode, MatTreeModule, MatTreeNestedDataSource } from '@angular/material/tree';
 import { DomSanitizer } from '@angular/platform-browser';
 import { INavListItem } from '../../../interfaces/inav-list-item';
-import { RouterLink,RouterOutlet } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatListModule, MatNavList } from "@angular/material/list";
 import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
 
 const NAV_LIST_ITEM: INavListItem[] = [
   {
     routerLink: ['/admin'],
-    title: 'Dashboard',
+    title: 'Yerlestirme Hesaplama',
     icon: 'home'
   },
   {
     routerLink: ['/admin/employees'],
-    title: 'employees',
+    title: 'Employees',
     icon: 'group'
   },
   {
-    title: 'stock management',
+    title: 'Stock Management',
     icon: 'home',
     children: [
       {
-        routerLink: ['/admin/stock-management/warehouses/warehouse'],
-        title: 'warehouses',
+        routerLink: ['/employees'],
+        title: 'Warehouses',
         icon: 'home'
       },
       {
         routerLink: ['/admin/stock-management/shelfs/shelf'],
-        title: 'shelf',
+        title: 'Shelf',
         icon: 'home'
       },
       {
         routerLink: ['/admin/stock-management/products/product'],
-        title: 'products',
+        title: 'Products',
         icon: 'home'
       },
       {
         routerLink: ['/admin/stock-management/inventory'],
-        title: 'inventory',
+        title: 'Inventory',
         icon: 'inventory'
       },
     ]
@@ -57,7 +58,7 @@ const NAV_LIST_ITEM: INavListItem[] = [
   selector: 'app-sidenav',
   templateUrl: './sidenav.component.html',
   styleUrls: ['./sidenav.component.scss'],
-  imports: [MatListModule, MatButtonModule, MatSidenavModule, MatSidenavContent, RouterLink, RouterOutlet, MatIconModule, MatNestedTreeNode, CommonModule, MatTreeModule, MatSidenavModule, MatNavList]
+  imports: [MatListModule, MatDividerModule, MatButtonModule, MatSidenavModule, MatSidenavContent, RouterModule, MatIconModule, MatNestedTreeNode, CommonModule, MatTreeModule, MatSidenavModule, MatNavList]
 })
 export class SidenavComponent {
   @Input('mode') sidenavMode!: MatDrawerMode;
