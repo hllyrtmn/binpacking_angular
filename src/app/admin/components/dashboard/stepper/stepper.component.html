@@ -1,0 +1,9 @@
+
+<mat-stepper class="example-stepper container" [orientation]="(stepperOrientation | async)!">
+  <mat-step [stepControl]="firstFormGroup" label="Fill out your name">
+    <app-invoice-upload></app-invoice-upload>
+  </mat-step>
+  <mat-step [stepControl]="secondFormGroup" label="Fill out your address">
+    <app-pallet-control></app-pallet-control>
+  </mat-step>
+</mat-stepper>
