@@ -14,9 +14,5 @@ export const routes: Routes = [
         path: 'admin',
         component: LayoutComponent,
         children: ADMIN_ROUTES
-    },
-    {
-        path: 'employees',
-        component: EmployeesComponent,
     }
 ];

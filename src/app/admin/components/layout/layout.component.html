@@ -1,3 +1,5 @@
 <app-header (sidenavOpen)="sidenavOpen()" [isToggleButton]="sidenavConfig.isToggleButtonVisible"></app-header>
-<app-sidenav [isOpen]="sidenavConfig.isSidenavOpen" [mode]="sidenavConfig.mode"></app-sidenav>
+<mat-divider></mat-divider>
+<app-sidenav [isOpen]="sidenavConfig.isSidenavOpen" [mode]="sidenavConfig.mode"><router-outlet></router-outlet></app-sidenav>
+<mat-divider></mat-divider>
 <app-footer></app-footer>

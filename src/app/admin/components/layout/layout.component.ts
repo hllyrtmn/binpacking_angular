@@ -2,18 +2,28 @@ import { Component, OnDestroy, ViewChild } from '@angular/core';
 import { ISidenavConfig } from '../../interfaces/isidenav-config';
 import { takeUntil } from 'rxjs';
 import { Subject } from 'rxjs';
-import { Breakpoints, BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
+import { Breakpoints, BreakpointObserver } from '@angular/cdk/layout';
 import { SidenavComponent } from './sidenav/sidenav.component';
 import { HeaderComponent } from './header/header.component';
 import { FooterComponent } from './footer/footer.component';
+import {MatGridListModule} from '@angular/material/grid-list';
+import {MatDividerModule} from '@angular/material/divider';
+import { RouterLink,RouterOutlet } from '@angular/router';
 // https://material.angular.io/cdk/layout/overview
+
+export interface Tile {
+  color: string;
+  cols: number;
+  rows: number;
+  text: string;
+}
 
 @Component({
   selector: 'app-layout',
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.scss'],
   standalone: true,
-  imports: [SidenavComponent, HeaderComponent, FooterComponent],
+  imports: [SidenavComponent, MatDividerModule, HeaderComponent, RouterOutlet, FooterComponent,MatGridListModule],
 
 })
 export class LayoutComponent implements OnDestroy {
@@ -21,6 +31,13 @@ export class LayoutComponent implements OnDestroy {
   @ViewChild(SidenavComponent) sidenav!: SidenavComponent;
 
   destroyed = new Subject<any>();
+
+  tiles: Tile[] = [
+    {text: 'One', cols: 4, rows: 1, color: 'lightblue'},
+    {text: 'Two', cols: 1, rows: 2, color: 'lightgreen'},
+    {text: 'Three', cols: 1, rows: 1, color: 'lightpink'},
+    {text: 'Four', cols: 2, rows: 1, color: '#DDBDF1'},
+  ];
 
   sidenavConfig: ISidenavConfig = {
     mode: 'side',
