@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ApiService } from '../../../../../services/api.service';
+import { httpResource } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -8,14 +9,20 @@ export class RepositoryService {
 
   constructor(private api: ApiService) { }
 
-  uploadFile(): string {
+  uploadFile(file: File) {
     // api/orders/files
     // { id: string, file: string, order:string}
     // only upload file and return this.
     // doesn't any proccess
 
+    const resource = httpResource(
+      () => ({
+        url: `${this.api.getApiUrl()}/orders/files`,
+        body: { file: file }
+      })
+    )
 
-    return 'file id';
+    return resource.value();
   }
 
   fileProccess(file_id: string): { order: string } {

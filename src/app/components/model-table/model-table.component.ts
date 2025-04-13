@@ -10,10 +10,10 @@ import { MatButtonModule } from '@angular/material/button';
 @Component({
   selector: 'model-table',
   templateUrl: './model-table.component.html',
-  styleUrls: ['./model-table.component.css'],
-  imports: [CommonModule, MatTableModule,MatIcon,MatButtonModule],
+  styleUrls: ['./model-table.component.scss'],
+  imports: [CommonModule, MatTableModule, MatIcon, MatButtonModule],
 })
-export class ModelTableComponent<T>  {
+export class ModelTableComponent<T> {
   rm = ArrayUtils.removeElementFromArray;
   constructor() {
   }

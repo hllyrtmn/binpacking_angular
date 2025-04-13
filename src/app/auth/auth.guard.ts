@@ -1,13 +1,12 @@
 import { ActivatedRouteSnapshot, CanActivate, GuardResult, MaybeAsync, Router, RouterStateSnapshot } from '@angular/router';
 import { AuthService } from './services/auth.service';
 import { Injectable } from '@angular/core';
-import { of, tap } from 'rxjs';
-import { ErrorHandlingService } from '../services/error-handling.service';
+import { of, tap, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 
 @Injectable({ providedIn: 'root' })
 export class AuthGuard implements CanActivate {
-  constructor(private authService: AuthService, private router: Router, private errorService: ErrorHandlingService) { }
+  constructor(private authService: AuthService, private router: Router) { }
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): MaybeAsync<GuardResult> {
     const token = this.authService.getAccessToken();
@@ -22,7 +21,6 @@ export class AuthGuard implements CanActivate {
               return of(true);
             },
             error: (err) => {
-              this.errorService.handle(err);
               localStorage.removeItem('refresh_token');
               localStorage.removeItem('access_token');
               this.router.navigate(['/auth/login']);
@@ -35,7 +33,6 @@ export class AuthGuard implements CanActivate {
       }
     } else {
       localStorage.setItem('redirectUrlAfterLogin', state.url);
-      this.errorService.handle({ status: 401, message: 'unauthorized' } as HttpErrorResponse);
       this.router.navigate(['/auth/login']);
       return of(false);
     }

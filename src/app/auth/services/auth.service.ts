@@ -38,8 +38,9 @@ export class AuthService {
         if (redirectUrlAfterLogin) {
           localStorage.removeItem('redirectUrlAfterLogin');
           this.router.navigate([redirectUrlAfterLogin]);
+        } else {
+          this.router.navigate(['/admin']);
         }
-        this.router.navigate(['/admin']);
       },
       error: this.handleError,
     });
