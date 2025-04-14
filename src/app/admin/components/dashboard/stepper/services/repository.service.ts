@@ -8,7 +8,7 @@ import { FileResponse } from '../interfaces/file-response.interface';
 @Injectable({
   providedIn: 'root'
 })
-export class RepositoryService {
+export class RepositoryService  {
 
   // TODO:
   // ileride generic repository service yazilip belirli yerler extend edilebilir
