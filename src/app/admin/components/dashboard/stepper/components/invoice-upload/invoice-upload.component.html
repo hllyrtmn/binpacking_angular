@@ -1,75 +1,60 @@
 
 <button mat-flat-button>
   <label mat-button for="file-upload">
-    Invoice Upload
+    {{ this.file.name|| 'Invoice Upload' }}
   </label>
   <input (change)="onFileSelected($event)" #file id="file-upload" class="file-upload" placeholder="Dosya" type="file">
 </button>
-<span>{{ file.name || "Dosya Sec" }}</span>
-<br/>
-<button mat-flat-button (click)="uploadFile(this.file)">Yukle</button>
+<span>{{ this.file.name || "Dosya Sec" }}</span>
 <br/>
 
-@if (true) {
-  <table mat-table [dataSource]="dataSource" class="mat-elevation-z8 demo-table">
-    <!-- Position Column -->
-    <ng-container matColumnDef="no">
-      <th mat-header-cell *matHeaderCellDef > Pallet No.</th>
-      <td mat-cell *matCellDef="let element">{{element.no}}</td>
+
+@if (orderDetails.length > 0) {
+  <table mat-table [dataSource]="dataSource">
+
+    <!-- Product Type -->
+    <ng-container matColumnDef="product_type">
+      <th mat-header-cell *matHeaderCellDef> Type </th>
+      <td mat-cell *matCellDef="let row"> {{ row.product.product_type.type }} </td>
     </ng-container>
 
-    <!-- Name Column -->
-    <ng-container matColumnDef="count">
-      <th mat-header-cell *matHeaderCellDef>Count</th>
-      <td mat-cell *matCellDef="let element">{{element.count}}</td>
+    <!-- Product Code -->
+    <ng-container matColumnDef="product_code">
+      <th mat-header-cell *matHeaderCellDef> Code </th>
+      <td mat-cell *matCellDef="let row"> {{ row.product.product_type.code }} </td>
     </ng-container>
 
-
-    <ng-container matColumnDef="weight">
-      <th mat-header-cell *matHeaderCellDef>Weight</th>
-      <td mat-cell *matCellDef="let element">{{element.weight}}</td>
-    </ng-container>
-
-    <!-- Symbol Column -->
-    <ng-container matColumnDef="depth1">
-      <th mat-header-cell *matHeaderCellDef>Depth</th>
-      <td mat-cell *matCellDef="let element">{{element.depth1}}</td>
-    </ng-container>
-
-    <!-- Weight Column -->
+    <!-- Width -->
     <ng-container matColumnDef="width">
-      <th mat-header-cell *matHeaderCellDef>Width</th>
-      <td mat-cell *matCellDef="let element">{{element.width}}</td>
+      <th mat-header-cell *matHeaderCellDef> Width </th>
+      <td mat-cell *matCellDef="let row"> {{ row.product.dimension.width | number:'1.0-0'  }} </td>
     </ng-container>
 
+    <!-- Depth -->
+    <ng-container matColumnDef="depth">
+      <th mat-header-cell *matHeaderCellDef> Depth </th>
+      <td mat-cell *matCellDef="let row"> {{ row.product.dimension.depth | number:'1.0-0' }} </td>
+    </ng-container>
 
+    <!-- Count -->
+    <ng-container matColumnDef="count">
+      <th mat-header-cell *matHeaderCellDef> Count </th>
+      <td mat-cell *matCellDef="let row"> {{ row.count }} </td>
+    </ng-container>
 
+    <ng-container matColumnDef="meter">
+      <th mat-header-cell *matHeaderCellDef> Meter </th>
+      <td mat-cell *matCellDef="let row"> {{ (row.product.dimension.depth   * row.count) | number:'1.0-0' }} </td>
+    </ng-container>
 
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr
-        mat-row
-        (click)="clickedRows.add(row)"
-        [class.demo-row-is-clicked]="clickedRows.has(row)"
-        *matRowDef="let row; columns: displayedColumns;"
-    ></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
   </table>
-
-  <div>
-    <h3>
-      Click Log
-    </h3>
-  </div>
-
-  @if (!clickedRows.size) {
-    <div>Clicked rows will be logged here</div>
-  }
-
-  <ul>
-    @for (clickedRow of clickedRows; track clickedRow) {
-      <li>Clicked on {{clickedRow.no}}</li>
-    }
-  </ul>
-
 }
-
-<button mat-button matStepperNext>Next</button>
+@if (file) {
+  <br/>
+  <button mat-flat-button (click)="uploadFile(this.file)">Yukle</button>
+  <br/>
+}
+<button disabled="this.orderDetails.data.length > 0" mat-button matStepperNext>Next</button>

@@ -1,36 +1,29 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { ApiService } from '../../../../../services/api.service';
-import { HttpClient, HttpHeaders, httpResource, HttpResourceOptions } from '@angular/common/http';
+import { HttpClient, httpResource } from '@angular/common/http';
 import { finalize, Observable, tap } from 'rxjs';
 import { FileResponse } from '../interfaces/file-response.interface';
 import { BaseRepositoryService } from '../../../../../services/base-repository.service';
 
-
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class RepositoryService extends BaseRepositoryService {
-
   // TODO:
   // ileride generic repository service yazilip belirli yerler extend edilebilir
   // ornek olarak loading ve errror signallari
 
-
   // bir kuralim olsa repository pattern icin  bu ne olurdu
   //
-
   private _order_id = signal('');
-
-   private _orderDetailResource = httpResource(() => ({ url: `${this.api.getApiUrl()}/orders/order-details?order_id=${this._order_id()}`}));
-
-
-  //api/orders/order-details?order_id=c54eb76e-287c-4ddd-a00c-9fa46f4634b7
-
-  public orderDetailResource = this._orderDetailResource.asReadonly()
+  private _orderDetailResource = httpResource<any>(() => ({
+    url: `${this.api.getApiUrl()}/orders/order-details/?order_id=c54eb76e-287c-4ddd-a00c-9fa46f4634b7`,
+  }));
+  public orderDetailResource = this._orderDetailResource.asReadonly();
 
   constructor() {
     super(inject(ApiService), inject(HttpClient));
-    this.resourceLoadingList.push(this.orderDetailResource.isLoading)
+    this.resourceLoadingList.push(this.orderDetailResource.isLoading);
   }
 
   uploadFile(file: File): Observable<FileResponse> {
@@ -41,27 +34,41 @@ export class RepositoryService extends BaseRepositoryService {
     const formData = new FormData();
     formData.append('file', file);
 
-    return this.http.post<FileResponse>(`${this.api.getApiUrl()}/orders/files/`, formData).pipe(
-      tap(() => { this._loading.set(true) }),
-      finalize(() => { this._loading.set(false) })
-    );
+    return this.http
+      .post<FileResponse>(`${this.api.getApiUrl()}/orders/files/`, formData)
+      .pipe(
+        tap(() => {
+          this._loading.set(true);
+        }),
+        finalize(() => {
+          this._loading.set(false);
+        })
+      );
   }
 
   processFile(file_id: string): Observable<{ status: string }> {
     // api/orders/procces-file/{id}
     // this only return status
-    return this.http.get<{ status: string }>(`${this.api.getApiUrl()}/orders/procces-file/${file_id}`).pipe(
-      tap(() => { this._loading.set(true) }),
-      finalize(() => { this._loading.set(false) })
-    );
+    return this.http
+      .post<{ status: string }>(
+        `${this.api.getApiUrl()}/orders/process-file/${file_id}/`,
+        {}
+      )
+      .pipe(
+        tap(() => {
+          this._loading.set(true);
+        }),
+        finalize(() => {
+          this._loading.set(false);
+        })
+      );
   }
 
-  setOrderId(order_id: string) {
-    this._order_id.set(order_id)
+  setOrderId(order_id: string | 'null') {
+    this._order_id.set(order_id);
   }
 
   addErrors(error: any) {
-    this._errors.update((value) => ([...value, error]))
+    this._errors.update((value) => [...value, error]);
   }
-
 }

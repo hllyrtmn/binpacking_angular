@@ -10,10 +10,12 @@ import { MatStepperModule } from '@angular/material/stepper';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatTableModule } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { RepositoryService } from '../../services/repository.service';
 import { FileResponse } from '../../interfaces/file-response.interface';
 import { Observable, switchMap, tap } from 'rxjs';
+import { OrderDetail } from '../../../../../../models/order-detail.interface';
+import { CommonModule } from '@angular/common';
 
 export interface PeriodicElement {
   no: number;
@@ -41,6 +43,7 @@ const ELEMENT_DATA: PeriodicElement[] = [
     MatButtonModule,
     MatTableModule,
     MatInputModule,
+    CommonModule,
   ],
   templateUrl: './invoice-upload.component.html',
   styleUrl: './invoice-upload.component.scss',
@@ -49,12 +52,28 @@ export class InvoiceUploadComponent {
   // toast service eklenecek
   // file upload islemi ile ilgili bilgiler orada gosterilecek
 
-  file: any = null;
+  file: File = new File([], '');
   repositoryService: RepositoryService = inject(RepositoryService);
 
-  displayedColumns: string[] = ['no', 'count', 'weight', 'width', 'depth1'];
-  dataSource = ELEMENT_DATA;
-  clickedRows = new Set<PeriodicElement>();
+  displayedColumns1: string[] = [
+    'product.product_type.type',
+    'product.product_type.code',
+    'product.dimension.width',
+    'product.dimension.depth',
+    'count',
+    'action',
+  ];
+  displayedColumns: string[] = [
+    'product_type',
+    'product_code',
+    'width',
+    'depth',
+    'count',
+    'meter',
+  ];
+  clickedRows = new Set<OrderDetail>();
+  orderDetails: OrderDetail[] = [];
+  dataSource = new MatTableDataSource<OrderDetail>(this.orderDetails);
 
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -62,19 +81,30 @@ export class InvoiceUploadComponent {
       this.file = input.files[0];
     }
   }
+
   uploadFile(file: File) {
     this.repositoryService
       .uploadFile(file)
       .pipe(
         tap((response) => {
-          this.repositoryService.setOrderId(response.id);
+          this.repositoryService.setOrderId(response.order || ''); // bu zaten doğru
         }),
         switchMap((response) => {
-          return this.processFile(response.file);
+          return this.processFile(response.id);
         })
       )
-      .subscribe((response) => {
-        console.log(this.repositoryService.orderDetailResource.value());
+      .subscribe({
+        next: (response) => {
+          this.orderDetails =
+            this.repositoryService.orderDetailResource.value().results;
+          console.log(this.orderDetails);
+          console.log(this.dataSource);
+          this.dataSource.data = this.orderDetails;
+        },
+        error: (err) => {
+          console.error(' Hata:', err);
+          this.repositoryService.addErrors(err);
+        },
       });
   }
 
