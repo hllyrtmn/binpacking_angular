@@ -6,7 +6,7 @@ export class BaseRepositoryService {
 
   protected _loading = signal<boolean>(false);
   protected resourceLoadingList: Signal<boolean>[] = [];
-  protected _errors = signal([]);
+  protected _errors = signal<any[]>([]);
 
   public errors = this._errors.asReadonly();
   public loading = computed(() => {
