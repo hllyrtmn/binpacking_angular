@@ -7,7 +7,7 @@
 </button>
 <span>{{ file.name || "Dosya Sec" }}</span>
 <br/>
-<button mat-flat-button>Yukle</button>
+<button mat-flat-button (click)="uploadFile(this.file)">Yukle</button>
 <br/>
 
 @if (true) {

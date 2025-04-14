@@ -21,8 +21,10 @@ export class RepositoryService extends BaseRepositoryService {
 
   private _order_id = signal('');
 
-  private _orderDetailResource = httpResource(() => ({ url: `${this.api.getApiUrl()}/orders/order-details?order_id=${this._order_id()}`, headers: { "Accept": "*/*" } }));
+   private _orderDetailResource = httpResource(() => ({ url: `${this.api.getApiUrl()}/orders/order-details?order_id=${this._order_id()}`}));
 
+
+  //api/orders/order-details?order_id=c54eb76e-287c-4ddd-a00c-9fa46f4634b7
 
   public orderDetailResource = this._orderDetailResource.asReadonly()
 
@@ -36,7 +38,10 @@ export class RepositoryService extends BaseRepositoryService {
     // { id: string, file: string, order:string}
     // only upload file and return this.
     // doesn't any proccess
-    return this.http.post<FileResponse>(`${this.api.getApiUrl()}/orders/files`, { file: file }).pipe(
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post<FileResponse>(`${this.api.getApiUrl()}/orders/files/`, formData).pipe(
       tap(() => { this._loading.set(true) }),
       finalize(() => { this._loading.set(false) })
     );
@@ -45,7 +50,10 @@ export class RepositoryService extends BaseRepositoryService {
   processFile(file_id: string): Observable<{ status: string }> {
     // api/orders/procces-file/{id}
     // this only return status
-    return this.http.get<{ status: string }>(`${this.api.getApiUrl()}/orders/procces-file/${file_id}`)
+    return this.http.get<{ status: string }>(`${this.api.getApiUrl()}/orders/procces-file/${file_id}`).pipe(
+      tap(() => { this._loading.set(true) }),
+      finalize(() => { this._loading.set(false) })
+    );
   }
 
   setOrderId(order_id: string) {

@@ -1,5 +1,11 @@
 import { Component, inject, output } from '@angular/core';
-import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
@@ -7,6 +13,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTableModule } from '@angular/material/table';
 import { RepositoryService } from '../../services/repository.service';
 import { FileResponse } from '../../interfaces/file-response.interface';
+import { Observable, switchMap, tap } from 'rxjs';
 
 export interface PeriodicElement {
   no: number;
@@ -24,13 +31,19 @@ const ELEMENT_DATA: PeriodicElement[] = [
   { no: 5, count: 22, weight: 10.811, width: 9.0122, depth1: 1.0079 },
 ];
 
-
 @Component({
   selector: 'app-invoice-upload',
-  imports: [FormsModule, ReactiveFormsModule, MatFormFieldModule, MatStepperModule, MatButtonModule,
-    MatTableModule, MatInputModule],
+  imports: [
+    FormsModule,
+    ReactiveFormsModule,
+    MatFormFieldModule,
+    MatStepperModule,
+    MatButtonModule,
+    MatTableModule,
+    MatInputModule,
+  ],
   templateUrl: './invoice-upload.component.html',
-  styleUrl: './invoice-upload.component.scss'
+  styleUrl: './invoice-upload.component.scss',
 })
 export class InvoiceUploadComponent {
   // toast service eklenecek
@@ -50,11 +63,23 @@ export class InvoiceUploadComponent {
     }
   }
   uploadFile(file: File) {
-    this.repositoryService.uploadFile(file).subscribe({
-      next: (response: FileResponse) => {
-        // switch map to order detail
-      }
-    });
+    this.repositoryService
+      .uploadFile(file)
+      .pipe(
+        tap((response) => {
+          this.repositoryService.setOrderId(response.id);
+        }),
+        switchMap((response) => {
+          return this.processFile(response.file);
+        })
+      )
+      .subscribe((response) => {
+        console.log(this.repositoryService.orderDetailResource.value());
+      });
+  }
+
+  processFile(file_id: string): Observable<{ status: string }> {
+    return this.repositoryService.processFile(file_id);
   }
 
   private _formBuilder = inject(FormBuilder);
