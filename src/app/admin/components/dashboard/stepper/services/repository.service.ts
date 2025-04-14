@@ -1,6 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { ApiService } from '../../../../../services/api.service';
-import { HttpClient, httpResource, HttpResourceOptions } from '@angular/common/http';
+import { HttpClient, HttpHeaders, httpResource, HttpResourceOptions } from '@angular/common/http';
 import { finalize, Observable, tap } from 'rxjs';
 import { FileResponse } from '../interfaces/file-response.interface';
 import { BaseRepositoryService } from '../../../../../services/base-repository.service';
@@ -21,7 +21,8 @@ export class RepositoryService extends BaseRepositoryService {
 
   private _order_id = signal('');
 
-  private _orderDetailResource = httpResource(() => `${this.api.getApiUrl()}/orders/order-details?order_id=${this._order_id()}`)
+  private _orderDetailResource = httpResource(() => ({ url: `${this.api.getApiUrl()}/orders/order-details?order_id=${this._order_id()}`, headers: { "Accept": "*/*" } }));
+
 
   public orderDetailResource = this._orderDetailResource.asReadonly()
 
