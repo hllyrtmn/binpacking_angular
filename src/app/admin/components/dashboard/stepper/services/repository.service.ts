@@ -1,14 +1,15 @@
-import { computed, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { ApiService } from '../../../../../services/api.service';
 import { HttpClient, httpResource, HttpResourceOptions } from '@angular/common/http';
 import { finalize, tap } from 'rxjs';
 import { FileResponse } from '../interfaces/file-response.interface';
+import { BaseRepositoryService } from '../../../../../services/base-repository.service';
 
 
 @Injectable({
   providedIn: 'root'
 })
-export class RepositoryService  {
+export class RepositoryService extends BaseRepositoryService {
 
   // TODO:
   // ileride generic repository service yazilip belirli yerler extend edilebilir
@@ -18,23 +19,14 @@ export class RepositoryService  {
   // bir kuralim olsa repository pattern icin  bu ne olurdu
   //
 
-  private _loading = signal<boolean>(false);
-
-  public loading = computed(() => {
-    return this._loading() || this._orderDetailResource.isLoading()
-  })
-
   private _order_id = signal('');
 
-  private _errors = signal([]);
-  public errors = this._errors.asReadonly();
-
   private _orderDetailResource = httpResource(() => `${this.api.getApiUrl()}/orders/order-details?order_id=${this._order_id()}`)
-
   public orderDetailResource = this._orderDetailResource.asReadonly()
 
-
-  constructor(private api: ApiService, private http: HttpClient) { }
+  constructor() {
+    super(inject(ApiService), inject(HttpClient));
+  }
 
   uploadFile(file: File) {
     // api/orders/files
@@ -54,14 +46,9 @@ export class RepositoryService  {
     return { order: 'order' }
   }
 
-  getOrder(id: string) {
-
-  }
+  getOrder(id: string) { }
 
   getOrderDetails(order_id: string) {
     this._order_id.set(order_id)
   }
-
-
-
 }

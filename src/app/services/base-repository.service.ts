@@ -4,9 +4,9 @@ import { ApiService } from './api.service';
 
 export class BaseRepositoryService {
 
-  private _loading = signal<boolean>(false);
-  private resourceLoadingList: Signal<boolean>[] = [];
-  private _errors = signal([]);
+  protected _loading = signal<boolean>(false);
+  protected resourceLoadingList: Signal<boolean>[] = [];
+  protected _errors = signal([]);
 
   public errors = this._errors.asReadonly();
   public loading = computed(() => {
@@ -17,5 +17,5 @@ export class BaseRepositoryService {
     return this._loading() || control;
   })
 
-  constructor(private api: ApiService, private http: HttpClient) { }
+  constructor(protected api: ApiService, protected http: HttpClient) { }
 }
