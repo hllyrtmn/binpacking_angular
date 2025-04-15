@@ -21,7 +21,10 @@
     "@angular/platform-browser-dynamic": "^19.2.6",
     "@angular/router": "^19.2.6",
     "@auth0/angular-jwt": "^5.2.0",
+    "@popperjs/core": "^2.11.8",
+    "bootstrap": "^5.3.5",
     "fs": "^0.0.1-security",
+    "ngx-toastr": "^19.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"

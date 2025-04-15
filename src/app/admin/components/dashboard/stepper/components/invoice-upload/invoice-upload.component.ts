@@ -1,7 +1,7 @@
-import { Component, inject, output } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import {
-  AbstractControl,
   FormBuilder,
+  FormGroup,
   FormsModule,
   ReactiveFormsModule,
   Validators,
@@ -12,26 +12,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { RepositoryService } from '../../services/repository.service';
-import { FileResponse } from '../../interfaces/file-response.interface';
-import { Observable, switchMap, tap } from 'rxjs';
-import { OrderDetail } from '../../../../../../models/order-detail.interface';
+import { Observable, switchMap, tap,catchError,finalize } from 'rxjs';
 import { CommonModule } from '@angular/common';
+import { mapToOrderDetailDtoList } from '../../../../../../models/mappers/order-detail.mapper';
+import { OrderDetailDto } from '../../../../../../models/dtos/order-detail-dto.interface';
+import { ModelTableComponent } from "../../../../../../components/model-table/model-table.component";
+import { ToastService } from '../../../../../../services/toast.service';
 
-export interface PeriodicElement {
-  no: number;
-  count: number;
-  weight: number;
-  width: number;
-  depth1: number;
-}
-
-const ELEMENT_DATA: PeriodicElement[] = [
-  { no: 1, count: 120, weight: 1.0079, width: 9.0122, depth1: 1.0019 },
-  { no: 2, count: 145, weight: 4.0026, width: 9.0122, depth1: 1.0029 },
-  { no: 3, count: 55, weight: 6.941, width: 9.0122, depth1: 1.0039 },
-  { no: 4, count: 45, weight: 9.0122, width: 9.0122, depth1: 1.0049 },
-  { no: 5, count: 22, weight: 10.811, width: 9.0122, depth1: 1.0079 },
-];
 
 @Component({
   selector: 'app-invoice-upload',
@@ -44,76 +31,141 @@ const ELEMENT_DATA: PeriodicElement[] = [
     MatTableModule,
     MatInputModule,
     CommonModule,
-  ],
+    ModelTableComponent
+],
   templateUrl: './invoice-upload.component.html',
   styleUrl: './invoice-upload.component.scss',
 })
-export class InvoiceUploadComponent {
+export class InvoiceUploadComponent implements OnInit {
   // toast service eklenecek
   // file upload islemi ile ilgili bilgiler orada gosterilecek
+  private _formBuilder = inject(FormBuilder);
+  private repositoryService = inject(RepositoryService);
+  private toastService = inject(ToastService);
 
-  file: File = new File([], '');
-  repositoryService: RepositoryService = inject(RepositoryService);
+  uploadForm: FormGroup;
+  file: File | null = null;
+  isLoading = false;
 
-  displayedColumns1: string[] = [
-    'product.product_type.type',
-    'product.product_type.code',
-    'product.dimension.width',
-    'product.dimension.depth',
-    'count',
-    'action',
-  ];
+
+  orderDetailDtoList: OrderDetailDto[] = [];
+  dataSource = new MatTableDataSource<OrderDetailDto>(this.orderDetailDtoList);
   displayedColumns: string[] = [
-    'product_type',
-    'product_code',
+    'type',
+    'code',
     'width',
     'depth',
     'count',
     'meter',
+    'action',
   ];
-  clickedRows = new Set<OrderDetail>();
-  orderDetails: OrderDetail[] = [];
-  dataSource = new MatTableDataSource<OrderDetail>(this.orderDetails);
 
-  onFileSelected(event: Event) {
+  constructor() {
+    this.uploadForm = this._formBuilder.group({
+      fileInput: ['', Validators.required]
+    });
+  }
+
+  ngOnInit(): void {
+
+  }
+
+  onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       this.file = input.files[0];
+      this.validateFile(this.file);
     }
   }
 
-  uploadFile(file: File) {
+  validateFile(file: File): void {
+    // Add file validation logic here (type, size, etc.)
+    const validTypes = ['application/pdf', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+    const maxSize = 10 * 1024 * 1024; // 10MB
+
+    if (!validTypes.includes(file.type)) {
+      this.toastService.error('Geçersiz dosya türü. Lütfen bir PDF veya Excel dosyası yükleyin.');
+      this.file = null;
+      this.uploadForm.get('fileInput')?.reset();
+      return;
+    }
+
+    if (file.size > maxSize) {
+      this.toastService.error('Dosya boyutu 10 MB sınırını aşıyor.');
+      this.file = null;
+      this.uploadForm.get('fileInput')?.reset();
+      return;
+    }
+    this.toastService.success('Dosya başarıyla seçildi.');
+  }
+
+  uploadFile(): void {
+    if (!this.file) {
+      this.toastService.warning('Lütfen bir dosya seçin.');
+      return;
+    }
+
+    this.isLoading = true;
+    // İlk bildirimi hemen göster
+    this.toastService.info('Dosya yükleniyor...');
+
+    // Observable içerisindeki bildirimleri bağımsız işlemlere bölelim
     this.repositoryService
-      .uploadFile(file)
-      .pipe(
-        tap((response) => {
-          this.repositoryService.setOrderId(response.order || ''); // bu zaten doğru
-        }),
-        switchMap((response) => {
-          return this.processFile(response.id);
-        })
-      )
+      .uploadFile(this.file)
       .subscribe({
         next: (response) => {
-          this.orderDetails =
-            this.repositoryService.orderDetailResource.value().results;
-          console.log(this.orderDetails);
-          console.log(this.dataSource);
-          this.dataSource.data = this.orderDetails;
+          if (response.order) {
+            this.repositoryService.setOrderId(response.order);
+            // Yükleme başarılı mesajını hemen göster
+            this.toastService.success('Dosya başarıyla yüklendi.');
+
+            // İşleme başladığımızı hemen bildir
+            this.toastService.info('Dosya işleniyor...');
+
+            // Dosya işleme aşamasını ayrı bir abonelik olarak başlat
+            this.processFile(response.id).subscribe({
+              next: () => {
+                this.updateDataSource();
+                // İşleme başarılı mesajını göster
+                this.toastService.success('Dosya başarıyla işlendi.');
+                this.resetForm();
+                this.isLoading = false;
+              },
+              error: (processError) => {
+                this.handleError(processError);
+                this.isLoading = false;
+              }
+            });
+          }
         },
-        error: (err) => {
-          console.error(' Hata:', err);
-          this.repositoryService.addErrors(err);
-        },
+        error: (uploadError) => {
+          this.handleError(uploadError);
+          this.isLoading = false;
+        }
       });
   }
 
-  processFile(file_id: string): Observable<{ status: string }> {
-    return this.repositoryService.processFile(file_id);
+  private processFile(fileId: string): Observable<{ status: string }> {
+    this.toastService.info('Dosya işleniyor...');
+    return this.repositoryService.processFile(fileId);
   }
 
-  private _formBuilder = inject(FormBuilder);
-  firstFormGroup = this._formBuilder.group({
-    firstCtrl: ['', Validators.required],
-  });
+  private updateDataSource(): void {
+    const orderDetails = this.repositoryService.orderDetailResource.value().results;
+    if (orderDetails) {
+      this.orderDetailDtoList = mapToOrderDetailDtoList(orderDetails);
+      this.dataSource.data = this.orderDetailDtoList;
+    }
+  }
+
+  private handleError(error: any): void {
+    console.error('Error:', error);
+    this.repositoryService.addErrors(error);
+    this.toastService.error('Dosya yükleme veya işleme sırasında bir hata oluştu.');
+  }
+
+  private resetForm(): void {
+    this.file = null;
+    this.uploadForm.reset();
+  }
 }

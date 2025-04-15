@@ -1,9 +1,9 @@
 <mat-stepper class="example-stepper container" [orientation]="(stepperOrientation | async)!">
   <app-loading></app-loading>
-  <mat-step [stepControl]="firstFormGroup" label="Fill out your name">
+  <mat-step [stepControl]="firstFormGroup" label="(ISB) İhraacat Sipariş Bildirimi Yükleme">
     <app-invoice-upload></app-invoice-upload>
   </mat-step>
-  <mat-step [stepControl]="secondFormGroup" label="Fill out your address">
+  <mat-step [stepControl]="secondFormGroup" label="Palet Kontrolü">
     <app-pallet-control></app-pallet-control>
   </mat-step>
 </mat-stepper>

@@ -1,16 +1,17 @@
-import { ApplicationConfig, provideZoneChangeDetection, inject, provideAppInitializer } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection, inject, provideAppInitializer, importProvidersFrom } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { ErrorHandler } from '@angular/core';
 
 import { routes } from './app.routes';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { CsrfTokenInterceptor } from './auth/interceptors/csrftoken.interceptor';
 import { ConfigService } from './services/config.service';
 import { AuthInterceptor } from './auth/interceptors/auth.interceptor';
 import { GlobalErrorHandler } from './services/global-error-handler';
 import { loadingInterceptor } from './components/loading/loading.interceptor';
-
+import { ToastrModule } from 'ngx-toastr';
 
 export function appConfigInit() {
   const configService = inject(ConfigService);
@@ -30,6 +31,15 @@ export const appConfig: ApplicationConfig = {
         loadingInterceptor
       ]
       )
+    ),
+    provideAnimations(),
+    importProvidersFrom(
+      ToastrModule.forRoot({
+        timeOut: 3000,
+        positionClass: 'toast-top-right',
+        preventDuplicates: true,
+        closeButton: true
+      })
     ),
     {
       provide: ErrorHandler, useClass: GlobalErrorHandler
