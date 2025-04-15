@@ -37,7 +37,6 @@ import { ToastService } from '../../../../../../services/toast.service';
   styleUrl: './invoice-upload.component.scss',
 })
 export class InvoiceUploadComponent implements OnInit {
-  // toast service eklenecek
   // file upload islemi ile ilgili bilgiler orada gosterilecek
   private _formBuilder = inject(FormBuilder);
   private repositoryService = inject(RepositoryService);
@@ -79,9 +78,8 @@ export class InvoiceUploadComponent implements OnInit {
   }
 
   validateFile(file: File): void {
-    // Add file validation logic here (type, size, etc.)
     const validTypes = ['application/pdf', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    const maxSize = 10 * 1024 * 1024;
 
     if (!validTypes.includes(file.type)) {
       this.toastService.error('Geçersiz dosya türü. Lütfen bir PDF veya Excel dosyası yükleyin.');
@@ -106,27 +104,19 @@ export class InvoiceUploadComponent implements OnInit {
     }
 
     this.isLoading = true;
-    // İlk bildirimi hemen göster
     this.toastService.info('Dosya yükleniyor...');
-
-    // Observable içerisindeki bildirimleri bağımsız işlemlere bölelim
     this.repositoryService
       .uploadFile(this.file)
       .subscribe({
         next: (response) => {
           if (response.order) {
             this.repositoryService.setOrderId(response.order);
-            // Yükleme başarılı mesajını hemen göster
             this.toastService.success('Dosya başarıyla yüklendi.');
-
-            // İşleme başladığımızı hemen bildir
             this.toastService.info('Dosya işleniyor...');
 
-            // Dosya işleme aşamasını ayrı bir abonelik olarak başlat
             this.processFile(response.id).subscribe({
               next: () => {
                 this.updateDataSource();
-                // İşleme başarılı mesajını göster
                 this.toastService.success('Dosya başarıyla işlendi.');
                 this.resetForm();
                 this.isLoading = false;
@@ -155,6 +145,7 @@ export class InvoiceUploadComponent implements OnInit {
     if (orderDetails) {
       this.orderDetailDtoList = mapToOrderDetailDtoList(orderDetails);
       this.dataSource.data = this.orderDetailDtoList;
+      console.log(orderDetails);
     }
   }
 
@@ -168,4 +159,12 @@ export class InvoiceUploadComponent implements OnInit {
     this.file = null;
     this.uploadForm.reset();
   }
+
+  onEdit(model: OrderDetailDto) {
+    console.log('Edit model:', model);
+  }
+  onDelete(id: string) {
+    console.log('Delete model with ID:', id);
+  }
+
 }

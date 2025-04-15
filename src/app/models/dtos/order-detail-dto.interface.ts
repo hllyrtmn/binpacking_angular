@@ -1,5 +1,6 @@
 
 export interface OrderDetailDto {
+  id: string;
   type: string;
   code: string;
   width: number;

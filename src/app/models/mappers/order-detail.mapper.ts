@@ -9,7 +9,9 @@ export const mapToOrderDetailDto = (orderDetail: OrderDetail): OrderDetailDto =>
   const meter = (depth * count ) / 1000; // Convert to square meters
   const type = orderDetail.product.product_type.type;
   const code = orderDetail.product.product_type.code;
+  const id = orderDetail.id;
   return {
+    id,
     type,
     code,
     width,
