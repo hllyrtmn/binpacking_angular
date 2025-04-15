@@ -1,5 +1,5 @@
-
 <mat-stepper class="example-stepper container" [orientation]="(stepperOrientation | async)!">
+  <app-loading></app-loading>
   <mat-step [stepControl]="firstFormGroup" label="Fill out your name">
     <app-invoice-upload></app-invoice-upload>
   </mat-step>

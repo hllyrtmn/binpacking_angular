@@ -9,6 +9,7 @@ import { CsrfTokenInterceptor } from './auth/interceptors/csrftoken.interceptor'
 import { ConfigService } from './services/config.service';
 import { AuthInterceptor } from './auth/interceptors/auth.interceptor';
 import { GlobalErrorHandler } from './services/global-error-handler';
+import { loadingInterceptor } from './components/loading/loading.interceptor';
 
 
 export function appConfigInit() {
@@ -25,7 +26,8 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withInterceptors([
         AuthInterceptor,
-        CsrfTokenInterceptor
+        CsrfTokenInterceptor,
+        loadingInterceptor
       ]
       )
     ),

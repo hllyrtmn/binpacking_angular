@@ -9,12 +9,7 @@ import { BaseRepositoryService } from '../../../../../services/base-repository.s
   providedIn: 'root',
 })
 export class RepositoryService extends BaseRepositoryService {
-  // TODO:
-  // ileride generic repository service yazilip belirli yerler extend edilebilir
-  // ornek olarak loading ve errror signallari
 
-  // bir kuralim olsa repository pattern icin  bu ne olurdu
-  //
   private _order_id = signal('');
   private _orderDetailResource = httpResource<any>(() => ({
     url: `${this.api.getApiUrl()}/orders/order-details/?order_id=c54eb76e-287c-4ddd-a00c-9fa46f4634b7`,

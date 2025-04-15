@@ -4,9 +4,15 @@ import ADMIN_ROUTES from './admin/admin.routes';
 import { LayoutComponent } from './admin/components/layout/layout.component';
 import { EmployeesComponent } from './admin/components/employees/employees.component';
 import { ErrorComponent } from './components/error/error.component';
+import { TestComponent } from './components/test/test.component';
 
 
 export const routes: Routes = [
+    {
+        pathMatch: 'full',
+        path: '',
+        redirectTo: 'admin'
+    },
     {
         path: 'auth',
         children: AUTH_ROUTES
@@ -15,6 +21,10 @@ export const routes: Routes = [
         path: 'admin',
         component: LayoutComponent,
         children: ADMIN_ROUTES
+    },
+    {
+        path: 'test',
+        component: TestComponent
     },
     {
         path: 'error',
