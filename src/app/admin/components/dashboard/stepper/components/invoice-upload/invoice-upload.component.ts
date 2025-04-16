@@ -1,10 +1,13 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, EventEmitter, inject, OnInit, Output } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
   FormsModule,
   ReactiveFormsModule,
   Validators,
+  ValidatorFn,
+  AbstractControl,
+  ValidationErrors
 } from '@angular/forms';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,7 +17,6 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { RepositoryService } from '../../services/repository.service';
 import { Observable, switchMap, tap } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { mapToOrderDetailDtoList } from '../../../../../../models/mappers/order-detail.mapper';
 import { IInvoiceOrderDetail } from '../../../../../../models/component-models/invoice-order-detail.interface';
 import { ModelTableComponent } from '../../../../../../components/model-table/model-table.component';
 import { ToastService } from '../../../../../../services/toast.service';
@@ -36,6 +38,7 @@ import { ToastService } from '../../../../../../services/toast.service';
   styleUrl: './invoice-upload.component.scss',
 })
 export class InvoiceUploadComponent implements OnInit {
+  @Output() palletControlModel: EventEmitter<string> = new EventEmitter<string>();
   // file upload islemi ile ilgili bilgiler orada gosterilecek
   private _formBuilder = inject(FormBuilder);
   private repositoryService = inject(RepositoryService);
@@ -43,11 +46,9 @@ export class InvoiceUploadComponent implements OnInit {
 
   uploadForm: FormGroup;
   file: File | null = null;
+  order_id:string = '';
 
-  invoiceOrderDetail: IInvoiceOrderDetail[] = [];
-  dataSource = new MatTableDataSource<IInvoiceOrderDetail>(
-    this.invoiceOrderDetail
-  );
+  dataSource = new MatTableDataSource<IInvoiceOrderDetail>();
   displayedColumns: string[] = [
     'type',
     'code',
@@ -115,6 +116,7 @@ export class InvoiceUploadComponent implements OnInit {
       .pipe(
         tap((response) => {
           order_id = response.order;
+          this.order_id = response.order;
           this.toastService.success('Dosya başarıyla yüklendi.');
           this.toastService.info('Dosya işleniyor...');
         }),
@@ -145,14 +147,42 @@ export class InvoiceUploadComponent implements OnInit {
   onEdit(model: IInvoiceOrderDetail) {
     console.log('Edit model:', model);
   }
+
   onDelete(id: string) {
     this.repositoryService.deleteOrderDetail(id).subscribe({
       next: () => {
         this.toastService.success('Başarıyla silindi.');
         this.dataSource.data = this.dataSource.data.filter(item => item.id !== id);
-
-
       },
     });
+  }
+
+  calculatePackage(){
+    console.log();
+  }
+
+}
+
+export function FileValidator():(control: AbstractControl)=> ValidationErrors | null {
+  return (control: AbstractControl): ValidationErrors | null => {
+
+    const validTypes = [
+      'application/pdf',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ];
+    const maxSize = 10 * 1024 * 1024;
+
+    if(!validTypes.includes(control.value.type)) {
+      return { invalidFileType: true }; // Invalid file type
+    }
+    if(control.value.size > maxSize) {
+      return { fileTooLarge: true }; // File size exceeds limit
+    }
+
+    if (!control.value) {
+      return null; // No file selected
+    }
+    return null; // Validation passed
   }
 }

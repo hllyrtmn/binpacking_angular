@@ -24,6 +24,6 @@
 
   <!-- İlerleme butonu -->
   <div class="navigation-buttons text-start">
-    <button [disabled]="dataSource.data.length === 0" mat-button color="primary" matStepperNext>İleri</button>
+    <button [disabled]="dataSource.data.length === 0" mat-button color="primary" matStepperNext (click)="palletControlModel.emit(this.order_id)">İleri</button>
   </div>
 </div>

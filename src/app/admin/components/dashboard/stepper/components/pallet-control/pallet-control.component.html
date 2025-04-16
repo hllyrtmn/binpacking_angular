@@ -1,15 +1,70 @@
 <p>pallet control works</p>
-  <form [formGroup]="secondFormGroup">
+<form [formGroup]="secondFormGroup">
+  @if (true) {
 
+  <div class="row">
+    <div class="col-md-2">
+      <div class="example-container">
+        <h2>To do</h2>
 
-@if (true) {
-  <model-table [dataSource]="dataSource" [displayedColumns]="displayedColumns"></model-table>
-
-}
-
-    <div>
-      <button mat-button matStepperPrevious>Back</button>
-      <button mat-button matStepperNext>Next</button>
+        <div
+          cdkDropList
+          #todoList="cdkDropList"
+          [cdkDropListData]="todo"
+          [cdkDropListConnectedTo]="[doneList]"
+          class="example-list"
+          (cdkDropListDropped)="drop($event)"
+        >
+          @for (item of todo; track item) {
+          <div class="example-box" cdkDrag>{{ item }}</div>
+          }
+        </div>
+      </div>
     </div>
-  </form>
+    <div class="col-md-8">
+      <div cdkDropList cdkDropListOrientation="mixed" class="example-list1" (cdkDropListDropped)="drop1($event)">
 
+        @for (item of items; track item) {
+          <div
+          cdkDrag
+          cdkDropList
+          #doneList="cdkDropList"
+          [cdkDropListData]="done"
+          [cdkDropListConnectedTo]="[todoList]"
+          class="example-list"
+          (cdkDropListDropped)="drop($event)"
+        >
+        <h5 class="text-center text-white" style="background-color: #006a6a;">Palet</h5>
+          @for (item of done; track item) {
+          <div class="example-box1" cdkDrag>{{ item }}</div>
+          }
+        </div>
+        }
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="example-container">
+        <h2>Done</h2>
+
+        <div
+          cdkDropList
+          #doneList="cdkDropList"
+          [cdkDropListData]="done"
+          [cdkDropListConnectedTo]="[todoList]"
+          class="example-list"
+          (cdkDropListDropped)="drop($event)"
+        >
+          @for (item of done; track item) {
+          <div class="example-box" cdkDrag>{{ item }}</div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+  }
+
+  <div>
+    <button mat-button matStepperPrevious>Back</button>
+    <button mat-button matStepperNext>Next</button>
+  </div>
+</form>

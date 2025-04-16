@@ -28,6 +28,12 @@ import { LoadingComponent } from "../../../../components/loading/loading.compone
 })
 export class StepperComponent {
   private _formBuilder = inject(FormBuilder);
+  order_id: string = '';
+
+  orderIdComeOn(id: string) {
+    this.order_id = id;
+    console.log('Order ID geldi:', this.order_id);
+  }
 
   firstFormGroup = this._formBuilder.group({
     firstCtrl: ['', Validators.required],
@@ -44,7 +50,7 @@ export class StepperComponent {
     const breakpointObserver = inject(BreakpointObserver);
 
     this.stepperOrientation = breakpointObserver
-      .observe('(min-width: 800px)')
+      .observe('(min-width: 1000px)')
       .pipe(map(({ matches }) => (matches ? 'horizontal' : 'vertical')));
   }
 }
