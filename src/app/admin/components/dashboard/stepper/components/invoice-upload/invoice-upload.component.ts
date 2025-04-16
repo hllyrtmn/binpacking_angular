@@ -15,7 +15,7 @@ import { RepositoryService } from '../../services/repository.service';
 import { Observable, switchMap, tap } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { mapToOrderDetailDtoList } from '../../../../../../models/mappers/order-detail.mapper';
-import { OrderDetailDto } from '../../../../../../models/dtos/order-detail-dto.interface';
+import { IInvoiceOrderDetail } from '../../../../../../models/component-models/invoice-order-detail.interface';
 import { ModelTableComponent } from '../../../../../../components/model-table/model-table.component';
 import { ToastService } from '../../../../../../services/toast.service';
 
@@ -43,10 +43,11 @@ export class InvoiceUploadComponent implements OnInit {
 
   uploadForm: FormGroup;
   file: File | null = null;
-  isLoading = false;
 
-  orderDetailDtoList: OrderDetailDto[] = [];
-  dataSource = new MatTableDataSource<OrderDetailDto>(this.orderDetailDtoList);
+  invoiceOrderDetail: IInvoiceOrderDetail[] = [];
+  dataSource = new MatTableDataSource<IInvoiceOrderDetail>(
+    this.invoiceOrderDetail
+  );
   displayedColumns: string[] = [
     'type',
     'code',
@@ -60,6 +61,8 @@ export class InvoiceUploadComponent implements OnInit {
   constructor() {
     this.uploadForm = this._formBuilder.group({
       fileInput: ['', Validators.required],
+      //TODO buraya validator gelecek customfilevalidator
+      // dosya tipi kontrol edilecek
     });
   }
 
@@ -104,54 +107,34 @@ export class InvoiceUploadComponent implements OnInit {
       this.toastService.warning('Lütfen bir dosya seçin.');
       return;
     }
+    let order_id: string = '';
 
-    this.isLoading = true;
     this.toastService.info('Dosya yükleniyor...');
     this.repositoryService
       .uploadFile(this.file)
       .pipe(
         tap((response) => {
-          this.repositoryService.setOrderId(response.order || '');
+          order_id = response.order;
           this.toastService.success('Dosya başarıyla yüklendi.');
           this.toastService.info('Dosya işleniyor...');
         }),
-        switchMap((response) => this.processFile(response.id))
+        switchMap((response) =>
+          this.processFile(response.id).pipe(
+            tap(() => {
+              this.toastService.success('Dosya başarıyla işlendi.');
+              this.resetForm();
+            })
+          )
+        ),
+        switchMap(() => this.repositoryService.orderDetails(order_id))
       )
-      .subscribe({
-        next: () => {
-          this.updateDataSource();
-          this.toastService.success('Dosya başarıyla işlendi.');
-          this.resetForm();
-          this.isLoading = false;
-        },
-        error: (err) => {
-          this.handleError(err);
-          this.isLoading = false;
-        },
+      .subscribe((response)=> {
+        this.dataSource.data = response;
       });
   }
 
   private processFile(fileId: string): Observable<{ status: string }> {
-    this.toastService.info('Dosya işleniyor...');
     return this.repositoryService.processFile(fileId);
-  }
-
-  private updateDataSource(): void {
-    const orderDetails =
-      this.repositoryService.orderDetailResource.value().results;
-    if (orderDetails) {
-      this.orderDetailDtoList = mapToOrderDetailDtoList(orderDetails);
-      this.dataSource.data = this.orderDetailDtoList;
-      console.log(orderDetails);
-    }
-  }
-
-  private handleError(error: any): void {
-    console.error('Error:', error);
-    this.repositoryService.addErrors(error);
-    this.toastService.error(
-      'Dosya yükleme veya işleme sırasında bir hata oluştu.'
-    );
   }
 
   private resetForm(): void {
@@ -159,10 +142,17 @@ export class InvoiceUploadComponent implements OnInit {
     this.uploadForm.reset();
   }
 
-  onEdit(model: OrderDetailDto) {
+  onEdit(model: IInvoiceOrderDetail) {
     console.log('Edit model:', model);
   }
   onDelete(id: string) {
-    console.log('Delete model with ID:', id);
+    this.repositoryService.deleteOrderDetail(id).subscribe({
+      next: () => {
+        this.toastService.success('Başarıyla silindi.');
+        this.dataSource.data = this.dataSource.data.filter(item => item.id !== id);
+
+
+      },
+    });
   }
 }

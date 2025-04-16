@@ -1,5 +1,5 @@
 
-export interface OrderDetailDto {
+export interface IInvoiceOrderDetail {
   id: string;
   type: string;
   code: string;

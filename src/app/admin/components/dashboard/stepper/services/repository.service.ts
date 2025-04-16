@@ -1,24 +1,32 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { inject, Injectable, linkedSignal, signal } from '@angular/core';
 import { ApiService } from '../../../../../services/api.service';
 import { HttpClient, httpResource } from '@angular/common/http';
-import { finalize, Observable, tap } from 'rxjs';
+import { finalize, map, Observable, tap } from 'rxjs';
 import { FileResponse } from '../interfaces/file-response.interface';
-import { BaseRepositoryService } from '../../../../../services/base-repository.service';
+import { mapToOrderDetailDtoList } from '../../../../../models/mappers/order-detail.mapper';
 
 @Injectable({
   providedIn: 'root',
 })
-export class RepositoryService extends BaseRepositoryService {
+export class RepositoryService  {
 
-  private _order_id = signal('');
-  private _orderDetailResource = httpResource<any>(() => ({
-    url: `${this.api.getApiUrl()}/orders/order-details/?order_id=c54eb76e-287c-4ddd-a00c-9fa46f4634b7`,
-  }));
-  public orderDetailResource = this._orderDetailResource.asReadonly();
+  constructor(private api: ApiService, private http: HttpClient) {
+  }
 
-  constructor() {
-    super(inject(ApiService), inject(HttpClient));
-    this.resourceLoadingList.push(this.orderDetailResource.isLoading);
+  orderDetails(id:string): Observable<any> {
+    // api/orders/order-details/{id}/
+    // get order detail by order id.
+    return this.http.get<any>(
+      `${this.api.getApiUrl()}/orders/order-details/?order_id=${id}`
+    ).pipe(map(response => (mapToOrderDetailDtoList(response.results))));
+  }
+
+  deleteOrderDetail(id: string): Observable<any> {
+    // api/orders/order-details/{id}/
+    // delete order detail
+    return this.http.delete<any>(
+      `${this.api.getApiUrl()}/orders/order-details/${id}/`
+    );
   }
 
   uploadFile(file: File): Observable<FileResponse> {
@@ -30,15 +38,7 @@ export class RepositoryService extends BaseRepositoryService {
     formData.append('file', file);
 
     return this.http
-      .post<FileResponse>(`${this.api.getApiUrl()}/orders/files/`, formData)
-      .pipe(
-        tap(() => {
-          this._loading.set(true);
-        }),
-        finalize(() => {
-          this._loading.set(false);
-        })
-      );
+      .post<FileResponse>(`${this.api.getApiUrl()}/orders/files/`, formData);
   }
 
   processFile(file_id: string): Observable<{ status: string }> {
@@ -48,22 +48,6 @@ export class RepositoryService extends BaseRepositoryService {
       .post<{ status: string }>(
         `${this.api.getApiUrl()}/orders/process-file/${file_id}/`,
         {}
-      )
-      .pipe(
-        tap(() => {
-          this._loading.set(true);
-        }),
-        finalize(() => {
-          this._loading.set(false);
-        })
       );
-  }
-
-  setOrderId(order_id: string | 'null') {
-    this._order_id.set(order_id);
-  }
-
-  addErrors(error: any) {
-    this._errors.update((value) => [...value, error]);
   }
 }

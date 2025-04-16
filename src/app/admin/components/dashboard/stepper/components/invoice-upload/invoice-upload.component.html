@@ -14,7 +14,7 @@
   </div>
 
   <div class="row">
-    @if (orderDetailDtoList.length > 0) {
+    @if (dataSource.data.length > 0) {
     <div class="table-container">
       <model-table [dataSource]="dataSource" [displayedColumns]="displayedColumns" (editModel)="onEdit($event)" (deleteModel)="onDelete($event)"></model-table>
       <button mat-flat-button color="primary" class="upload-button">Veritabanına Kaydet</button>
@@ -24,6 +24,6 @@
 
   <!-- İlerleme butonu -->
   <div class="navigation-buttons text-start">
-    <button [disabled]="orderDetailDtoList.length === 0" mat-button color="primary" matStepperNext>İleri</button>
+    <button [disabled]="dataSource.data.length === 0" mat-button color="primary" matStepperNext>İleri</button>
   </div>
 </div>

@@ -1,8 +1,7 @@
-import { map } from "rxjs";
-import { OrderDetailDto } from "../dtos/order-detail-dto.interface";
+import { IInvoiceOrderDetail } from "../component-models/invoice-order-detail.interface";
 import { OrderDetail } from "../order-detail.interface";
 
-export const mapToOrderDetailDto = (orderDetail: OrderDetail): OrderDetailDto => {
+export const mapToOrderDetailDto = (orderDetail: OrderDetail): IInvoiceOrderDetail => {
   const width = Number(orderDetail.product.dimension.width);
   const depth = Number(orderDetail.product.dimension.depth);
   const count = Number(orderDetail.count);
@@ -21,5 +20,5 @@ export const mapToOrderDetailDto = (orderDetail: OrderDetail): OrderDetailDto =>
   };
 };
 
-export const mapToOrderDetailDtoList = (orderDetails: OrderDetail[]): OrderDetailDto[] =>
+export const mapToOrderDetailDtoList = (orderDetails: OrderDetail[]): IInvoiceOrderDetail[] =>
   orderDetails.map(mapToOrderDetailDto);
