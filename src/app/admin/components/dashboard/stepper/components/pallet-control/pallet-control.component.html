@@ -1,5 +1,111 @@
 <form [formGroup]="secondFormGroup">
-  @if (true) {
+  <div class="row">
+    <!-- ÜRÜNLER BÖLÜMÜ -->
+    <div class="col-md-2">
+      <div class="example-container">
+        <h2 class="text-center">Ürünler</h2>
+        <div
+          cdkDropList
+          #productsList="cdkDropList"
+          id="productsList"
+          [cdkDropListData]="availableProducts"
+          [cdkDropListConnectedTo]="palletProductsLists"
+          class="example-list"
+          (cdkDropListDropped)="dropProductToPallet($event)"
+        >
+          <div class="example-box" *ngFor="let product of availableProducts" cdkDrag>
+            {{ product.position }} - {{ product.name }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAKETLER BÖLÜMÜ -->
+    <div class="col-md-8">
+      <h2 class="text-center">Paketler</h2>
+      <div class="packages-container">
+        <div class="package-box" *ngFor="let package of packages">
+          <div class="package-header" style="background-color: #006a6a; color: white; padding: 8px;">
+            <h5 class="text-center">{{ package.id }}</h5>
+          </div>
+
+          <!-- Paket içeriği -->
+          <div
+            cdkDropList
+            [id]="'package-' + package.id"
+            [cdkDropListData]="[]"
+            [cdkDropListConnectedTo]="['palletsList']"
+            class="package-items"
+            (cdkDropListDropped)="dropPalletToPackage($event)"
+          >
+            <!-- Eğer paket içinde palet varsa göster -->
+            <div class="pallet-in-package" *ngIf="package.pallet">
+              <div class="pallet-header">
+                <span>{{ package.pallet.id }}</span>
+                <button class="remove-btn" (click)="removePalletFromPackage(package)">X</button>
+              </div>
+
+              <!-- Palet içindeki ürünler -->
+              <div
+                cdkDropList
+                [id]="'pallet-' + package.pallet.id"
+                [cdkDropListData]="package.pallet.products"
+                [cdkDropListConnectedTo]="['productsList']"
+                class="pallet-items"
+                (cdkDropListDropped)="dropProductToPallet($event)"
+              >
+                <div class="product-in-pallet" *ngFor="let product of package.pallet.products; let j = index" cdkDrag>
+                  {{ product.position }} - {{ product.name }}
+                  <button class="remove-btn" (click)="removeProductFromPallet(package.pallet, j)">X</button>
+                </div>
+
+                <!-- Boş palet mesajı -->
+                <div class="empty-message" *ngIf="package.pallet.products.length === 0">
+                  Bu palet boş. Ürün sürükleyin.
+                </div>
+              </div>
+            </div>
+
+            <!-- Boş paket mesajı -->
+            <div class="empty-message" *ngIf="!package.pallet">
+              Bu pakete bir palet yerleştirin.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PALETLER BÖLÜMÜ -->
+    <div class="col-md-2">
+      <div class="example-container">
+        <h2 class="text-center">Paletler</h2>
+        <div
+          cdkDropList
+          #palletsList="cdkDropList"
+          id="palletsList"
+          [cdkDropListData]="availablePallets"
+          [cdkDropListConnectedTo]="packageIds"
+          class="example-list"
+          (cdkDropListDropped)="dropPalletToPackage($event)"
+        >
+          <div class="example-box" *ngFor="let pallet of availablePallets" cdkDrag>
+            {{ pallet.id }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+
+
+
+
+
+
+
+  <!-- @if (true) {
 
   <div class="row">
     <div class="col-md-2">
@@ -58,9 +164,9 @@
       </div>
     </div>
   </div>
-  }
+  } -->
 
-  <div>
+  <div class="mt-4">
     <button mat-button matStepperPrevious>Back</button>
     <button mat-button matStepperNext>Next</button>
   </div>
