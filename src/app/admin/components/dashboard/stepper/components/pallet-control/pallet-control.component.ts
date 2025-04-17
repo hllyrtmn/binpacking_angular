@@ -12,12 +12,14 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import {MatCardModule} from '@angular/material/card';
+import {MatIconModule} from '@angular/material/icon';
+
 import {
   CdkDragDrop,
   moveItemInArray,
   transferArrayItem,
   CdkDrag,
-  CdkDropList,
+  CdkDropList
 } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 
@@ -50,7 +52,7 @@ interface Package {
     MatTableModule,
     MatCardModule,
     CommonModule,
-    CdkDropList, CdkDrag
+    CdkDropList, CdkDrag,MatIconModule
 ],
   templateUrl: './pallet-control.component.html',
   styleUrl: './pallet-control.component.scss',
@@ -89,7 +91,10 @@ export class PalletControlComponent implements OnInit {
     { id: 'Package 3', pallet: null }
   ];
 
+  // Paket sayacı
   private packageCounter: number = 4;
+  // Palet sayacı
+  private palletCounter: number = 6;
 
   secondFormGroup: FormGroup;
 
@@ -97,8 +102,25 @@ export class PalletControlComponent implements OnInit {
     this.secondFormGroup = this._formBuilder.group({
       secondCtrl: ['', Validators.required],
     });
+    this.replenishPallets();
   }
 
+  // Paletleri yenile - her zaman sabit sayıda palet olmasını sağla
+  replenishPallets() {
+    // Mevcut paletlerin sayısını kontrol et
+    const currentCount = this.availablePallets.length;
+
+    // Her zaman 5 palet olmalı
+    const neededPallets = 5 - currentCount;
+
+    // Eğer eksikse, yeni paletler ekle
+    for (let i = 0; i < neededPallets; i++) {
+      const newPalletId = 'Pallet ' + this.palletCounter++;
+      this.availablePallets.push({ id: newPalletId, products: [] });
+    }
+  }
+
+  // Ürünleri paletlere taşıma
   dropProductToPallet(event: CdkDragDrop<Product[]>) {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
@@ -127,14 +149,19 @@ export class PalletControlComponent implements OnInit {
       return; // Geçersiz paket veya paket zaten dolu ise işlem yapma
     }
 
-    // Paleti önceki konteynırdan al
-    const pallet = event.previousContainer.data[event.previousIndex];
+    // Paleti önceki konteynırdan al (derin kopya ile)
+    const pallet = {...event.previousContainer.data[event.previousIndex]};
+    // Ürünlerin de derin kopyasını yap
+    pallet.products = [...pallet.products];
 
     // Paleti yeni pakete yerleştir
     this.packages[packageIndex].pallet = pallet;
 
     // Paleti önceki konteynırdan kaldır
     event.previousContainer.data.splice(event.previousIndex, 1);
+
+    // Paletleri yenile
+    this.replenishPallets();
 
     // Yeni boş paket oluştur
     this.addNewEmptyPackage();
@@ -149,11 +176,17 @@ export class PalletControlComponent implements OnInit {
   // Paleti paketten çıkart
   removePalletFromPackage(packageItem: Package) {
     if (packageItem.pallet) {
-      // Paleti kullanılabilir paletlere geri ekle
-      this.availablePallets.push(packageItem.pallet);
+      // Palet içindeki tüm ürünleri ürün listesine geri ekle
+      if (packageItem.pallet.products && packageItem.pallet.products.length > 0) {
+        this.availableProducts.push(...packageItem.pallet.products);
+        packageItem.pallet.products = [];
+      }
 
       // Paketten paleti kaldır
       packageItem.pallet = null;
+
+      // Paletleri yenile
+      this.replenishPallets();
     }
   }
 
@@ -221,27 +254,6 @@ export class PalletControlComponent implements OnInit {
     // Burada bir HTTP isteği ile backend'e veri gönderebilirsiniz
     // this.http.post('your-api-endpoint', packageData).subscribe(...)
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

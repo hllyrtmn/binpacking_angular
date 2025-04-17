@@ -16,6 +16,10 @@
           <div class="example-box" *ngFor="let product of availableProducts" cdkDrag>
             {{ product.position }} - {{ product.name }}
           </div>
+
+          <div class="empty-message" *ngIf="availableProducts.length === 0">
+            Tüm ürünler paletlere yerleştirildi.
+          </div>
         </div>
       </div>
     </div>
@@ -42,7 +46,7 @@
             <div class="pallet-in-package" *ngIf="package.pallet">
               <div class="pallet-header">
                 <span>{{ package.pallet.id }}</span>
-                <button class="remove-btn" (click)="removePalletFromPackage(package)">X</button>
+                <button mat-icon-button class="small-icon-button" (click)="removePalletFromPackage(package)" ><mat-icon class="icon-display" >close</mat-icon></button>
               </div>
 
               <!-- Palet içindeki ürünler -->
@@ -56,7 +60,7 @@
               >
                 <div class="product-in-pallet" *ngFor="let product of package.pallet.products; let j = index" cdkDrag>
                   {{ product.position }} - {{ product.name }}
-                  <button class="remove-btn" (click)="removeProductFromPallet(package.pallet, j)">X</button>
+                  <button mat-icon-button (click)="removeProductFromPallet(package.pallet, j)"><mat-icon class="icon-display">close</mat-icon></button>
                 </div>
 
                 <!-- Boş palet mesajı -->

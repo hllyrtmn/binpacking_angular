@@ -178,6 +178,11 @@
   flex-direction: column;
 }
 
+.small-icon-button {
+margin: 0;
+}
+
+
 .pallet-header {
   background-color: #0099cc;
   color: white;
@@ -203,20 +208,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.remove-btn {
-  background: #ff5252;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  font-size: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
 }
 
 .empty-message {
