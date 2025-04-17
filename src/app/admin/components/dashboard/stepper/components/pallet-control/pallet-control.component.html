@@ -1,21 +1,20 @@
-<p>pallet control works</p>
 <form [formGroup]="secondFormGroup">
   @if (true) {
 
   <div class="row">
     <div class="col-md-2">
       <div class="example-container">
-        <h2>To do</h2>
+        <h2 class="text-center">Ürünler</h2>
 
         <div
           cdkDropList
           #todoList="cdkDropList"
-          [cdkDropListData]="todo"
+          [cdkDropListData]="products"
           [cdkDropListConnectedTo]="[doneList]"
           class="example-list"
           (cdkDropListDropped)="drop($event)"
         >
-          @for (item of todo; track item) {
+          @for (item of products; track item) {
           <div class="example-box" cdkDrag>{{ item }}</div>
           }
         </div>
@@ -24,19 +23,18 @@
     <div class="col-md-8">
       <div cdkDropList cdkDropListOrientation="mixed" class="example-list1" (cdkDropListDropped)="drop1($event)">
 
-        @for (item of items; track item) {
+        @for (item of packages; track item) {
           <div
           cdkDrag
           cdkDropList
           #doneList="cdkDropList"
-          [cdkDropListData]="done"
+          [cdkDropListData]="pallets"
           [cdkDropListConnectedTo]="[todoList]"
           class="example-list"
-          (cdkDropListDropped)="drop($event)"
         >
-        <h5 class="text-center text-white" style="background-color: #006a6a;">Palet</h5>
-          @for (item of done; track item) {
-          <div class="example-box1" cdkDrag>{{ item }}</div>
+        <h5 class="text-center text-white" style="background-color: #006a6a;">Package {{item}} </h5>
+          @for (product of products; track product) {
+          <div class="example-box1" cdkDrag>{{ product.position }} / {{product.name}}</div>
           }
         </div>
         }
@@ -44,17 +42,16 @@
     </div>
     <div class="col-md-2">
       <div class="example-container">
-        <h2>Done</h2>
+        <h2 class="text-center">Paletler</h2>
 
         <div
           cdkDropList
           #doneList="cdkDropList"
-          [cdkDropListData]="done"
+          [cdkDropListData]="pallets"
           [cdkDropListConnectedTo]="[todoList]"
           class="example-list"
-          (cdkDropListDropped)="drop($event)"
         >
-          @for (item of done; track item) {
+          @for (item of pallets; track item) {
           <div class="example-box" cdkDrag>{{ item }}</div>
           }
         </div>
