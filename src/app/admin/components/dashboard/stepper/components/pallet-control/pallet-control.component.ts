@@ -11,8 +11,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import {MatCardModule} from '@angular/material/card';
-import {MatIconModule} from '@angular/material/icon';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 
 import {
   CdkDragDrop,
@@ -22,6 +22,8 @@ import {
   CdkDropList
 } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
+import { RepositoryService } from '../../services/repository.service';
+import { map } from 'rxjs';
 
 export interface Product {
   name: string;
@@ -52,24 +54,24 @@ interface Package {
     MatTableModule,
     MatCardModule,
     CommonModule,
-    CdkDropList, CdkDrag,MatIconModule
-],
+    CdkDropList, CdkDrag, MatIconModule
+  ],
   templateUrl: './pallet-control.component.html',
   styleUrl: './pallet-control.component.scss',
 })
 export class PalletControlComponent implements OnInit {
   @Input() order_id!: string;
   availableProducts: Product[] = [
-    {position: 1, name: 'Radiator 1', weight: 1.0079, price: '120H'},
-    {position: 2, name: 'Radiator 2', weight: 4.0026, price: '111He'},
-    {position: 3, name: 'Radiator 3', weight: 6.941, price: '222Li'},
-    {position: 4, name: 'Radiator 4', weight: 9.0122, price: '33Be'},
-    {position: 5, name: 'Radiator 5', weight: 10.811, price: '45B'},
-    {position: 6, name: 'Radiator 6', weight: 12.0107, price: '67C'},
-    {position: 7, name: 'Radiator 7', weight: 14.0067, price: '87N'},
-    {position: 8, name: 'Radiator 8', weight: 15.9994, price: '65O'},
-    {position: 9, name: 'Radiator 9', weight: 18.9984, price: '43F'},
-    {position: 10, name: 'Radiator 10', weight: 20.1797, price: '34Ne'},
+    { position: 1, name: 'Radiator 1', weight: 1.0079, price: '120H' },
+    { position: 2, name: 'Radiator 2', weight: 4.0026, price: '111He' },
+    { position: 3, name: 'Radiator 3', weight: 6.941, price: '222Li' },
+    { position: 4, name: 'Radiator 4', weight: 9.0122, price: '33Be' },
+    { position: 5, name: 'Radiator 5', weight: 10.811, price: '45B' },
+    { position: 6, name: 'Radiator 6', weight: 12.0107, price: '67C' },
+    { position: 7, name: 'Radiator 7', weight: 14.0067, price: '87N' },
+    { position: 8, name: 'Radiator 8', weight: 15.9994, price: '65O' },
+    { position: 9, name: 'Radiator 9', weight: 18.9984, price: '43F' },
+    { position: 10, name: 'Radiator 10', weight: 20.1797, price: '34Ne' },
   ];
 
   availablePallets: Pallet[] = [
@@ -91,6 +93,7 @@ export class PalletControlComponent implements OnInit {
     { id: 'Package 3', pallet: null }
   ];
 
+  repository: RepositoryService = inject(RepositoryService);
   // Paket sayacı
   private packageCounter: number = 4;
   // Palet sayacı
@@ -104,6 +107,12 @@ export class PalletControlComponent implements OnInit {
     });
     this.replenishPallets();
   }
+
+
+  pallets() {
+    this.repository.pallets().subscribe(response => console.log);
+  }
+
 
   // Paletleri yenile - her zaman sabit sayıda palet olmasını sağla
   replenishPallets() {
@@ -150,7 +159,7 @@ export class PalletControlComponent implements OnInit {
     }
 
     // Paleti önceki konteynırdan al (derin kopya ile)
-    const pallet = {...event.previousContainer.data[event.previousIndex]};
+    const pallet = { ...event.previousContainer.data[event.previousIndex] };
     // Ürünlerin de derin kopyasını yap
     pallet.products = [...pallet.products];
 
@@ -296,6 +305,7 @@ export class PalletControlComponent implements OnInit {
 
   ngOnInit(): void {
     console.log('Order ID geldi:', this.order_id);
+    this.pallets();
   }
 
 }
