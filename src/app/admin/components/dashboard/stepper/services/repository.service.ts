@@ -8,17 +8,21 @@ import { mapToOrderDetailDtoList } from '../../../../../models/mappers/order-det
 @Injectable({
   providedIn: 'root',
 })
-export class RepositoryService  {
+export class RepositoryService {
 
   constructor(private api: ApiService, private http: HttpClient) {
   }
 
-  orderDetails(id:string): Observable<any> {
+  orderDetails(id: string): Observable<any> {
     // api/orders/order-details/{id}/
     // get order detail by order id.
     return this.http.get<any>(
       `${this.api.getApiUrl()}/orders/order-details/?order_id=${id}`
     ).pipe(map(response => (mapToOrderDetailDtoList(response.results))));
+  }
+
+  pallets(): Observable<any> {
+    return this.http.get<any>(`${this.api.getApiUrl()}/logistics/pallets`);
   }
 
   deleteOrderDetail(id: string): Observable<any> {
