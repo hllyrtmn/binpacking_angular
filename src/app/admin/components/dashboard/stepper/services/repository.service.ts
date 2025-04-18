@@ -54,4 +54,12 @@ export class RepositoryService {
         {}
       );
   }
+
+  calculatePackageDetail(order_id:string): Observable<any> {
+    // api/orders/packages/{id}/
+    // get package detail by package id.
+    return this.http.get<any>(
+      `${this.api.getApiUrl()}/logistics/calculate-box/${order_id}/`
+    );
+  }
 }
