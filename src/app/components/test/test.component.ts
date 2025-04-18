@@ -7,7 +7,7 @@ import { DragDropFactory } from './factories/drag-drop-factory';
 
 @Component({
   selector: 'app-test',
-  imports: [MatButtonModule, DragDropComponent],
+  imports: [MatButtonModule],
   templateUrl: './test.component.html',
   styleUrl: './test.component.scss'
 })

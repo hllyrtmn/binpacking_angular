@@ -1,9 +1,10 @@
 import { inject, Injectable, linkedSignal, signal } from '@angular/core';
 import { ApiService } from '../../../../../services/api.service';
-import { HttpClient, httpResource } from '@angular/common/http';
+import { HttpClient, HttpParams, httpResource } from '@angular/common/http';
 import { finalize, map, Observable, tap } from 'rxjs';
 import { FileResponse } from '../interfaces/file-response.interface';
 import { mapToOrderDetailDtoList } from '../../../../../models/mappers/order-detail.mapper';
+import { Pallet } from '../../../../../models/pallet.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -22,7 +23,7 @@ export class RepositoryService {
   }
 
   pallets(): Observable<any> {
-    return this.http.get<any>(`${this.api.getApiUrl()}/logistics/pallets`);
+    return this.http.get<any>(`${this.api.getApiUrl()}/logistics/pallets/`,{params: new HttpParams().set('limit',30).set('offset',0)}).pipe(map(response => {return response.results as Pallet[]}));
   }
 
   deleteOrderDetail(id: string): Observable<any> {
