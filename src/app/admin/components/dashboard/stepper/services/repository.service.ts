@@ -1,29 +1,34 @@
-import { inject, Injectable, linkedSignal, signal } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { ApiService } from '../../../../../services/api.service';
-import { HttpClient, HttpParams, httpResource } from '@angular/common/http';
-import { finalize, map, Observable, tap } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { map, Observable } from 'rxjs';
 import { FileResponse } from '../interfaces/file-response.interface';
 import { mapToOrderDetailDtoList } from '../../../../../models/mappers/order-detail.mapper';
-import { Pallet } from '../../../../../models/pallet.interface';
+import { mapPackageDetailToPackage } from '../../../../../models/mappers/package-detail.mapper';
+import { UiPallet } from '../components/ui-models/ui-pallet.model';
 
 @Injectable({
   providedIn: 'root',
 })
 export class RepositoryService {
-
-  constructor(private api: ApiService, private http: HttpClient) {
-  }
+  constructor(private api: ApiService, private http: HttpClient) {}
 
   orderDetails(id: string): Observable<any> {
     // api/orders/order-details/{id}/
     // get order detail by order id.
-    return this.http.get<any>(
-      `${this.api.getApiUrl()}/orders/order-details/?order_id=${id}`
-    ).pipe(map(response => (mapToOrderDetailDtoList(response.results))));
+    return this.http
+      .get<any>(`${this.api.getApiUrl()}/orders/order-details/?order_id=${id}`)
+      .pipe(map((response) => mapToOrderDetailDtoList(response.results)));
   }
 
   pallets(): Observable<any> {
-    return this.http.get<any>(`${this.api.getApiUrl()}/logistics/pallets/`,{params: new HttpParams().set('limit',30).set('offset',0)}).pipe(map(response => {return response.results as Pallet[]}));
+    return this.http
+      .get<any>(`${this.api.getApiUrl()}/logistics/pallets/`, {
+        params: new HttpParams().set('limit', 30).set('offset', 0),
+      })
+      .pipe(
+        map((response) => response.results.map((item: any) => new UiPallet(item)))
+      );
   }
 
   deleteOrderDetail(id: string): Observable<any> {
@@ -42,26 +47,29 @@ export class RepositoryService {
     const formData = new FormData();
     formData.append('file', file);
 
-    return this.http
-      .post<FileResponse>(`${this.api.getApiUrl()}/orders/files/`, formData);
+    return this.http.post<FileResponse>(
+      `${this.api.getApiUrl()}/orders/files/`,
+      formData
+    );
   }
 
   processFile(file_id: string): Observable<{ status: string }> {
     // api/orders/procces-file/{id}
     // this only return status
-    return this.http
-      .post<{ status: string }>(
-        `${this.api.getApiUrl()}/orders/process-file/${file_id}/`,
-        {}
-      );
+    return this.http.post<{ status: string }>(
+      `${this.api.getApiUrl()}/orders/process-file/${file_id}/`,
+      {}
+    );
   }
 
-  calculatePackageDetail(order_id:string | '942a07ac-6c20-4dc9-b9bb-e7d2c733b4e1'): Observable<any> {
+  calculatePackageDetail(
+    order_id: string = '35ea955b-cdd8-4e03-bf32-5e75fc355a45'
+  ): Observable<any> {
     // api/orders/packages/{id}/
     // get package detail by package id.
 
-    return this.http.get<any>(
-      `${this.api.getApiUrl()}/logistics/calculate-box/${order_id}/`
-    );
+    return this.http
+      .get<any>(`${this.api.getApiUrl()}/logistics/calculate-box/${order_id}/`)
+      .pipe(map((response) => mapPackageDetailToPackage(response.data)));
   }
 }

@@ -43,7 +43,7 @@
 }
 
 .package-box {
-  border: 1px solid #006a6a;
+  border: 1px solid #006A6A;
   border-radius: 4px;
   background: white;
   overflow: hidden;
@@ -53,22 +53,19 @@
 }
 
 .package-header {
-  background-color: #006a6a;
+  background-color: #006A6A;
   color: white;
-  padding: 8px;
+  padding: 2px;
 }
 
 .package-items {
-  min-height: 120px;
-  padding: 10px;
-  background: #f5f5f5;
+  min-height: 60px;
   flex-grow: 1;
   display: flex;
   flex-direction: column;
 }
 
 .pallet-in-package {
-  border: 1px solid #0099cc;
   border-radius: 4px;
   background: white;
   padding: 5px;
@@ -79,14 +76,24 @@
 }
 
 .small-icon-button {
-margin: 0;
+  margin: 0;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+
+  .mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+  }
 }
 
-
 .pallet-header {
-  background-color: #0099cc;
+  background-color: #D6BB86;
   color: white;
-  padding: 5px;
+  padding: 2px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -100,14 +107,16 @@ margin: 0;
 }
 
 .product-in-pallet {
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  margin: 5px 0;
-  padding: 5px;
-  background: white;
+  border-bottom: solid 1px #ccc;
+  color: rgba(0, 0, 0, 0.87);
   display: flex;
-  justify-content: space-between;
+  flex-direction: row;
   align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  cursor: move;
+  background: white;
+  font-size: 12px;
 }
 
 .empty-message {
@@ -117,6 +126,11 @@ margin: 0;
   font-style: italic;
 }
 
+.icon-display {
+  transform: scale(0.8);
+}
+
+// Angular CDK Drag & Drop animation styles
 .cdk-drag-preview {
   box-sizing: border-box;
   border-radius: 4px;
@@ -136,3 +150,37 @@ margin: 0;
 .example-list.cdk-drop-list-dragging .example-box:not(.cdk-drag-placeholder) {
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
+.cdk-drag-preview {
+  border: none;
+  box-sizing: border-box;
+  border-radius: 4px;
+  box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+              0 8px 10px 1px rgba(0, 0, 0, 0.14),
+              0 3px 14px 2px rgba(0, 0, 0, 0.12);
+}
+
+.example-box:last-child {
+  border: none;
+}
+
+
+/* Drop alanı stilleri */
+.can-drop {
+  background-color: rgba(76, 175, 80, 0.2) !important; /* Hafif yeşil */
+  border: 2px dashed #4CAF50 !important;
+  transition: all 0.3s ease;
+}
+
+.cannot-drop {
+  background-color: rgba(244, 67, 54, 0.2) !important; /* Hafif kırmızı */
+  border: 2px dashed #F44336 !important;
+  transition: all 0.3s ease;
+  cursor: not-allowed !important;
+}
+
+/* Hover stil geçişleri */
+.pallet-items:hover {
+  background-color: rgba(33, 150, 243, 0.1);
+  transition: background-color 0.3s ease;
+}
+

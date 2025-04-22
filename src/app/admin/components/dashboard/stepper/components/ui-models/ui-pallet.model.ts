@@ -1,9 +1,9 @@
-import { User } from "../../../../../../auth/models/user.model";
-import { Company } from "../../../../../../models/company.interface";
-import { Dimension } from "../../../../../../models/dimension.interface";
-import { IUiPallet } from "../../interfaces/ui-interfaces/ui-pallet.interface";
+import { User } from '../../../../../../auth/models/user.model';
+import { Company } from '../../../../../../models/company.interface';
+import { Dimension } from '../../../../../../models/dimension.interface';
+import { IUiPallet } from '../../interfaces/ui-interfaces/ui-pallet.interface';
 
-export class UiPallet implements IUiPallet{
+export class UiPallet implements IUiPallet {
   name: string;
   dimension: Dimension;
   weight: number;
@@ -17,7 +17,12 @@ export class UiPallet implements IUiPallet{
   is_deleted: boolean;
 
   constructor(init: Partial<IUiPallet>) {
-    this.name = init.name!;
+    this.name =
+      init.dimension?.depth != null && init.dimension?.width != null
+        ? `${Math.trunc(init.dimension.depth)} X ${Math.trunc(
+            init.dimension.width
+          )}`
+        : 'Unnamed Pallet';
     this.dimension = init.dimension!;
     this.weight = init.weight!;
     this.id = init.id!;

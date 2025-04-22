@@ -19,28 +19,16 @@ import {
   moveItemInArray,
   transferArrayItem,
   CdkDrag,
-  CdkDropList
+  CdkDropList,
+  CdkDragStart,
 } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import { RepositoryService } from '../../services/repository.service';
 import { UiProduct } from '../ui-models/ui-product.model';
-
-export interface Product {
-  name: string;
-  position: number;
-  weight: number;
-  price: string;
-}
-
-interface Pallet {
-  id: string;
-  products: Product[];
-}
-
-interface Package {
-  id: string;
-  pallet: Pallet | null;
-}
+import { UiPallet } from '../ui-models/ui-pallet.model';
+import { UiPackage } from '../ui-models/ui-package.model';
+import { package1 } from './test/dummy-data';
+import { ToastService } from '../../../../../../services/toast.service';
 
 @Component({
   selector: 'app-pallet-control',
@@ -54,67 +42,31 @@ interface Package {
     MatTableModule,
     MatCardModule,
     CommonModule,
-    CdkDropList, CdkDrag, MatIconModule
+    CdkDropList,
+    CdkDrag,
+    MatIconModule,
   ],
   templateUrl: './pallet-control.component.html',
   styleUrl: './pallet-control.component.scss',
 })
 export class PalletControlComponent implements OnInit {
   @Input() order_id!: string;
-  availableProducts: UiProduct[] = [
-    {
-      count: 10, id: "string", name: 'Radiator 1',
-      weight_type: { id: "string", eco: 123, std: 123, pre: 123, created_at: new Date(), updated_at: new Date(), is_deleted: false, deleted_time: null },
-      dimension: {
-        dimension_type: "string",
-        id: "string",
-        width: 300.000000,
-        height: 12.000000,
-        depth: 2000.000000,
-        unit: "mm",
-        volume: 7200000.0000000000,
-        created_at: new Date(), updated_at: new Date(), is_deleted: false, deleted_time: null,
-      },
-      product_type: {
-        id: "string",
-        code: "string",
-        type: "string",
-        created_at: new Date(),
-        updated_at: new Date(),
-        is_deleted: false,
-        deleted_time: null
-      },
-      split(perItem) {
-        return perItem || 123
-      },
-      created_at: new Date(), updated_at: new Date(), is_deleted: false, deleted_time: null,
-    }
-  ];
 
-  availablePallets: Pallet[] = [
-    { id: 'Pallet 1', products: [] },
-    { id: 'Pallet 2', products: [] },
-    { id: 'Pallet 3', products: [] },
-    { id: 'Pallet 4', products: [] },
-    { id: 'Pallet 5', products: [] },
-    { id: 'Pallet 6', products: [] },
-    { id: 'Pallet 7', products: [] },
-    { id: 'Pallet 8', products: [] },
-    { id: 'Pallet 9', products: [] },
-    { id: 'Pallet 10', products: [] }
-  ];
+  packages: UiPackage[] = [];
+  availableProducts: UiProduct[] = [];
+  currentDraggedProduct: UiProduct | null = null;
+  remainingVolume:number = 0; // Paletin kalan hacmi
+  // DB'den gelen sabit palet listesi
+  availablePallets: UiPallet[] = [];
 
-  packages: Package[] = [
-    { id: 'Package 1', pallet: null },
-    { id: 'Package 2', pallet: null },
-    { id: 'Package 3', pallet: null }
-  ];
+  // Seçilen paletlerin klonlarını tutacağımız bir dizi
+  selectedPallets: UiPallet[] = [];
 
   repository: RepositoryService = inject(RepositoryService);
+  toastService: ToastService = inject(ToastService);
+
   // Paket sayacı
   private packageCounter: number = 4;
-  // Palet sayacı
-  private palletCounter: number = 6;
 
   secondFormGroup: FormGroup;
 
@@ -122,154 +74,192 @@ export class PalletControlComponent implements OnInit {
     this.secondFormGroup = this._formBuilder.group({
       secondCtrl: ['', Validators.required],
     });
-    this.replenishPallets();
   }
 
-
-  pallets() {
-    this.repository.pallets().subscribe(response => console.log);
-  }
-
-
-  // Paletleri yenile - her zaman sabit sayıda palet olmasını sağla
-  replenishPallets() {
-    // Mevcut paletlerin sayısını kontrol et
-    const currentCount = this.availablePallets.length;
-
-    // Her zaman 5 palet olmalı
-    const neededPallets = 5 - currentCount;
-
-    // Eğer eksikse, yeni paletler ekle
-    for (let i = 0; i < neededPallets; i++) {
-      const newPalletId = 'Pallet ' + this.palletCounter++;
-      this.availablePallets.push({ id: newPalletId, products: [] });
-    }
+  // DB'den paletleri al
+  loadPallets() {
+    this.repository.pallets().subscribe({
+      next: (response) => {
+        this.availablePallets = response;
+      },
+    });
   }
 
   // Ürünleri paletlere taşıma
-  dropProductToPallet(event: CdkDragDrop<Product[]>) {
+  dropProductToPallet(event: CdkDragDrop<UiProduct[]>) {
+    // Drag edilmekte olan ürün
+    const product = event.previousContainer.data[event.previousIndex];
+
+    // Hedef paletin bulunduğu paketi bul
+    const targetPalletId = event.container.id.replace('pallet-', '');
+    const targetPackage = this.packages.find(
+      (p) => p.pallet && p.pallet.id === targetPalletId
+    );
+
+    if (targetPackage && targetPackage.pallet) {
+      // Ürünün palete sığıp sığmadığını kontrol et
+      const canFit = this.canFitProductToPallet(
+        product,
+        targetPackage.pallet,
+        targetPackage.products
+      );
+
+      if (!canFit) {
+        // Kullanıcıya bildirim göster
+        this.toastService.error(
+          'Bu ürün seçilen palete boyutlarından dolayı sığmıyor.',
+          'Bu ürün palete sığmıyor!'
+        );
+        return; // Drop işlemini iptal et
+      }
+    }
+
+    // Normal drop işlemini devam ettir
     if (event.previousContainer === event.container) {
-      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+      moveItemInArray(
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex
+      );
     } else {
       transferArrayItem(
         event.previousContainer.data,
         event.container.data,
         event.previousIndex,
-        event.currentIndex,
+        event.currentIndex
       );
     }
   }
 
-  // Paleti pakete taşıma
+  // Paleti pakete taşıma - artık orijinal palet listesini değiştirmeden klon kullanarak
   dropPalletToPackage(event: CdkDragDrop<any>) {
     if (event.previousContainer === event.container) {
-      return; // Aynı konteyner içinde hareket etmeyi engelle
+      return; // Aynı konteyner içinde hareketi engelle
     }
 
     // Hedef paketin indexini bul
-    const packageIndex = this.packages.findIndex(p =>
-      p.id === event.container.id.replace('package-', '')
+    const packageIndex = this.packages.findIndex(
+      (p) => p.id === event.container.id.replace('package-', '')
     );
 
     if (packageIndex === -1 || this.packages[packageIndex].pallet !== null) {
-      return; // Geçersiz paket veya paket zaten dolu ise işlem yapma
+      return; // Geçersiz paket veya paket zaten dolu
     }
 
-    // Paleti önceki konteynırdan al (derin kopya ile)
-    const pallet = { ...event.previousContainer.data[event.previousIndex] };
-    // Ürünlerin de derin kopyasını yap
-    pallet.products = [...pallet.products];
+    // Orijinal paleti al
+    const originalPallet = event.previousContainer.data[event.previousIndex];
 
-    // Paleti yeni pakete yerleştir
-    this.packages[packageIndex].pallet = pallet;
+    // Paletin derin bir kopyasını oluştur (klon)
+    const palletClone = new UiPallet({
+      ...originalPallet,
+      id: originalPallet.id + '-clone-' + new Date().getTime(), // Benzersiz ID ekliyoruz
+      //TODO buraya guid ekle
+    });
 
-    // Paleti önceki konteynırdan kaldır
-    event.previousContainer.data.splice(event.previousIndex, 1);
+    // Klonlanmış paleti pakete yerleştir
+    this.packages[packageIndex].pallet = palletClone;
 
-    // Paletleri yenile
-    this.replenishPallets();
+    // Klonlanmış paleti seçilen paletler listesine ekle
+    this.selectedPallets.push(palletClone);
 
     // Yeni boş paket oluştur
     this.addNewEmptyPackage();
   }
 
   // Ürünü paletten geri çıkart
-  removeProductFromPallet(pallet: Pallet, productIndex: number) {
-    const removedProduct = pallet.products.splice(productIndex, 1)[0];
+  removeProductFromPackage(package1: UiPackage, productIndex: number) {
+    const removedProduct = package1.products.splice(productIndex, 1)[0];
     this.availableProducts.push(removedProduct);
   }
 
   // Paleti paketten çıkart
-  removePalletFromPackage(packageItem: Package) {
+  removePalletFromPackage(packageItem: UiPackage) {
     if (packageItem.pallet) {
       // Palet içindeki tüm ürünleri ürün listesine geri ekle
-      if (packageItem.pallet.products && packageItem.pallet.products.length > 0) {
-        this.availableProducts.push(...packageItem.pallet.products);
-        packageItem.pallet.products = [];
+      if (packageItem.products && packageItem.products.length > 0) {
+        this.availableProducts.push(...packageItem.products);
+        packageItem.products = [];
+      }
+
+      // Klonlanmış paleti seçilen paletler listesinden kaldır
+      const palletIndex = this.selectedPallets.findIndex(
+        (p) => p.id === packageItem.pallet?.id
+      );
+      if (palletIndex !== -1) {
+        this.selectedPallets.splice(palletIndex, 1);
       }
 
       // Paketten paleti kaldır
       packageItem.pallet = null;
-
-      // Paletleri yenile
-      this.replenishPallets();
     }
   }
 
   // Yeni boş paket ekle
   addNewEmptyPackage() {
     // Boş paket sayısını kontrol et
-    const emptyPackages = this.packages.filter(p => p.pallet === null);
+    const emptyPackages = this.packages.filter((p) => p.pallet === null);
 
     // Eğer 2'den az boş paket varsa yeni paket ekle
     if (emptyPackages.length < 2) {
-      this.packages.push({
-        id: 'Package ' + this.packageCounter++,
-        pallet: null
+      // Yeni bir UiPackage oluşturalim
+      const newPackage = new UiPackage({
+        id: 'package-' + this.packageCounter++,
+        pallet: null,
+        products: [],
+        order: package1.order, // Mevcut sipariş bilgisini kullanıyoruz
+        created_at: new Date(),
+        updated_at: new Date(),
+        is_deleted: false,
+        deleted_time: null,
       });
+
+      this.packages.push(newPackage);
     }
   }
 
-  // Bütün palet ürün listelerini getir
+  // Tüm palet ürün listelerini getir
   get palletProductsLists(): string[] {
-    // Tüm paletlerin ürün listelerinin ID'lerini topla
-    const availablePalletIds = this.availablePallets.map(pallet => 'pallet-' + pallet.id);
-    const packagedPalletIds: string[] = [];
+    const allPalletIds: string[] = ['productsList']; // Ürün listesi de bağlantılı olsun
 
-    this.packages.forEach(pkg => {
+    // Paketlerdeki paletlerin ürün liste ID'lerini topla
+    this.packages.forEach((pkg) => {
       if (pkg.pallet) {
-        packagedPalletIds.push('pallet-' + pkg.pallet.id);
+        allPalletIds.push('pallet-' + pkg.pallet.id);
       }
     });
 
-    return [...availablePalletIds, ...packagedPalletIds];
+    return allPalletIds;
   }
 
-  // Bütün paket listeleri
+  // Boş paket listeleri
   get packageIds(): string[] {
     return this.packages
-      .filter(pkg => pkg.pallet === null) // Sadece boş paketler
-      .map(pkg => 'package-' + pkg.id);
+      .filter((pkg) => pkg.pallet === null) // Sadece boş paketler
+      .map((pkg) => 'package-' + pkg.id);
   }
 
-  // Paket içeriğini JSON olarak al (backend'e gönderme işlemi için)
+  // Paket verilerini JSON olarak al (backend'e gönderme işlemi için)
   getPackageData(): any {
     return {
       orderId: this.order_id,
       packages: this.packages
-        .filter(pkg => pkg.pallet !== null) // Sadece doldurulmuş paketleri gönder
-        .map(pkg => ({
+        .filter((pkg) => pkg.pallet !== null) // Sadece doldurulmuş paketleri gönder
+        .map((pkg) => ({
           packageId: pkg.id,
-          pallet: pkg.pallet ? {
-            palletId: pkg.pallet.id,
-            products: pkg.pallet.products.map(product => ({
-              productId: product.position,
-              productName: product.name,
-              weight: product.weight,
-              price: product.price
-            }))
-          } : null
-        }))
+          pallet: pkg.pallet
+            ? {
+                palletId: pkg.pallet.id.split('-clone-')[0], // Orijinal palet ID'sini al
+                products: pkg.products.map((product) => ({
+                  productId: product.id,
+                  productName: product.name,
+                  dimension: product.dimension,
+                  count: product.count,
+                  productType: product.product_type,
+                  weightType: product.weight_type,
+                })),
+              }
+            : null,
+        })),
     };
   }
 
@@ -277,52 +267,150 @@ export class PalletControlComponent implements OnInit {
   submitForm() {
     const packageData = this.getPackageData();
     console.log('Gönderilecek veri:', packageData);
-    // Burada bir HTTP isteği ile backend'e veri gönderebilirsiniz
-    // this.http.post('your-api-endpoint', packageData).subscribe(...)
+    // Burada HTTP isteği ile backend'e veri gönderebilirsiniz
+    // this.http.post('api-endpoint', packageData).subscribe(...)
   }
-
-
-
-  // products: Product[] = [
-  //   {position: 1, name: 'Radiator 1', weight: 1.0079, price: '120H'},
-  //   {position: 2, name: 'Radiator 2', weight: 4.0026, price: '111He'},
-  //   {position: 3, name: 'Radiator 3', weight: 6.941, price: '222Li'},
-  //   {position: 4, name: 'Radiator 4', weight: 9.0122, price: '33Be'},
-  //   {position: 5, name: 'Radiator 5', weight: 10.811, price: '45B'},
-  //   {position: 6, name: 'Radiator 6', weight: 12.0107, price: '67C'},
-  //   {position: 7, name: 'Radiator 7', weight: 14.0067, price: '87N'},
-  //   {position: 8, name: 'Radiator 8', weight: 15.9994, price: '65O'},
-  //   {position: 9, name: 'Radiator 9', weight: 18.9984, price: '43F'},
-  //   {position: 10, name: 'Radiator 10', weight: 20.1797, price: '34Ne'},
-  // ];
-
-
-  // packages = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
-
-
-  // pallets = ['Pallet 1', 'Pallet 2', 'Pallet 3', 'Pallet 4', 'Pallet 5', 'Pallet 6', 'Pallet 7', 'Pallet 8', 'Pallet 9', 'Pallet 10'];
-
-
-  // drop1(event: CdkDragDrop<string[]>) {
-  //   moveItemInArray(this.packages, event.previousIndex, event.currentIndex);
-  // }
-
-  // drop(event: CdkDragDrop<Product[]>) {
-  //   if (event.previousContainer === event.container) {
-  //     moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
-  //   } else {
-  //     transferArrayItem(
-  //       event.previousContainer.data,
-  //       event.container.data,
-  //       event.previousIndex,
-  //       event.currentIndex,
-  //     );
-  //   }
-  // }
 
   ngOnInit(): void {
-    console.log('Order ID geldi:', this.order_id);
-    this.pallets();
+    console.log('Sipariş ID alındı:', this.order_id);
+
+    // Paketleri ve ürünleri yükle
+    this.repository.calculatePackageDetail().subscribe({
+      next: (response) => {
+        this.packages = response;
+
+        // Paketlerden ürünleri çıkart (gerekiyorsa)
+        response.forEach((pkg: UiPackage) => {
+          if (pkg.products && pkg.products.length > 0) {
+            // İhtiyaca göre ürünleri availableProducts'a ekleyebilirsin
+            // this.availableProducts.push(...pkg.products);
+          }
+        });
+
+        // En az 2 boş paket olduğundan emin ol
+        this.addNewEmptyPackage();
+      },
+    });
+
+    // Paletleri yükle
+    this.loadPallets();
   }
 
+  // Ürünün palete sığıp sığmadığını kontrol eden metot
+  canFitProductToPallet(
+    product: UiProduct,
+    pallet: UiPallet,
+    existingProducts: UiProduct[]
+  ): boolean {
+    // Paletin kalan kullanılabilir boyutlarını hesapla
+    const usedSpace = this.calculateUsedSpace(existingProducts);
+
+    // Paletin toplam hacmi
+    const palletVolume = pallet.dimension.width * pallet.dimension.depth * pallet.dimension.height;
+
+    // Paletin kalan hacmi
+    const remainingVolume = palletVolume - usedSpace.volume;
+    // Ürünün hacmi
+    const productVolume =
+      product.dimension.width *
+      product.dimension.depth *
+      product.dimension.height;
+
+    // Hacim kontrolü
+    if (productVolume > remainingVolume) {
+      return false;
+    }
+
+    // Boyut kontrolü (yüksek ürünler palete sığmalı)
+    if (product.dimension.height > pallet.dimension.height) {
+      return false;
+    }
+
+    // Genişlik ve derinlik kontrolü (2D yerleşim kuralları)
+    // Bu kısmı siz kendi yerleşim kurallarınıza göre özelleştirebilirsiniz
+    // Örneğin basit bir kontrol:
+    const remainingWidth = pallet.dimension.width - usedSpace.maxWidth;
+    const remainingDepth = pallet.dimension.depth - usedSpace.maxDepth;
+
+    if (
+      (product.dimension.width <= remainingWidth &&
+        product.dimension.depth <= pallet.dimension.depth) ||
+      (product.dimension.width <= pallet.dimension.width &&
+        product.dimension.depth <= remainingDepth)
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  // Bir paletteki mevcut ürünlerin kapladığı alanı hesaplayan yardımcı metot
+  calculateUsedSpace(products: UiProduct[]): {
+    volume: number;
+    maxWidth: number;
+    maxDepth: number;
+  } {
+    let totalVolume = 0;
+    let maxWidthUsed = 0;
+    let maxDepthUsed = 0;
+
+    // Bu basit bir hesaplama - gerçek kullanımda daha karmaşık bin-packing
+    // algoritmaları kullanabilirsiniz
+    products.forEach((product) => {
+      totalVolume +=
+        product.dimension.width *
+        product.dimension.depth *
+        product.dimension.height;
+      maxWidthUsed = Math.max(maxWidthUsed, product.dimension.width);
+      maxDepthUsed = Math.max(maxDepthUsed, product.dimension.depth);
+    });
+
+    return {
+      volume: totalVolume,
+      maxWidth: maxWidthUsed,
+      maxDepth: maxDepthUsed,
+    };
+  }
+
+  // Sürükleme başladığında çağrılacak metot - önizleme için
+  dragStarted(event: CdkDragStart) {
+    const product = event.source.data as UiProduct;
+    this.currentDraggedProduct = product;
+
+    // Tüm paletlerin drop alanlarını kontrol et
+    this.packages.forEach((pkg) => {
+      if (pkg.pallet) {
+        const canFit = this.canFitProductToPallet(
+          product,
+          pkg.pallet,
+          pkg.products
+        );
+
+        // DOM manipülasyonu ile görsel geri bildirim ekle
+        const palletElement = document.getElementById(
+          'pallet-' + pkg.pallet.id
+        );
+        if (palletElement) {
+          if (canFit) {
+            palletElement.classList.add('can-drop');
+            palletElement.classList.remove('cannot-drop');
+          } else {
+            palletElement.classList.add('cannot-drop');
+            palletElement.classList.remove('can-drop');
+          }
+        }
+      }
+    });
+  }
+
+  // Sürükleme bittiğinde stil sınıflarını temizle
+  dragEnded() {
+    this.currentDraggedProduct = null;
+
+    // Tüm highlight'ları temizle
+    document.querySelectorAll('.can-drop, .cannot-drop').forEach((el) => {
+      el.classList.remove('can-drop');
+      el.classList.remove('cannot-drop');
+    });
+  }
 }

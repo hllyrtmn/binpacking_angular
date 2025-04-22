@@ -5,8 +5,8 @@ import { IUiProduct } from "./ui-product.interface";
 export interface IUiPackage extends Package {
   pallet: IUiPallet | null;
   products: IUiProduct[];
-  addProduct(product: IUiProduct): void;
-  removeProduct(product: IUiProduct): void;
-  addPallet(pallet: IUiPallet): void;
-  isValid(product: IUiPallet): boolean;
+  // addProduct(product: IUiProduct): void;
+  // removeProduct(product: IUiProduct): void;
+  // addPallet(pallet: IUiPallet): void;
+  // isValid(product: IUiPallet): boolean;
 }
