@@ -23,7 +23,7 @@ import {
 } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import { RepositoryService } from '../../services/repository.service';
-import { map } from 'rxjs';
+import { UiProduct } from '../ui-models/ui-product.model';
 
 export interface Product {
   name: string;
@@ -61,17 +61,17 @@ interface Package {
 })
 export class PalletControlComponent implements OnInit {
   @Input() order_id!: string;
-  availableProducts: Product[] = [
-    { position: 1, name: 'Radiator 1', weight: 1.0079, price: '120H' },
-    { position: 2, name: 'Radiator 2', weight: 4.0026, price: '111He' },
-    { position: 3, name: 'Radiator 3', weight: 6.941, price: '222Li' },
-    { position: 4, name: 'Radiator 4', weight: 9.0122, price: '33Be' },
-    { position: 5, name: 'Radiator 5', weight: 10.811, price: '45B' },
-    { position: 6, name: 'Radiator 6', weight: 12.0107, price: '67C' },
-    { position: 7, name: 'Radiator 7', weight: 14.0067, price: '87N' },
-    { position: 8, name: 'Radiator 8', weight: 15.9994, price: '65O' },
-    { position: 9, name: 'Radiator 9', weight: 18.9984, price: '43F' },
-    { position: 10, name: 'Radiator 10', weight: 20.1797, price: '34Ne' },
+  availableProducts: UiProduct[] = [
+    { name: 'Radiator 1'},
+    { name: 'Radiator 2'},
+    { name: 'Radiator 3'},
+    { name: 'Radiator 4'},
+    { name: 'Radiator 5'},
+    { name: 'Radiator 6'},
+    { name: 'Radiator 7'},
+    { name: 'Radiator 8'},
+    { name: 'Radiator 9'},
+    { name: 'Radiator 10'},
   ];
 
   availablePallets: Pallet[] = [
