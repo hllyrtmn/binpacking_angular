@@ -62,16 +62,33 @@ interface Package {
 export class PalletControlComponent implements OnInit {
   @Input() order_id!: string;
   availableProducts: UiProduct[] = [
-    { name: 'Radiator 1'},
-    { name: 'Radiator 2'},
-    { name: 'Radiator 3'},
-    { name: 'Radiator 4'},
-    { name: 'Radiator 5'},
-    { name: 'Radiator 6'},
-    { name: 'Radiator 7'},
-    { name: 'Radiator 8'},
-    { name: 'Radiator 9'},
-    { name: 'Radiator 10'},
+    {
+      count: 10, id: "string", name: 'Radiator 1',
+      weight_type: { id: "string", eco: 123, std: 123, pre: 123, created_at: new Date(), updated_at: new Date(), is_deleted: false, deleted_time: null },
+      dimension: {
+        dimension_type: "string",
+        id: "string",
+        width: 300.000000,
+        height: 12.000000,
+        depth: 2000.000000,
+        unit: "mm",
+        volume: 7200000.0000000000,
+        created_at: new Date(), updated_at: new Date(), is_deleted: false, deleted_time: null,
+      },
+      product_type: {
+        id: "string",
+        code: "string",
+        type: "string",
+        created_at: new Date(),
+        updated_at: new Date(),
+        is_deleted: false,
+        deleted_time: null
+      },
+      split(perItem) {
+        return perItem || 123
+      },
+      created_at: new Date(), updated_at: new Date(), is_deleted: false, deleted_time: null,
+    }
   ];
 
   availablePallets: Pallet[] = [

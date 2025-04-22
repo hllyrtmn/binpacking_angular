@@ -6,7 +6,7 @@ import { WeightType } from '../../../../../../models/weight-type.interface';
 import { IUiProduct } from '../../interfaces/ui-interfaces/ui-product.interface';
 
 export class UiProduct implements IUiProduct {
-  split(perItem: number | null): IUiProduct {
+  split(perItem: number | null): any {
     throw new Error('Method not implemented.');
   }
   name: string;
@@ -24,7 +24,7 @@ export class UiProduct implements IUiProduct {
   is_deleted: boolean;
 
   constructor(init: Partial<IUiProduct>) {
-    this.name  = init.name!;
+    this.name = init.name!;
     this.count = init.count!;
     this.id = init.id!;
     this.created_at = init.created_at!;
