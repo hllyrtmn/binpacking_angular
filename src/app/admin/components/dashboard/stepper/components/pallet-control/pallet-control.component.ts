@@ -10,10 +10,10 @@ import { MatStepperModule } from '@angular/material/stepper';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { MatTableModule } from '@angular/material/table';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-
+import { v4 as Guid} from 'uuid';
 import {
   CdkDragDrop,
   moveItemInArray,
@@ -52,22 +52,14 @@ import { ToastService } from '../../../../../../services/toast.service';
 export class PalletControlComponent implements OnInit {
   @Input() order_id!: string;
 
-  packages: UiPackage[] = [];
-  availableProducts: UiProduct[] = [];
-  currentDraggedProduct: UiProduct | null = null;
-  remainingVolume:number = 0; // Paletin kalan hacmi
-  // DB'den gelen sabit palet listesi
-  availablePallets: UiPallet[] = [];
-
-  // Seçilen paletlerin klonlarını tutacağımız bir dizi
-  selectedPallets: UiPallet[] = [];
-
   repository: RepositoryService = inject(RepositoryService);
   toastService: ToastService = inject(ToastService);
 
-  // Paket sayacı
-  private packageCounter: number = 4;
-
+  packages: UiPackage[] = [];
+  availableProducts: UiProduct[] = [];
+  availablePallets: UiPallet[] = [];
+  currentDraggedProduct: UiProduct | null = null;
+  selectedPallets: UiPallet[] = [];
   secondFormGroup: FormGroup;
 
   constructor(private _formBuilder: FormBuilder) {
@@ -76,7 +68,6 @@ export class PalletControlComponent implements OnInit {
     });
   }
 
-  // DB'den paletleri al
   loadPallets() {
     this.repository.pallets().subscribe({
       next: (response) => {
@@ -87,17 +78,14 @@ export class PalletControlComponent implements OnInit {
 
   // Ürünleri paletlere taşıma
   dropProductToPallet(event: CdkDragDrop<UiProduct[]>) {
-    // Drag edilmekte olan ürün
     const product = event.previousContainer.data[event.previousIndex];
-
-    // Hedef paletin bulunduğu paketi bul
-    const targetPalletId = event.container.id.replace('pallet-', '');
+    const targetPalletId = event.container.id;
     const targetPackage = this.packages.find(
       (p) => p.pallet && p.pallet.id === targetPalletId
     );
 
     if (targetPackage && targetPackage.pallet) {
-      // Ürünün palete sığıp sığmadığını kontrol et
+      console.log(product,targetPackage);
       const canFit = this.canFitProductToPallet(
         product,
         targetPackage.pallet,
@@ -105,16 +93,11 @@ export class PalletControlComponent implements OnInit {
       );
 
       if (!canFit) {
-        // Kullanıcıya bildirim göster
-        this.toastService.error(
-          'Bu ürün seçilen palete boyutlarından dolayı sığmıyor.',
-          'Bu ürün palete sığmıyor!'
-        );
+        this.toastService.error('Bu ürün seçilen palete boyutlarından dolayı sığmıyor.','Bu ürün palete sığmıyor!');
         return; // Drop işlemini iptal et
       }
     }
 
-    // Normal drop işlemini devam ettir
     if (event.previousContainer === event.container) {
       moveItemInArray(
         event.container.data,
@@ -131,57 +114,41 @@ export class PalletControlComponent implements OnInit {
     }
   }
 
-  // Paleti pakete taşıma - artık orijinal palet listesini değiştirmeden klon kullanarak
   dropPalletToPackage(event: CdkDragDrop<any>) {
     if (event.previousContainer === event.container) {
       return; // Aynı konteyner içinde hareketi engelle
     }
 
-    // Hedef paketin indexini bul
-    const packageIndex = this.packages.findIndex(
-      (p) => p.id === event.container.id.replace('package-', '')
-    );
+    const packageIndex = this.packages.findIndex((p) => p.id === event.container.id);
 
     if (packageIndex === -1 || this.packages[packageIndex].pallet !== null) {
       return; // Geçersiz paket veya paket zaten dolu
     }
 
-    // Orijinal paleti al
     const originalPallet = event.previousContainer.data[event.previousIndex];
-
-    // Paletin derin bir kopyasını oluştur (klon)
     const palletClone = new UiPallet({
       ...originalPallet,
-      id: originalPallet.id + '-clone-' + new Date().getTime(), // Benzersiz ID ekliyoruz
+      id: Guid(), // Benzersiz ID ekliyoruz
       //TODO buraya guid ekle
     });
 
-    // Klonlanmış paleti pakete yerleştir
     this.packages[packageIndex].pallet = palletClone;
-
-    // Klonlanmış paleti seçilen paletler listesine ekle
     this.selectedPallets.push(palletClone);
-
-    // Yeni boş paket oluştur
     this.addNewEmptyPackage();
   }
 
-  // Ürünü paletten geri çıkart
   removeProductFromPackage(package1: UiPackage, productIndex: number) {
     const removedProduct = package1.products.splice(productIndex, 1)[0];
     this.availableProducts.push(removedProduct);
   }
 
-  // Paleti paketten çıkart
   removePalletFromPackage(packageItem: UiPackage) {
     if (packageItem.pallet) {
-      // Palet içindeki tüm ürünleri ürün listesine geri ekle
       if (packageItem.products && packageItem.products.length > 0) {
         this.availableProducts.push(...packageItem.products);
         packageItem.products = [];
       }
 
-      // Klonlanmış paleti seçilen paletler listesinden kaldır
       const palletIndex = this.selectedPallets.findIndex(
         (p) => p.id === packageItem.pallet?.id
       );
@@ -189,24 +156,19 @@ export class PalletControlComponent implements OnInit {
         this.selectedPallets.splice(palletIndex, 1);
       }
 
-      // Paketten paleti kaldır
       packageItem.pallet = null;
     }
   }
 
-  // Yeni boş paket ekle
   addNewEmptyPackage() {
-    // Boş paket sayısını kontrol et
     const emptyPackages = this.packages.filter((p) => p.pallet === null);
 
-    // Eğer 2'den az boş paket varsa yeni paket ekle
     if (emptyPackages.length < 2) {
-      // Yeni bir UiPackage oluşturalim
       const newPackage = new UiPackage({
-        id: 'package-' + this.packageCounter++,
+        id: Guid(),
         pallet: null,
         products: [],
-        order: package1.order, // Mevcut sipariş bilgisini kullanıyoruz
+        order: package1.order,
         created_at: new Date(),
         updated_at: new Date(),
         is_deleted: false,
@@ -220,14 +182,11 @@ export class PalletControlComponent implements OnInit {
   // Tüm palet ürün listelerini getir
   get palletProductsLists(): string[] {
     const allPalletIds: string[] = ['productsList']; // Ürün listesi de bağlantılı olsun
-
-    // Paketlerdeki paletlerin ürün liste ID'lerini topla
     this.packages.forEach((pkg) => {
       if (pkg.pallet) {
-        allPalletIds.push('pallet-' + pkg.pallet.id);
+        allPalletIds.push(pkg.pallet.id);
       }
     });
-
     return allPalletIds;
   }
 
@@ -235,10 +194,9 @@ export class PalletControlComponent implements OnInit {
   get packageIds(): string[] {
     return this.packages
       .filter((pkg) => pkg.pallet === null) // Sadece boş paketler
-      .map((pkg) => 'package-' + pkg.id);
+      .map((pkg) => pkg.id);
   }
 
-  // Paket verilerini JSON olarak al (backend'e gönderme işlemi için)
   getPackageData(): any {
     return {
       orderId: this.order_id,
@@ -248,7 +206,7 @@ export class PalletControlComponent implements OnInit {
           packageId: pkg.id,
           pallet: pkg.pallet
             ? {
-                palletId: pkg.pallet.id.split('-clone-')[0], // Orijinal palet ID'sini al
+                palletId: pkg.pallet.id[0], // Orijinal palet ID'sini al
                 products: pkg.products.map((product) => ({
                   productId: product.id,
                   productName: product.name,
@@ -263,88 +221,30 @@ export class PalletControlComponent implements OnInit {
     };
   }
 
-  // Formu gönder (Backend'e veri gönderme işlemi için)
   submitForm() {
     const packageData = this.getPackageData();
     console.log('Gönderilecek veri:', packageData);
-    // Burada HTTP isteği ile backend'e veri gönderebilirsiniz
     // this.http.post('api-endpoint', packageData).subscribe(...)
   }
 
   ngOnInit(): void {
     console.log('Sipariş ID alındı:', this.order_id);
 
-    // Paketleri ve ürünleri yükle
     this.repository.calculatePackageDetail().subscribe({
       next: (response) => {
         this.packages = response;
 
-        // Paketlerden ürünleri çıkart (gerekiyorsa)
         response.forEach((pkg: UiPackage) => {
           if (pkg.products && pkg.products.length > 0) {
-            // İhtiyaca göre ürünleri availableProducts'a ekleyebilirsin
-            // this.availableProducts.push(...pkg.products);
+            // İhtiyac
           }
         });
-
-        // En az 2 boş paket olduğundan emin ol
         this.addNewEmptyPackage();
       },
     });
-
-    // Paletleri yükle
     this.loadPallets();
   }
 
-  // Ürünün palete sığıp sığmadığını kontrol eden metot
-  canFitProductToPallet(
-    product: UiProduct,
-    pallet: UiPallet,
-    existingProducts: UiProduct[]
-  ): boolean {
-    // Paletin kalan kullanılabilir boyutlarını hesapla
-    const usedSpace = this.calculateUsedSpace(existingProducts);
-
-    // Paletin toplam hacmi
-    const palletVolume = pallet.dimension.width * pallet.dimension.depth * pallet.dimension.height;
-
-    // Paletin kalan hacmi
-    const remainingVolume = palletVolume - usedSpace.volume;
-    // Ürünün hacmi
-    const productVolume =
-      product.dimension.width *
-      product.dimension.depth *
-      product.dimension.height;
-
-    // Hacim kontrolü
-    if (productVolume > remainingVolume) {
-      return false;
-    }
-
-    // Boyut kontrolü (yüksek ürünler palete sığmalı)
-    if (product.dimension.height > pallet.dimension.height) {
-      return false;
-    }
-
-    // Genişlik ve derinlik kontrolü (2D yerleşim kuralları)
-    // Bu kısmı siz kendi yerleşim kurallarınıza göre özelleştirebilirsiniz
-    // Örneğin basit bir kontrol:
-    const remainingWidth = pallet.dimension.width - usedSpace.maxWidth;
-    const remainingDepth = pallet.dimension.depth - usedSpace.maxDepth;
-
-    if (
-      (product.dimension.width <= remainingWidth &&
-        product.dimension.depth <= pallet.dimension.depth) ||
-      (product.dimension.width <= pallet.dimension.width &&
-        product.dimension.depth <= remainingDepth)
-    ) {
-      return true;
-    }
-
-    return false;
-  }
-
-  // Bir paletteki mevcut ürünlerin kapladığı alanı hesaplayan yardımcı metot
   calculateUsedSpace(products: UiProduct[]): {
     volume: number;
     maxWidth: number;
@@ -354,13 +254,12 @@ export class PalletControlComponent implements OnInit {
     let maxWidthUsed = 0;
     let maxDepthUsed = 0;
 
-    // Bu basit bir hesaplama - gerçek kullanımda daha karmaşık bin-packing
-    // algoritmaları kullanabilirsiniz
+    //burasi basit suan
     products.forEach((product) => {
       totalVolume +=
         product.dimension.width *
         product.dimension.depth *
-        product.dimension.height;
+        product.dimension.height * product.count;
       maxWidthUsed = Math.max(maxWidthUsed, product.dimension.width);
       maxDepthUsed = Math.max(maxDepthUsed, product.dimension.depth);
     });
@@ -372,12 +271,39 @@ export class PalletControlComponent implements OnInit {
     };
   }
 
+  canFitProductToPallet(product: UiProduct,pallet: UiPallet,existingProducts: UiProduct[]): boolean {
+    const usedSpace = this.calculateUsedSpace(existingProducts);
+    const palletVolume = pallet.dimension.width * pallet.dimension.depth * pallet.dimension.height;
+    const remainingVolume = palletVolume - usedSpace.volume;
+    const productVolume =product.dimension.width * product.dimension.depth * product.dimension.height * product.count;
+
+    if (productVolume > remainingVolume) {
+      console.log('Ürün hacmi paletin kalan hacminden büyük!');
+      return false;
+    }
+
+    if (product.dimension.height > pallet.dimension.height) {
+      console.log('Ürün yüksekliği paletin yüksekliğinden büyük!');
+      return false;
+    }
+
+    const remainingWidth = pallet.dimension.width - usedSpace.maxWidth;
+    const remainingDepth = pallet.dimension.depth - usedSpace.maxDepth;
+
+    if ((product.dimension.width <= remainingWidth && product.dimension.depth <= pallet.dimension.depth) ||
+      (product.dimension.width <= pallet.dimension.width && product.dimension.depth <= remainingDepth)) {
+        console.log('Ürün palete sığıyor!');
+      return true;
+    }
+    console.log('Ürün palete sığmıyor!');
+    return false;
+  }
+
   // Sürükleme başladığında çağrılacak metot - önizleme için
   dragStarted(event: CdkDragStart) {
     const product = event.source.data as UiProduct;
-    this.currentDraggedProduct = product;
 
-    // Tüm paletlerin drop alanlarını kontrol et
+    this.currentDraggedProduct = product;
     this.packages.forEach((pkg) => {
       if (pkg.pallet) {
         const canFit = this.canFitProductToPallet(
@@ -386,10 +312,7 @@ export class PalletControlComponent implements OnInit {
           pkg.products
         );
 
-        // DOM manipülasyonu ile görsel geri bildirim ekle
-        const palletElement = document.getElementById(
-          'pallet-' + pkg.pallet.id
-        );
+        const palletElement = document.getElementById(pkg.pallet.id);
         if (palletElement) {
           if (canFit) {
             palletElement.classList.add('can-drop');
@@ -403,11 +326,8 @@ export class PalletControlComponent implements OnInit {
     });
   }
 
-  // Sürükleme bittiğinde stil sınıflarını temizle
   dragEnded() {
     this.currentDraggedProduct = null;
-
-    // Tüm highlight'ları temizle
     document.querySelectorAll('.can-drop, .cannot-drop').forEach((el) => {
       el.classList.remove('can-drop');
       el.classList.remove('cannot-drop');

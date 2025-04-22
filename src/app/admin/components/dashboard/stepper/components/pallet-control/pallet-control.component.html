@@ -36,7 +36,7 @@
           <!-- Paket içeriği -->
           <div
             cdkDropList
-            [id]="'package-' + package.id"
+            [id]="package.id"
             [cdkDropListData]="[]"
             [cdkDropListConnectedTo]="['palletsList']"
             class="package-items"
@@ -54,12 +54,11 @@
               <!-- Palet içindeki ürünler -->
               <div
                   cdkDropList
-                  [id]="'pallet-' + package.pallet.id"
+                  [id]="package.pallet.id"
                   [cdkDropListData]="package.products"
                   [cdkDropListConnectedTo]="palletProductsLists"
                   class="pallet-items"
-                  (cdkDropListDropped)="dropProductToPallet($event)"
-                >
+                  (cdkDropListDropped)="dropProductToPallet($event)">
                 <div
                       class="product-in-pallet"
                       *ngFor="let product of package.products; let j = index"
@@ -84,7 +83,7 @@
             <div class="empty-message" *ngIf="!package.pallet">
               Bu pakete bir palet yerleştirin.
             </div>
-            <div class="text-center">{{this.remainingVolume}}</div>
+            <div class="text-center"></div>
           </div>
         </div>
       </div>
