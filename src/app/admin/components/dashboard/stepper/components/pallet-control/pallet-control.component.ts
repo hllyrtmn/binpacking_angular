@@ -111,6 +111,10 @@ export class PalletControlComponent implements OnInit {
         event.currentIndex
       );
     }
+
+    if (targetPackage) {
+      targetPackage.products = this.consolidateProducts(targetPackage.products);
+    }
   }
 
   dropPalletToPackage(event: CdkDragDrop<any>) {
@@ -202,13 +206,13 @@ export class PalletControlComponent implements OnInit {
       packages: this.packages
         .filter((pkg) => pkg.pallet !== null && pkg.products.length !== 0) // Sadece doldurulmuş paketleri gönder
         .map((pkg) => ({
-          packageId: pkg.id,
+          id: pkg.id,
           pallet: pkg.pallet
             ? {
-                palletId: pkg.pallet.id.split('/')[0], // Orijinal palet ID'sini al
+                id: pkg.pallet.id.split('/')[0], // Orijinal palet ID'sini al
                 products: pkg.products.map((product) => ({
-                  productId: product.id,
-                  productName: product.name,
+                  id: product.id,
+                  name: product.name,
                   dimension: product.dimension,
                   count: product.count,
                   productType: product.product_type,
@@ -432,7 +436,6 @@ export class PalletControlComponent implements OnInit {
           pkg.pallet,
           pkg.products
         );
-
         const palletElement = document.getElementById(pkg.pallet.id);
         if (palletElement) {
           if (canFit) {
@@ -445,31 +448,27 @@ export class PalletControlComponent implements OnInit {
         }
       }
     });
-
-
-    //TODO: burasi olmadi. urunleri birlestiremedim.
-    let deneme:any = null;
-    this.packages.forEach(pkg=>{
-      if(pkg.products.length > 1){
-        const groupedProducts = new Map();
-        pkg.products.forEach(product=>{
-          const mainId = product.id.split('/')[0];
-          if(groupedProducts.has(mainId)){
-            const existingProduct = groupedProducts.get(mainId);
-            existingProduct.count = product.count;
-          }
-          else{
-            const newProduct = {...product}
-            newProduct.id = mainId;
-            groupedProducts.set(mainId,newProduct);
-          }
-        });
-        deneme = Array.from(groupedProducts.values());
-
-      }
-    })
-    console.log("deneme",deneme)
   }
+
+  consolidateProducts(products:UiProduct[]){
+  const groupedProducts = new Map();
+
+  products.forEach(product => {
+    const mainId = product.id.split('/')[0];
+
+    if (groupedProducts.has(mainId)) {
+      const existingProduct = groupedProducts.get(mainId);
+      console.log(existingProduct)
+      existingProduct.count += product.count;
+    } else {
+      const newProduct = {...product};
+      newProduct.id = mainId;
+      groupedProducts.set(mainId, newProduct);
+    }
+  });
+  return Array.from(groupedProducts.values());
+  }
+
 
   dragEnded() {
     this.currentDraggedProduct = null;

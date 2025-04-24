@@ -50,7 +50,7 @@ export class UiProduct implements IUiProduct {
       init.dimension?.depth != null && init.dimension?.width != null
         ? `${Math.trunc(init.dimension.depth)} X ${Math.trunc(
             init.dimension.width
-          )} - ${init.count} Adet`
+          )}`
         : 'Unnamed Product';
     this.count = init.count!;
     this.id = init.id!;

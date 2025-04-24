@@ -1,4 +1,5 @@
-<mat-sidenav-container>
+<div style="display: flex; flex-direction: column; height: 100vh;">
+<mat-sidenav-container style="flex: 1;">
     <mat-sidenav #sidenav style="min-width: 13em;" [opened]="isOpen" [mode]="sidenavMode">
         <mat-nav-list>
             <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="example-tree">
@@ -23,8 +24,8 @@
             </mat-tree>
         </mat-nav-list>
     </mat-sidenav>
-    <mat-sidenav-content style="height: calc(94.9vh - 9em)" cdkScrollable>
+    <mat-sidenav-content cdkScrollable>
         <ng-content></ng-content>
     </mat-sidenav-content>
 </mat-sidenav-container>
-
+</div>

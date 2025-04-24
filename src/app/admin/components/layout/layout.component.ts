@@ -83,8 +83,8 @@ export class LayoutComponent implements OnDestroy {
             this.sidenavConfig.isSidenavOpen = false;
             this.sidenavConfig.mode = 'over';
           } else {
-            this.sidenavConfig.isSidenavOpen = true;
-            this.sidenavConfig.mode = 'side';
+            this.sidenavConfig.isSidenavOpen = false;
+            this.sidenavConfig.mode = 'over';
           }
         }
         this.sidenavConfig.isToggleButtonVisible = !this.sidenavConfig.isSidenavOpen;

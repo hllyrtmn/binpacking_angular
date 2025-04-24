@@ -14,7 +14,7 @@
           (cdkDropListDropped)="dropProductToPallet($event)"
         >
           <div class="example-box" *ngFor="let product of availableProducts" cdkDrag (cdkDragStarted)="dragStarted($event)" (cdkDragEnded)="dragEnded()"[cdkDragData]="product">
-            {{ product.name }}
+            {{ product.name }} - {{product.count}} Adet
             <button mat-icon-button class="small-icon-button" (click)="splitProduct(product)">
               <mat-icon class="icon-display">content_cut</mat-icon>
             </button>
@@ -69,7 +69,7 @@
                       [cdkDragData]="product"
                       (cdkDragStarted)="dragStarted($event)"
                       (cdkDragEnded)="dragEnded()">
-                      {{ product.name }}
+                      {{ product.name }} - {{product.count}} Adet
                       <button mat-icon-button (click)="removeProductFromPackage(package, j)">
                         <mat-icon class="icon-display">close</mat-icon>
                       </button>

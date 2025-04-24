@@ -1,3 +1,36 @@
+/* Ana layout ayarları */
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* Ana layout ayarları */
+.row {
+  display: flex;
+  height: calc(100vh - 100px);
+  overflow: hidden; /* Bu zaten doğru */
+  position: relative;
+}
+
+/* Sabit kenar çubukları */
+.col-md-2 {
+  position: sticky;
+  top: 0;
+  height: 100%;
+  /* overflow-y: auto; kaldırıldı */
+  z-index: 10;
+}
+
+/* Orta bölüm stilleri */
+.col-md-8 {
+  flex-grow: 1;
+  overflow-y: auto;
+  height: 100%;
+  padding: 0 15px;
+}
+
+/* Container stilleri */
 .example-container {
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -5,17 +38,31 @@
   background: white;
   padding: 5px;
   height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
+.example-container h2 {
+  position: sticky;
+  top: 0;
+  background: white;
+  margin: 0;
+  padding: 10px 0;
+  z-index: 5;
+}
+
+/* Liste stilleri */
 .example-list {
   width: 500px;
   max-width: 100%;
   border: solid 1px #ccc;
   min-height: 60px;
-  display: block;
   background: white;
   border-radius: 4px;
-  overflow: hidden;
+  flex-grow: 1;
+  overflow-y: auto;
+  max-height: calc(100% - 50px);
+  height: 100%; /* Yüksekliği kontrol etmek için */
 }
 
 .example-box {
@@ -32,12 +79,19 @@
   font-size: 14px;
 }
 
+.example-box:last-child {
+  border: none;
+}
+
+/* Paket container stilleri */
 .packages-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   grid-gap: 16px;
   width: 100%;
   margin-bottom: 20px;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .package-box {
@@ -63,6 +117,7 @@
   flex-direction: column;
 }
 
+/* Palet stilleri */
 .pallet-in-package {
   border-radius: 4px;
   background: white;
@@ -71,21 +126,6 @@
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-}
-
-.small-icon-button {
-  margin: 0;
-  padding: 0;
-  width: 24px;
-  height: 24px;
-  line-height: 24px;
-
-  .mat-icon {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-    line-height: 16px;
-  }
 }
 
 .pallet-header {
@@ -104,6 +144,12 @@
   flex-grow: 1;
 }
 
+.pallet-items:hover {
+  background-color: rgba(33, 150, 243, 0.1);
+  transition: background-color 0.3s ease;
+}
+
+/* Ürün stilleri */
 .product-in-pallet {
   border-bottom: solid 1px #ccc;
   color: rgba(0, 0, 0, 0.87);
@@ -117,6 +163,26 @@
   font-size: 12px;
 }
 
+/* Yardımcı element stilleri */
+.small-icon-button {
+  margin: 0;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+}
+
+.small-icon-button .mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+}
+
+.icon-display {
+  transform: scale(0.8);
+}
+
 .empty-message {
   text-align: center;
   color: #999;
@@ -124,17 +190,33 @@
   font-style: italic;
 }
 
-.icon-display {
-  transform: scale(0.8);
+/* Drop alanı stilleri */
+.can-drop {
+  background-color: rgba(76, 175, 80, 0.2) !important;
+  border: 2px dashed #4CAF50 !important;
+  transition: all 0.3s ease;
 }
 
-// Angular CDK Drag & Drop animation styles
+.cannot-drop {
+  background-color: rgba(244, 67, 54, 0.2) !important;
+  border: 2px dashed #F44336 !important;
+  transition: all 0.3s ease;
+  cursor: not-allowed !important;
+}
+
+/* Angular CDK Drag & Drop animation stilleri */
 .cdk-drag-preview {
   box-sizing: border-box;
   border-radius: 4px;
   box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
               0 8px 10px 1px rgba(0, 0, 0, 0.14),
               0 3px 14px 2px rgba(0, 0, 0, 0.12);
+  border: none;
+  scrollbar-width: none;
+}
+
+.cdk-drag-preview::-webkit-scrollbar {
+  display: none;
 }
 
 .cdk-drag-placeholder {
@@ -148,37 +230,90 @@
 .example-list.cdk-drop-list-dragging .example-box:not(.cdk-drag-placeholder) {
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
-.cdk-drag-preview {
-  border: none;
-  box-sizing: border-box;
-  border-radius: 4px;
-  box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
-              0 8px 10px 1px rgba(0, 0, 0, 0.14),
-              0 3px 14px 2px rgba(0, 0, 0, 0.12);
+
+/* CDK Drag ile ilgili elemanlarda scrollbar'ı gizle */
+.cdk-drag-handle::-webkit-scrollbar,
+.cdk-drag-placeholder::-webkit-scrollbar,
+.cdk-drag-animating::-webkit-scrollbar {
+  display: none;
 }
 
-.example-box:last-child {
-  border: none;
+.cdk-drag-handle,
+.cdk-drag-placeholder,
+.cdk-drag-animating {
+  scrollbar-width: none;
 }
 
-
-/* Drop alanı stilleri */
-.can-drop {
-  background-color: rgba(76, 175, 80, 0.2) !important; /* Hafif yeşil */
-  border: 2px dashed #4CAF50 !important;
-  transition: all 0.3s ease;
+/* Draggable elemanlarda scrollbar'ı gizle */
+.example-box::-webkit-scrollbar,
+.product-in-pallet::-webkit-scrollbar,
+.pallet-in-package::-webkit-scrollbar {
+  display: none;
 }
 
-.cannot-drop {
-  background-color: rgba(244, 67, 54, 0.2) !important; /* Hafif kırmızı */
-  border: 2px dashed #F44336 !important;
-  transition: all 0.3s ease;
-  cursor: not-allowed !important;
+.example-box,
+.product-in-pallet,
+.pallet-in-package {
+  scrollbar-width: none;
 }
 
-/* Hover stil geçişleri */
-.pallet-items:hover {
-  background-color: rgba(33, 150, 243, 0.1);
-  transition: background-color 0.3s ease;
+/* Genel scrollbar stilleri */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
 }
 
+::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 5px;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #006A6A, #004A4A);
+  border-radius: 5px;
+  border: 1px solid #004040;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #004A4A, #003030);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(to bottom, #003030, #002020);
+}
+
+/* Bölümlere özel scrollbar stilleri */
+.example-list::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #D6BB86, #C0A670);
+  border: 1px solid #B09060;
+}
+
+.example-list::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #C0A670, #A89060);
+}
+
+.col-md-8::-webkit-scrollbar {
+  width: 12px;
+}
+
+.col-md-8::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #444, #333);
+  border: 1px solid #222;
+  background-image: url("data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M15 5v20M5 15h20' stroke='rgba(255,255,255,0.2)' stroke-width='2'/%3E%3C/svg%3E");
+}
+
+/* Firefox için scrollbar stilleri */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #006A6A #f0f0f0;
+}
+
+.example-list {
+  scrollbar-color: #D6BB86 #f0f0f0;
+}
+
+.col-md-8 {
+  scrollbar-width: auto;
+  scrollbar-color: #444 #f0f0f0;
+}

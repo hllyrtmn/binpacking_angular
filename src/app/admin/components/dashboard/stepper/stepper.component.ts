@@ -50,7 +50,7 @@ export class StepperComponent {
     const breakpointObserver = inject(BreakpointObserver);
 
     this.stepperOrientation = breakpointObserver
-      .observe('(min-width: 1000px)')
-      .pipe(map(({ matches }) => (matches ? 'horizontal' : 'vertical')));
+    .observe('(min-width: 800px)')
+    .pipe(map(({matches}) => matches ? 'horizontal' : 'vertical'));
   }
 }

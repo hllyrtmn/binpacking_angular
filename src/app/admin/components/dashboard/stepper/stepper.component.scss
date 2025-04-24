@@ -1,0 +1,24 @@
+.responsive-stepper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* For small screens, adjust the stepper header */
+@media (max-width: 768px) {
+  .responsive-stepper ::ng-deep .mat-step-header {
+    padding: 10px;
+  }
+
+  .responsive-stepper ::ng-deep .mat-step-label {
+    font-size: 14px;
+    white-space: normal;
+    line-height: 1.2;
+  }
+}
+
+/* Make sure content inside the stepper fits too */
+.responsive-stepper ::ng-deep .mat-step-content {
+  width: 100%;
+  overflow-x: auto;
+}
