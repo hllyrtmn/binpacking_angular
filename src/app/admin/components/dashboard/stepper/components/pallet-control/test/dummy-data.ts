@@ -1,5 +1,5 @@
-import { UiPackage } from "../../ui-models/ui-package.model";
-import { UiPallet } from "../../ui-models/ui-pallet.model";
+import { UiPackage } from '../../ui-models/ui-package.model';
+import { UiPallet } from '../../ui-models/ui-pallet.model';
 
 export let palletsData: UiPallet[] = [
   {
@@ -67,9 +67,8 @@ export let palletsData: UiPallet[] = [
     deleted_time: null,
     id: 'pallet-002',
     weight: 70,
-  }
-
-]
+  },
+];
 
 export const pallet: UiPallet = {
   name: 'Palet 4',
@@ -92,9 +91,9 @@ export const pallet: UiPallet = {
   deleted_time: null,
   id: 'pallet-003',
   weight: 130,
-}
+};
 
-export let packages: UiPackage[] =[
+export let packages: UiPackage[] = [
   {
     id: 'Package 1',
     pallet: null,
@@ -102,6 +101,9 @@ export let packages: UiPackage[] =[
     created_at: new Date(),
     updated_at: new Date(),
     is_deleted: false,
+    totalMeter: 0,
+    totalVolume: 0,
+    totalWeight: 0,
     deleted_time: null,
     order: {
       id: 'string',
@@ -118,7 +120,6 @@ export let packages: UiPackage[] =[
         updated_at: new Date(),
         is_deleted: false,
         deleted_time: null,
-
       },
     },
   },
@@ -129,6 +130,9 @@ export let packages: UiPackage[] =[
     created_at: new Date(),
     updated_at: new Date(),
     is_deleted: false,
+    totalMeter: 0,
+    totalVolume: 0,
+    totalWeight: 0,
     deleted_time: null,
     order: {
       id: 'order-002',
@@ -147,15 +151,18 @@ export let packages: UiPackage[] =[
         deleted_time: null,
       },
     },
-  }
-]
+  },
+];
 
-export const package1:UiPackage = {
+export const package1: UiPackage = {
   id: 'Package 3',
   pallet: null,
   products: [],
   created_at: new Date(),
   updated_at: new Date(),
+  totalMeter: 0,
+  totalVolume: 0,
+  totalWeight: 0,
   is_deleted: false,
   deleted_time: null,
   order: {
@@ -175,4 +182,35 @@ export const package1:UiPackage = {
       deleted_time: null,
     },
   },
-}
+};
+
+export let emptyPackages: UiPackage[] = [
+  {
+    id: 'Package 1',
+    pallet: null,
+    products: [],
+    created_at: new Date(),
+    updated_at: new Date(),
+    is_deleted: false,
+    totalMeter: 0,
+    totalVolume: 0,
+    totalWeight: 0,
+    deleted_time: null,
+    order: {
+      id: 'string',
+      created_at: new Date(),
+      updated_at: new Date(),
+      is_deleted: false,
+      deleted_time: null,
+      date: '2023-10-01',
+      company: {
+        id: 'string',
+        company_name: 'string',
+        country: 'string',
+        created_at: new Date(),
+        updated_at: new Date(),
+        is_deleted: false,
+        deleted_time: null,
+      },
+    },
+  },]

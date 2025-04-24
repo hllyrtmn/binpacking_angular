@@ -61,11 +61,52 @@ export class PalletControlComponent implements OnInit {
   currentDraggedProduct: UiProduct | null = null;
   selectedPallets: UiPallet[] = [];
   secondFormGroup: FormGroup;
+  trailer = {width:11800,depth:2350,height:2400,weighLimit:25000};
+  remainingVolume:any;
+  remainingWeight:any;
+  totalWeight:number = 0;
+  totalMeter:number = 0;
   private cloneCount = 1;
+
   constructor(private _formBuilder: FormBuilder) {
     this.secondFormGroup = this._formBuilder.group({
       secondCtrl: ['', Validators.required],
     });
+  }
+
+  calculateVolume(){
+    let totalVolume = 0;
+    this.packages.forEach(pkg=>{
+      totalVolume += Math.floor(pkg.pallet?.dimension.volume ?? 0)
+      pkg.products.forEach(product=>{
+        totalVolume += Math.floor( product.dimension.volume);
+      })
+    })
+    this.remainingVolume = Math.floor(((this.trailer.depth * this.trailer.height * this.trailer.width) - totalVolume) / 1000);
+  }
+  calculateWeight(){
+    let totalWeight = 0;
+    this.packages.forEach(pkg=>{
+      totalWeight += Math.floor(pkg.pallet?.weight ?? 0);
+      pkg.products.forEach(product=>{
+        totalWeight += Math.floor(product.weight_type.std * product.count)
+      })
+    })
+    this.totalWeight = totalWeight;
+    this.remainingWeight = Math.floor(this.trailer.weighLimit - totalWeight);
+  }
+  calculateTotalMeter(){
+    this.packages.forEach(pkg=>{
+      if(pkg.products.length > 0){
+        pkg.products.forEach(product=>{
+          this.totalMeter += Math.round(Math.floor(product.count * Math.floor(product.dimension.depth)));
+      })}
+    })
+    this.totalMeter = this.totalMeter / 1000;
+  }
+
+  packageTotalWeight(pkg:UiPackage){
+    return pkg.totalWeight + Math.floor(pkg.pallet?.weight ?? 0);
   }
 
   loadPallets() {
@@ -115,6 +156,9 @@ export class PalletControlComponent implements OnInit {
     if (targetPackage) {
       targetPackage.products = this.consolidateProducts(targetPackage.products);
     }
+    this.calculateVolume();
+    this.calculateWeight();
+    this.calculateTotalMeter();
   }
 
   dropPalletToPackage(event: CdkDragDrop<any>) {
@@ -132,7 +176,6 @@ export class PalletControlComponent implements OnInit {
     const palletClone = new UiPallet({
       ...originalPallet,
       id: originalPallet.id + '/'+ this.cloneCount++, // Benzersiz ID ekliyoruz
-      //TODO buraya guid ekle
     });
 
     this.packages[packageIndex].pallet = palletClone;
@@ -143,6 +186,49 @@ export class PalletControlComponent implements OnInit {
   removeProductFromPackage(package1: UiPackage, productIndex: number) {
     const removedProduct = package1.products.splice(productIndex, 1)[0];
     this.availableProducts.push(removedProduct);
+    this.calculateVolume();
+    this.calculateWeight();
+    this.calculateTotalMeter();
+  }
+  removeAllPackage(){
+  this.packages.forEach(pkg => {
+    if (pkg.products && pkg.products.length > 0) {
+      this.availableProducts.push(...pkg.products);
+      pkg.products = [];
+    }
+
+    if (pkg.pallet) {
+      const palletIndex = this.selectedPallets.findIndex(
+        (p) => p.id === pkg.pallet?.id
+      );
+      if (palletIndex !== -1) {
+        this.selectedPallets.splice(palletIndex, 1);
+      }
+      pkg.pallet = null;
+    }
+  });
+
+  this.availableProducts = this.consolidateProducts(this.availableProducts);
+
+  this.packages = [];
+  const newPackage = new UiPackage({
+    id: Guid(),
+    pallet: null,
+    products: [],
+    order: package1.order,
+    created_at: new Date(),
+    updated_at: new Date(),
+    is_deleted: false,
+    deleted_time: null,
+  });
+
+  this.packages.push(newPackage);
+  this.calculateVolume();
+  this.calculateWeight();
+  this.totalMeter = 0;
+  this.calculateTotalMeter();
+
+  this.toastService.success('Tüm paketler temizlendi.', 'Başarılı');
   }
 
   removePalletFromPackage(packageItem: UiPackage) {
@@ -160,6 +246,9 @@ export class PalletControlComponent implements OnInit {
       }
 
       packageItem.pallet = null;
+      this.calculateVolume();
+      this.calculateWeight();
+      this.calculateTotalMeter();
     }
   }
 
@@ -241,12 +330,10 @@ export class PalletControlComponent implements OnInit {
             pkg.pallet.id = pkg.pallet.id + '/' + index;
           }
         });
-        // response.forEach((pkg: UiPackage) => {
-        //   if (pkg.products && pkg.products.length > 0) {
-        //     // İhtiyac
-        //   }
-        // });
         this.addNewEmptyPackage();
+        this.calculateVolume();
+        this.calculateWeight();
+        this.calculateTotalMeter();
       },
     });
     this.loadPallets();
@@ -458,7 +545,6 @@ export class PalletControlComponent implements OnInit {
 
     if (groupedProducts.has(mainId)) {
       const existingProduct = groupedProducts.get(mainId);
-      console.log(existingProduct)
       existingProduct.count += product.count;
     } else {
       const newProduct = {...product};

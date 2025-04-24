@@ -29,7 +29,20 @@
 
     <!-- PAKETLER BÖLÜMÜ -->
     <div class="col-md-8">
-      <h2 class="text-center">Paketler</h2>
+      <div class="header-container">
+        <h2 class="text-center">Paketler</h2>
+        <button mat-icon-button class="clear-all-button" (click)="removeAllPackage()" matTooltip="Tüm paketleri temizle">
+          <mat-icon>delete_sweep</mat-icon>
+        </button>
+      </div>
+
+      <div class="package-info">
+        <p><mat-icon class="icon-display">view_in_ar</mat-icon>Kalan Hacim: {{this.remainingVolume}} cm3</p>
+        <p><mat-icon class="icon-display">scale</mat-icon>Toplam Agirlik: {{this.totalWeight}} Kg</p>
+        <p><mat-icon class="icon-display">fitness_center</mat-icon>Kalan Agirlik: {{this.remainingWeight}} Kg</p>
+        <p><mat-icon class="icon-display">straighten</mat-icon>Toplam Metre: {{this.totalMeter}} Metre</p>
+      </div>
+
       <div class="packages-container">
         <div class="package-box" *ngFor="let package of packages; let i = index">
           <div class="package-header">
@@ -80,6 +93,30 @@
                   Bu palet boş. Ürün sürükleyin.
                 </div>
               </div>
+
+              <div class="pallet-footer d-flex justify-content-center align-items-center">
+                <div class="footer-content">
+                  <div class="pallet-summary d-flex justify-content-center">
+                    <div class="summary-item">
+                      <mat-icon class="icon-display">scale</mat-icon>
+                      <span>{{this.packageTotalWeight(package)}}</span>
+                    </div>
+                    <div class="summary-item">
+                      <mat-icon class="icon-display">straighten</mat-icon>
+                      <span>{{package.totalMeter}}</span>
+                    </div>
+                    <div class="summary-item">
+                      <mat-icon class="icon-display">view_in_ar</mat-icon>
+                      <span>{{package.totalVolume}}</span>
+                    </div>
+                  </div>
+                  <div class="footer-actions">
+                    <!-- Butonlar veya başka içerik varsa buraya -->
+                  </div>
+                </div>
+              </div>
+
+
             </div>
 
             <!-- Boş paket mesajı -->

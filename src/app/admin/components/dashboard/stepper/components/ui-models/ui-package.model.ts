@@ -30,6 +30,24 @@ export class UiPackage implements IUiPackage{
   deleted_time: Date | null;
   is_deleted: boolean;
 
+  get totalMeter(): number {
+    return this.products?.reduce((sum, product) => {
+      return sum + (Math.floor(product.count * Math.floor(product.dimension.depth)) / 1000);
+    }, 0) ?? 0;
+  }
+
+  get totalVolume(): number {
+    return this.products?.reduce((sum, product) => {
+      return sum + (Math.floor(product.count * product.dimension.volume) / 1000);
+    }, 0) ?? 0;
+  }
+
+  get totalWeight(): number {
+    return this.products?.reduce((sum, product) => {
+      return sum + Math.floor(product.count * product.weight_type.std);
+    }, 0) ?? 0;
+  }
+
   constructor(init: Partial<IUiPackage>) {
     this.pallet = init.pallet!;
     this.products = init.products!;

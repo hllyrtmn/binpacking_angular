@@ -90,7 +90,7 @@ html, body {
   grid-gap: 16px;
   width: 100%;
   margin-bottom: 20px;
-  height: 100%;
+  min-height: 250px;
   overflow-y: auto;
 }
 
@@ -316,4 +316,95 @@ html, body {
 .col-md-8 {
   scrollbar-width: auto;
   scrollbar-color: #444 #f0f0f0;
+}
+
+
+.pallet-footer {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-top: 1px solid #e0e0e0;
+  border-radius: 0 0 4px 4px;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-actions {
+  display: flex;
+  gap: 8px;
+}
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pallet-summary {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+
+/* Summary information bar styles */
+.header-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.header-container h2 {
+  margin: 0;
+}
+
+.clear-all-button {
+  position: absolute;
+  right: 0;
+  color: #6c757d;
+  transition: color 0.2s ease;
+}
+
+.clear-all-button:hover {
+  color: #dc3545;
+}
+
+.package-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background-color: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.package-info p {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.87);
+  white-space: nowrap;
+}
+
+.package-info p .mat-icon {
+  margin-right: 5px;
+  color: #006A6A;
+  transform: scale(0.8);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .package-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
 }

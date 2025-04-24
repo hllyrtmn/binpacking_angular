@@ -5,10 +5,9 @@ import { Subject } from 'rxjs';
 import { Breakpoints, BreakpointObserver } from '@angular/cdk/layout';
 import { SidenavComponent } from './sidenav/sidenav.component';
 import { HeaderComponent } from './header/header.component';
-import { FooterComponent } from './footer/footer.component';
 import {MatGridListModule} from '@angular/material/grid-list';
 import {MatDividerModule} from '@angular/material/divider';
-import { RouterLink,RouterOutlet } from '@angular/router';
+import { RouterOutlet } from '@angular/router';
 // https://material.angular.io/cdk/layout/overview
 
 export interface Tile {
@@ -23,7 +22,7 @@ export interface Tile {
   templateUrl: './layout.component.html',
   styleUrls: ['./layout.component.scss'],
   standalone: true,
-  imports: [SidenavComponent, MatDividerModule, HeaderComponent, RouterOutlet, FooterComponent,MatGridListModule],
+  imports: [SidenavComponent, MatDividerModule, HeaderComponent, RouterOutlet,MatGridListModule],
 
 })
 export class LayoutComponent implements OnDestroy {
