@@ -61,7 +61,7 @@ export class PalletControlComponent implements OnInit {
   currentDraggedProduct: UiProduct | null = null;
   selectedPallets: UiPallet[] = [];
   secondFormGroup: FormGroup;
-
+  private cloneCount = 1;
   constructor(private _formBuilder: FormBuilder) {
     this.secondFormGroup = this._formBuilder.group({
       secondCtrl: ['', Validators.required],
@@ -85,7 +85,6 @@ export class PalletControlComponent implements OnInit {
     );
 
     if (targetPackage && targetPackage.pallet) {
-      console.log(product,targetPackage);
       const canFit = this.canFitProductToPallet(
         product,
         targetPackage.pallet,
@@ -128,7 +127,7 @@ export class PalletControlComponent implements OnInit {
     const originalPallet = event.previousContainer.data[event.previousIndex];
     const palletClone = new UiPallet({
       ...originalPallet,
-      id: Guid(), // Benzersiz ID ekliyoruz
+      id: originalPallet.id + '/'+ this.cloneCount++, // Benzersiz ID ekliyoruz
       //TODO buraya guid ekle
     });
 
@@ -201,12 +200,12 @@ export class PalletControlComponent implements OnInit {
     return {
       orderId: this.order_id,
       packages: this.packages
-        .filter((pkg) => pkg.pallet !== null) // Sadece doldurulmuş paketleri gönder
+        .filter((pkg) => pkg.pallet !== null && pkg.products.length !== 0) // Sadece doldurulmuş paketleri gönder
         .map((pkg) => ({
           packageId: pkg.id,
           pallet: pkg.pallet
             ? {
-                palletId: pkg.pallet.id[0], // Orijinal palet ID'sini al
+                palletId: pkg.pallet.id.split('/')[0], // Orijinal palet ID'sini al
                 products: pkg.products.map((product) => ({
                   productId: product.id,
                   productName: product.name,
@@ -223,7 +222,7 @@ export class PalletControlComponent implements OnInit {
 
   submitForm() {
     const packageData = this.getPackageData();
-    console.log('Gönderilecek veri:', packageData);
+    console.log(packageData)
     // this.http.post('api-endpoint', packageData).subscribe(...)
   }
 
@@ -233,28 +232,34 @@ export class PalletControlComponent implements OnInit {
     this.repository.calculatePackageDetail().subscribe({
       next: (response) => {
         this.packages = response;
-
-        response.forEach((pkg: UiPackage) => {
-          if (pkg.products && pkg.products.length > 0) {
-            // İhtiyac
+        this.packages.forEach((pkg,index) => {
+          if(pkg.pallet) {
+            pkg.pallet.id = pkg.pallet.id + '/' + index;
           }
         });
+        // response.forEach((pkg: UiPackage) => {
+        //   if (pkg.products && pkg.products.length > 0) {
+        //     // İhtiyac
+        //   }
+        // });
         this.addNewEmptyPackage();
       },
     });
     this.loadPallets();
   }
 
+  // Python:
+//TODO : bu kisim komple python ile ayni
   calculateUsedSpace(products: UiProduct[]): {
     volume: number;
     maxWidth: number;
     maxDepth: number;
+    layeredItems: number;
   } {
     let totalVolume = 0;
     let maxWidthUsed = 0;
     let maxDepthUsed = 0;
 
-    //burasi basit suan
     products.forEach((product) => {
       totalVolume +=
         product.dimension.width *
@@ -264,18 +269,31 @@ export class PalletControlComponent implements OnInit {
       maxDepthUsed = Math.max(maxDepthUsed, product.dimension.depth);
     });
 
+    const layeredItems = this.calculateCurrentLayerUsage(products);
+
     return {
       volume: totalVolume,
       maxWidth: maxWidthUsed,
       maxDepth: maxDepthUsed,
+      layeredItems: layeredItems
     };
   }
 
-  canFitProductToPallet(product: UiProduct,pallet: UiPallet,existingProducts: UiProduct[]): boolean {
+  calculateCurrentLayerUsage(products: UiProduct[]): number {
+    if (products.length === 0) return 0;
+    const standardProduct = products[0];
+    const totalArea = products.reduce((total, product) => {
+      return total + (product.dimension.width * product.dimension.depth * product.count);
+    }, 0);
+
+    return totalArea / (standardProduct.dimension.width * standardProduct.dimension.depth);
+  }
+
+  canFitProductToPallet(product: UiProduct, pallet: UiPallet, existingProducts: UiProduct[]): boolean {
     const usedSpace = this.calculateUsedSpace(existingProducts);
     const palletVolume = pallet.dimension.width * pallet.dimension.depth * pallet.dimension.height;
     const remainingVolume = palletVolume - usedSpace.volume;
-    const productVolume =product.dimension.width * product.dimension.depth * product.dimension.height * product.count;
+    const productVolume = product.dimension.width * product.dimension.depth * product.dimension.height * product.count;
 
     if (productVolume > remainingVolume) {
       console.log('Ürün hacmi paletin kalan hacminden büyük!');
@@ -287,22 +305,125 @@ export class PalletControlComponent implements OnInit {
       return false;
     }
 
-    const remainingWidth = pallet.dimension.width - usedSpace.maxWidth;
-    const remainingDepth = pallet.dimension.depth - usedSpace.maxDepth;
+    if (this.canFitExactly(product, pallet)) {
+      const itemsPerLayer = this.calculateItemsPerLayerExactly(product, pallet);
+      const layersPerBox = Math.floor(pallet.dimension.height / product.dimension.height);
+      const totalCapacity = itemsPerLayer * layersPerBox;
 
-    if ((product.dimension.width <= remainingWidth && product.dimension.depth <= pallet.dimension.depth) ||
-      (product.dimension.width <= pallet.dimension.width && product.dimension.depth <= remainingDepth)) {
-        console.log('Ürün palete sığıyor!');
+      const existingCapacity = existingProducts.reduce((total, existingProduct) => {
+        if (this.areSimilarDimensions(existingProduct, product)) {
+          return total + existingProduct.count;
+        }
+        return total;
+      }, 0);
+
+      const totalRequiredCapacity = existingCapacity + product.count;
+
+      if (totalRequiredCapacity > totalCapacity) {
+        console.log('Toplam ürün sayısı paletin kapasitesinden fazla!');
+        return false;
+      }
+
+      console.log('Ürün palete tam olarak sığıyor!');
       return true;
     }
+
+    if (existingProducts.length > 0) {
+      const differentDimensionProducts = existingProducts.filter(
+        existingProduct => !this.areSimilarDimensions(existingProduct, product)
+      );
+
+      if (differentDimensionProducts.length > 0) {
+        console.log('Palete farklı boyutta ürünler yerleştirilemez!');
+        return false;
+      }
+    }
+
+    const groupedProducts = this.groupProductsByDimension([...existingProducts, product]);
+    if (groupedProducts.length <= 1) {
+      // Eğer tüm ürünler aynı boyut grubundaysa, optimize bir şekilde yerleştirebiliriz
+      console.log('Ürün palete benzer ürünlerle birlikte sığabilir.');
+      return true;
+    }
+
     console.log('Ürün palete sığmıyor!');
     return false;
   }
 
-  // Sürükleme başladığında çağrılacak metot - önizleme için
+  areSimilarDimensions(product1: UiProduct, product2: UiProduct): boolean {
+    return (
+      (Math.abs(product1.dimension.width - product2.dimension.width) < 0.01 &&
+       Math.abs(product1.dimension.depth - product2.dimension.depth) < 0.01) ||
+      (Math.abs(product1.dimension.width - product2.dimension.depth) < 0.01 &&
+       Math.abs(product1.dimension.depth - product2.dimension.width) < 0.01)
+    );
+  }
+
+  canFitExactly(product: UiProduct, pallet: UiPallet): boolean {
+    return (pallet.dimension.width % product.dimension.width === 0 &&
+            pallet.dimension.depth % product.dimension.depth === 0) ||
+           (pallet.dimension.width % product.dimension.depth === 0 &&
+            pallet.dimension.depth % product.dimension.width === 0);
+  }
+
+  calculateItemsPerLayerExactly(product: UiProduct, pallet: UiPallet): number {
+    if (pallet.dimension.width % product.dimension.width === 0 &&
+        pallet.dimension.depth % product.dimension.depth === 0) {
+      return Math.floor(pallet.dimension.width / product.dimension.width) *
+             Math.floor(pallet.dimension.depth / product.dimension.depth);
+    } else {
+      return Math.floor(pallet.dimension.width / product.dimension.depth) *
+             Math.floor(pallet.dimension.depth / product.dimension.width);
+    }
+  }
+
+  groupProductsByDimension(products: UiProduct[]): UiProduct[][] {
+    const groupedByWidth: { [key: number]: UiProduct[] } = {};
+
+    products.forEach(product => {
+      const widthKey = Math.floor(product.dimension.width);
+      if (!groupedByWidth[widthKey]) {
+        groupedByWidth[widthKey] = [];
+      }
+      groupedByWidth[widthKey].push(product);
+    });
+
+    Object.keys(groupedByWidth).forEach(widthKey => {
+      groupedByWidth[Number(widthKey)].sort((a, b) =>
+        b.dimension.depth - a.dimension.depth
+      );
+    });
+
+    return Object.values(groupedByWidth);
+  }
+
+  findBestBoxForGroup(group: UiProduct[], pallets: UiPallet[]): UiPallet | null {
+    if (group.length === 0) return null;
+
+    const maxDepth = Math.max(...group.map(product => product.dimension.depth));
+    const maxWidth = Math.max(...group.map(product => product.dimension.width));
+
+    for (const pallet of pallets) {
+      if ((pallet.dimension.width % maxWidth === 0 && pallet.dimension.depth % maxDepth === 0) ||
+          (pallet.dimension.width % maxDepth === 0 && pallet.dimension.depth % maxWidth === 0)) {
+
+        const palletCopy = { ...pallet };
+        if (pallet.dimension.width % maxDepth === 0 && pallet.dimension.depth % maxWidth === 0) {
+          palletCopy.dimension.width = pallet.dimension.depth
+          palletCopy.dimension.depth = pallet.dimension.width
+          palletCopy.dimension.height = pallet.dimension.height
+        }
+
+        return palletCopy;
+      }
+    }
+
+    return null;
+  }
+//TODO : Yukarisi python ile ayni
+
   dragStarted(event: CdkDragStart) {
     const product = event.source.data as UiProduct;
-
     this.currentDraggedProduct = product;
     this.packages.forEach((pkg) => {
       if (pkg.pallet) {
@@ -324,6 +445,30 @@ export class PalletControlComponent implements OnInit {
         }
       }
     });
+
+
+    //TODO: burasi olmadi. urunleri birlestiremedim.
+    let deneme:any = null;
+    this.packages.forEach(pkg=>{
+      if(pkg.products.length > 1){
+        const groupedProducts = new Map();
+        pkg.products.forEach(product=>{
+          const mainId = product.id.split('/')[0];
+          if(groupedProducts.has(mainId)){
+            const existingProduct = groupedProducts.get(mainId);
+            existingProduct.count = product.count;
+          }
+          else{
+            const newProduct = {...product}
+            newProduct.id = mainId;
+            groupedProducts.set(mainId,newProduct);
+          }
+        });
+        deneme = Array.from(groupedProducts.values());
+
+      }
+    })
+    console.log("deneme",deneme)
   }
 
   dragEnded() {
@@ -332,5 +477,16 @@ export class PalletControlComponent implements OnInit {
       el.classList.remove('can-drop');
       el.classList.remove('cannot-drop');
     });
+  }
+
+  splitProduct(product: UiProduct) {
+    const products = product.split();
+
+    const index = this.availableProducts.indexOf(product);
+    if (index !== -1) {
+      this.availableProducts.splice(index, 1);
+    }
+    this.availableProducts.push(...products);
+
   }
 }

@@ -3,35 +3,33 @@
   border-radius: 4px;
   margin-bottom: 16px;
   background: white;
-  padding: 10px;
+  padding: 5px;
   height: 100%;
 }
 
 .example-list {
-  min-height: 60px;
+  width: 500px;
+  max-width: 100%;
   border: solid 1px #ccc;
+  min-height: 60px;
+  display: block;
+  background: white;
   border-radius: 4px;
   overflow: hidden;
-  background: #fafafa;
-  display: block;
-  padding: 10px;
-  max-height: 600px;
-  overflow-y: auto;
 }
 
 .example-box {
-  padding: 10px;
-  border: solid 1px #ccc;
-  border-radius: 4px;
-  margin-bottom: 10px;
-  background: white;
-  color: black;
+  padding: 20px 10px;
+  border-bottom: solid 1px #ccc;
+  color: rgba(0, 0, 0, 0.87);
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
   box-sizing: border-box;
   cursor: move;
+  background: white;
+  font-size: 14px;
 }
 
 .packages-container {

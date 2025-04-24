@@ -6,8 +6,30 @@ import { WeightType } from '../../../../../../models/weight-type.interface';
 import { IUiProduct } from '../../interfaces/ui-interfaces/ui-product.interface';
 
 export class UiProduct implements IUiProduct {
-  split(perItem: number | null): any {
-    throw new Error('Method not implemented.');
+  split(perItem?: number | null): UiProduct[] {
+    if(this.count <=1 ){
+      return [this];
+    }
+    const itemCount = perItem === undefined ? null : perItem;
+    const firstCount = itemCount !== null ? itemCount : Math.ceil(this.count / 2);
+    const secondCount = this.count - firstCount;
+
+    if(firstCount <= 0 || secondCount <= 0){
+      return [this];
+    }
+
+    const firstProduct = new UiProduct({
+      ...this,
+      count: firstCount,
+      id: this.id + '/1',
+    });
+
+    const secondProduct = new UiProduct({
+      ...this,
+      count: secondCount,
+      id: this.id + '/2',
+    });
+    return [firstProduct, secondProduct];
   }
   name: string;
   count: number;
