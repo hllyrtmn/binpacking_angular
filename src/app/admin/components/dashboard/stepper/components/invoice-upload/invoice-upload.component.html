@@ -4,19 +4,23 @@
     <h2>(ISB) İhraacat Sipariş Bildirimi Yükleme</h2>
   </div>
   <div class="row">
-    <button mat-flat-button color="primary" class="upload-button" (click)="fileInput.click()">{{ file?.name || "Dosya Seç" }}</button>
-    <input (change)="onFileSelected($event)" #fileInput id="file-upload" class="file-upload" type="file" accept=".pdf,.xls,.xlsx" hidden/>
+    <button mat-flat-button color="primary" class="upload-button" (click)="fileInput.click()">{{ file?.name || "Dosya
+      Seç" }}</button>
+    <input (change)="onFileSelected($event)" #fileInput id="file-upload" class="file-upload" type="file"
+      accept=".pdf,.xls,.xlsx" hidden />
   </div>
   <div class="row">
     <div class="col">
-      <button mat-flat-button color="accent" class="action-button" [disabled]="!file" (click)="uploadFile()">İçeri Aktar</button>
+      <button mat-flat-button color="accent" class="action-button" [disabled]="!file" (click)="uploadFile()">İçeri
+        Aktar</button>
     </div>
   </div>
 
   <div class="row">
     @if (dataSource.data.length > 0) {
     <div class="table-container">
-      <model-table [dataSource]="dataSource" [displayedColumns]="displayedColumns" (editModel)="onEdit($event)" (deleteModel)="onDelete($event)"></model-table>
+      <model-table [dataSource]="dataSource" [displayedColumns]="displayedColumns" (editModel)="onEdit($event)"
+        (deleteModel)="onDelete($event)"></model-table>
       <button mat-flat-button color="primary" class="upload-button">Veritabanına Kaydet</button>
     </div>
     }
@@ -24,6 +28,6 @@
 
   <!-- İlerleme butonu -->
   <div class="navigation-buttons text-start">
-    <button [disabled]="dataSource.data.length === 0" mat-button color="primary" matStepperNext (click)="palletControlModel.emit(this.order_id)">İleri</button>
+    <button [disabled]="dataSource.data.length === 0" mat-button color="primary" matStepperNext>İleri</button>
   </div>
 </div>

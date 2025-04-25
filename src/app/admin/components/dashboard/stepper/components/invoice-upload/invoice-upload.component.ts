@@ -38,15 +38,16 @@ import { ToastService } from '../../../../../../services/toast.service';
   styleUrl: './invoice-upload.component.scss',
 })
 export class InvoiceUploadComponent implements OnInit {
-  @Output() palletControlModel: EventEmitter<string> = new EventEmitter<string>();
+  @Output() invoiceUploaded: EventEmitter<any> = new EventEmitter<any>();
   // file upload islemi ile ilgili bilgiler orada gosterilecek
   private _formBuilder = inject(FormBuilder);
   private repositoryService = inject(RepositoryService);
   private toastService = inject(ToastService);
 
+  private $nextStep = new Observable<any>();
   uploadForm: FormGroup;
   file: File | null = null;
-  order_id:string = '';
+  order_id: string = '';
 
   dataSource = new MatTableDataSource<IInvoiceOrderDetail>();
   displayedColumns: string[] = [
@@ -67,7 +68,7 @@ export class InvoiceUploadComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void { }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -115,8 +116,7 @@ export class InvoiceUploadComponent implements OnInit {
       .uploadFile(this.file)
       .pipe(
         tap((response) => {
-          order_id = response.order;
-          this.order_id = response.order;
+          this.repositoryService.setOrderId(response.order)
           this.toastService.success('Dosya başarıyla yüklendi.');
           this.toastService.info('Dosya işleniyor...');
         }),
@@ -130,8 +130,9 @@ export class InvoiceUploadComponent implements OnInit {
         ),
         switchMap(() => this.repositoryService.orderDetails(order_id))
       )
-      .subscribe((response)=> {
+      .subscribe((response) => {
         this.dataSource.data = response;
+        this.invoiceUploaded.emit();
       });
   }
 
@@ -153,17 +154,18 @@ export class InvoiceUploadComponent implements OnInit {
       next: () => {
         this.toastService.success('Başarıyla silindi.');
         this.dataSource.data = this.dataSource.data.filter(item => item.id !== id);
+        this.invoiceUploaded.emit();
       },
     });
   }
 
-  calculatePackage(){
+  calculatePackage() {
     console.log();
   }
 
 }
 
-export function FileValidator():(control: AbstractControl)=> ValidationErrors | null {
+export function FileValidator(): (control: AbstractControl) => ValidationErrors | null {
   return (control: AbstractControl): ValidationErrors | null => {
 
     const validTypes = [
@@ -173,10 +175,10 @@ export function FileValidator():(control: AbstractControl)=> ValidationErrors | 
     ];
     const maxSize = 10 * 1024 * 1024;
 
-    if(!validTypes.includes(control.value.type)) {
+    if (!validTypes.includes(control.value.type)) {
       return { invalidFileType: true }; // Invalid file type
     }
-    if(control.value.size > maxSize) {
+    if (control.value.size > maxSize) {
       return { fileTooLarge: true }; // File size exceeds limit
     }
 

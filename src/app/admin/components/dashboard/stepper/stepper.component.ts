@@ -11,6 +11,7 @@ import { AsyncPipe } from '@angular/common';
 import { InvoiceUploadComponent } from './components/invoice-upload/invoice-upload.component';
 import { PalletControlComponent } from './components/pallet-control/pallet-control.component';
 import { LoadingComponent } from "../../../../components/loading/loading.component";
+import { StepperSelectionEvent } from '@angular/cdk/stepper';
 
 
 @Component({
@@ -27,12 +28,28 @@ import { LoadingComponent } from "../../../../components/loading/loading.compone
   styleUrl: './stepper.component.scss'
 })
 export class StepperComponent {
+
+  @ViewChild('palletControlComponent') palletControlComponent!: PalletControlComponent;
+
   private _formBuilder = inject(FormBuilder);
   order_id: string = '';
+
+  selectedIndex: number = 0;
+
+  logger = (item: any) => console.log(item);
 
   orderIdComeOn(id: string) {
     this.order_id = id;
     console.log('Order ID geldi:', this.order_id);
+    this.selectedIndex = 1;
+  }
+
+  configurePalletComponent() {
+    this.palletControlComponent.configureComponent();
+  }
+
+  onStepChange(event: StepperSelectionEvent) {
+    console.log(event);
   }
 
   firstFormGroup = this._formBuilder.group({
@@ -50,7 +67,7 @@ export class StepperComponent {
     const breakpointObserver = inject(BreakpointObserver);
 
     this.stepperOrientation = breakpointObserver
-    .observe('(min-width: 800px)')
-    .pipe(map(({matches}) => matches ? 'horizontal' : 'vertical'));
+      .observe('(min-width: 800px)')
+      .pipe(map(({ matches }) => matches ? 'horizontal' : 'vertical'));
   }
 }

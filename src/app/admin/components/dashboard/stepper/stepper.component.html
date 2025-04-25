@@ -1,9 +1,9 @@
 <mat-stepper #stepper class="responsive-stepper" [orientation]="(stepperOrientation | async)!">
   <app-loading></app-loading>
   <mat-step [stepControl]="firstFormGroup" label="(ISB) İhraacat Sipariş Bildirimi Yükleme">
-    <app-invoice-upload (palletControlModel)="orderIdComeOn($event)"></app-invoice-upload>
+    <app-invoice-upload (invoiceUploaded)="configurePalletComponent();"></app-invoice-upload>
   </mat-step>
   <mat-step [stepControl]="secondFormGroup" label="Palet Kontrolü">
-    <app-pallet-control [order_id]="order_id"></app-pallet-control>
+    <app-pallet-control #palletControlComponent></app-pallet-control>
   </mat-step>
 </mat-stepper>

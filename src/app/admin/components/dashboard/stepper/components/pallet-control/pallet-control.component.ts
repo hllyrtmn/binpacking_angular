@@ -13,7 +13,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTableModule } from '@angular/material/table';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { v4 as Guid} from 'uuid';
+import { v4 as Guid } from 'uuid';
 import {
   CdkDragDrop,
   moveItemInArray,
@@ -30,6 +30,7 @@ import { UiPackage } from '../ui-models/ui-package.model';
 import { package1 } from './test/dummy-data';
 import { ToastService } from '../../../../../../services/toast.service';
 import { mapPackageToPackageDetail } from '../../../../../../models/mappers/package-detail.mapper';
+import { switchMap, tap, filter } from 'rxjs';
 
 @Component({
   selector: 'app-pallet-control',
@@ -51,7 +52,12 @@ import { mapPackageToPackageDetail } from '../../../../../../models/mappers/pack
   styleUrl: './pallet-control.component.scss',
 })
 export class PalletControlComponent implements OnInit {
-  @Input() order_id!: string;
+  // TODO: 
+  // 1. next e basildiginda ng content ve benzeri birsey ile
+  // componenti create etmen gerekebilir.
+  // 2. bir behaviour subject data bind yaptiginda 
+  // diger component subscribe oldugunda veriyi islemesi gerek
+
 
   repository: RepositoryService = inject(RepositoryService);
   toastService: ToastService = inject(ToastService);
@@ -62,11 +68,11 @@ export class PalletControlComponent implements OnInit {
   currentDraggedProduct: UiProduct | null = null;
   selectedPallets: UiPallet[] = [];
   secondFormGroup: FormGroup;
-  trailer = {width:11800,depth:2350,height:2400,weighLimit:25000};
-  remainingVolume:any;
-  remainingWeight:any;
-  totalWeight:number = 0;
-  totalMeter:number = 0;
+  trailer = { width: 11800, depth: 2350, height: 2400, weighLimit: 25000 };
+  remainingVolume: any;
+  remainingWeight: any;
+  totalWeight: number = 0;
+  totalMeter: number = 0;
   private cloneCount = 1;
 
   constructor(private _formBuilder: FormBuilder) {
@@ -75,38 +81,58 @@ export class PalletControlComponent implements OnInit {
     });
   }
 
-  calculateVolume(){
+  configureComponent() {
+    this.loadPallets();
+    this.repository.calculatePackageDetail()
+      .subscribe({
+        next: (response) => {
+          this.packages = response;
+          this.packages.forEach((pkg, index) => {
+            if (pkg.pallet) {
+              pkg.pallet.id = pkg.pallet.id + '/' + index;
+            }
+          });
+          this.addNewEmptyPackage();
+          this.calculateVolume();
+          this.calculateWeight();
+          this.calculateTotalMeter();
+        }
+      })
+  }
+
+  calculateVolume() {
     let totalVolume = 0;
-    this.packages.forEach(pkg=>{
+    this.packages.forEach(pkg => {
       totalVolume += Math.floor(pkg.pallet?.dimension.volume ?? 0)
-      pkg.products.forEach(product=>{
-        totalVolume += Math.floor( product.dimension.volume);
+      pkg.products.forEach(product => {
+        totalVolume += Math.floor(product.dimension.volume);
       })
     })
     this.remainingVolume = Math.floor(((this.trailer.depth * this.trailer.height * this.trailer.width) - totalVolume) / 1000);
   }
-  calculateWeight(){
+  calculateWeight() {
     let totalWeight = 0;
-    this.packages.forEach(pkg=>{
+    this.packages.forEach(pkg => {
       totalWeight += Math.floor(pkg.pallet?.weight ?? 0);
-      pkg.products.forEach(product=>{
+      pkg.products.forEach(product => {
         totalWeight += Math.floor(product.weight_type.std * product.count)
       })
     })
     this.totalWeight = totalWeight;
     this.remainingWeight = Math.floor(this.trailer.weighLimit - totalWeight);
   }
-  calculateTotalMeter(){
-    this.packages.forEach(pkg=>{
-      if(pkg.products.length > 0){
-        pkg.products.forEach(product=>{
+  calculateTotalMeter() {
+    this.packages.forEach(pkg => {
+      if (pkg.products.length > 0) {
+        pkg.products.forEach(product => {
           this.totalMeter += Math.round(Math.floor(product.count * Math.floor(product.dimension.depth)));
-      })}
+        })
+      }
     })
     this.totalMeter = this.totalMeter / 1000;
   }
 
-  packageTotalWeight(pkg:UiPackage){
+  packageTotalWeight(pkg: UiPackage) {
     return pkg.totalWeight + Math.floor(pkg.pallet?.weight ?? 0);
   }
 
@@ -134,7 +160,7 @@ export class PalletControlComponent implements OnInit {
       );
 
       if (!canFit) {
-        this.toastService.error('Bu ürün seçilen palete boyutlarından dolayı sığmıyor.','Bu ürün palete sığmıyor!');
+        this.toastService.error('Bu ürün seçilen palete boyutlarından dolayı sığmıyor.', 'Bu ürün palete sığmıyor!');
         return; // Drop işlemini iptal et
       }
     }
@@ -176,7 +202,7 @@ export class PalletControlComponent implements OnInit {
     const originalPallet = event.previousContainer.data[event.previousIndex];
     const palletClone = new UiPallet({
       ...originalPallet,
-      id: originalPallet.id + '/'+ this.cloneCount++, // Benzersiz ID ekliyoruz
+      id: originalPallet.id + '/' + this.cloneCount++, // Benzersiz ID ekliyoruz
     });
 
     this.packages[packageIndex].pallet = palletClone;
@@ -191,45 +217,45 @@ export class PalletControlComponent implements OnInit {
     this.calculateWeight();
     this.calculateTotalMeter();
   }
-  removeAllPackage(){
-  this.packages.forEach(pkg => {
-    if (pkg.products && pkg.products.length > 0) {
-      this.availableProducts.push(...pkg.products);
-      pkg.products = [];
-    }
-
-    if (pkg.pallet) {
-      const palletIndex = this.selectedPallets.findIndex(
-        (p) => p.id === pkg.pallet?.id
-      );
-      if (palletIndex !== -1) {
-        this.selectedPallets.splice(palletIndex, 1);
+  removeAllPackage() {
+    this.packages.forEach(pkg => {
+      if (pkg.products && pkg.products.length > 0) {
+        this.availableProducts.push(...pkg.products);
+        pkg.products = [];
       }
-      pkg.pallet = null;
-    }
-  });
 
-  this.availableProducts = this.consolidateProducts(this.availableProducts);
+      if (pkg.pallet) {
+        const palletIndex = this.selectedPallets.findIndex(
+          (p) => p.id === pkg.pallet?.id
+        );
+        if (palletIndex !== -1) {
+          this.selectedPallets.splice(palletIndex, 1);
+        }
+        pkg.pallet = null;
+      }
+    });
 
-  this.packages = [];
-  const newPackage = new UiPackage({
-    id: Guid(),
-    pallet: null,
-    products: [],
-    order: package1.order,
-    created_at: new Date(),
-    updated_at: new Date(),
-    is_deleted: false,
-    deleted_time: null,
-  });
+    this.availableProducts = this.consolidateProducts(this.availableProducts);
 
-  this.packages.push(newPackage);
-  this.calculateVolume();
-  this.calculateWeight();
-  this.totalMeter = 0;
-  this.calculateTotalMeter();
+    this.packages = [];
+    const newPackage = new UiPackage({
+      id: Guid(),
+      pallet: null,
+      products: [],
+      order: package1.order,
+      created_at: new Date(),
+      updated_at: new Date(),
+      is_deleted: false,
+      deleted_time: null,
+    });
 
-  this.toastService.success('Tüm paketler temizlendi.', 'Başarılı');
+    this.packages.push(newPackage);
+    this.calculateVolume();
+    this.calculateWeight();
+    this.totalMeter = 0;
+    this.calculateTotalMeter();
+
+    this.toastService.success('Tüm paketler temizlendi.', 'Başarılı');
   }
 
   removePalletFromPackage(packageItem: UiPackage) {
@@ -296,34 +322,19 @@ export class PalletControlComponent implements OnInit {
 
   submitForm() {
     const packageData = this.getPackageData();
-    this.repository.bulkCreatePackageDetail(this.order_id,packageData).subscribe({next:response=>{
-      this.toastService.success("Kaydedildi","Basarili")
-    }});
+    // this.repository.bulkCreatePackageDetail(this.order_id, packageData).subscribe({
+    //   next: response => {
+    //     this.toastService.success("Kaydedildi", "Basarili")
+    //   }
+    // });
     // this.http.post('api-endpoint', packageData).subscribe(...)
   }
 
   ngOnInit(): void {
-    console.log('Sipariş ID alındı:', this.order_id);
-
-    this.repository.calculatePackageDetail().subscribe({
-      next: (response) => {
-        this.packages = response;
-        this.packages.forEach((pkg,index) => {
-          if(pkg.pallet) {
-            pkg.pallet.id = pkg.pallet.id + '/' + index;
-          }
-        });
-        this.addNewEmptyPackage();
-        this.calculateVolume();
-        this.calculateWeight();
-        this.calculateTotalMeter();
-      },
-    });
-    this.loadPallets();
   }
 
   // Python:
-//TODO : bu kisim komple python ile ayni
+  //TODO : bu kisim komple python ile ayni
   calculateUsedSpace(products: UiProduct[]): {
     volume: number;
     maxWidth: number;
@@ -427,27 +438,27 @@ export class PalletControlComponent implements OnInit {
   areSimilarDimensions(product1: UiProduct, product2: UiProduct): boolean {
     return (
       (Math.abs(product1.dimension.width - product2.dimension.width) < 0.01 &&
-       Math.abs(product1.dimension.depth - product2.dimension.depth) < 0.01) ||
+        Math.abs(product1.dimension.depth - product2.dimension.depth) < 0.01) ||
       (Math.abs(product1.dimension.width - product2.dimension.depth) < 0.01 &&
-       Math.abs(product1.dimension.depth - product2.dimension.width) < 0.01)
+        Math.abs(product1.dimension.depth - product2.dimension.width) < 0.01)
     );
   }
 
   canFitExactly(product: UiProduct, pallet: UiPallet): boolean {
     return (pallet.dimension.width % product.dimension.width === 0 &&
-            pallet.dimension.depth % product.dimension.depth === 0) ||
-           (pallet.dimension.width % product.dimension.depth === 0 &&
-            pallet.dimension.depth % product.dimension.width === 0);
+      pallet.dimension.depth % product.dimension.depth === 0) ||
+      (pallet.dimension.width % product.dimension.depth === 0 &&
+        pallet.dimension.depth % product.dimension.width === 0);
   }
 
   calculateItemsPerLayerExactly(product: UiProduct, pallet: UiPallet): number {
     if (pallet.dimension.width % product.dimension.width === 0 &&
-        pallet.dimension.depth % product.dimension.depth === 0) {
+      pallet.dimension.depth % product.dimension.depth === 0) {
       return Math.floor(pallet.dimension.width / product.dimension.width) *
-             Math.floor(pallet.dimension.depth / product.dimension.depth);
+        Math.floor(pallet.dimension.depth / product.dimension.depth);
     } else {
       return Math.floor(pallet.dimension.width / product.dimension.depth) *
-             Math.floor(pallet.dimension.depth / product.dimension.width);
+        Math.floor(pallet.dimension.depth / product.dimension.width);
     }
   }
 
@@ -479,7 +490,7 @@ export class PalletControlComponent implements OnInit {
 
     for (const pallet of pallets) {
       if ((pallet.dimension.width % maxWidth === 0 && pallet.dimension.depth % maxDepth === 0) ||
-          (pallet.dimension.width % maxDepth === 0 && pallet.dimension.depth % maxWidth === 0)) {
+        (pallet.dimension.width % maxDepth === 0 && pallet.dimension.depth % maxWidth === 0)) {
 
         const palletCopy = { ...pallet };
         if (pallet.dimension.width % maxDepth === 0 && pallet.dimension.depth % maxWidth === 0) {
@@ -494,7 +505,7 @@ export class PalletControlComponent implements OnInit {
 
     return null;
   }
-//TODO : Yukarisi python ile ayni
+  //TODO : Yukarisi python ile ayni
 
   dragStarted(event: CdkDragStart) {
     const product = event.source.data as UiProduct;
@@ -520,22 +531,22 @@ export class PalletControlComponent implements OnInit {
     });
   }
 
-  consolidateProducts(products:UiProduct[]){
-  const groupedProducts = new Map();
+  consolidateProducts(products: UiProduct[]) {
+    const groupedProducts = new Map();
 
-  products.forEach(product => {
-    const mainId = product.id.split('/')[0];
+    products.forEach(product => {
+      const mainId = product.id.split('/')[0];
 
-    if (groupedProducts.has(mainId)) {
-      const existingProduct = groupedProducts.get(mainId);
-      existingProduct.count += product.count;
-    } else {
-      const newProduct = {...product};
-      newProduct.id = mainId;
-      groupedProducts.set(mainId, newProduct);
-    }
-  });
-  return Array.from(groupedProducts.values());
+      if (groupedProducts.has(mainId)) {
+        const existingProduct = groupedProducts.get(mainId);
+        existingProduct.count += product.count;
+      } else {
+        const newProduct = { ...product };
+        newProduct.id = mainId;
+        groupedProducts.set(mainId, newProduct);
+      }
+    });
+    return Array.from(groupedProducts.values());
   }
 
 

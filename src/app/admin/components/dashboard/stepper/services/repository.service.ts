@@ -1,7 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { ApiService } from '../../../../../services/api.service';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { map, Observable } from 'rxjs';
+import { BehaviorSubject, map, Observable } from 'rxjs';
 import { FileResponse } from '../interfaces/file-response.interface';
 import { mapToOrderDetailDtoList } from '../../../../../models/mappers/order-detail.mapper';
 import { mapPackageDetailToPackage } from '../../../../../models/mappers/package-detail.mapper';
@@ -12,7 +12,12 @@ import { PackageDetail } from '../../../../../models/package-detail.interface';
   providedIn: 'root',
 })
 export class RepositoryService {
-  constructor(private api: ApiService, private http: HttpClient) {}
+
+  $orderId = new BehaviorSubject('');
+
+  private orderId = signal('');
+
+  constructor(private api: ApiService, private http: HttpClient) { }
 
   orderDetails(id: string): Observable<any> {
     // api/orders/order-details/{id}/
@@ -40,6 +45,10 @@ export class RepositoryService {
     );
   }
 
+  setOrderId(orderId: string) {
+    this.orderId.set(orderId);
+  }
+
   uploadFile(file: File): Observable<FileResponse> {
     // api/orders/files
     // { id: string, file: string, order:string}
@@ -64,7 +73,7 @@ export class RepositoryService {
   }
 
   calculatePackageDetail(
-    order_id: string = '35ea955b-cdd8-4e03-bf32-5e75fc355a45'
+    order_id: string = this.orderId()
   ): Observable<any> {
     // api/orders/packages/{id}/
     // get package detail by package id.
@@ -74,10 +83,10 @@ export class RepositoryService {
       .pipe(map((response) => mapPackageDetailToPackage(response.data)));
   }
 
-  bulkCreatePackageDetail(order_id:string = '35ea955b-cdd8-4e03-bf32-5e75fc355a45',packageDetailList:PackageDetail[]){
-    const payload ={
-      packageDetails:packageDetailList
+  bulkCreatePackageDetail(order_id: string = this.orderId(), packageDetailList: PackageDetail[]) {
+    const payload = {
+      packageDetails: packageDetailList
     }
-    return this.http.post<any>(`${this.api.getApiUrl()}reate-package-detail/35ea955b-cdd8-4e03-bf32-5e75fc355a45/`,payload)
+    return this.http.post<any>(`${this.api.getApiUrl()}/create-package-detail/${order_id}/`, payload)
   }
 }
