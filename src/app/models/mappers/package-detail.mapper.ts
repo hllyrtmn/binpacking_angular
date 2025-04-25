@@ -2,6 +2,7 @@ import { UiPackage } from '../../admin/components/dashboard/stepper/components/u
 import { UiPallet } from '../../admin/components/dashboard/stepper/components/ui-models/ui-pallet.model';
 import { UiProduct } from '../../admin/components/dashboard/stepper/components/ui-models/ui-product.model';
 import { PackageDetail } from '../package-detail.interface';
+import { v4 as Guid} from 'uuid';
 
 export function mapPackageDetailToPackage(packageDetailList: PackageDetail[]): UiPackage[] {
   const uniquePackageIds = new Set<string>();
@@ -30,4 +31,37 @@ export function mapPackageDetailToPackage(packageDetailList: PackageDetail[]): U
   );
 
   return packageList;
+}
+
+export function mapPackageToPackageDetail(uiPackageList: UiPackage[]): PackageDetail[] {
+  const packageDetailList: PackageDetail[] = [];
+
+  uiPackageList.forEach((uiPackage) => {
+    // For each product in the UiPackage, create a PackageDetail
+    uiPackage.products.forEach((uiProduct) => {
+      const packageDetail: PackageDetail = {
+
+        package: {
+          ...uiPackage,
+          id: uiPackage.id,
+          order: uiPackage.order,
+          pallet: uiPackage.pallet ? { ...uiPackage.pallet } : null
+        },
+        product: {
+          ...uiProduct,
+          id: uiProduct.id
+        },
+        count: uiProduct.count,
+        id: Guid(),
+        deleted_time: null,
+        created_at: new Date(),
+        is_deleted: false,
+        updated_at: new Date()
+      };
+
+      packageDetailList.push(packageDetail);
+    });
+  });
+
+  return packageDetailList;
 }

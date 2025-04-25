@@ -6,6 +6,7 @@ import { FileResponse } from '../interfaces/file-response.interface';
 import { mapToOrderDetailDtoList } from '../../../../../models/mappers/order-detail.mapper';
 import { mapPackageDetailToPackage } from '../../../../../models/mappers/package-detail.mapper';
 import { UiPallet } from '../components/ui-models/ui-pallet.model';
+import { PackageDetail } from '../../../../../models/package-detail.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -71,5 +72,12 @@ export class RepositoryService {
     return this.http
       .get<any>(`${this.api.getApiUrl()}/logistics/calculate-box/${order_id}/`)
       .pipe(map((response) => mapPackageDetailToPackage(response.data)));
+  }
+
+  bulkCreatePackageDetail(order_id:string = '35ea955b-cdd8-4e03-bf32-5e75fc355a45',packageDetailList:PackageDetail[]){
+    const payload ={
+      packageDetails:packageDetailList
+    }
+    return this.http.post<any>(`${this.api.getApiUrl()}reate-package-detail/35ea955b-cdd8-4e03-bf32-5e75fc355a45/`,payload)
   }
 }

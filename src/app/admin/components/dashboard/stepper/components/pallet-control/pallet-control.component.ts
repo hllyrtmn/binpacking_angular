@@ -29,6 +29,7 @@ import { UiPallet } from '../ui-models/ui-pallet.model';
 import { UiPackage } from '../ui-models/ui-package.model';
 import { package1 } from './test/dummy-data';
 import { ToastService } from '../../../../../../services/toast.service';
+import { mapPackageToPackageDetail } from '../../../../../../models/mappers/package-detail.mapper';
 
 @Component({
   selector: 'app-pallet-control',
@@ -290,32 +291,14 @@ export class PalletControlComponent implements OnInit {
   }
 
   getPackageData(): any {
-    return {
-      orderId: this.order_id,
-      packages: this.packages
-        .filter((pkg) => pkg.pallet !== null && pkg.products.length !== 0) // Sadece doldurulmuş paketleri gönder
-        .map((pkg) => ({
-          id: pkg.id,
-          pallet: pkg.pallet
-            ? {
-                id: pkg.pallet.id.split('/')[0], // Orijinal palet ID'sini al
-                products: pkg.products.map((product) => ({
-                  id: product.id,
-                  name: product.name,
-                  dimension: product.dimension,
-                  count: product.count,
-                  productType: product.product_type,
-                  weightType: product.weight_type,
-                })),
-              }
-            : null,
-        })),
-    };
+    return mapPackageToPackageDetail(this.packages);
   }
 
   submitForm() {
     const packageData = this.getPackageData();
-    console.log(packageData)
+    this.repository.bulkCreatePackageDetail(this.order_id,packageData).subscribe({next:response=>{
+      this.toastService.success("Kaydedildi","Basarili")
+    }});
     // this.http.post('api-endpoint', packageData).subscribe(...)
   }
 
