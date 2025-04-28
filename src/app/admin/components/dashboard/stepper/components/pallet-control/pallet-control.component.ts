@@ -27,10 +27,8 @@ import { RepositoryService } from '../../services/repository.service';
 import { UiProduct } from '../ui-models/ui-product.model';
 import { UiPallet } from '../ui-models/ui-pallet.model';
 import { UiPackage } from '../ui-models/ui-package.model';
-import { package1 } from './test/dummy-data';
 import { ToastService } from '../../../../../../services/toast.service';
 import { mapPackageToPackageDetail } from '../../../../../../models/mappers/package-detail.mapper';
-import { switchMap, tap, filter } from 'rxjs';
 
 @Component({
   selector: 'app-pallet-control',
@@ -52,10 +50,10 @@ import { switchMap, tap, filter } from 'rxjs';
   styleUrl: './pallet-control.component.scss',
 })
 export class PalletControlComponent implements OnInit {
-  // TODO: 
+  // TODO:
   // 1. next e basildiginda ng content ve benzeri birsey ile
   // componenti create etmen gerekebilir.
-  // 2. bir behaviour subject data bind yaptiginda 
+  // 2. bir behaviour subject data bind yaptiginda
   // diger component subscribe oldugunda veriyi islemesi gerek
 
 
@@ -73,6 +71,7 @@ export class PalletControlComponent implements OnInit {
   remainingWeight: any;
   totalWeight: number = 0;
   totalMeter: number = 0;
+  order:any;
   private cloneCount = 1;
 
   constructor(private _formBuilder: FormBuilder) {
@@ -87,6 +86,9 @@ export class PalletControlComponent implements OnInit {
       .subscribe({
         next: (response) => {
           this.packages = response;
+          this.order = this.packages[0].order;
+          console.log("ana data",this.packages);
+
           this.packages.forEach((pkg, index) => {
             if (pkg.pallet) {
               pkg.pallet.id = pkg.pallet.id + '/' + index;
@@ -110,6 +112,7 @@ export class PalletControlComponent implements OnInit {
     })
     this.remainingVolume = Math.floor(((this.trailer.depth * this.trailer.height * this.trailer.width) - totalVolume) / 1000);
   }
+
   calculateWeight() {
     let totalWeight = 0;
     this.packages.forEach(pkg => {
@@ -121,6 +124,7 @@ export class PalletControlComponent implements OnInit {
     this.totalWeight = totalWeight;
     this.remainingWeight = Math.floor(this.trailer.weighLimit - totalWeight);
   }
+
   calculateTotalMeter() {
     this.packages.forEach(pkg => {
       if (pkg.products.length > 0) {
@@ -210,13 +214,14 @@ export class PalletControlComponent implements OnInit {
     this.addNewEmptyPackage();
   }
 
-  removeProductFromPackage(package1: UiPackage, productIndex: number) {
-    const removedProduct = package1.products.splice(productIndex, 1)[0];
+  removeProductFromPackage(pkg: UiPackage, productIndex: number) {
+    const removedProduct = pkg.products.splice(productIndex, 1)[0];
     this.availableProducts.push(removedProduct);
     this.calculateVolume();
     this.calculateWeight();
     this.calculateTotalMeter();
   }
+
   removeAllPackage() {
     this.packages.forEach(pkg => {
       if (pkg.products && pkg.products.length > 0) {
@@ -242,11 +247,7 @@ export class PalletControlComponent implements OnInit {
       id: Guid(),
       pallet: null,
       products: [],
-      order: package1.order,
-      created_at: new Date(),
-      updated_at: new Date(),
-      is_deleted: false,
-      deleted_time: null,
+      order: this.order
     });
 
     this.packages.push(newPackage);
@@ -287,11 +288,7 @@ export class PalletControlComponent implements OnInit {
         id: Guid(),
         pallet: null,
         products: [],
-        order: package1.order,
-        created_at: new Date(),
-        updated_at: new Date(),
-        is_deleted: false,
-        deleted_time: null,
+        order: this.order
       });
 
       this.packages.push(newPackage);
@@ -322,11 +319,12 @@ export class PalletControlComponent implements OnInit {
 
   submitForm() {
     const packageData = this.getPackageData();
-    // this.repository.bulkCreatePackageDetail(this.order_id, packageData).subscribe({
-    //   next: response => {
-    //     this.toastService.success("Kaydedildi", "Basarili")
-    //   }
-    // });
+    console.log('Submitteki data',packageData)
+    this.repository.bulkCreatePackageDetail(packageData).subscribe({
+      next: response => {
+        this.toastService.success("Kaydedildi", "Basarili")
+      }
+    });
     // this.http.post('api-endpoint', packageData).subscribe(...)
   }
 

@@ -83,10 +83,10 @@ export class RepositoryService {
       .pipe(map((response) => mapPackageDetailToPackage(response.data)));
   }
 
-  bulkCreatePackageDetail(order_id: string = this.orderId(), packageDetailList: PackageDetail[]) {
+  bulkCreatePackageDetail(packageDetailList: PackageDetail[],order_id: string = this.orderId()) {
     const payload = {
       packageDetails: packageDetailList
     }
-    return this.http.post<any>(`${this.api.getApiUrl()}/create-package-detail/${order_id}/`, payload)
+    return this.http.post<any>(`${this.api.getApiUrl()}/logistics/create-package-detail/${order_id}/`, payload)
   }
 }

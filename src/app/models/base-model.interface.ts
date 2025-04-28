@@ -1,6 +1,6 @@
 import { Company } from "./company.interface";
-import { ZeroModel } from "./zero-model.interface";
 
-export interface BaseModel  extends ZeroModel{
+export interface BaseModel{
+  id: string; //UUID
   company?: Company; //Company
 }

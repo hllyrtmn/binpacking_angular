@@ -23,12 +23,6 @@ export class UiPackage implements IUiPackage{
   order: Order;
   company?: Company | undefined;
   id: string;
-  created_at: Date;
-  updated_at: Date;
-  created_by?: User | null | undefined;
-  updated_by?: User | null | undefined;
-  deleted_time: Date | null;
-  is_deleted: boolean;
 
   get totalMeter(): number {
     return this.products?.reduce((sum, product) => {
@@ -54,12 +48,6 @@ export class UiPackage implements IUiPackage{
     this.order = init.order!;
     this.company = init.company;
     this.id = init.id!;
-    this.created_at = init.created_at!;
-    this.updated_at = init.updated_at!;
-    this.created_by = init.created_by;
-    this.updated_by = init.updated_by;
-    this.deleted_time = init.deleted_time!;
-    this.is_deleted = init.is_deleted!;
   }
 
 }

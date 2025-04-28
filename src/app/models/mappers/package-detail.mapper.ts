@@ -3,6 +3,7 @@ import { UiPallet } from '../../admin/components/dashboard/stepper/components/ui
 import { UiProduct } from '../../admin/components/dashboard/stepper/components/ui-models/ui-product.model';
 import { PackageDetail } from '../package-detail.interface';
 import { v4 as Guid} from 'uuid';
+import { Pallet } from '../pallet.interface';
 
 export function mapPackageDetailToPackage(packageDetailList: PackageDetail[]): UiPackage[] {
   const uniquePackageIds = new Set<string>();
@@ -35,28 +36,41 @@ export function mapPackageDetailToPackage(packageDetailList: PackageDetail[]): U
 
 export function mapPackageToPackageDetail(uiPackageList: UiPackage[]): PackageDetail[] {
   const packageDetailList: PackageDetail[] = [];
+  const currentDate = new Date();
 
   uiPackageList.forEach((uiPackage) => {
     // For each product in the UiPackage, create a PackageDetail
     uiPackage.products.forEach((uiProduct) => {
-      const packageDetail: PackageDetail = {
+      let packagePallet: Pallet | null = null;
 
+      // Only create the pallet object if it exists
+      if (uiPackage.pallet) {
+        // Extract the pallet ID correctly, ensuring it's a string
+        const palletId = uiPackage.pallet.id
+          ? uiPackage.pallet.id.split('/')[0]
+          : "unknown-pallet-id"; // Provide a default value if ID is undefined
+
+        packagePallet = {
+          id: palletId,
+          weight: uiPackage.pallet.weight,
+          dimension: uiPackage.pallet.dimension
+        };
+      }
+
+      const packageDetail: PackageDetail = {
+        id: Guid(), // Unique ID for the package detail
         package: {
-          ...uiPackage,
           id: uiPackage.id,
-          order: uiPackage.order,
-          pallet: uiPackage.pallet ? { ...uiPackage.pallet } : null
+          pallet: packagePallet,
+          order: uiPackage.order
         },
         product: {
-          ...uiProduct,
-          id: uiProduct.id
+          id: uiProduct.id,
+          product_type: uiProduct.product_type,
+          dimension: uiProduct.dimension,
+          weight_type: uiProduct.weight_type,
         },
-        count: uiProduct.count,
-        id: Guid(),
-        deleted_time: null,
-        created_at: new Date(),
-        is_deleted: false,
-        updated_at: new Date()
+        count: uiProduct.count
       };
 
       packageDetailList.push(packageDetail);

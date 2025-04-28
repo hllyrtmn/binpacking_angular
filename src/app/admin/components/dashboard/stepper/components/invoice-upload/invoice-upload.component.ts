@@ -116,7 +116,8 @@ export class InvoiceUploadComponent implements OnInit {
       .uploadFile(this.file)
       .pipe(
         tap((response) => {
-          this.repositoryService.setOrderId(response.order)
+          order_id = response.order;
+          this.repositoryService.setOrderId(response.order);
           this.toastService.success('Dosya başarıyla yüklendi.');
           this.toastService.info('Dosya işleniyor...');
         }),

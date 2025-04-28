@@ -43,12 +43,6 @@ export class UiProduct implements IUiProduct {
   weight_type: WeightType;
   company?: Company | undefined;
   id: string;
-  created_at: Date;
-  updated_at: Date;
-  created_by?: User | null | undefined;
-  updated_by?: User | null | undefined;
-  deleted_time: Date | null;
-  is_deleted: boolean;
 
   constructor(init: Partial<IUiProduct>) {
     this.name =
@@ -59,15 +53,9 @@ export class UiProduct implements IUiProduct {
         : 'Unnamed Product';
     this.count = init.count!;
     this.id = init.id!;
-    this.created_at = init.created_at!;
-    this.updated_at = init.updated_at!;
     this.product_type = init.product_type!;
     this.dimension = init.dimension!;
     this.weight_type = init.weight_type!;
     this.company = init.company;
-    this.created_by = init.created_by;
-    this.updated_by = init.updated_by;
-    this.deleted_time = init.deleted_time!;
-    this.is_deleted = init.is_deleted!;
   }
 }
