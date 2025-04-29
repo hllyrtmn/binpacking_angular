@@ -13,8 +13,6 @@ import { PackageDetail } from '../../../../../models/package-detail.interface';
 })
 export class RepositoryService {
 
-  $orderId = new BehaviorSubject('');
-
   private orderId = signal('');
 
   constructor(private api: ApiService, private http: HttpClient) { }
@@ -83,10 +81,14 @@ export class RepositoryService {
       .pipe(map((response) => mapPackageDetailToPackage(response.data)));
   }
 
-  bulkCreatePackageDetail(packageDetailList: PackageDetail[],order_id: string = this.orderId()) {
+  bulkCreatePackageDetail(packageDetailList: PackageDetail[], order_id: string = this.orderId()) {
     const payload = {
       packageDetails: packageDetailList
     }
     return this.http.post<any>(`${this.api.getApiUrl()}/logistics/create-package-detail/${order_id}/`, payload)
+  }
+
+  calculatePacking(order_id: string = this.orderId()) {
+    return this.http.get<any>(`${this.api.getApiUrl()}/logistics/calculate-packing/${order_id}/`)
   }
 }

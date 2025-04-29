@@ -1,9 +1,11 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ViewContainerRef } from '@angular/core';
 import { LoadingComponent } from '../../../../../../components/loading/loading.component';
 import { MatButton } from '@angular/material/button';
 import { MatStepperPrevious } from '@angular/material/stepper';
 import { RepositoryService } from '../../services/repository.service';
 import { StepperStore } from '../../services/stepper.store';
+import { SafeHtml } from '@angular/platform-browser';
+import { DomSanitizer } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-result-step',
@@ -31,12 +33,23 @@ export class ResultStepComponent {
   // order ve result iliskili olur
   // package ve order iliskili olmaz
 
+  htmlContent!:SafeHtml
+
 
   repositoryService= inject(RepositoryService);
 
   stepperService = inject(StepperStore)
+  sanitizer = inject(DomSanitizer)
 
 
+
+  calculateBinpacking(){
+    this.repositoryService.calculatePacking().subscribe({next: (response) => {
+      console.log(response.data.html)
+      this.htmlContent = this.sanitizer.bypassSecurityTrustHtml(response.data.html)
+    } })
+
+  }
 
 
 }
