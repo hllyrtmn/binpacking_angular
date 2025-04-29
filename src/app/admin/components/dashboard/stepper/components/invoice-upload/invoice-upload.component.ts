@@ -44,7 +44,6 @@ export class InvoiceUploadComponent implements OnInit {
   private _formBuilder = inject(FormBuilder);
   private repositoryService = inject(RepositoryService);
   private toastService = inject(ToastService);
-  private labelService = inject(MatStepperIntl);
 
   private $nextStep = new Observable<any>();
   uploadForm: FormGroup;

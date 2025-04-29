@@ -13,8 +13,7 @@ import { PalletControlComponent } from './components/pallet-control/pallet-contr
 import { LoadingComponent } from "../../../../components/loading/loading.component";
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { ResultStepComponent } from './components/result-step/result-step.component';
-import { StepperStore } from './services/stepper.store';
-
+import { StepperStore, STATUSES } from './services/stepper.store';
 
 @Component({
   selector: 'app-stepper',
@@ -25,7 +24,7 @@ import { StepperStore } from './services/stepper.store';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    AsyncPipe, InvoiceUploadComponent, PalletControlComponent, LoadingComponent,ResultStepComponent],
+    AsyncPipe, InvoiceUploadComponent, PalletControlComponent, LoadingComponent, ResultStepComponent],
   templateUrl: './stepper.component.html',
   styleUrl: './stepper.component.scss'
 })
@@ -62,5 +61,10 @@ export class StepperComponent {
     this.stepperOrientation = breakpointObserver
       .observe('(min-width: 800px)')
       .pipe(map(({ matches }) => matches ? 'horizontal' : 'vertical'));
+  }
+
+  invoiceUploaded() {
+    this.palletControlComponent.configureComponent();
+    this.stepperService.setStepStatus(1, STATUSES.completed, true);
   }
 }
