@@ -1,0 +1,155 @@
+<div class="table-container mat-elevation-z8">
+  <div class="table-header">
+    <h2>{{ title }}</h2>
+    <div class="spacer"></div>
+    <button mat-raised-button color="primary" (click)="addNewRow()">
+      <mat-icon>add</mat-icon> Yeni Ekle
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-container" *ngIf="filterableColumns.length > 0">
+    <div class="filter-item" *ngFor="let column of filterableColumns">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ getColumnDisplayName(column) }} ile filtrele</mat-label>
+        <input matInput [formControl]="filterControls[column]">
+        <button mat-icon-button matSuffix *ngIf="filterControls[column].value"
+          (click)="filterControls[column].setValue('')">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
+    </div>
+  </div>
+
+  <!-- Loading indicator -->
+  <div class="loading-shade" *ngIf="isLoading">
+    <mat-spinner></mat-spinner>
+  </div>
+
+  <!-- Add new item row -->
+  <div class="add-new-container" *ngIf="isAddingNew">
+    <div class="add-new-header">
+      <h3>Yeni {{ title }} Ekle</h3>
+      <div class="spacer"></div>
+      <button mat-icon-button color="warn" (click)="cancelAddNew()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <div class="add-new-form">
+      <div class="form-row">
+        <!-- Düzenlenebilir alanlar için form -->
+        <mat-form-field appearance="outline" *ngFor="let column of editableColumns">
+          <mat-label>{{ getColumnDisplayName(column) }}</mat-label>
+
+          <!-- İlişkili alanlar için dropdown -->
+          <mat-select *ngIf="relationOptions[column]" [(ngModel)]="newItem[column]">
+            <mat-option *ngFor="let option of getRelationOptions(column)" [value]="option.id">
+              {{ option.name || option.title || option.code || option.type || option.id }}
+            </mat-option>
+          </mat-select>
+
+          <!-- Normal alanlar için input -->
+          <input matInput *ngIf="!relationOptions[column]" [(ngModel)]="newItem[column]">
+        </mat-form-field>
+      </div>
+      <div class="form-actions">
+        <button mat-raised-button color="warn" (click)="cancelAddNew()">İptal</button>
+        <button mat-raised-button color="primary" (click)="saveNewItem()">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <table mat-table [dataSource]="dataSource" matSort>
+
+    <!-- Dynamic Columns -->
+    <ng-container *ngFor="let column of displayedColumns" [matColumnDef]="column">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ getColumnDisplayName(column) }}</th>
+      <td mat-cell *matCellDef="let row">
+
+        <!-- Edit mode -->
+        <ng-container *ngIf="editedRow && editedRow.id === row.id">
+          <!-- Sadece ilişkili ana modeller düzenlenebilir (iç içe alanlar değil) -->
+          <ng-container *ngIf="editableColumns.includes(column.split('.')[0])">
+            <!-- İlişkili alan düzenleme -->
+            <mat-form-field *ngIf="relationOptions[column.split('.')[0]]" appearance="outline" class="edit-field">
+              <mat-select [(ngModel)]="editedRow[column.split('.')[0]]">
+                <mat-option *ngFor="let option of getRelationOptions(column.split('.')[0])" [value]="option.id">
+                  {{ option.name || option.title || option.code || option.type || option.id }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <!-- Normal alan düzenleme -->
+            <mat-form-field *ngIf="!relationOptions[column.split('.')[0]]" appearance="outline" class="edit-field">
+              <input matInput [(ngModel)]="editedRow[column]">
+            </mat-form-field>
+          </ng-container>
+
+          <!-- Düzenlenemeyen alanlar için sadece görüntüleme -->
+          <ng-container *ngIf="!editableColumns.includes(column.split('.')[0])">
+            <span>{{ getNestedPropertyValue(row, column) }}</span>
+          </ng-container>
+        </ng-container>
+
+        <!-- View mode -->
+        <ng-container *ngIf="!editedRow || editedRow.id !== row.id">
+          <!-- İç içe alan değerlerini göster -->
+          <span>{{ getNestedPropertyValue(row, column) }}</span>
+        </ng-container>
+
+      </td>
+    </ng-container>
+
+    <!-- Actions Column -->
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef>İşlemler</th>
+      <td mat-cell *matCellDef="let row">
+
+        <!-- Edit mode -->
+        <div *ngIf="editedRow && editedRow.id === row.id" class="action-buttons">
+          <button mat-icon-button color="primary" (click)="saveEdit(row.id)" matTooltip="Kaydet">
+            <mat-icon>save</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" (click)="cancelEdit()" matTooltip="İptal">
+            <mat-icon>cancel</mat-icon>
+          </button>
+        </div>
+
+        <!-- View mode -->
+        <div *ngIf="!editedRow || editedRow.id !== row.id" class="action-buttons">
+          <button mat-icon-button color="primary" (click)="startEdit(row)" matTooltip="Düzenle">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" (click)="confirmDelete(row.id)" matTooltip="Sil">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+
+      </td>
+    </ng-container>
+
+    <!-- Bu kısımda spread operatörü (...) yerine metod kullanıyoruz -->
+    <tr mat-header-row *matHeaderRowDef="getDisplayColumnWithActions()"></tr>
+    <tr mat-row *matRowDef="let row; columns: getDisplayColumnWithActions();"
+        (click)="onRowClick(row)"
+        [class.edited-row]="editedRow && editedRow.id === row.id"></tr>
+  </table>
+
+  <!-- Empty state -->
+  <div class="empty-state" *ngIf="dataSource.data.length === 0 && !isLoading">
+    <mat-icon>info</mat-icon>
+    <p>Hiç kayıt bulunamadı.</p>
+    <button mat-raised-button color="primary" (click)="addNewRow()">
+      <mat-icon>add</mat-icon> Yeni Ekle
+    </button>
+  </div>
+
+  <!-- Paginator -->
+  <mat-paginator
+    [length]="totalItems"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="[5, 10, 25, 100]"
+    (page)="onPageChange($event)">
+  </mat-paginator>
+</div>

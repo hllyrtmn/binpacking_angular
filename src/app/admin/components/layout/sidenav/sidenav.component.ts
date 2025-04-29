@@ -25,26 +25,26 @@ const NAV_LIST_ITEM: INavListItem[] = [
     icon: 'group'
   },
   {
-    title: 'Stock Management',
+    title: 'Islemler',
     icon: 'home',
     children: [
       {
-        routerLink: ['/employees'],
+        routerLink: ['/admin/employees'],
         title: 'Warehouses',
         icon: 'home'
       },
       {
-        routerLink: ['/admin/stock-management/shelfs/shelf'],
+        routerLink: ['/admin/logistics'],
         title: 'Shelf',
         icon: 'home'
       },
       {
-        routerLink: ['/admin/stock-management/products/product'],
+        routerLink: ['/admin/orders'],
         title: 'Products',
         icon: 'home'
       },
       {
-        routerLink: ['/admin/stock-management/inventory'],
+        routerLink: ['/admin/products'],
         title: 'Inventory',
         icon: 'inventory'
       },

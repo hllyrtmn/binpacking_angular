@@ -1,1 +1,38 @@
-<p>products works!</p>
+<div class="product-container">
+  <div class="page-header">
+    <h1>Ürün Yönetimi</h1>
+    <div class="breadcrumb">
+      <span>Ana Sayfa</span>
+      <span class="separator">/</span>
+      <span class="active">Ürünler</span>
+    </div>
+  </div>
+
+  <div class="loading-overlay" *ngIf="isLoading">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>İlişkili veriler yükleniyor...</p>
+  </div>
+
+  <div class="content-section" [class.loading]="isLoading">
+    <div class="intro-section">
+      <p>
+        Bu sayfada tüm ürünleri görüntüleyebilir, düzenleyebilir, ekleyebilir veya silebilirsiniz.
+        Ürünlerin ürün tipi, boyut ve ağırlık özellikleri API'den gelen detaylarıyla görüntülenmektedir.
+      </p>
+    </div>
+
+    <app-generic-table
+      [service]="productService"
+      [displayedColumns]="displayedColumns"
+      [editableColumns]="editableColumns"
+      [filterableColumns]="filterableColumns"
+      [relationOptions]="relationOptions"
+      [nestedDisplayColumns]="nestedDisplayColumns"
+      [title]="'Ürünler'"
+      (rowCreated)="onProductCreated($event)"
+      (rowUpdated)="onProductUpdated($event)"
+      (rowDeleted)="onProductDeleted($event)"
+      (rowClick)="onProductRowClick($event)">
+    </app-generic-table>
+  </div>
+</div>
