@@ -1,0 +1,10 @@
+
+<div class="p-container" [class.fullscreen-mode]="isFullscreen">
+  <div #plotlyContainer class="plotly-container"></div>
+  <div class="button-container">
+    <button class="fullscreen-button" (click)="toggleFullscreen()">
+      <span class="fullscreen-icon" [class.exit-icon]="isFullscreen"></span>
+      {{ isFullscreen ? 'Tam Ekrandan Çık' : 'Tam Ekran' }}
+    </button>
+  </div>
+</div>

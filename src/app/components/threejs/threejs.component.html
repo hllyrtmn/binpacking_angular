@@ -1,0 +1,13 @@
+<div class="t-container" [class.fullscreen-mode]="isFullscreen">
+  <div #threejsContainer class="threejs-container"></div>
+  <div class="button-container">
+    <button class="fullscreen-button" (click)="toggleFullscreen()">
+      <span class="fullscreen-icon" [class.exit-icon]="isFullscreen"></span>
+      {{ isFullscreen ? 'Tam Ekrandan Çık' : 'Tam Ekran' }}
+    </button>
+    <button class="new-tab-button" (click)="openInNewTab()">
+      <span class="new-tab-icon"></span>
+      Yeni Sekmede Aç
+    </button>
+  </div>
+</div>

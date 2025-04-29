@@ -36,7 +36,8 @@
               "node_modules/ngx-toastr/toastr.css",
               "node_modules/bootstrap/dist/css/bootstrap.min.css"
             ],
-            "scripts": []
+            "scripts": ["node_modules/three/build/three.min.js",
+                        "node_modules/three/examples/js/controls/OrbitControls.js"]
           },
           "configurations": {
             "production": {

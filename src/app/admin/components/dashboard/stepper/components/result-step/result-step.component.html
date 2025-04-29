@@ -1,7 +1,39 @@
-<app-loading></app-loading>
-<h1>Sonuc ekrani</h1>
-<button mat-flat-button (click)="calculateBinpacking()"></button>
+<!-- <app-loading></app-loading>
+<h1>Sonuç Ekranı</h1>
+<div class="controls">
+  <button mat-button (click)="calculateBinpacking()">Paketleme Hesapla</button>
+  <button mat-button class="new-tab-button" (click)="openInNewTab()">
+    <span class="new-tab-icon"></span>
+    Yeni Sekmede Aç
+  </button>
+</div>
 
-<div [innerHTML]="htmlContent"></div>
+<div class="visualization-container">
+  <app-plotly
+    #plotlyComponent
+    [piecesData]="piecesData"
+    [truckDimension]="truckDimension">
+  </app-plotly>
+</div>
+<button mat-button matStepperPrevious>Geri</button> -->
+
+
+<app-loading></app-loading>
+<h1>Sonuç Ekranı</h1>
+<div class="controls">
+  <button mat-button (click)="calculateBinpacking()">Paketleme Hesapla</button>
+  <button mat-button class="new-tab-button" (click)="openInNewTab()">
+    <span class="new-tab-icon"></span>
+    Yeni Sekmede Aç
+  </button>
+</div>
+
+<div class="visualization-container">
+  <app-threejs
+    #threejsComponent
+    [piecesData]="piecesData"
+    [truckDimension]="truckDimension">
+  </app-threejs>
+</div>
 
 <button mat-button matStepperPrevious>Geri</button>
