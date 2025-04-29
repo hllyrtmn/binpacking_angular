@@ -29,6 +29,7 @@ import { UiPallet } from '../ui-models/ui-pallet.model';
 import { UiPackage } from '../ui-models/ui-package.model';
 import { ToastService } from '../../../../../../services/toast.service';
 import { mapPackageToPackageDetail } from '../../../../../../models/mappers/package-detail.mapper';
+import { StepperStore } from '../../services/stepper.store';
 
 @Component({
   selector: 'app-pallet-control',
@@ -59,6 +60,7 @@ export class PalletControlComponent implements OnInit {
 
   repository: RepositoryService = inject(RepositoryService);
   toastService: ToastService = inject(ToastService);
+  stepperService = inject(StepperStore);
 
   packages: UiPackage[] = [];
   availableProducts: UiProduct[] = [];
@@ -323,6 +325,7 @@ export class PalletControlComponent implements OnInit {
     this.repository.bulkCreatePackageDetail(packageData).subscribe({
       next: response => {
         this.toastService.success("Kaydedildi", "Basarili")
+        this.stepperService.setStepCompletedStatus(2,true);
       }
     });
     // this.http.post('api-endpoint', packageData).subscribe(...)

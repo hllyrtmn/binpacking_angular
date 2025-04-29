@@ -9,7 +9,7 @@ import {
   AbstractControl,
   ValidationErrors
 } from '@angular/forms';
-import { MatStepperModule } from '@angular/material/stepper';
+import { MatStepperIntl, MatStepperModule } from '@angular/material/stepper';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -20,6 +20,7 @@ import { CommonModule } from '@angular/common';
 import { IInvoiceOrderDetail } from '../../../../../../models/component-models/invoice-order-detail.interface';
 import { ModelTableComponent } from '../../../../../../components/model-table/model-table.component';
 import { ToastService } from '../../../../../../services/toast.service';
+import { StepperStore } from '../../services/stepper.store';
 
 @Component({
   selector: 'app-invoice-upload',
@@ -43,6 +44,7 @@ export class InvoiceUploadComponent implements OnInit {
   private _formBuilder = inject(FormBuilder);
   private repositoryService = inject(RepositoryService);
   private toastService = inject(ToastService);
+  private labelService = inject(MatStepperIntl);
 
   private $nextStep = new Observable<any>();
   uploadForm: FormGroup;
@@ -66,6 +68,7 @@ export class InvoiceUploadComponent implements OnInit {
       //TODO buraya validator gelecek customfilevalidator
       // dosya tipi kontrol edilecek
     });
+
   }
 
   ngOnInit(): void { }

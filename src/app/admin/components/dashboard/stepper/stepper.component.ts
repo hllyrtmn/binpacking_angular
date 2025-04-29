@@ -12,6 +12,8 @@ import { InvoiceUploadComponent } from './components/invoice-upload/invoice-uplo
 import { PalletControlComponent } from './components/pallet-control/pallet-control.component';
 import { LoadingComponent } from "../../../../components/loading/loading.component";
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
+import { ResultStepComponent } from './components/result-step/result-step.component';
+import { StepperStore } from './services/stepper.store';
 
 
 @Component({
@@ -23,7 +25,7 @@ import { StepperSelectionEvent } from '@angular/cdk/stepper';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    AsyncPipe, InvoiceUploadComponent, PalletControlComponent, LoadingComponent],
+    AsyncPipe, InvoiceUploadComponent, PalletControlComponent, LoadingComponent,ResultStepComponent],
   templateUrl: './stepper.component.html',
   styleUrl: './stepper.component.scss'
 })
@@ -31,8 +33,9 @@ export class StepperComponent {
 
   @ViewChild('palletControlComponent') palletControlComponent!: PalletControlComponent;
 
-  private _formBuilder = inject(FormBuilder);
   order_id: string = '';
+
+  stepperService = inject(StepperStore);
 
   selectedIndex: number = 0;
 
@@ -51,16 +54,6 @@ export class StepperComponent {
   onStepChange(event: StepperSelectionEvent) {
     console.log(event);
   }
-
-  firstFormGroup = this._formBuilder.group({
-    firstCtrl: ['', Validators.required],
-  });
-  secondFormGroup = this._formBuilder.group({
-    secondCtrl: ['', Validators.required],
-  });
-  thirdFormGroup = this._formBuilder.group({
-    thirdCtrl: ['', Validators.required],
-  });
   stepperOrientation: Observable<StepperOrientation>;
 
   constructor() {
