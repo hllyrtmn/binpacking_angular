@@ -1,0 +1,153 @@
+<h2 mat-dialog-title>Sipariş Detayı Ekle</h2>
+<mat-dialog-content>
+  <form [formGroup]="orderDetailForm" (ngSubmit)="onSubmit()">
+    <div class="form-container">
+      <!-- Arama Seçenekleri Tablar -->
+      <mat-tab-group (selectedIndexChange)="onTabChange($event)">
+        <!-- İsim/Kod Araması -->
+        <mat-tab label="Metin Araması">
+          <div class="tab-content">
+            <mat-form-field appearance="fill" class="full-width">
+              <mat-label>Ürün Ara</mat-label>
+              <input type="text"
+                     placeholder="Ürün kodu veya tip numarası için en az 3 karakter yazın"
+                     matInput
+                     formControlName="product"
+                     [matAutocomplete]="auto">
+              <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayProductFn.bind(this)">
+                <mat-option *ngIf="isLoading" class="loading-indicator">
+                  <mat-spinner diameter="20"></mat-spinner> Aranıyor...
+                </mat-option>
+
+                <mat-option *ngIf="hasError" class="error-message">
+                  <span class="error-text">{{ errorMessage }}</span>
+                </mat-option>
+
+                <ng-container *ngIf="!isLoading && !hasError">
+                  <mat-option *ngIf="filteredProducts.length === 0" disabled>
+                    Sonuç bulunamadı
+                  </mat-option>
+                  <mat-option *ngFor="let product of filteredProducts" [value]="product" (click)="selectProduct(product)">
+                    {{ getProductDisplayName(product) }}
+                  </mat-option>
+                </ng-container>
+              </mat-autocomplete>
+              <mat-hint>Ürün kodu veya tip numarasıyla arama yapın</mat-hint>
+            </mat-form-field>
+          </div>
+        </mat-tab>
+
+        <!-- Boyut Araması -->
+        <mat-tab label="Boyut Araması">
+          <div class="tab-content">
+            <form [formGroup]="dimensionSearchForm" class="dimension-form">
+              <mat-form-field appearance="fill">
+                <mat-label>Genişlik</mat-label>
+                <input type="number" matInput formControlName="width" placeholder="mm">
+              </mat-form-field>
+
+              <mat-form-field appearance="fill">
+                <mat-label>Yükseklik</mat-label>
+                <input type="number" matInput formControlName="height" placeholder="mm">
+              </mat-form-field>
+
+              <mat-form-field appearance="fill">
+                <mat-label>Derinlik</mat-label>
+                <input type="number" matInput formControlName="depth" placeholder="mm">
+              </mat-form-field>
+
+              <button mat-raised-button color="primary" type="button" (click)="searchByDimensions()">
+                <mat-icon>search</mat-icon> Boyutlara Göre Ara
+              </button>
+            </form>
+
+            <!-- Boyut Arama Sonuçları -->
+            <div class="search-results" *ngIf="filteredProducts.length > 0 || isLoading || hasError">
+              <mat-spinner *ngIf="isLoading" diameter="30" class="centered-spinner"></mat-spinner>
+
+              <div *ngIf="hasError" class="error-box">
+                <mat-icon color="warn">error</mat-icon>
+                <span>{{ errorMessage }}</span>
+              </div>
+
+              <div *ngIf="!isLoading && !hasError">
+                <p *ngIf="filteredProducts.length === 0" class="no-results">Eşleşen ürün bulunamadı</p>
+
+                <div *ngIf="filteredProducts.length > 0" class="product-list">
+                  <div *ngFor="let product of filteredProducts" class="product-item" (click)="selectProduct(product)">
+                    <div class="product-info">
+                      <span class="product-code">{{ product.product_type?.code }}-{{ product.product_type?.type }}</span>
+                      <span class="product-dimensions">
+                        {{ product.dimension?.width }}x{{ product.dimension?.height }}x{{ product.dimension?.depth }} {{ product.dimension?.unit }}
+                      </span>
+                    </div>
+                    <button mat-icon-button color="primary">
+                      <mat-icon>add_circle</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+
+      <!-- Sipariş Detay Bilgileri -->
+      <div class="order-details-section">
+        <h3>Sipariş Bilgileri</h3>
+
+        <!-- Miktar -->
+        <mat-form-field appearance="fill" class="half-width">
+          <mat-label>Miktar</mat-label>
+          <input type="number" matInput formControlName="count" min="1">
+          <mat-error *ngIf="orderDetailForm.get('count')?.hasError('required')">
+            Miktar girilmesi zorunludur
+          </mat-error>
+          <mat-error *ngIf="orderDetailForm.get('count')?.hasError('min')">
+            Miktar en az 1 olmalıdır
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Birim Fiyat -->
+        <mat-form-field appearance="fill" class="half-width">
+          <mat-label>Birim Fiyat</mat-label>
+          <input type="number" matInput formControlName="unit_price" step="0.01" min="0.01">
+          <span matSuffix>₺</span>
+          <mat-error *ngIf="orderDetailForm.get('unit_price')?.hasError('required')">
+            Birim fiyat girilmesi zorunludur
+          </mat-error>
+          <mat-error *ngIf="orderDetailForm.get('unit_price')?.hasError('min')">
+            Birim fiyat sıfırdan büyük olmalıdır
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Seçilen Ürün Bilgisi -->
+        <div class="selected-product" *ngIf="orderDetailForm.get('product_id')?.value && orderDetailForm.get('product_id')?.value.id">
+          <h4>Seçilen Ürün</h4>
+          <div class="product-detail-box">
+            <div class="product-detail-item">
+              <strong>Kod-Tip:</strong>
+              {{ orderDetailForm.get('product_id')?.value.product_type?.code }}-{{ orderDetailForm.get('product_id')?.value.product_type?.type }}
+            </div>
+            <div class="product-detail-item">
+              <strong>Boyutlar:</strong>
+              {{ orderDetailForm.get('product_id')?.value.dimension?.width }}x
+              {{ orderDetailForm.get('product_id')?.value.dimension?.height }}x
+              {{ orderDetailForm.get('product_id')?.value.dimension?.depth }}
+              {{ orderDetailForm.get('product_id')?.value.dimension?.unit }}
+            </div>
+            <div class="product-detail-item">
+              <strong>Hacim:</strong>
+              {{ orderDetailForm.get('product_id')?.value.dimension?.volume }} mm³
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">İptal</button>
+  <button mat-raised-button color="primary" [disabled]="orderDetailForm.invalid" (click)="onSubmit()">Kaydet</button>
+</mat-dialog-actions>

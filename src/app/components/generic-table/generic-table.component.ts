@@ -7,6 +7,7 @@ import {
   EventEmitter,
   inject,
   AfterViewInit,
+  SimpleChanges,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -29,8 +30,8 @@ import { MatChipsModule } from '@angular/material/chips';
 import { GenericCrudService, Page } from '../../services/generic-crud.service';
 import { FilterDialogComponent } from './filter-dialog/filter-dialog.component';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
-import {MatButtonToggleModule} from '@angular/material/button-toggle';
-import {AddOrUpdateDialogComponent} from './add-or-update-dialog/add-or-update-dialog-component'
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { AddOrUpdateDialogComponent } from './add-or-update-dialog/add-or-update-dialog-component'
 import { ToastService } from '../../services/toast.service';
 
 @Component({
@@ -66,6 +67,10 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
   @Input() nestedDisplayColumns: { [key: string]: string } = {}; // İç içe sütunlar için görünen başlıklar
   @Input() showRowNumbers: boolean = true; // Sıra numaralarını gösterme ayarı
   @Input() showAddButton: boolean = false; // Ekleme butonu gösterme ayarı
+
+  @Input() parentId: string | null = null; // Bağlı olduğu üst nesne ID'si
+  @Input() useParentId: boolean = false; // Üst nesne ID kullanılacak mı belirteci
+  @Input() parentIdFieldName: string = 'order_id'; // API'ye gönderilecek parametre adı
 
   @Output() rowClick = new EventEmitter<T>();
   @Output() rowDeleted = new EventEmitter<any>();
@@ -160,6 +165,24 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
     }
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    // parentId, useParentId veya parentIdFieldName değiştiğinde veriyi yeniden yükle
+    if (
+      (changes['parentId'] && this.useParentId) ||
+      (changes['useParentId'] && this.useParentId) ||
+      (changes['parentIdFieldName'] && this.useParentId && this.parentId !== null)
+    ) {
+      // İlk sayfa için sayfalayıcıyı sıfırla
+      this.currentPage = 0;
+      if (this.paginator) {
+        this.paginator.pageIndex = 0;
+      }
+
+      // Veriyi yeniden yükle
+      this.loadData();
+    }
+  }
+
   /**
    * Sütunlar için filtre dialogu açar
    * @param column Filtre uygulanacak sütun
@@ -246,11 +269,28 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
   loadData(): void {
     this.isLoading = true;
 
+    // Parent ID değeri boş ve useParentId aktif ise,
+    // API çağrısı yapmadan tabloyu temizle ve uyarı göster
+    if (this.useParentId && (this.parentId === null || this.parentId === undefined)) {
+      this.dataSource.data = [];
+      this.totalItems = 0;
+      this.isLoading = false;
+      // Opsiyonel: Kullanıcıya bir mesaj göster
+      // this.toastService.info('Lütfen önce bir üst nesne seçin', 'Bilgi');
+      return; // API çağrısı yapmadan çık
+    }
+
     // Temel parametreler
     const params: any = {
       offset: this.currentPage * this.pageSize,
       limit: this.pageSize,
     };
+
+    // Üst nesne ID varsa ve kullanılması isteniyorsa ekle
+    if (this.useParentId && this.parentId !== null) {
+      // Dinamik olarak gönderilen field adını kullan
+      params[this.parentIdFieldName] = this.parentId;
+    }
 
     // Sıralama parametresi ekle
     if (this.currentSortField && this.currentSortDirection) {
@@ -290,7 +330,7 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
         this.isLoading = false;
       },
       error: (error) => {
-        this.toastService.error('Veri yüklenirken hata', 'Uyari')
+        this.toastService.error('Veri yüklenirken hata', 'Uyarı')
         this.isLoading = false;
         this.dataSource.data = [];
         this.totalItems = 0;

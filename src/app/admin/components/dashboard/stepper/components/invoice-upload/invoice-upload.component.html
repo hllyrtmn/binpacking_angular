@@ -1,33 +1,60 @@
 <div class="container-xxl text-center">
   <!-- Ortalanmış başlık ve dosya yükleme alanı -->
   <div class="row">
-    <h2>(ISB) İhraacat Sipariş Bildirimi Yükleme</h2>
+    <h2>(ISB) İhracat Sipariş Bildirimi Yükleme</h2>
   </div>
-  <div class="row">
-    <button mat-flat-button color="primary" class="upload-button" (click)="fileInput.click()">{{ file?.name || "Dosya
-      Seç" }}</button>
-    <input (change)="onFileSelected($event)" #fileInput id="file-upload" class="file-upload" type="file"
-      accept=".pdf,.xls,.xlsx" hidden />
-  </div>
-  <div class="row">
-    <div class="col">
-      <button mat-flat-button color="accent" class="action-button" [disabled]="!file" (click)="uploadFile()">İçeri
-        Aktar</button>
+  <!-- Boş durum mesajı - order_id yoksa ve dosya da yüklenmemişse -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="empty-state">
+        <mat-icon>info</mat-icon>
+        <p>Henüz sipariş bilgisi yok. Excel dosyası yükleyebilir veya manuel olarak sipariş detayı ekleyebilirsiniz.</p>
+        <button mat-raised-button color="primary" (click)="addOrderDetail()" [disabled]="manualAdd">
+          <mat-icon>add</mat-icon> Sipariş Detayı Ekle
+        </button>
+        <span>ya da</span>
+        <button mat-raised-button color="primary" class="upload-button" (click)="fileInput.click()" [disabled]="excelUpload">
+          <mat-icon>add</mat-icon> {{ file?.name || "Dosya Seç" }}
+        </button>
+        <input (change)="onFileSelected($event)" #fileInput id="file-upload" class="file-upload" type="file"
+          accept=".pdf,.xls,.xlsx" hidden />
+      </div>
+      <button *ngIf="file" mat-flat-button color="accent" [disabled]="!file" (click)="uploadFile()">
+        İçeri Aktar
+      </button>
     </div>
   </div>
 
-  <div class="row">
-    @if (dataSource.data.length > 0) {
-    <div class="table-container">
-      <model-table [dataSource]="dataSource" [displayedColumns]="displayedColumns" (editModel)="onEdit($event)"
-        (deleteModel)="onDelete($event)"></model-table>
-      <button mat-flat-button color="primary" class="upload-button">Veritabanına Kaydet</button>
+  <!-- Yükleme göstergesi -->
+  <div class="row mt-3" *ngIf="isLoading">
+    <div class="col-12 d-flex justify-content-center">
+      <mat-spinner diameter="40"></mat-spinner>
     </div>
-    }
   </div>
+
+  @if (order && !isLoading) {
+    <!-- Generic Table -->
+    <div class="row mt-4">
+      <app-generic-table
+        [service]="orderDetailService"
+        [displayedColumns]="displayedColumns"
+        [filterableColumns]="filterableColumns"
+        [nestedDisplayColumns]="nestedDisplayColumns"
+        [parentId]="order.id"
+        [useParentId]="true"
+        [parentIdFieldName]="'order_id'"
+        [title]="'Sipariş Detayı'"
+        [showRowNumbers]="true"
+        [showAddButton]="false"
+        (addClick)="addOrderDetail()"
+        (updateItem)="onTableUpdate($event)">
+      </app-generic-table>
+    </div>
+
+  }
 
   <!-- İlerleme butonu -->
-  <div class="navigation-buttons text-start">
-    <button  mat-button color="primary" matStepperNext>İleri</button>
+  <div class="navigation-buttons text-start mt-4">
+    <button mat-button color="primary" matStepperNext [disabled]="!order">İleri</button>
   </div>
 </div>

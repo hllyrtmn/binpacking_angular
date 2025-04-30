@@ -1,0 +1,59 @@
+.form-container {
+  display: flex;
+  flex-direction: column;
+  min-width: 500px;
+  padding: 10px;
+}
+
+.full-width {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.half-width {
+  width: 48%;
+  margin-right: 2%;
+  display: inline-block;
+}
+
+.loading-indicator {
+  display: flex;
+  align-items: center;
+
+  mat-spinner {
+    margin-right: 10px;
+  }
+}
+
+.error-message {
+  color: #f44336;
+
+  .error-text {
+    font-size: 14px;
+  }
+}
+
+mat-dialog-content {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+mat-dialog-actions {
+  padding: 10px 0;
+  justify-content: flex-end;
+}
+
+// Autocomplete listesini daha yönetilebilir hale getirmek için
+::ng-deep .mat-mdc-autocomplete-panel {
+  max-height: 256px !important;
+  overflow-y: auto;
+}
+
+// Ürün listesinde metin taşmalarını önle ve daha iyi bir görünüm sağla
+::ng-deep .mat-mdc-option {
+  white-space: normal;
+  line-height: 1.2;
+  height: auto;
+  min-height: 48px;
+  padding: 8px 16px;
+}

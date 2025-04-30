@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { catchError, map, Observable } from 'rxjs';
 import { GenericCrudService } from '../../../services/generic-crud.service';
 import { Product } from '../../../models/product.interface';
 import { ProductType } from '../../../models/product-type.interface';
@@ -15,22 +15,91 @@ export class ProductService extends GenericCrudService<Product> {
   constructor(http: HttpClient) {
     super(http, 'products/products');
   }
+    /**
+   * Ürün arama metodu - Backend'den gelen sonuçları sınırlandırır
+   * @param query Arama sorgusu
+   * @param limit Maksimum sonuç sayısı (varsayılan 10)
+   */
+    searchProducts(query: string, limit: number = 10): Observable<any[]> {
+      // Çok kısa sorgular için boş sonuç döndür (backend'i meşgul etmemek için)
+      if (!query || query.length < 3) {
+        return new Observable(observer => {
+          observer.next([]);
+          observer.complete();
+        });
+      }
 
-  // // Model özelinde ek metotlar burada tanımlanabilir
-  // getProductsByType(typeId: string): Observable<Product[]> {
-  //   return this.http.get<Product[]>(`${this.apiUrl}/by-type/${typeId}`);
-  // }
+      // Arama sonuçlarını sınırlandırmak için limit parametresi ekleyin
+      let params = new HttpParams()
+        .set('search', query)
+        .set('limit', limit.toString());
 
-  // // İlişkili veri getirme örnekleri
-  // getProductTypes(): Observable<ProductType[]> {
-  //   return this.http.get<ProductType[]>(`${this.apiUrl}/product-types`);
-  // }
+      return this.http.get<any>(`${this.apiUrl}`, { params })
+        .pipe(
+          map(response => {
+            console.log('API yanıtı:', response);
 
-  // getDimensions(): Observable<Dimension[]> {
-  //   return this.http.get<Dimension[]>(`${this.apiUrl}/dimensions`);
-  // }
+            // API'den bir sayfalama yanıtı gelirse (paginated response) "results" alanını kullan
+            if (response && response.results) {
+              return response.results;
+            }
+            // Doğrudan bir dizi gelirse, onu kullan
+            return Array.isArray(response) ? response : [];
+          }),
+          catchError(error => {
+            console.error('Ürün arama hatası:', error);
+            throw error;
+          })
+        );
+    }
 
-  // getWeightTypes(): Observable<WeightType[]> {
-  //   return this.http.get<WeightType[]>(`${this.apiUrl}/weight-types`);
-  // }
+    /**
+     * Hacim değerine göre ürün arama
+     * @param volume Aranacak hacim değeri
+     * @param limit Maksimum sonuç sayısı
+     */
+    searchByVolume(volume: number, limit: number = 10): Observable<any[]> {
+      let params = new HttpParams()
+        .set('volume', volume.toString())
+        .set('limit', limit.toString());
+
+      return this.http.get<any>(`${this.apiUrl}`, { params })
+        .pipe(
+          map(response => {
+            if (response && response.results) {
+              return response.results;
+            }
+            return Array.isArray(response) ? response : [];
+          })
+        );
+    }
+
+    /**
+     * Boyutlara göre ürün arama (genişlik, yükseklik, derinlik)
+     */
+    searchByDimensions(width?: number, height?: number, depth?: number, limit: number = 10): Observable<any[]> {
+      let params = new HttpParams().set('limit', limit.toString());
+
+      if (width) {
+        params = params.set('dimension.width', width.toString());
+      }
+
+      if (height) {
+        params = params.set('dimension.height', height.toString());
+      }
+
+      if (depth) {
+        params = params.set('dimension.depth', depth.toString());
+      }
+
+      return this.http.get<any>(`${this.apiUrl}`, { params })
+        .pipe(
+          map(response => {
+            if (response && response.results) {
+              return response.results;
+            }
+            return Array.isArray(response) ? response : [];
+          })
+        );
+    }
 }

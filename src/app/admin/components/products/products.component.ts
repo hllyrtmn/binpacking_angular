@@ -6,9 +6,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ProductService } from '../services/product.service';
-import { ProductTypeService } from '../services/product-type.service';
-import { DimensionService } from '../services/dimension.service';
-import { WeightTypeService } from '../services/weight-type.service';
 import { GenericTableComponent } from "../../../components/generic-table/generic-table.component";
 
 @Component({
@@ -27,14 +24,12 @@ export class ProductsComponent implements OnInit {
 
   // Servis enjeksiyonları
   productService = inject(ProductService);
-  productTypeService = inject(ProductTypeService);
-  dimensionService = inject(DimensionService);
-  weightTypeService = inject(WeightTypeService);
   snackBar = inject(MatSnackBar);
   dialog = inject(MatDialog);
 
   // Loading durumu
   isLoading = false;
+  selectedOrderId: string | null = null;
 
   // API'den dönen verilerde product_type, dimension ve weight_type doğrudan
   // nesne olarak döndüğü için kolonları değişiyoruz

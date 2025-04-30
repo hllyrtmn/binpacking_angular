@@ -21,6 +21,15 @@ import { IInvoiceOrderDetail } from '../../../../../../models/component-models/i
 import { ModelTableComponent } from '../../../../../../components/model-table/model-table.component';
 import { ToastService } from '../../../../../../services/toast.service';
 import { StepperStore } from '../../services/stepper.store';
+import { GenericTableComponent } from '../../../../../../components/generic-table/generic-table.component';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { OrderDetailService } from '../../../../services/order-detail.service';
+import { OrderService } from '../../../../services/order.service';
+import { Order } from '../../../../../../models/order.interface';
+import { OrderDetailAddDialogComponent } from './order-detail-add-dialog/order-detail-add-dialog.component';
 
 @Component({
   selector: 'app-invoice-upload',
@@ -33,7 +42,11 @@ import { StepperStore } from '../../services/stepper.store';
     MatTableModule,
     MatInputModule,
     CommonModule,
-    ModelTableComponent,
+    GenericTableComponent,
+    MatSnackBarModule,
+    MatProgressSpinnerModule,
+    MatIconModule,
+    MatDialogModule
   ],
   templateUrl: './invoice-upload.component.html',
   styleUrl: './invoice-upload.component.scss',
@@ -44,22 +57,40 @@ export class InvoiceUploadComponent implements OnInit {
   private _formBuilder = inject(FormBuilder);
   private repositoryService = inject(RepositoryService);
   private toastService = inject(ToastService);
+  orderDetailService = inject(OrderDetailService)
+  orderService = inject(OrderService)
+  dialog = inject(MatDialog)
 
-  private $nextStep = new Observable<any>();
   uploadForm: FormGroup;
   file: File | null = null;
-  order_id: string = '';
+  order!: Order;
+  isLoading = false;
+  excelUpload = false;
+  manualAdd = false;
 
-  dataSource = new MatTableDataSource<IInvoiceOrderDetail>();
   displayedColumns: string[] = [
-    'type',
-    'code',
-    'width',
-    'depth',
-    'count',
-    'meter',
-    'action',
+    'product.product_type.type',
+    'product.product_type.code',
+    'product.dimension.width',
+    'product.dimension.depth',
+    'count'
   ];
+
+  filterableColumns: string[] = [
+    'product.product_type.type',
+    'product.product_type.code',
+    'product.dimension.width',
+    'product.dimension.depth',
+    'count'
+  ];
+
+  nestedDisplayColumns: { [key: string]: string } = {
+    'product.product_type.type': 'Ürün Tipi',
+    'product.product_type.code': 'Ürün Kodu',
+    'product.dimension.width': 'Genişlik',
+    'product.dimension.depth': 'Derinlik',
+    'count' : 'Adet'
+  };
 
   constructor() {
     this.uploadForm = this._formBuilder.group({
@@ -111,15 +142,17 @@ export class InvoiceUploadComponent implements OnInit {
       this.toastService.warning('Lütfen bir dosya seçin.');
       return;
     }
-    let order_id: string = '';
 
+    this.isLoading = true; // Yükleme göstergesini aktifleştir
     this.toastService.info('Dosya yükleniyor...');
+
     this.repositoryService
       .uploadFile(this.file)
       .pipe(
         tap((response) => {
-          order_id = response.order;
-          this.repositoryService.setOrderId(response.order);
+          // string'i number'a çeviriyoruz (MongoDB ID ise string olarak bırakabilirsiniz)
+          this.order = response.order;
+          this.repositoryService.setOrderId(response.order.id);
           this.toastService.success('Dosya başarıyla yüklendi.');
           this.toastService.info('Dosya işleniyor...');
         }),
@@ -131,11 +164,18 @@ export class InvoiceUploadComponent implements OnInit {
             })
           )
         ),
-        switchMap(() => this.repositoryService.orderDetails(order_id))
+        switchMap(() => this.repositoryService.orderDetails(this.order.id?.toString() || ''))
       )
-      .subscribe((response) => {
-        this.dataSource.data = response;
-        this.invoiceUploaded.emit();
+      .subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          this.invoiceUploaded.emit();
+          // Table kendini otomatik güncelleyecek (ngOnChanges sayesinde)
+        },
+        error: (error) => {
+          this.isLoading = false;
+          this.toastService.error('Dosya işlenirken bir hata oluştu.');
+        }
       });
   }
 
@@ -148,24 +188,65 @@ export class InvoiceUploadComponent implements OnInit {
     this.uploadForm.reset();
   }
 
-  onEdit(model: IInvoiceOrderDetail) {
-    console.log('Edit model:', model);
-  }
-
-  onDelete(id: string) {
-    this.repositoryService.deleteOrderDetail(id).subscribe({
-      next: () => {
-        this.toastService.success('Başarıyla silindi.');
-        this.dataSource.data = this.dataSource.data.filter(item => item.id !== id);
-        this.invoiceUploaded.emit();
-      },
-    });
-  }
-
   calculatePackage() {
     console.log();
   }
 
+  addOrderDetail(): void {
+    if (!this.order) {
+      // Eğer order_id yoksa, önce bir order oluşturmamız gerekiyor
+      this.orderService.createOrder().subscribe({
+        next: (response) => {
+          this.order = response;
+          // Şimdi order_id var, dialog açılabilir
+          this.openOrderDetailDialog(this.order);
+        },
+        error: (error) => {
+          this.toastService.error('Sipariş oluşturulurken bir hata oluştu.');
+        }
+      });
+    } else {
+      // Zaten bir order_id var, doğrudan dialog açılabilir
+      this.openOrderDetailDialog(this.order);
+    }
+  }
+
+  openOrderDetailDialog(order: Order): void {
+    const dialogRef = this.dialog.open(OrderDetailAddDialogComponent, {
+      width: '600px',
+      data: order
+    });
+
+    dialogRef.afterClosed().subscribe({
+      next: (result) => {
+        if (result) {
+          console.log('Dialog sonucu:', result);
+
+          // result geçerli ise sipariş detayı oluştur
+          this.orderDetailService.create(result).subscribe({
+            next: (response) => {
+              this.toastService.success('Sipariş detayı başarıyla eklendi.');
+            },
+            error: (error) => {
+              console.error('Sipariş detayı eklenirken hata:', error);
+              this.toastService.error('Sipariş detayı eklenirken bir hata oluştu.');
+            }
+          });
+        }
+      },
+      error: (err) => {
+        console.error('Dialog kapatılırken hata oluştu:', err);
+      },
+      complete: () => {
+        console.log('Dialog kapatma işlemi tamamlandı.');
+      }
+    });
+  }
+
+  onTableUpdate(event: any): void {
+    console.log('Tablo güncellendi:', event);
+    // Gerekirse burada ek işlemler yapabilirsiniz
+  }
 }
 
 export function FileValidator(): (control: AbstractControl) => ValidationErrors | null {
