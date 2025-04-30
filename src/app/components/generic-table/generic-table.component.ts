@@ -149,7 +149,6 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
     // Sort olayı için listener ekle
     if (this.sort) {
       this.sort.sortChange.subscribe((sort: Sort) => {
-        console.log('Sort değişti:', sort);
         this.currentPage = 0; // Sıralama değiştiğinde ilk sayfaya dön
         if (this.paginator) {
           this.paginator.pageIndex = 0;
@@ -273,11 +272,8 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
       }
     });
 
-    console.log('API isteği:', this.service['apiUrl'], params);
-
     this.service.getAll(params).subscribe({
       next: (page: Page<T>) => {
-        console.log('API yanıtı:', page);
         if (page && 'results' in page && Array.isArray(page.results)) {
           // Verileri temizle ve yeni verileri ekle
           this.dataSource.data = [];
@@ -286,14 +282,15 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
             this.totalItems = page.count;
           }, 0);
         } else {
-          console.error('API yanıtı beklenen formatta değil:', page);
+          this.toastService.error('API yanıtı beklenen formatta değil', 'Uyarı')
           this.dataSource.data = [];
           this.totalItems = 0;
         }
+        this.toastService.success('Veri yüklendi',"Başarılı")
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Veri yüklenirken hata:', error);
+        this.toastService.error('Veri yüklenirken hata', 'Uyari')
         this.isLoading = false;
         this.dataSource.data = [];
         this.totalItems = 0;
@@ -345,11 +342,11 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
           // Mevcut öğeyi güncelle
           this.service.update((row as any).id,row).subscribe({next: () => {
             this.updateItem.emit((result)) // Artık result zaten güncellenmiş nesne
-            this.toastService.success('Basari ile guncellendi','Guncellendi')
+            this.toastService.success('Başarı ile güncellendi','Güncellendi')
             //TODO buraya load data demek gerekebilir.
           },
           error: (error) => {
-            this.toastService.error('Hata olustu','Guncellenemedi')
+            this.toastService.error('Hata oluştu','Güncellenemedi')
             this.isLoading = false;
           },});
         } else {
@@ -379,7 +376,7 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
       next: () => {
         this.rowDeleted.emit(id);
         this.loadData();
-        this.toastService.success("Basari ile silindi","Silindi")
+        this.toastService.success("Başari ile silindi","Silindi")
       },
       error: (error) => {
         this.toastService.success("Silinemedi","Hata")

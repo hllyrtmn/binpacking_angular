@@ -25,14 +25,9 @@
       [service]="productService"
       [displayedColumns]="displayedColumns"
       [filterableColumns]="filterableColumns"
-      [relationOptions]="relationOptions"
       [nestedDisplayColumns]="nestedDisplayColumns"
       [title]="'Ürünler'"
-      [showRowNumbers]="true"
-      (rowDeleted)="onProductDeleted($event)"
-      (rowClick)="onProductRowClick($event)"
-      (addClick)="openAddProductForm()"
-      (updateItem)="onUpdated($event)">
+      [showRowNumbers]="true">
     </app-generic-table>
   </div>
 </div>
