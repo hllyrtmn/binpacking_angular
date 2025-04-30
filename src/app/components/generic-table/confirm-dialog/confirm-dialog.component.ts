@@ -6,12 +6,14 @@ import {
   MatDialogModule
 } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-confirm-dialog',
   imports: [CommonModule,
     MatDialogModule,
-    MatButtonModule],
+    MatButtonModule,
+    MatIconModule],
   templateUrl: './confirm-dialog.component.html',
   styleUrl: './confirm-dialog.component.scss'
 })

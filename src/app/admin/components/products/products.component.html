@@ -16,21 +16,25 @@
   <div class="content-section" [class.loading]="isLoading">
     <div class="intro-section">
       <p>
-        Bu sayfada tüm ürünleri görüntüleyebilir, düzenleyebilir, ekleyebilir veya silebilirsiniz.
+        Bu sayfada tüm ürünleri görüntüleyebilir veya silebilirsiniz.
         Ürünlerin ürün tipi, boyut ve ağırlık özellikleri API'den gelen detaylarıyla görüntülenmektedir.
       </p>
+    </div>
+
+    <div class="action-bar">
+      <button mat-raised-button color="primary" (click)="openAddProductForm()">
+        <mat-icon>add</mat-icon> Yeni Ürün Ekle
+      </button>
     </div>
 
     <app-generic-table
       [service]="productService"
       [displayedColumns]="displayedColumns"
-      [editableColumns]="editableColumns"
       [filterableColumns]="filterableColumns"
       [relationOptions]="relationOptions"
       [nestedDisplayColumns]="nestedDisplayColumns"
       [title]="'Ürünler'"
-      (rowCreated)="onProductCreated($event)"
-      (rowUpdated)="onProductUpdated($event)"
+      [showRowNumbers]="true"
       (rowDeleted)="onProductDeleted($event)"
       (rowClick)="onProductRowClick($event)">
     </app-generic-table>

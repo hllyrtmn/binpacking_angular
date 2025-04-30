@@ -71,10 +71,16 @@
         line-height: 1.5;
       }
     }
+
+    .action-bar {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 16px;
+    }
   }
 }
 
-// Snackbar Stilleri (styles.scss'e de eklenebilir)
+// Snackbar Stilleri
 ::ng-deep .success-snackbar {
   background-color: #4caf50;
   color: white;

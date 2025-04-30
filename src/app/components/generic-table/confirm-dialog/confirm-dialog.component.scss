@@ -1,0 +1,88 @@
+:host {
+  display: block;
+  width: 100%;
+  max-width: 450px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+h2.mat-dialog-title {
+  margin: 0;
+  padding: 20px 24px;
+  background-color: #f5f5f5;
+  color: #333;
+  font-weight: 500;
+  font-size: 18px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 18px;
+    background-color: #f44336;
+    margin-right: 12px;
+    border-radius: 2px;
+  }
+}
+
+mat-dialog-content {
+  padding: 24px 24px 8px;
+  color: rgba(0, 0, 0, 0.7);
+  font-size: 16px;
+  line-height: 1.5;
+
+  p {
+    margin: 0;
+  }
+}
+
+mat-dialog-actions {
+  padding: 8px 24px 24px;
+  margin-bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+
+  button {
+    min-width: 90px;
+    border-radius: 4px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+
+    &[mat-button] {
+      color: rgba(0, 0, 0, 0.6);
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.04);
+      }
+    }
+
+    &[color="warn"] {
+      background-color: #f44336;
+      color: white;
+
+      &:hover {
+        background-color: #e53935;
+        box-shadow: 0 2px 8px rgba(244, 67, 54, 0.4);
+        transform: translateY(-1px);
+      }
+    }
+  }
+}
+
+// Dialog genel animasyonları
+::ng-deep .mat-dialog-container {
+  padding: 0 !important;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15) !important;
+  transform: scale(1);
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.01);
+  }
+}

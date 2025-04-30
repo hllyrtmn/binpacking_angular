@@ -1,30 +1,38 @@
-
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { forkJoin } from 'rxjs';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { forkJoin, pipe } from 'rxjs';
 import { ProductService } from '../services/product.service';
 import { Product } from '../../../models/product.interface';
 import { ProductTypeService } from '../services/product-type.service';
 import { DimensionService } from '../services/dimension.service';
 import { WeightTypeService } from '../services/weight-type.service';
 import { GenericTableComponent } from "../../../components/generic-table/generic-table.component";
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-products',
   imports: [CommonModule,
     GenericTableComponent,
     MatSnackBarModule,
-    MatProgressSpinnerModule],
+    MatProgressSpinnerModule,
+    MatButtonModule,
+    MatIconModule,
+    MatDialogModule],
   templateUrl: './products.component.html',
   styleUrl: './products.component.scss'
 })
 export class ProductsComponent implements OnInit {
+
+  toastService = inject(ToastService)
   // API'den dönen verilerde product_type, dimension ve weight_type doğrudan
   // nesne olarak döndüğü için kolonları değişiyoruz
   displayedColumns: string[] = [
-    'id',
+    // 'id' kolonunu kaldırdık, sıra numarası kullanacağız
     'product_type.code',
     'product_type.type',
     'dimension.width',
@@ -35,19 +43,16 @@ export class ProductsComponent implements OnInit {
     'weight_type.pre'
   ];
 
-  // Düzenlenebilen alanlar - burada sadece ilişkili nesnelerin ID'si düzenlenebilir
-  editableColumns: string[] = [
-    'product_type',
-    'dimension',
-    'weight_type'
-  ];
-
   // Filtrelenebilen alanlar
   filterableColumns: string[] = [
     'product_type.code',
     'product_type.type',
     'dimension.width',
-    'dimension.height'
+    'dimension.height',
+    'dimension.depth',
+    'weight_type.std',
+    'weight_type.eco',
+    'weight_type.pre'
   ];
 
   // İlişkili drop-down seçenekleri
@@ -75,6 +80,7 @@ export class ProductsComponent implements OnInit {
   dimensionService = inject(DimensionService);
   weightTypeService = inject(WeightTypeService);
   snackBar = inject(MatSnackBar);
+  dialog = inject(MatDialog);
 
   // Loading durumu
   isLoading = false;
@@ -112,42 +118,32 @@ export class ProductsComponent implements OnInit {
     });
   }
 
-  // Ürün oluşturulduğunda
-  onProductCreated(product: Product): void {
-    console.log('Ürün oluşturuldu:', product);
-    this.snackBar.open('Ürün başarıyla oluşturuldu', 'Kapat', {
-      duration: 3000,
-      horizontalPosition: 'end',
-      verticalPosition: 'top',
-      panelClass: ['success-snackbar']
-    });
-  }
-
-  // Ürün güncellendiğinde
-  onProductUpdated(product: Product): void {
-    console.log('Ürün güncellendi:', product);
-    this.snackBar.open('Ürün başarıyla güncellendi', 'Kapat', {
-      duration: 3000,
-      horizontalPosition: 'end',
-      verticalPosition: 'top',
-      panelClass: ['success-snackbar']
+  // Yeni ürün ekleme formunu açma
+  openAddProductForm(): void {
+    // Dialog component oluşturulana kadar basit bir bildirim gösterelim
+    this.snackBar.open('Yeni ürün ekleme özelliği hazırlanıyor...', 'Tamam', {
+      duration: 3000
     });
   }
 
   // Ürün silindiğinde
   onProductDeleted(id: string): void {
     console.log('Ürün silindi, ID:', id);
-    this.snackBar.open('Ürün başarıyla silindi', 'Kapat', {
-      duration: 3000,
-      horizontalPosition: 'end',
-      verticalPosition: 'top',
-      panelClass: ['success-snackbar']
-    });
+    this.productService.delete(id).subscribe({ next: () => {
+      this.toastService.success('Başarıyla silindi.');
+      this.snackBar.open('Ürün başarıyla silindi', 'Kapat', {
+        duration: 3000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top',
+        panelClass: ['success-snackbar']
+      });
+    } })
+
   }
 
   // Ürün satırına tıklandığında
   onProductRowClick(product: Product): void {
     console.log('Seçilen ürün:', product);
-    // İhtiyaç duyulursa detay görüntüleme veya başka işlemler yapılabilir
+    // Burada ürün detay sayfasına gidilebilir veya düzenleme diyaloğu açılabilir
   }
 }

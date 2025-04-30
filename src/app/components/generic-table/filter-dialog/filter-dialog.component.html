@@ -1,0 +1,14 @@
+<h2 mat-dialog-title>{{ data.displayName }} için Filtre</h2>
+<mat-dialog-content>
+  <div class="filter-content">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Filtre Değeri</mat-label>
+      <input matInput [(ngModel)]="filterValue" placeholder="Arama değeri girin">
+    </mat-form-field>
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onClear()">Temizle</button>
+  <button mat-button (click)="onCancel()">İptal</button>
+  <button mat-raised-button color="primary" (click)="onApply()">Uygula</button>
+</mat-dialog-actions>
