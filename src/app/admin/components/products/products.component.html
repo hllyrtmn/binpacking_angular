@@ -21,12 +21,6 @@
       </p>
     </div>
 
-    <div class="action-bar">
-      <button mat-raised-button color="primary" (click)="openAddProductForm()">
-        <mat-icon>add</mat-icon> Yeni Ürün Ekle
-      </button>
-    </div>
-
     <app-generic-table
       [service]="productService"
       [displayedColumns]="displayedColumns"
@@ -36,7 +30,9 @@
       [title]="'Ürünler'"
       [showRowNumbers]="true"
       (rowDeleted)="onProductDeleted($event)"
-      (rowClick)="onProductRowClick($event)">
+      (rowClick)="onProductRowClick($event)"
+      (addClick)="openAddProductForm()"
+      (updateItem)="onUpdated($event)">
     </app-generic-table>
   </div>
 </div>

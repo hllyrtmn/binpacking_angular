@@ -27,8 +27,11 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatChipsModule } from '@angular/material/chips';
 import { GenericCrudService, Page } from '../../services/generic-crud.service';
-import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
 import { FilterDialogComponent } from './filter-dialog/filter-dialog.component';
+import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
+import {MatButtonToggleModule} from '@angular/material/button-toggle';
+import {AddOrUpdateDialogComponent} from './add-or-update-dialog/add-or-update-dialog-component'
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-generic-table',
@@ -48,6 +51,7 @@ import { FilterDialogComponent } from './filter-dialog/filter-dialog.component';
     MatProgressSpinnerModule,
     MatTooltipModule,
     MatChipsModule,
+    MatButtonToggleModule
   ],
   templateUrl: './generic-table.component.html',
   styleUrl: './generic-table.component.scss',
@@ -58,16 +62,21 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
   @Input() title: string = 'Items';
   @Input() filterableColumns: string[] = [];
   @Input() relationOptions: { [key: string]: any[] } = {};
+  @Input() columnDefinitions: { key: string, label: string, type?: string, required?: boolean }[] = [];
   @Input() nestedDisplayColumns: { [key: string]: string } = {}; // İç içe sütunlar için görünen başlıklar
   @Input() showRowNumbers: boolean = true; // Sıra numaralarını gösterme ayarı
+  @Input() showAddButton: boolean = false; // Ekleme butonu gösterme ayarı
 
   @Output() rowClick = new EventEmitter<T>();
   @Output() rowDeleted = new EventEmitter<any>();
+  @Output() addClick = new EventEmitter<void>(); // Yeni ekleme düğmesi tıklama olayı
+  @Output() updateItem = new EventEmitter<T>();
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
   private dialog = inject(MatDialog);
+  private toastService = inject(ToastService)
 
   dataSource = new MatTableDataSource<T>([]);
   filterValues: { [key: string]: string } = {}; // Aktif filtre değerlerinin izlenmesi
@@ -119,6 +128,12 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
   // Sıra numarası hesaplama metodu
   getRowNumber(index: number): number {
     return this.currentPage * this.pageSize + index + 1;
+  }
+
+  // Yeni ekleme düğmesi tıklama işleyicisi
+  onAddButtonClick(event: Event): void {
+    event.stopPropagation(); // Diğer olayların etkilenmesini engelle
+    this.addClick.emit(); // Olayı yukarı ilet
   }
 
   ngOnInit(): void {
@@ -296,6 +311,55 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
     this.rowClick.emit(row);
   }
 
+  openAddOrUpdateDialog(row?: T): void {
+    // Tabloda gösterilen sütunlara göre dinamik olarak görünür alanları belirle
+    let visibleFields: string[] | undefined;
+
+    if (row) {
+      // 1. Yöntem: Tabloda gösterilen sütunlar (displayedColumns) kullanarak
+      visibleFields = [...this.displayedColumns].filter(col => col !== 'actions');
+
+      // 2. Yöntem: Düzenleme için eğer bazı alanlar her zaman gösterilmesi gerekiyorsa
+      // Bu örnekte category.id gibi gösterilmeyen ama düzenlenebilir olması gereken alanlar eklenir
+      // const additionalFields = this.getAdditionalEditFields();
+      // if (additionalFields.length > 0) {
+        visibleFields = [...visibleFields];
+      // }
+    }
+    // Yeni ekleme durumunda tüm alanları göstermek için visibleFields undefined bırakılabilir
+    // veya belirli alanlar gösterilmek istenirse burada belirtilebilir
+
+    const dialogRef = this.dialog.open(AddOrUpdateDialogComponent, {
+      width: '500px',
+      data: {
+        row: row, // Düzenleme için mevcut satır verisi
+        columns: this.columnDefinitions, // Sütun tanımları
+        //options: this.getDialogOptions(), // Dropdown seçeneklerini dinamik olarak al
+        visibleFields: visibleFields // Dinamik olarak belirlenen alanlar
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        if (row) {
+          // Mevcut öğeyi güncelle
+          this.service.update((row as any).id,row).subscribe({next: () => {
+            this.updateItem.emit((result)) // Artık result zaten güncellenmiş nesne
+            this.toastService.success('Basari ile guncellendi','Guncellendi')
+            //TODO buraya load data demek gerekebilir.
+          },
+          error: (error) => {
+            this.toastService.error('Hata olustu','Guncellenemedi')
+            this.isLoading = false;
+          },});
+        } else {
+          // Yeni öğe ekle
+          this.addClick.emit(result);
+        }
+      }
+    });
+  }
+
   confirmDelete(id: any): void {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '350px',
@@ -315,9 +379,11 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
       next: () => {
         this.rowDeleted.emit(id);
         this.loadData();
+        this.toastService.success("Basari ile silindi","Silindi")
       },
       error: (error) => {
-        console.error('Error deleting item:', error);
+        this.toastService.success("Silinemedi","Hata")
+
         this.isLoading = false;
       },
     });

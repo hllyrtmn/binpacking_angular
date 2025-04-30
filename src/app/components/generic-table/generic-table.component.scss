@@ -210,6 +210,16 @@ table {
         background-color: rgba(244, 67, 54, 0.1);
       }
     }
+
+    &.mat-info {
+      .mat-icon {
+        color: #FFF3CD;
+      }
+
+      &:hover {
+        background-color: rgba(244, 67, 54, 0.1);
+      }
+    }
   }
 }
 

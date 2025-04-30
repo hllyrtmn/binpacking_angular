@@ -1,0 +1,30 @@
+.full-width {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.form-field {
+  margin-bottom: 8px;
+}
+
+.checkbox-field {
+  margin: 12px 0 24px;
+}
+
+.no-fields-message {
+  color: #f44336;
+  text-align: center;
+  padding: 16px;
+}
+
+mat-dialog-content {
+  min-height: 120px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+mat-dialog-actions {
+  margin-top: 16px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}

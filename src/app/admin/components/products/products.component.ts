@@ -32,7 +32,6 @@ export class ProductsComponent implements OnInit {
   // API'den dönen verilerde product_type, dimension ve weight_type doğrudan
   // nesne olarak döndüğü için kolonları değişiyoruz
   displayedColumns: string[] = [
-    // 'id' kolonunu kaldırdık, sıra numarası kullanacağız
     'product_type.code',
     'product_type.type',
     'dimension.width',
@@ -69,9 +68,9 @@ export class ProductsComponent implements OnInit {
     'dimension.width': 'Genişlik',
     'dimension.height': 'Yükseklik',
     'dimension.depth': 'Derinlik',
-    'weight_type.std': 'Standart Ağırlık',
-    'weight_type.eco': 'Ekonomik Ağırlık',
-    'weight_type.pre': 'Premium Ağırlık'
+    'weight_type.std': 'Std',
+    'weight_type.eco': 'Eco',
+    'weight_type.pre': 'Pre'
   };
 
   // Servis enjeksiyonları
@@ -128,17 +127,20 @@ export class ProductsComponent implements OnInit {
 
   // Ürün silindiğinde
   onProductDeleted(id: string): void {
-    console.log('Ürün silindi, ID:', id);
-    this.productService.delete(id).subscribe({ next: () => {
-      this.toastService.success('Başarıyla silindi.');
-      this.snackBar.open('Ürün başarıyla silindi', 'Kapat', {
-        duration: 3000,
-        horizontalPosition: 'end',
-        verticalPosition: 'top',
-        panelClass: ['success-snackbar']
-      });
-    } })
+    // this.productService.delete(id).subscribe({ next: () => {
+    //   this.toastService.success('Başarıyla silindi.');
+    //   this.snackBar.open('Ürün başarıyla silindi', 'Kapat', {
+    //     duration: 3000,
+    //     horizontalPosition: 'end',
+    //     verticalPosition: 'top',
+    //     panelClass: ['success-snackbar']
+    //   });
+    // } })
 
+  }
+
+  onUpdated(product:Product):void{
+    console.log(product)
   }
 
   // Ürün satırına tıklandığında

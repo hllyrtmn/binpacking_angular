@@ -37,9 +37,15 @@
   <!-- Table -->
   <table mat-table [dataSource]="dataSource" matSort matSortDisableClear>
 
-    <!-- Row Number Column (Daraltılmış) -->
     <ng-container matColumnDef="rowNumber">
-      <th mat-header-cell *matHeaderCellDef>{{ getColumnDisplayName('rowNumber') }}</th>
+      <th mat-header-cell *matHeaderCellDef class="text-center">
+        <button
+          mat-icon-button
+          (click)="onAddButtonClick($event)"
+          matTooltip="Yeni Ekle">
+          <mat-icon>add_circle</mat-icon>
+        </button>
+      </th>
       <td mat-cell *matCellDef="let row; let i = index" class="row-number-cell">
         {{ getRowNumber(i) }}
       </td>
@@ -74,10 +80,14 @@
       <th mat-header-cell *matHeaderCellDef>İşlemler</th>
       <td mat-cell *matCellDef="let row">
         <div class="action-buttons">
-          <button mat-icon-button color="warn" (click)="confirmDelete(row.id); $event.stopPropagation();" matTooltip="Sil">
+          <button class="btn" mat-icon-button color="warn" (click)="confirmDelete(row.id); $event.stopPropagation();" matTooltip="Sil">
             <mat-icon>delete</mat-icon>
           </button>
+          <button class="btn" mat-icon-button  (click)="openAddOrUpdateDialog(row); $event.stopPropagation();" matTooltip="Güncelle">
+            <mat-icon>update</mat-icon>
+          </button>
         </div>
+
       </td>
     </ng-container>
 
