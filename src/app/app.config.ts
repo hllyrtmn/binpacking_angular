@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideZoneChangeDetection, inject, provideAppInitializer, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection, inject, provideAppInitializer, importProvidersFrom, APP_INITIALIZER } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { ErrorHandler } from '@angular/core';
 
@@ -12,15 +12,22 @@ import { AuthInterceptor } from './auth/interceptors/auth.interceptor';
 import { GlobalErrorHandler } from './services/global-error-handler';
 import { loadingInterceptor } from './components/loading/loading.interceptor';
 import { ToastrModule } from 'ngx-toastr';
+import { PermissionService } from './services/permission.service';
 
 export function appConfigInit() {
   const configService = inject(ConfigService);
   return configService.load();
 }
 
+export function appPermissionInit() {
+  const permissionService = inject(PermissionService);
+  return permissionService.loadPermissions();
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAppInitializer(appConfigInit),
+    provideAppInitializer(appPermissionInit),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes, withComponentInputBinding()),
     provideAnimationsAsync(),
