@@ -6,9 +6,14 @@ import { ConfigService } from './config.service';
 })
 export class ApiService {
 
-  constructor() { }
+  constructor(private configService: ConfigService) { }
 
   getApiUrl() {
+    // Check if settings are loaded before trying to access them
+    if (!ConfigService.settings || !ConfigService.settings.apiServer) {
+      console.warn('API Server configuration is not loaded yet');
+      return ''; // Return an empty string or a default URL
+    }
     return ConfigService.settings.apiServer.url;
   }
 }

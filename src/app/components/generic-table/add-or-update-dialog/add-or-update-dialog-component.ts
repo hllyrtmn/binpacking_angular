@@ -70,10 +70,41 @@ export class AddOrUpdateDialogComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Data kontrolü - data objesi ve columns array'i kontrol edilir
+    if (!this.data || !this.data.columns || this.data.columns.length === 0) {
+      console.error('Dialog data eksik veya geçersiz. Sütun tanımları gerekli!', this.data);
+      // En az bir varsayılan alan ekle ki form boş kalmasın
+      this.data = this.data || {};
+      this.data.columns = this.data.columns || [
+        { key: 'defaultField', label: 'Varsayılan Alan', type: 'text', required: false }
+      ];
+    }
+
     this.isEditMode = !!this.data.row;
     this.dialogTitle = this.isEditMode ? 'Kayıt Güncelle' : 'Yeni Kayıt Ekle';
     this.initializeFields();
+
+    // Fields kontrolü
+    if (this.fields.length === 0) {
+      console.warn('Görüntülenecek alan bulunamadı. Varsayılan alan kullanılıyor.');
+      // En az bir varsayılan alan ekle
+      this.addDefaultField();
+    }
+
     this.buildForm();
+  }
+
+  /**
+   * Varsayılan alan ekler - hiç alan bulunamadığında
+   */
+  private addDefaultField(): void {
+    this.fields.push({
+      key: 'defaultField',
+      label: 'Değer',
+      type: 'text',
+      required: false,
+      path: ['defaultField']
+    });
   }
 
   /**
@@ -106,6 +137,9 @@ export class AddOrUpdateDialogComponent implements OnInit {
                        this.isFieldVisible(col.key))
         .map(col => this.prepareField(col));
     }
+
+    // Debug için alanları konsola yazdır
+    console.log('Oluşturulan alanlar:', this.fields);
   }
 
   /**
@@ -114,6 +148,13 @@ export class AddOrUpdateDialogComponent implements OnInit {
   private createFieldFromPath(path: string, obj: any): FieldDefinition {
     const pathParts = path.split('.');
     let value = this.getValueByPath(obj, pathParts);
+
+    // Sütun tanımlarında bu alana ait bir tanım varsa, onu kullan
+    const columnDef = this.data.columns?.find(col => col.key === path);
+
+    if (columnDef) {
+      return this.prepareField(columnDef);
+    }
 
     return {
       key: path,
@@ -140,6 +181,11 @@ export class AddOrUpdateDialogComponent implements OnInit {
     // Etiket yoksa, oluştur
     if (!field.label) {
       field.label = this.formatLabel(field.path[field.path.length - 1]);
+    }
+
+    // Tip yoksa, 'text' olarak varsay
+    if (!field.type) {
+      field.type = 'text';
     }
 
     return field;
@@ -238,7 +284,8 @@ export class AddOrUpdateDialogComponent implements OnInit {
   private formatLabel(key: string): string {
     return key
       .replace(/([A-Z])/g, ' $1')
-      .replace(/^./, str => str.toUpperCase());
+      .replace(/^./, str => str.toUpperCase())
+      .replace(/_/g, ' '); // Alt çizgileri boşluklara dönüştür
   }
 
   /**
@@ -264,6 +311,15 @@ export class AddOrUpdateDialogComponent implements OnInit {
 
       if (this.isEditMode && field.path) {
         initialValue = this.getValueByPath(this.data.row, field.path);
+      }
+
+      // Alanın tipine göre uygun varsayılan değeri ayarla
+      if (initialValue === undefined || initialValue === null) {
+        if (field.type === 'number') initialValue = 0;
+        else if (field.type === 'checkbox') initialValue = false;
+        else if (field.type === 'date') initialValue = null;
+        else if (field.type === 'select') initialValue = '';
+        else initialValue = ''; // text ve diğerleri
       }
 
       formConfig[field.key] = [
@@ -300,7 +356,6 @@ export class AddOrUpdateDialogComponent implements OnInit {
         if (field.path && field.path.length > 0) {
           const value = formValues[field.key];
           this.setValueByPath(result, field.path, value);
-
         }
       }
       this.dialogRef.close(result);

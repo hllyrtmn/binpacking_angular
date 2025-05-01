@@ -16,7 +16,7 @@ export class PermissionService {
   constructor(private apiService: ApiService, private http: HttpClient) { }
 
   loadPermissions() {
-    const url = `${this.apiService.getApiUrl()}api/permissions/user_permissions/current_user/`
+    const url = `${this.apiService.getApiUrl()}/permissions/user_permissions/current_user/`
     return new Promise<void>((resolve, reject) => {
       firstValueFrom(this.http.get<any>(url)).then((response:any) => {
         this.userPermissions = response;
@@ -27,7 +27,7 @@ export class PermissionService {
     })
   }
 
-    
+
   hasPermission(requiredPermission: IRequiredPermission[]): boolean {
     if(requiredPermission.length > this.userPermissions.length) return false;
     let isApproved: boolean = true;

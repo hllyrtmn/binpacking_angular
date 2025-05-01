@@ -7,7 +7,7 @@ import {
   Validators,
   ValidatorFn,
   AbstractControl,
-  ValidationErrors
+  ValidationErrors,
 } from '@angular/forms';
 import { MatStepperIntl, MatStepperModule } from '@angular/material/stepper';
 import { MatButtonModule } from '@angular/material/button';
@@ -46,7 +46,7 @@ import { OrderDetailAddDialogComponent } from './order-detail-add-dialog/order-d
     MatSnackBarModule,
     MatProgressSpinnerModule,
     MatIconModule,
-    MatDialogModule
+    MatDialogModule,
   ],
   templateUrl: './invoice-upload.component.html',
   styleUrl: './invoice-upload.component.scss',
@@ -57,9 +57,9 @@ export class InvoiceUploadComponent implements OnInit {
   private _formBuilder = inject(FormBuilder);
   private repositoryService = inject(RepositoryService);
   private toastService = inject(ToastService);
-  orderDetailService = inject(OrderDetailService)
-  orderService = inject(OrderService)
-  dialog = inject(MatDialog)
+  orderDetailService = inject(OrderDetailService);
+  orderService = inject(OrderService);
+  dialog = inject(MatDialog);
 
   uploadForm: FormGroup;
   file: File | null = null;
@@ -73,7 +73,7 @@ export class InvoiceUploadComponent implements OnInit {
     'product.product_type.code',
     'product.dimension.width',
     'product.dimension.depth',
-    'count'
+    'count',
   ];
 
   filterableColumns: string[] = [
@@ -81,7 +81,7 @@ export class InvoiceUploadComponent implements OnInit {
     'product.product_type.code',
     'product.dimension.width',
     'product.dimension.depth',
-    'count'
+    'count',
   ];
 
   nestedDisplayColumns: { [key: string]: string } = {
@@ -89,7 +89,7 @@ export class InvoiceUploadComponent implements OnInit {
     'product.product_type.code': 'Ürün Kodu',
     'product.dimension.width': 'Genişlik',
     'product.dimension.depth': 'Derinlik',
-    'count' : 'Adet'
+    count: 'Adet',
   };
 
   constructor() {
@@ -98,10 +98,9 @@ export class InvoiceUploadComponent implements OnInit {
       //TODO buraya validator gelecek customfilevalidator
       // dosya tipi kontrol edilecek
     });
-
   }
 
-  ngOnInit(): void { }
+  ngOnInit(): void {}
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -164,7 +163,9 @@ export class InvoiceUploadComponent implements OnInit {
             })
           )
         ),
-        switchMap(() => this.repositoryService.orderDetails(this.order.id?.toString() || ''))
+        switchMap(() =>
+          this.repositoryService.orderDetails(this.order.id?.toString() || '')
+        )
       )
       .subscribe({
         next: (response) => {
@@ -175,7 +176,7 @@ export class InvoiceUploadComponent implements OnInit {
         error: (error) => {
           this.isLoading = false;
           this.toastService.error('Dosya işlenirken bir hata oluştu.');
-        }
+        },
       });
   }
 
@@ -203,7 +204,7 @@ export class InvoiceUploadComponent implements OnInit {
         },
         error: (error) => {
           this.toastService.error('Sipariş oluşturulurken bir hata oluştu.');
-        }
+        },
       });
     } else {
       // Zaten bir order_id var, doğrudan dialog açılabilir
@@ -214,7 +215,7 @@ export class InvoiceUploadComponent implements OnInit {
   openOrderDetailDialog(order: Order): void {
     const dialogRef = this.dialog.open(OrderDetailAddDialogComponent, {
       width: '600px',
-      data: order
+      data: order,
     });
 
     dialogRef.afterClosed().subscribe({
@@ -229,8 +230,10 @@ export class InvoiceUploadComponent implements OnInit {
             },
             error: (error) => {
               console.error('Sipariş detayı eklenirken hata:', error);
-              this.toastService.error('Sipariş detayı eklenirken bir hata oluştu.');
-            }
+              this.toastService.error(
+                'Sipariş detayı eklenirken bir hata oluştu.'
+              );
+            },
           });
         }
       },
@@ -239,7 +242,7 @@ export class InvoiceUploadComponent implements OnInit {
       },
       complete: () => {
         console.log('Dialog kapatma işlemi tamamlandı.');
-      }
+      },
     });
   }
 
@@ -249,9 +252,10 @@ export class InvoiceUploadComponent implements OnInit {
   }
 }
 
-export function FileValidator(): (control: AbstractControl) => ValidationErrors | null {
+export function FileValidator(): (
+  control: AbstractControl
+) => ValidationErrors | null {
   return (control: AbstractControl): ValidationErrors | null => {
-
     const validTypes = [
       'application/pdf',
       'application/vnd.ms-excel',
@@ -270,5 +274,5 @@ export function FileValidator(): (control: AbstractControl) => ValidationErrors 
       return null; // No file selected
     }
     return null; // Validation passed
-  }
+  };
 }

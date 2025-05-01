@@ -25,9 +25,19 @@ const NAV_LIST_ITEM: INavListItem[] = [
     icon: 'group'
   },
   {
-    title: 'Islemler',
+    title: 'İşlemler',
     icon: 'home',
     children: [
+      {
+        routerLink: ['/admin/orders'],
+        title: 'Sipariş Yönetimi',
+        icon: 'assignment'
+      },
+      {
+        routerLink: ['/admin/products'],
+        title: 'Ürün Yönetimi',
+        icon: 'inventory'
+      },
       {
         routerLink: ['/admin/employees'],
         title: 'Warehouses',
@@ -37,16 +47,6 @@ const NAV_LIST_ITEM: INavListItem[] = [
         routerLink: ['/admin/logistics'],
         title: 'Shelf',
         icon: 'home'
-      },
-      {
-        routerLink: ['/admin/orders'],
-        title: 'Products',
-        icon: 'home'
-      },
-      {
-        routerLink: ['/admin/products'],
-        title: 'Inventory',
-        icon: 'inventory'
       },
     ]
   },

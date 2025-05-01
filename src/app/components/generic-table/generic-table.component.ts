@@ -31,7 +31,7 @@ import { GenericCrudService, Page } from '../../services/generic-crud.service';
 import { FilterDialogComponent } from './filter-dialog/filter-dialog.component';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { AddOrUpdateDialogComponent } from './add-or-update-dialog/add-or-update-dialog-component'
+import { AddOrUpdateDialogComponent } from './add-or-update-dialog/add-or-update-dialog-component';
 import { ToastService } from '../../services/toast.service';
 
 @Component({
@@ -52,7 +52,7 @@ import { ToastService } from '../../services/toast.service';
     MatProgressSpinnerModule,
     MatTooltipModule,
     MatChipsModule,
-    MatButtonToggleModule
+    MatButtonToggleModule,
   ],
   templateUrl: './generic-table.component.html',
   styleUrl: './generic-table.component.scss',
@@ -63,10 +63,15 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
   @Input() title: string = 'Items';
   @Input() filterableColumns: string[] = [];
   @Input() relationOptions: { [key: string]: any[] } = {};
-  @Input() columnDefinitions: { key: string, label: string, type?: string, required?: boolean }[] = [];
+  @Input() columnDefinitions: {
+    key: string;
+    label: string;
+    type?: string;
+    required?: boolean;
+  }[] = [];
   @Input() nestedDisplayColumns: { [key: string]: string } = {}; // İç içe sütunlar için görünen başlıklar
   @Input() showRowNumbers: boolean = true; // Sıra numaralarını gösterme ayarı
-  @Input() showAddButton: boolean = false; // Ekleme butonu gösterme ayarı
+  @Input() showAddButton: boolean = true; // Ekleme butonu gösterme ayarı
 
   @Input() parentId: string | null = null; // Bağlı olduğu üst nesne ID'si
   @Input() useParentId: boolean = false; // Üst nesne ID kullanılacak mı belirteci
@@ -76,12 +81,13 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
   @Output() rowDeleted = new EventEmitter<any>();
   @Output() addClick = new EventEmitter<void>(); // Yeni ekleme düğmesi tıklama olayı
   @Output() updateItem = new EventEmitter<T>();
+  @Output() itemAdded = new EventEmitter<T>(); // Yeni öğe eklendiğinde tetiklenecek olay
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
   private dialog = inject(MatDialog);
-  private toastService = inject(ToastService)
+  private toastService = inject(ToastService);
 
   dataSource = new MatTableDataSource<T>([]);
   filterValues: { [key: string]: string } = {}; // Aktif filtre değerlerinin izlenmesi
@@ -138,7 +144,7 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
   // Yeni ekleme düğmesi tıklama işleyicisi
   onAddButtonClick(event: Event): void {
     event.stopPropagation(); // Diğer olayların etkilenmesini engelle
-    this.addClick.emit(); // Olayı yukarı ilet
+    this.openAddOrUpdateDialog(); // Dialog'u aç (row olmadan)
   }
 
   ngOnInit(): void {
@@ -170,7 +176,9 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
     if (
       (changes['parentId'] && this.useParentId) ||
       (changes['useParentId'] && this.useParentId) ||
-      (changes['parentIdFieldName'] && this.useParentId && this.parentId !== null)
+      (changes['parentIdFieldName'] &&
+        this.useParentId &&
+        this.parentId !== null)
     ) {
       // İlk sayfa için sayfalayıcıyı sıfırla
       this.currentPage = 0;
@@ -271,7 +279,10 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
 
     // Parent ID değeri boş ve useParentId aktif ise,
     // API çağrısı yapmadan tabloyu temizle ve uyarı göster
-    if (this.useParentId && (this.parentId === null || this.parentId === undefined)) {
+    if (
+      this.useParentId &&
+      (this.parentId === null || this.parentId === undefined)
+    ) {
       this.dataSource.data = [];
       this.totalItems = 0;
       this.isLoading = false;
@@ -322,15 +333,18 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
             this.totalItems = page.count;
           }, 0);
         } else {
-          this.toastService.error('API yanıtı beklenen formatta değil', 'Uyarı')
+          this.toastService.error(
+            'API yanıtı beklenen formatta değil',
+            'Uyarı'
+          );
           this.dataSource.data = [];
           this.totalItems = 0;
         }
-        this.toastService.success('Veri yüklendi',"Başarılı")
+        this.toastService.success('Veri yüklendi', 'Başarılı');
         this.isLoading = false;
       },
       error: (error) => {
-        this.toastService.error('Veri yüklenirken hata', 'Uyarı')
+        this.toastService.error('Veri yüklenirken hata', 'Uyarı');
         this.isLoading = false;
         this.dataSource.data = [];
         this.totalItems = 0;
@@ -348,50 +362,98 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
     this.rowClick.emit(row);
   }
 
+  // openAddOrUpdateDialog metodunda columnDefinitions dizisinin doğru gönderildiğinden emin olalım
   openAddOrUpdateDialog(row?: T): void {
     // Tabloda gösterilen sütunlara göre dinamik olarak görünür alanları belirle
     let visibleFields: string[] | undefined;
 
-    if (row) {
-      // 1. Yöntem: Tabloda gösterilen sütunlar (displayedColumns) kullanarak
-      visibleFields = [...this.displayedColumns].filter(col => col !== 'actions');
-
-      // 2. Yöntem: Düzenleme için eğer bazı alanlar her zaman gösterilmesi gerekiyorsa
-      // Bu örnekte category.id gibi gösterilmeyen ama düzenlenebilir olması gereken alanlar eklenir
-      // const additionalFields = this.getAdditionalEditFields();
-      // if (additionalFields.length > 0) {
-        visibleFields = [...visibleFields];
-      // }
+    if (this.displayedColumns.length === 0) {
+      console.error(
+        'Hata: displayedColumns boş! Lütfen tablo sütunlarını tanımlayın.'
+      );
+      return;
     }
-    // Yeni ekleme durumunda tüm alanları göstermek için visibleFields undefined bırakılabilir
-    // veya belirli alanlar gösterilmek istenirse burada belirtilebilir
+
+    // Görüntülenecek alanları ayarla
+    visibleFields = [...this.displayedColumns].filter(
+      (col) => col !== 'actions'
+    );
+
+    // Sütun tanımlarımız yoksa bir hata mesajı göster
+    if (!this.columnDefinitions || this.columnDefinitions.length === 0) {
+      console.error(
+        'Hata: columnDefinitions boş! Diyalog için sütun tanımları gerekli.'
+      );
+
+      // Basit sütun tanımları oluştur
+      this.columnDefinitions = this.displayedColumns
+        .filter((col) => col !== 'actions' && col !== 'rowNumber')
+        .map((col) => ({
+          key: col,
+          label: this.getColumnDisplayName(col),
+          type: 'text',
+          required: true,
+        }));
+    }
+
+    // Debug için bilgileri konsola yaz
+    console.log('Dialog açılıyor. Sütun tanımları:', this.columnDefinitions);
+    console.log('Görünür alanlar:', visibleFields);
 
     const dialogRef = this.dialog.open(AddOrUpdateDialogComponent, {
       width: '500px',
       data: {
-        row: row, // Düzenleme için mevcut satır verisi
+        row: row, // Düzenleme için mevcut satır verisi (eğer yeni ekleme ise undefined)
         columns: this.columnDefinitions, // Sütun tanımları
         //options: this.getDialogOptions(), // Dropdown seçeneklerini dinamik olarak al
-        visibleFields: visibleFields // Dinamik olarak belirlenen alanlar
-      }
+        visibleFields: visibleFields, // Dinamik olarak belirlenen alanlar
+      },
     });
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
         if (row) {
           // Mevcut öğeyi güncelle
-          this.service.update((row as any).id,row).subscribe({next: () => {
-            this.updateItem.emit((result)) // Artık result zaten güncellenmiş nesne
-            this.toastService.success('Başarı ile güncellendi','Güncellendi')
-            //TODO buraya load data demek gerekebilir.
-          },
-          error: (error) => {
-            this.toastService.error('Hata oluştu','Güncellenemedi')
-            this.isLoading = false;
-          },});
+          this.isLoading = true;
+          this.service.update((row as any).id, result).subscribe({
+            next: (updatedItem) => {
+              this.updateItem.emit(updatedItem); // Güncellenmiş nesneyi bildir
+              this.toastService.success(
+                'Başarı ile güncellendi',
+                'Güncellendi'
+              );
+              this.loadData(); // Tabloyu yenile
+              this.isLoading = false;
+            },
+            error: (error) => {
+              console.error('Güncelleme hatası:', error);
+              this.toastService.error('Hata oluştu', 'Güncellenemedi');
+              this.isLoading = false;
+            },
+          });
         } else {
           // Yeni öğe ekle
-          this.addClick.emit(result);
+          this.isLoading = true;
+
+          // Parent ID parametresi kullanılıyorsa, yeni ekleme için de dahil et
+          if (this.useParentId && this.parentId) {
+            result[this.parentIdFieldName] = this.parentId;
+          }
+
+          this.service.create(result).subscribe({
+            next: (createdItem) => {
+              this.itemAdded.emit(createdItem); // Yeni eklenen öğeyi bildir
+              this.toastService.success('Başarı ile eklendi', 'Eklendi');
+              this.loadData(); // Tabloyu yenile
+              this.isLoading = false;
+            },
+            error: (error) => {
+              console.log("ekleme verisi",result);
+              console.error('Ekleme hatası:', error);
+              this.toastService.error('Hata oluştu', 'Eklenemedi');
+              this.isLoading = false;
+            },
+          });
         }
       }
     });
@@ -416,10 +478,10 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
       next: () => {
         this.rowDeleted.emit(id);
         this.loadData();
-        this.toastService.success("Başari ile silindi","Silindi")
+        this.toastService.success('Başari ile silindi', 'Silindi');
       },
       error: (error) => {
-        this.toastService.success("Silinemedi","Hata")
+        this.toastService.success('Silinemedi', 'Hata');
 
         this.isLoading = false;
       },

@@ -14,20 +14,19 @@ import { loadingInterceptor } from './components/loading/loading.interceptor';
 import { ToastrModule } from 'ngx-toastr';
 import { PermissionService } from './services/permission.service';
 
-export function appConfigInit() {
+export function appInitialization() {
   const configService = inject(ConfigService);
-  return configService.load();
-}
-
-export function appPermissionInit() {
   const permissionService = inject(PermissionService);
-  return permissionService.loadPermissions();
+
+  // Directly return the promise chain
+  return configService.load().then(() => {
+    return permissionService.loadPermissions();
+  });
 }
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideAppInitializer(appConfigInit),
-    provideAppInitializer(appPermissionInit),
+    provideAppInitializer(appInitialization),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes, withComponentInputBinding()),
     provideAnimationsAsync(),
