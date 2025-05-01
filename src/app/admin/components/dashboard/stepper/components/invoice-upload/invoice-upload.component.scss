@@ -1,4 +1,299 @@
-input[type="file"] {
-  display: none;
+/* İhracat Sipariş Bildirimi Form Styles */
+
+.isb-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  height: 100%;
+  overflow-y: auto;
 }
 
+.isb-header {
+  margin-bottom: 24px;
+  text-align: center;
+
+  h2 {
+    margin-bottom: 16px;
+    color: #006A6A;
+    font-weight: 500;
+  }
+}
+
+.isb-card {
+  margin-bottom: 24px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px;
+  text-align: center;
+
+  .info-icon {
+    font-size: 48px;
+    height: 48px;
+    width: 48px;
+    color: #006A6A;
+    margin-bottom: 16px;
+  }
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0;
+  width: 100%;
+  max-width: 400px;
+}
+
+.divider-text {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.54);
+  margin: 8px 0;
+}
+
+.file-select-button {
+  width: 100%;
+}
+
+.upload-button {
+  margin-top: 16px;
+}
+
+/* Loading Container */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  margin: 32px 0;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+}
+
+/* Details Container */
+.details-container {
+  margin-bottom: 24px;
+}
+
+/* Table Header Container - Yeni Tasarım */
+.table-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.table-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  span {
+    font-size: 16px;
+    font-weight: 500;
+    color: #006A6A;
+  }
+
+  .items-counter {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.6);
+    font-weight: normal;
+  }
+}
+
+.action-button {
+  background-color: #006A6A;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+
+  &:hover:not([disabled]) {
+    background-color: #004A4A;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+  }
+
+  &[disabled] {
+    background-color: rgba(0, 106, 106, 0.5);
+    color: rgba(255, 255, 255, 0.7);
+    box-shadow: none;
+  }
+}
+
+.navigation-buttons {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 24px;
+}
+
+/* Tema renkleri - CSS'inizdeki stillere uygun */
+.primary-button {
+  background-color: #006A6A;
+  color: white;
+}
+
+.primary-button[disabled] {
+  background-color: rgba(0, 106, 106, 0.5);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.accent-button {
+  background-color: #D6BB86;
+  color: white;
+}
+
+.accent-button[disabled] {
+  background-color: rgba(214, 187, 134, 0.5);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.small-icon-button {
+  margin: 0;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  background-color: #006A6A;
+  color: white;
+
+  &[disabled] {
+    background-color: rgba(0, 106, 106, 0.5);
+    color: rgba(255, 255, 255, 0.7);
+  }
+}
+
+.small-icon-button .mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+}
+
+.icon-display {
+  transform: scale(0.8);
+}
+
+/* Palet özeti ve altbilgi - CSS'inizden alındı */
+.pallet-footer {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-top: 1px solid #e0e0e0;
+  border-radius: 0 0 4px 4px;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pallet-summary {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  .mat-icon {
+    color: #006A6A;
+  }
+}
+
+/* Paket bilgi alanı - CSS'inizden alındı */
+.package-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background-color: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.package-info p {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.87);
+  white-space: nowrap;
+}
+
+.package-info p .mat-icon {
+  margin-right: 5px;
+  color: #006A6A;
+  transform: scale(0.8);
+}
+
+/* Kaydırma çubukları - CSS'inizden alındı */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 5px;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #006A6A, #004A4A);
+  border-radius: 5px;
+  border: 1px solid #004040;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #004A4A, #003030);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(to bottom, #003030, #002020);
+}
+
+/* Firefox için scrollbar stilleri */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #006A6A #f0f0f0;
+}
+
+/* Responsive ayarlamalar */
+@media (min-width: 768px) {
+  .action-buttons {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .divider-text {
+    margin: 0 16px;
+  }
+
+  .file-select-button {
+    width: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .package-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+}

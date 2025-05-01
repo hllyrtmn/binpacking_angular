@@ -82,7 +82,6 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
   @Output() addClick = new EventEmitter<void>(); // Yeni ekleme düğmesi tıklama olayı
   @Output() updateItem = new EventEmitter<T>();
   @Output() itemAdded = new EventEmitter<T>(); // Yeni öğe eklendiğinde tetiklenecek olay
-
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
@@ -448,7 +447,7 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
               this.isLoading = false;
             },
             error: (error) => {
-              console.log("ekleme verisi",result);
+              console.log('ekleme verisi', result);
               console.error('Ekleme hatası:', error);
               this.toastService.error('Hata oluştu', 'Eklenemedi');
               this.isLoading = false;
