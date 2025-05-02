@@ -79,6 +79,7 @@ export class InvoiceUploadComponent implements OnInit {
   dataRefreshInProgress = false;
 
   displayedColumns: string[] = [
+    'prodcut.name',
     'product.product_type.type',
     'product.product_type.code',
     'product.dimension.width',
@@ -88,6 +89,7 @@ export class InvoiceUploadComponent implements OnInit {
   ];
 
   filterableColumns: string[] = [
+    'product.name',
     'product.product_type.type',
     'product.product_type.code',
     'product.dimension.width',
@@ -101,8 +103,10 @@ export class InvoiceUploadComponent implements OnInit {
     'product.product_type.code': 'Ürün Kodu',
     'product.dimension.width': 'Genişlik',
     'product.dimension.depth': 'Derinlik',
+    'product.name': 'Ürün Adı',
     count: 'Adet',
     weight: 'Ağırlık'
+
   };
 
   constructor() {

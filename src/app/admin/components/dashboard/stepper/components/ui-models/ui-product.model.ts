@@ -45,12 +45,7 @@ export class UiProduct implements IUiProduct {
   id: string;
 
   constructor(init: Partial<IUiProduct>) {
-    this.name =
-      init.dimension?.depth != null && init.dimension?.width != null
-        ? `${Math.trunc(init.dimension.depth)} X ${Math.trunc(
-          init.dimension.width
-        )}`
-        : 'Unnamed Product';
+    this.name = init.name!;
     this.count = init.count!;
     this.id = init.id!;
     this.product_type = init.product_type!;

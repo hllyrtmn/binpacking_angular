@@ -5,7 +5,7 @@ import { IUiPackage } from "../../interfaces/ui-interfaces/ui-package.interface"
 import { IUiPallet } from "../../interfaces/ui-interfaces/ui-pallet.interface";
 import { IUiProduct } from "../../interfaces/ui-interfaces/ui-product.interface";
 
-export class UiPackage implements IUiPackage{
+export class UiPackage implements IUiPackage {
   pallet: IUiPallet | null;
   products: IUiProduct[];
   // addProduct(product: IUiProduct): void {
@@ -24,6 +24,8 @@ export class UiPackage implements IUiPackage{
   company?: Company | undefined;
   id: string;
 
+  // TODO: buradaki methodlar observable veya signala donusturulmeli
+  // veya cache mantigi kullanilmali performance artirmak icin
   get totalMeter(): number {
     return this.products?.reduce((sum, product) => {
       return sum + (Math.floor(product.count * Math.floor(product.dimension.depth)) / 1000);

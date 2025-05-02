@@ -136,21 +136,7 @@ export class OrderDetailAddDialogComponent implements OnInit {
   }
 
   displayProductFn(product: any): string {
-    return product ? this.getProductDisplayName(product) : '';
-  }
-
-  getProductDisplayName(product: any): string {
-    // Customize how products are displayed here
-    if (!product) return '';
-
-    const type = product.product_type?.type || '';
-    const code = product.product_type?.code || '';
-
-    const dimensions = product.dimension
-      ? `${product.dimension.width}x${product.dimension.height}x${product.dimension.depth} ${product.dimension.unit}`
-      : '';
-
-    return `${code}-${type} ${dimensions}`;
+    return product ? product.name : '';
   }
 
   selectProduct(product: Product): void {
@@ -159,7 +145,7 @@ export class OrderDetailAddDialogComponent implements OnInit {
       product: product,
       unit_price: 1.00 // Default value or value from product
     });
-    console.log('Selected product:', product);
+    console.log('Selected product:', product.name);
     console.log('Updated form:', this.orderDetailForm.value);
   }
 

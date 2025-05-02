@@ -34,6 +34,7 @@ export class ProductsComponent implements OnInit {
   // API'den dönen verilerde product_type, dimension ve weight_type doğrudan
   // nesne olarak döndüğü için kolonları değişiyoruz
   displayedColumns: string[] = [
+    'name',
     'product_type.code',
     'product_type.type',
     'dimension.width',
@@ -46,6 +47,7 @@ export class ProductsComponent implements OnInit {
 
   // Filtrelenebilen alanlar
   filterableColumns: string[] = [
+    'name',
     'product_type.code',
     'product_type.type',
     'dimension.width',
@@ -58,6 +60,7 @@ export class ProductsComponent implements OnInit {
 
   // İlişkili nesne sütunları için özel görüntüleme ayarları
   nestedDisplayColumns: { [key: string]: string } = {
+    'name': 'Ürün Adı',
     'product_type.code': 'Ürün Kodu',
     'product_type.type': 'Ürün Tipi',
     'dimension.width': 'Genişlik',
