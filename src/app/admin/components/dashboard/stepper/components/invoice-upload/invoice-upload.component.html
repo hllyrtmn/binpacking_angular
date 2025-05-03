@@ -20,13 +20,15 @@
 
           <div class="divider-text">ya da</div>
 
-          <button mat-raised-button class="primary-button file-select-button" (click)="fileInput.click()" [disabled]="excelUpload">
+          <button mat-raised-button class="primary-button file-select-button" (click)="fileInput.click()"
+            [disabled]="excelUpload">
             <mat-icon>cloud_upload</mat-icon> {{ file?.name || "Dosya Seç" }}
           </button>
           <input (change)="onFileSelected($event)" #fileInput type="file" accept=".pdf,.xls,.xlsx" hidden />
         </div>
 
-        <button *ngIf="file" mat-flat-button class="accent-button upload-button" [disabled]="!file || excelUpload" (click)="uploadFile()">
+        <button *ngIf="file" mat-flat-button class="accent-button upload-button" [disabled]="!file || excelUpload"
+          (click)="uploadFile()">
           <mat-icon>upload_file</mat-icon> İçeri Aktar
         </button>
       </div>
@@ -52,35 +54,12 @@
     </div>
 
     <mat-card>
-      <mat-card-header>
-        <mat-card-title>
-          <div class="table-header-container">
-            <div class="table-title">
-              <span>Sipariş Detayı</span>
-              <span class="items-counter" *ngIf="orderDetails && orderDetails.length > 0">({{orderDetails.length}} Kalem)</span>
-            </div>
-            <button mat-mini-fab class="action-button" (click)="addOrderDetail()"
-              matTooltip="Yeni Detay Ekle" [disabled]="manualAdd">
-              <mat-icon>add</mat-icon>
-            </button>
-          </div>
-        </mat-card-title>
-      </mat-card-header>
 
       <mat-card-content>
-        <app-generic-table
-          [service]="orderDetailService"
-          [displayedColumns]="displayedColumns"
-          [filterableColumns]="filterableColumns"
-          [nestedDisplayColumns]="nestedDisplayColumns"
-          [parentId]="order.id"
-          [useParentId]="true"
-          [parentIdFieldName]="'order_id'"
-          [title]="''"
-          [showRowNumbers]="true"
-          [showAddButton]="false"
-          (addClick)="addOrderDetail()"
-          (updateItem)="onTableUpdate($event)">
+        <app-generic-table [service]="orderDetailService" [displayedColumns]="displayedColumns"
+          [filterableColumns]="filterableColumns" [nestedDisplayColumns]="nestedDisplayColumns" [parentId]="order.id"
+          [useParentId]="true" [parentIdFieldName]="'order_id'" [title]="''" [showRowNumbers]="true"
+          (addClick)="addOrderDetail()" (updateItem)="onTableUpdate($event)">
         </app-generic-table>
       </mat-card-content>
 

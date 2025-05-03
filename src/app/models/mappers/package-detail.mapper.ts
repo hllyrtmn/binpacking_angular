@@ -2,7 +2,7 @@ import { UiPackage } from '../../admin/components/dashboard/stepper/components/u
 import { UiPallet } from '../../admin/components/dashboard/stepper/components/ui-models/ui-pallet.model';
 import { UiProduct } from '../../admin/components/dashboard/stepper/components/ui-models/ui-product.model';
 import { PackageDetail } from '../package-detail.interface';
-import { v4 as Guid} from 'uuid';
+import { v4 as Guid } from 'uuid';
 import { Pallet } from '../pallet.interface';
 
 export function mapPackageDetailToPackage(packageDetailList: PackageDetail[]): UiPackage[] {
@@ -66,6 +66,7 @@ export function mapPackageToPackageDetail(uiPackageList: UiPackage[]): PackageDe
         },
         product: {
           id: uiProduct.id,
+          name: uiProduct.name,
           product_type: uiProduct.product_type,
           dimension: uiProduct.dimension,
           weight_type: uiProduct.weight_type,

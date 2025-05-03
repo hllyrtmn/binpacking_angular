@@ -36,7 +36,7 @@ export class UiProduct implements IUiProduct {
     return [firstProduct, secondProduct];
   }
 
-  name: string;
+  name?: string;
   count: number;
   product_type: ProductType;
   dimension: Dimension;

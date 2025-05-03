@@ -72,6 +72,7 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
   @Input() nestedDisplayColumns: { [key: string]: string } = {}; // İç içe sütunlar için görünen başlıklar
   @Input() showRowNumbers: boolean = true; // Sıra numaralarını gösterme ayarı
   @Input() showAddButton: boolean = true; // Ekleme butonu gösterme ayarı
+  @Input() excludeFields: string[] = [];
 
   @Input() parentId: string | null = null; // Bağlı olduğu üst nesne ID'si
   @Input() useParentId: boolean = false; // Üst nesne ID kullanılacak mı belirteci
@@ -140,10 +141,20 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
     return this.currentPage * this.pageSize + index + 1;
   }
 
-  // Yeni ekleme düğmesi tıklama işleyicisi
+  /**
+   * Handles the click event for the add button.
+   * If the parent component has subscribed to the `addClick` output, it emits the event.
+   * Otherwise, it executes the default behavior (opening the add/update dialog).
+   * @param event The click event object
+   */
   onAddButtonClick(event: Event): void {
-    event.stopPropagation(); // Diğer olayların etkilenmesini engelle
-    this.openAddOrUpdateDialog(); // Dialog'u aç (row olmadan)
+    event.stopPropagation(); // Prevent event bubbling
+
+    if (this.addClick.observed) {
+      this.addClick.emit(); // Let the parent component handle the add action
+    } else {
+      this.openAddOrUpdateDialog(); // Default action: open dialog to add a new item
+    }
   }
 
   ngOnInit(): void {
@@ -304,14 +315,12 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
 
     // Sıralama parametresi ekle
     if (this.currentSortField && this.currentSortDirection) {
-      params.ordering = `${this.currentSortDirection === 'desc' ? '-' : ''}${
-        this.currentSortField
-      }`;
+      params.ordering = `${this.currentSortDirection === 'desc' ? '-' : ''}${this.currentSortField
+        }`;
     } else if (this.sort && this.sort.active) {
       // MatSort'tan sıralama bilgisini al
-      params.ordering = `${this.sort.direction === 'desc' ? '-' : ''}${
-        this.sort.active
-      }`;
+      params.ordering = `${this.sort.direction === 'desc' ? '-' : ''}${this.sort.active
+        }`;
     }
 
     // Filtre değerlerini ekle
@@ -364,7 +373,6 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
   // openAddOrUpdateDialog metodunda columnDefinitions dizisinin doğru gönderildiğinden emin olalım
   openAddOrUpdateDialog(row?: T): void {
     // Tabloda gösterilen sütunlara göre dinamik olarak görünür alanları belirle
-    let visibleFields: string[] | undefined;
 
     if (this.displayedColumns.length === 0) {
       console.error(
@@ -373,18 +381,13 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
       return;
     }
 
-    // Görüntülenecek alanları ayarla
-    visibleFields = [...this.displayedColumns].filter(
-      (col) => col !== 'actions'
-    );
-
     // Sütun tanımlarımız yoksa bir hata mesajı göster
     if (!this.columnDefinitions || this.columnDefinitions.length === 0) {
       console.error(
         'Hata: columnDefinitions boş! Diyalog için sütun tanımları gerekli.'
       );
 
-      // Basit sütun tanımları oluştur
+      //Basit sütun tanımları oluştur
       this.columnDefinitions = this.displayedColumns
         .filter((col) => col !== 'actions' && col !== 'rowNumber')
         .map((col) => ({
@@ -397,15 +400,22 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
 
     // Debug için bilgileri konsola yaz
     console.log('Dialog açılıyor. Sütun tanımları:', this.columnDefinitions);
-    console.log('Görünür alanlar:', visibleFields);
 
+    // TODO: product name alani required olara add dialog icersinde gorundu
+    // bunu kaldirmak icin ya columndefinicion inputunu gondermen gerekiyor
+    // veya excludeFiled inputu olusturup dialoglara gondererek bu fieldlari
+    // formun icinden kaldir veya hic ekleme dememiz gerekiyor
+    // load data surekli cagriliyor.
+    // her seferinde cagrilmasin
     const dialogRef = this.dialog.open(AddOrUpdateDialogComponent, {
       width: '500px',
       data: {
         row: row, // Düzenleme için mevcut satır verisi (eğer yeni ekleme ise undefined)
         columns: this.columnDefinitions, // Sütun tanımları
         //options: this.getDialogOptions(), // Dropdown seçeneklerini dinamik olarak al
-        visibleFields: visibleFields, // Dinamik olarak belirlenen alanlar
+        visibleFields: this.displayedColumns.filter(
+          (col) => col !== 'actions' && col !== 'rowNumber' && !this.excludeFields.includes(col)
+        ), // Dinamik olarak belirlenen alanlar
       },
     });
 
@@ -443,7 +453,7 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
             next: (createdItem) => {
               this.itemAdded.emit(createdItem); // Yeni eklenen öğeyi bildir
               this.toastService.success('Başarı ile eklendi', 'Eklendi');
-              this.loadData(); // Tabloyu yenile
+              this.dataSource.data.unshift(createdItem);
               this.isLoading = false;
             },
             error: (error) => {
@@ -476,7 +486,11 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
     this.service.delete(id).subscribe({
       next: () => {
         this.rowDeleted.emit(id);
-        this.loadData();
+        let index = this.dataSource.data.findIndex((item: any) => item.id === id);
+        if (index !== -1) {
+          this.dataSource.data.splice(index, 1);
+          this.dataSource._updateChangeSubscription();
+        }
         this.toastService.success('Başari ile silindi', 'Silindi');
       },
       error: (error) => {
@@ -539,4 +553,5 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   }
+
 }
