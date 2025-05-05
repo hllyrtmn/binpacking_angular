@@ -30,22 +30,6 @@ export class UserService {
     return this.http.get<User>(`${this.api.getApiUrl()}/profile/`);
   }
 
-  getProfile1(): Observable<User> {
-    return new Observable(observer => {
-      this.http.get<User[]>(`${this.api.getApiUrl()}/profile/`).subscribe({
-        next: (users) => {
-          if (users && users.length > 0) {
-            observer.next(users[0]);
-          } else {
-            observer.error('No profile found');
-          }
-          observer.complete();
-        },
-        error: (error) => observer.error(error)
-      });
-    });
-  }
-
   updateProfile(profileData: Partial<User>): Observable<User> {
     if (profileData.phone) {
       profileData.phone = this.formatPhoneNumber(profileData.phone);
@@ -61,5 +45,22 @@ export class UserService {
 
   changePassword(passwords: ChangePasswordRequest): Observable<any> {
     return this.http.post(`${this.api.getApiUrl()}/profile/change-password/`, passwords);
+  }
+
+  // Şifre sıfırlama istekleri
+  requestPasswordReset(email: string): Observable<any> {
+    return this.http.post(`${this.api.getApiUrl()}/password-reset/`, { email });
+  }
+
+  // Şifre sıfırlama doğrulama - token/uidb64 eklendi
+  validatePasswordResetToken(uidb64: string, token: string): Observable<any> {
+    return this.http.get(`${this.api.getApiUrl()}/password-reset/validate/${uidb64}/${token}/`);
+  }
+
+  // Yeni şifre belirleme - token/uidb64 eklendi
+  resetPassword(uidb64: string, token: string, newPassword: string): Observable<any> {
+    return this.http.post(`${this.api.getApiUrl()}/password-reset/confirm/${uidb64}/${token}/`, {
+      new_password: newPassword
+    });
   }
 }

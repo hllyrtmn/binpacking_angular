@@ -407,3 +407,22 @@ mat-divider {
     background-color: #c62828 !important;
   }
 }
+
+.forgot-password-section {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.forgot-text {
+  margin: 16px 0;
+  color: #666;
+}
+
+.forgot-button {
+  color: #006A6A;
+  border-color: #D6BB86;
+}
+
+.forgot-button mat-icon {
+  margin-right: 8px;
+}

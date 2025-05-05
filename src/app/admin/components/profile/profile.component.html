@@ -251,6 +251,21 @@
                 </button>
               </div>
             </form>
+
+            <!-- Şifremi Unuttum linkleri -->
+            <div class="forgot-password-section">
+              <mat-divider></mat-divider>
+              <p class="forgot-text">Şifrenizi mi unuttunuz?</p>
+              <button
+                mat-stroked-button
+                color="accent"
+                class="forgot-button"
+                (click)="openForgotPasswordDialog()"
+              >
+                <mat-icon>lock_reset</mat-icon>
+                Şifremi Unuttum
+              </button>
+            </div>
           </div>
         </mat-tab>
 

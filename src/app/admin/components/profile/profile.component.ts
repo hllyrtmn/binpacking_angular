@@ -12,6 +12,8 @@ import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { User } from '../../../models/user.interface';
 import { UserService } from '../../../services/user.service';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { ForgotPasswordDialogComponent } from './forgot-password-dialog/forgot-password-dialog.component';
 
 @Component({
   selector: 'app-profile',
@@ -25,7 +27,8 @@ import { UserService } from '../../../services/user.service';
     MatTabsModule,
     MatSnackBarModule,
     MatProgressSpinnerModule,
-    MatDividerModule],
+    MatDividerModule,
+    MatDialogModule  ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss'
 })
@@ -33,6 +36,7 @@ export class ProfileComponent implements OnInit {
   private userService = inject(UserService);
   private fb = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog); // Dialog servisini inject edin
 
   profileForm!: FormGroup;
   passwordForm!: FormGroup;
@@ -69,6 +73,17 @@ export class ProfileComponent implements OnInit {
   private passwordMatchValidator(g: FormGroup) {
     return g.get('new_password')?.value === g.get('confirm_password')?.value
       ? null : { mismatch: true };
+  }
+
+  openForgotPasswordDialog() {
+    const dialogRef = this.dialog.open(ForgotPasswordDialogComponent, {
+      width: '400px',
+      disableClose: true
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      console.log('Forgot password dialog was closed');
+    });
   }
 
   loadProfile() {
