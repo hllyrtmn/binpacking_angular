@@ -1,1 +1,309 @@
-<p>profile works!</p>
+<div class="profile-container">
+  <div class="profile-wrapper">
+    <!-- Profile Header Section -->
+    <div class="profile-header-card" *ngIf="!isLoading">
+      <div class="cover-section">
+        <div class="profile-picture-wrapper">
+          <div class="profile-picture-container">
+            <img
+              [src]="profilePictureUrl"
+              alt="Profile picture"
+              class="profile-picture"
+              [class.loading]="isLoadingPicture"
+            >
+            <div class="picture-overlay" *ngIf="isLoadingPicture">
+              <mat-spinner diameter="30"></mat-spinner>
+            </div>
+            <button
+              mat-mini-fab
+              class="upload-button"
+              (click)="fileInput.click()"
+              [disabled]="isLoading"
+            >
+              <mat-icon>photo_camera</mat-icon>
+            </button>
+            <input
+              #fileInput
+              type="file"
+              accept="image/*"
+              (change)="onFileSelected($event)"
+              style="display: none"
+            >
+          </div>
+        </div>
+
+        <div class="profile-info">
+          <h1 class="profile-name">
+            {{userProfile?.first_name}} {{userProfile?.last_name}}
+            <span class="admin-badge" *ngIf="userProfile?.is_admin">Admin</span>
+          </h1>
+          <p class="profile-email">{{userProfile?.email}}</p>
+          <p class="profile-username" *ngIf="userProfile?.username">{{userProfile?.username}}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Skeleton for Header -->
+    <div class="profile-header-card" *ngIf="isLoading">
+      <div class="cover-section">
+        <div class="profile-picture-wrapper">
+          <div class="profile-picture-container">
+            <div class="profile-picture skeleton"></div>
+          </div>
+        </div>
+        <div class="profile-info">
+          <div class="skeleton-text title"></div>
+          <div class="skeleton-text subtitle"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs Section -->
+    <mat-card class="profile-content-card">
+      <mat-tab-group animationDuration="500ms" class="profile-tabs">
+        <!-- Personal Information Tab -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">person</mat-icon>
+            <span>Personal Information</span>
+          </ng-template>
+
+          <div class="tab-content">
+            <form [formGroup]="profileForm" (ngSubmit)="onUpdateProfile()" class="profile-form">
+              <div class="form-section">
+                <h3 class="section-title">Basic Information</h3>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>First Name</mat-label>
+                    <input matInput formControlName="first_name" placeholder="Enter first name">
+                    <mat-icon matSuffix>person</mat-icon>
+                    <mat-error *ngIf="profileForm.get('first_name')?.hasError('required')">
+                      First name is required
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Last Name</mat-label>
+                    <input matInput formControlName="last_name" placeholder="Enter last name">
+                    <mat-icon matSuffix>person</mat-icon>
+                    <mat-error *ngIf="profileForm.get('last_name')?.hasError('required')">
+                      Last name is required
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Username</mat-label>
+                    <input matInput formControlName="username" placeholder="Enter username">
+                    <mat-icon matSuffix>alternate_email</mat-icon>
+                    <mat-error *ngIf="profileForm.get('username')?.hasError('required')">
+                      Username is required
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Email</mat-label>
+                    <input matInput formControlName="email" type="email" placeholder="Enter email">
+                    <mat-icon matSuffix>email</mat-icon>
+                    <mat-error *ngIf="profileForm.get('email')?.hasError('required')">
+                      Email is required
+                    </mat-error>
+                    <mat-error *ngIf="profileForm.get('email')?.hasError('email')">
+                      Please enter a valid email
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <div class="form-section">
+                <h3 class="section-title">Contact Information</h3>
+
+                <div class="form-row">
+                  <mat-form-field appearance="outline" class="form-field">
+                    <mat-label>Phone Number</mat-label>
+                    <input matInput formControlName="phone" placeholder="05XX XXX XX XX"
+                           (input)="onPhoneInput($event)" maxlength="11">
+                    <mat-icon matSuffix>phone</mat-icon>
+                    <mat-hint>Enter without country code</mat-hint>
+                    <mat-error *ngIf="profileForm.get('phone')?.hasError('pattern')">
+                      Only numbers allowed
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <mat-form-field appearance="outline" class="form-field full-width">
+                  <mat-label>Address</mat-label>
+                  <textarea matInput formControlName="address" rows="3" placeholder="Enter your address"></textarea>
+                  <mat-icon matSuffix>location_on</mat-icon>
+                </mat-form-field>
+              </div>
+
+              <div class="form-actions">
+                <button
+                  mat-raised-button
+                  color="primary"
+                  type="submit"
+                  [disabled]="isLoading || profileForm.invalid"
+                  class="submit-button"
+                >
+                  <mat-spinner diameter="20" *ngIf="isLoading"></mat-spinner>
+                  <span *ngIf="!isLoading">Update Profile</span>
+                </button>
+
+                <button
+                  mat-stroked-button
+                  type="button"
+                  (click)="resetForm()"
+                  [disabled]="isLoading"
+                  class="cancel-button"
+                >
+                  Reset
+                </button>
+              </div>
+            </form>
+          </div>
+        </mat-tab>
+
+        <!-- Change Password Tab -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">lock</mat-icon>
+            <span>Security</span>
+          </ng-template>
+
+          <div class="tab-content">
+            <form [formGroup]="passwordForm" (ngSubmit)="onChangePassword()" class="profile-form">
+              <div class="form-section">
+                <h3 class="section-title">Change Password</h3>
+
+                <mat-form-field appearance="outline" class="form-field full-width">
+                  <mat-label>Current Password</mat-label>
+                  <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="old_password">
+                  <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" [attr.aria-label]="'Hide password'" [attr.aria-pressed]="hidePassword" type="button">
+                    <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+                  </button>
+                  <mat-error *ngIf="passwordForm.get('old_password')?.hasError('required')">
+                    Current password is required
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field full-width">
+                  <mat-label>New Password</mat-label>
+                  <input matInput [type]="hideNewPassword ? 'password' : 'text'" formControlName="new_password">
+                  <button mat-icon-button matSuffix (click)="hideNewPassword = !hideNewPassword" [attr.aria-label]="'Hide password'" [attr.aria-pressed]="hideNewPassword" type="button">
+                    <mat-icon>{{hideNewPassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+                  </button>
+                  <mat-error *ngIf="passwordForm.get('new_password')?.hasError('required')">
+                    New password is required
+                  </mat-error>
+                  <mat-error *ngIf="passwordForm.get('new_password')?.hasError('minlength')">
+                    Password must be at least 8 characters
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field full-width">
+                  <mat-label>Confirm New Password</mat-label>
+                  <input matInput [type]="hideConfirmPassword ? 'password' : 'text'" formControlName="confirm_password">
+                  <button mat-icon-button matSuffix (click)="hideConfirmPassword = !hideConfirmPassword" [attr.aria-label]="'Hide password'" [attr.aria-pressed]="hideConfirmPassword" type="button">
+                    <mat-icon>{{hideConfirmPassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+                  </button>
+                  <mat-error *ngIf="passwordForm.get('confirm_password')?.hasError('required')">
+                    Please confirm your password
+                  </mat-error>
+                  <mat-error *ngIf="passwordForm.hasError('mismatch') && !passwordForm.get('confirm_password')?.hasError('required')">
+                    Passwords do not match
+                  </mat-error>
+                </mat-form-field>
+              </div>
+
+              <div class="password-strength">
+                <div class="strength-indicator" [class.weak]="getPasswordStrength() === 'weak'"
+                     [class.medium]="getPasswordStrength() === 'medium'"
+                     [class.strong]="getPasswordStrength() === 'strong'">
+                  <span>Password strength: {{getPasswordStrength()}}</span>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button
+                  mat-raised-button
+                  color="primary"
+                  type="submit"
+                  [disabled]="isLoading || passwordForm.invalid"
+                  class="submit-button"
+                >
+                  <mat-spinner diameter="20" *ngIf="isLoading"></mat-spinner>
+                  <span *ngIf="!isLoading">Change Password</span>
+                </button>
+
+                <button
+                  mat-stroked-button
+                  type="button"
+                  (click)="passwordForm.reset()"
+                  [disabled]="isLoading"
+                  class="cancel-button"
+                >
+                  Clear
+                </button>
+              </div>
+            </form>
+          </div>
+        </mat-tab>
+
+        <!-- Account Settings Tab -->
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <mat-icon class="tab-icon">settings</mat-icon>
+            <span>Settings</span>
+          </ng-template>
+
+          <div class="tab-content">
+            <div class="settings-section">
+              <h3 class="section-title">Account Information</h3>
+
+              <div class="info-card">
+                <div class="info-item">
+                  <mat-icon>verified_user</mat-icon>
+                  <div>
+                    <p class="info-label">Account Type</p>
+                    <p class="info-value">{{userProfile?.is_admin ? 'Administrator' : 'Regular User'}}</p>
+                  </div>
+                </div>
+
+                <div class="info-item" *ngIf="userProfile?.company">
+                  <mat-icon>business</mat-icon>
+                  <div>
+                    <p class="info-label">Company</p>
+                    <p class="info-value">{{userProfile?.company?.company_name}}</p>
+                  </div>
+                </div>
+
+                <div class="info-item">
+                  <mat-icon>fingerprint</mat-icon>
+                  <div>
+                    <p class="info-label">User ID</p>
+                    <p class="info-value">{{userProfile?.id}}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <h3 class="section-title">Danger Zone</h3>
+              <div class="danger-zone">
+                <button mat-stroked-button color="warn" class="danger-button">
+                  <mat-icon>delete_forever</mat-icon>
+                  Delete Account
+                </button>
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </mat-card>
+  </div>
+</div>

@@ -1,0 +1,65 @@
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { ApiService } from './api.service';
+import { ChangePasswordRequest, User } from '../models/user.interface';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class UserService {
+
+  constructor(private http: HttpClient,private api: ApiService) {}
+
+
+  private formatPhoneNumber(phone: string | null): string | null {
+    if (!phone) return null;
+
+    // Remove any non-digit characters
+    const cleaned = phone.replace(/\D/g, '');
+
+    // Add country code if not present
+    if (cleaned && !cleaned.startsWith('90')) {
+      return '+90' + cleaned;
+    }
+
+    return cleaned ? '+' + cleaned : null;
+  }
+
+  getProfile(): Observable<User> {
+    return this.http.get<User>(`${this.api.getApiUrl()}/profile/`);
+  }
+
+  getProfile1(): Observable<User> {
+    return new Observable(observer => {
+      this.http.get<User[]>(`${this.api.getApiUrl()}/profile/`).subscribe({
+        next: (users) => {
+          if (users && users.length > 0) {
+            observer.next(users[0]);
+          } else {
+            observer.error('No profile found');
+          }
+          observer.complete();
+        },
+        error: (error) => observer.error(error)
+      });
+    });
+  }
+
+  updateProfile(profileData: Partial<User>): Observable<User> {
+    if (profileData.phone) {
+      profileData.phone = this.formatPhoneNumber(profileData.phone);
+    }
+    return this.http.put<User>(`${this.api.getApiUrl()}/profile/`, profileData);
+  }
+
+  updateProfilePicture(file: File): Observable<User> {
+    const formData = new FormData();
+    formData.append('profile_picture', file);
+    return this.http.put<User>(`${this.api.getApiUrl()}/profile/picture/`, formData);
+  }
+
+  changePassword(passwords: ChangePasswordRequest): Observable<any> {
+    return this.http.post(`${this.api.getApiUrl()}/profile/change-password/`, passwords);
+  }
+}

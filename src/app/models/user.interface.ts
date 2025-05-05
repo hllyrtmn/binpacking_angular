@@ -14,4 +14,13 @@ export interface User{
   id: string;
   company: Company;
   is_admin: boolean;
+  phone: string|null;
+  address: string;
+  profile_picture: string;
+}
+
+export interface ChangePasswordRequest {
+  old_password: string;
+  new_password: string;
+  confirm_password: string;
 }

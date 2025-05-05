@@ -5,6 +5,7 @@ import { EmployeesComponent } from './components/employees/employees.component';
 import { LogisticsComponent } from './components/logistics/logistics.component';
 import { OrdersComponent } from './components/orders/orders.component';
 import { ProductsComponent } from './components/products/products.component';
+import { ProfileComponent } from './components/profile/profile.component';
 
 const ADMIN_ROUTES: Routes = [
   {
@@ -30,6 +31,11 @@ const ADMIN_ROUTES: Routes = [
   {
     path: 'products',
     component: ProductsComponent,
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'profile',
+    component: ProfileComponent,
     canActivate: [AuthGuard],
   },
 ];
