@@ -56,6 +56,11 @@ import { MatTooltipModule } from '@angular/material/tooltip';
   styleUrl: './invoice-upload.component.scss',
 })
 export class InvoiceUploadComponent implements OnInit {
+  // todo: search kismi calismiyor
+  //        silmede ekran refreshi sorunlu
+  //        silmede id yok
+  //        update de sorunlu olacak
+  //        order hemen olustulmayacak ve get istekleri bir suru gidiyor
   @Output() invoiceUploaded = new EventEmitter<any>();
   @Output() orderDataRefreshed = new EventEmitter<void>();
 
@@ -314,14 +319,14 @@ export class InvoiceUploadComponent implements OnInit {
         this.manualAdd = false;
 
         if (result) {
-          this.genericTable.service.create(result).subscribe({
+          this.genericTable.service.create(result.apiRequestItem).subscribe({
             next: (createdItem) => {
               // Sadece veri kaynağını güncelle, loadData'ya gerek yok
-              this.genericTable.dataSource.data.unshift(createdItem);
+              this.genericTable.dataSource.data.unshift(result.orderDetail);
               this.genericTable.dataSource._updateChangeSubscription();
 
               // Local işlemlerimizi yap
-              this.orderDetails.push(createdItem);
+              this.orderDetails.push(result.orderDetail);
               this.calculateTotals();
               this.toastService.success('Sipariş detayı başarıyla eklendi.');
             },
