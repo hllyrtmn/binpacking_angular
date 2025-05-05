@@ -179,7 +179,7 @@ export class ResultStepComponent implements OnDestroy {
         console.log('Paketleme verisi alındı:', response);
 
         // String ise parse et
-        if (typeof response.data === 'string') {
+        if (typeof response.data.data === 'string') {
           try {
             this.piecesData = JSON.parse(response.data);
           } catch (e) {
@@ -187,7 +187,7 @@ export class ResultStepComponent implements OnDestroy {
             this.piecesData = [];
           }
         } else {
-          this.piecesData = response.data;
+          this.piecesData = response.data.data;
         }
 
         // Eğer popup penceresi açıksa, oradaki görselleştirmeyi de güncelle

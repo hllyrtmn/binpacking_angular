@@ -20,7 +20,7 @@ export function appInitialization() {
 
   // Directly return the promise chain
   return configService.load().then(() => {
-    return permissionService.loadPermissions();
+    // return permissionService.loadPermissions();
   });
 }
 

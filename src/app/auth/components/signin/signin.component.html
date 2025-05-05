@@ -1,19 +1,117 @@
-<div class="container">
-    <form class="form" [formGroup]="signinForm" (ngSubmit)="loginUser()">
-        <mat-form-field appearance="fill">
-            <mat-label>Enter your username</mat-label>
-            <input matInput formControlName="username">
+<div class="logistics-container">
+  <div class="logistics-background">
+    <div class="warehouse-scene">
+      <!-- Warehouse Building -->
+      <div class="warehouse">
+        <div class="warehouse-wall"></div>
+        <div class="warehouse-roof"></div>
+        <div class="loading-dock"></div>
+      </div>
+
+      <!-- Road and Floor -->
+      <div class="road"></div>
+      <div class="warehouse-floor"></div>
+
+      <!-- Forklift with Pallet -->
+      <div class="forklift">
+        <div class="forklift-body">
+          <mat-icon>construction</mat-icon>
+        </div>
+        <div class="forklift-cargo">
+          <div class="mini-pallet"></div>
+        </div>
+      </div>
+
+      <!-- Products/Boxes -->
+      <div class="product-boxes">
+        <div class="product-box box-1"></div>
+        <div class="product-box box-2"></div>
+        <div class="product-box box-3"></div>
+      </div>
+
+      <!-- Pallets Stacked -->
+      <div class="stacked-pallets">
+        <div class="pallet-stack">
+          <div class="pallet stack-1"></div>
+          <div class="pallet stack-2"></div>
+          <div class="pallet stack-3"></div>
+        </div>
+        <div class="pallet-stack-2">
+          <div class="pallet stack-4"></div>
+          <div class="pallet stack-5"></div>
+        </div>
+      </div>
+
+      <!-- Moving Truck -->
+      <div class="truck">
+        <div class="truck-cabin">
+          <mat-icon>local_shipping</mat-icon>
+        </div>
+        <div class="truck-container"></div>
+      </div>
+
+      <!-- Loading Animation -->
+      <div class="loading-crane">
+        <div class="crane-arm"></div>
+        <div class="crane-hook"></div>
+        <div class="loading-box"></div>
+      </div>
+
+      <!-- Background Elements -->
+      <div class="background-elements">
+        <div class="building building-1"></div>
+        <div class="building building-2"></div>
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        <div class="cloud cloud-3"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="login-section">
+    <div class="login-card">
+      <div class="login-header">
+        <mat-icon class="logo-icon">local_shipping</mat-icon>
+        <h1>Lojistik Yönetim Sistemi</h1>
+        <p>Palet ve TIR yükleme optimizasyonu</p>
+      </div>
+
+      <form class="login-form" [formGroup]="signinForm" (ngSubmit)="loginUser()">
+        <mat-form-field appearance="outline">
+          <mat-label>Kullanıcı ID</mat-label>
+          <input matInput formControlName="username" placeholder="Lojistik kimlik numaranız">
+          <mat-icon matSuffix>person</mat-icon>
         </mat-form-field>
-        <br>
-        <mat-form-field appearance="fill">
-            <mat-label>Enter your password</mat-label>
-            <input matInput formControlName="password" [type]="hide ? 'password' : 'text'">
-            <button mat-icon-button matSuffix (click)="hide = !hide" [attr.aria-label]="'Hide password'"
-                [attr.aria-pressed]="hide">
-                <mat-icon>{{hide ? 'visibility_off' : 'visibility'}}</mat-icon>
-            </button>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Güvenlik Kodu</mat-label>
+          <input matInput formControlName="password" [type]="hide ? 'password' : 'text'" placeholder="Şifrenizi girin">
+          <button mat-icon-button matSuffix (click)="hide = !hide" [attr.aria-label]="'Hide password'" [attr.aria-pressed]="hide">
+            <mat-icon>{{hide ? 'visibility_off' : 'visibility'}}</mat-icon>
+          </button>
         </mat-form-field>
-        <br>
-        <button  type="submit" mat-raised-button>login</button>
-    </form>
+
+        <button class="login-button custom-button" type="submit" mat-raised-button>
+          Sisteme Giriş
+          <mat-icon class="button-icon">keyboard_arrow_right</mat-icon>
+        </button>
+      </form>
+
+      <div class="quick-actions">
+        <a href="#" class="action-link">
+          <mat-icon>lock_open</mat-icon>
+          Şifre Yenileme
+        </a>
+        <a href="#" class="action-link">
+          <mat-icon>help_outline</mat-icon>
+          Teknik Destek
+        </a>
+      </div>
+    </div>
+
+    <div class="system-status">
+      <span class="status-indicator"></span>
+      <span>Sistem Aktif</span>
+    </div>
+  </div>
 </div>

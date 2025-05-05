@@ -56,17 +56,17 @@ import { MatTooltipModule } from '@angular/material/tooltip';
   styleUrl: './invoice-upload.component.scss',
 })
 export class InvoiceUploadComponent implements OnInit {
-  @Output() invoiceUploaded: EventEmitter<any> = new EventEmitter<any>();
-  @Output() orderDataRefreshed: EventEmitter<void> = new EventEmitter<void>();
+  @Output() invoiceUploaded = new EventEmitter<any>();
+  @Output() orderDataRefreshed = new EventEmitter<void>();
 
   @ViewChild(GenericTableComponent) genericTable!: GenericTableComponent<any>;
 
+  orderDetailService = inject(OrderDetailService);
   private _formBuilder = inject(FormBuilder);
   private repositoryService = inject(RepositoryService);
   private toastService = inject(ToastService);
-  orderDetailService = inject(OrderDetailService);
-  orderService = inject(OrderService);
-  dialog = inject(MatDialog);
+  private orderService = inject(OrderService);
+  private dialog = inject(MatDialog);
 
   uploadForm: FormGroup;
   file: File | null = null;
@@ -79,13 +79,12 @@ export class InvoiceUploadComponent implements OnInit {
   dataRefreshInProgress = false;
 
   displayedColumns: string[] = [
-    'prodcut.name',
+    'product.name',
     'product.product_type.type',
     'product.product_type.code',
     'product.dimension.width',
     'product.dimension.depth',
     'count',
-    'weight'
   ];
 
   filterableColumns: string[] = [
@@ -95,7 +94,6 @@ export class InvoiceUploadComponent implements OnInit {
     'product.dimension.width',
     'product.dimension.depth',
     'count',
-    'weight'
   ];
 
   nestedDisplayColumns: { [key: string]: string } = {
@@ -105,9 +103,15 @@ export class InvoiceUploadComponent implements OnInit {
     'product.dimension.depth': 'Derinlik',
     'product.name': 'Ürün Adı',
     count: 'Adet',
-    weight: 'Ağırlık'
-
   };
+
+  excludeFields: string[] = [
+    'product.name',
+    'product.product_type.type',
+    'product.product_type.code',
+    'product.dimension.width',
+    'product.dimension.depth',
+  ];
 
   constructor() {
     this.uploadForm = this._formBuilder.group({
@@ -236,15 +240,13 @@ export class InvoiceUploadComponent implements OnInit {
 
   /**
    * Sipariş detaylarını ve tablo verilerini tek bir metodla günceller.
-   * Gereksiz çağrıları önlemek için bir bayrak kullanır.
    */
   refreshOrderData(): Observable<any> {
-    // Zaten bir güncelleme devam ediyorsa ve yeni bir güncelleme isteği geldiyse,
-    // mevcut güncellemeyi iptal etmeden devam et
     if (this.dataRefreshInProgress) {
       console.log('Veri zaten güncelleniyor, bu istek atlanacak');
       return of(null);
     }
+
     const params = { order_id: this.order.id?.toString() || '' };
     this.dataRefreshInProgress = true;
 
@@ -254,22 +256,7 @@ export class InvoiceUploadComponent implements OnInit {
         if (response && response.results) {
           this.orderDetails = response.results || [];
           this.calculateTotals();
-        } else if (response && response.results) {
-          // Eğer API farklı bir format döndürüyorsa (Page yerine results kullanıyorsa)
-          this.orderDetails = response.results || [];
-          this.calculateTotals();
         }
-
-        // Tablonun manuel olarak yenilenmesi gerekiyorsa ve tablo referansı alındıysa
-        // Bu kısmı dikkatli kullanın - tabloyu yenilemenin başka bir yolu varsa, o tercih edilebilir
-        if (this.genericTable && typeof this.genericTable.loadData === 'function') {
-          console.log('Tablo verileri güncelleniyor...');
-          // Yalnızca gerekiyorsa bu satırı aktif edin - genellikle gerekli değildir
-          // çünkü tablonuz zaten aynı service'i kullanıyor olmalı
-          // this.genericTable.loadData();
-        }
-
-        this.orderDataRefreshed.emit();
       }),
       catchError(error => {
         this.toastService.error('Sipariş detayları güncellenirken hata oluştu');
@@ -300,11 +287,9 @@ export class InvoiceUploadComponent implements OnInit {
     this.manualAdd = true;
 
     if (!this.order) {
-      // Eğer order yoksa, önce bir order oluşturmamız gerekiyor
       this.orderService.createOrder().subscribe({
         next: (response) => {
           this.order = response;
-          // Şimdi order var, dialog açılabilir
           this.openOrderDetailDialog(this.order);
         },
         error: (error) => {
@@ -313,7 +298,6 @@ export class InvoiceUploadComponent implements OnInit {
         },
       });
     } else {
-      // Zaten bir order var, doğrudan dialog açılabilir
       this.openOrderDetailDialog(this.order);
     }
   }
@@ -330,20 +314,20 @@ export class InvoiceUploadComponent implements OnInit {
         this.manualAdd = false;
 
         if (result) {
-          // result geçerli ise sipariş detayı oluştur
-          this.orderDetailService.create(result).subscribe({
-            next: (response) => {
-              this.toastService.success('Sipariş detayı başarıyla eklendi.');
+          this.genericTable.service.create(result).subscribe({
+            next: (createdItem) => {
+              // Sadece veri kaynağını güncelle, loadData'ya gerek yok
+              this.genericTable.dataSource.data.unshift(createdItem);
+              this.genericTable.dataSource._updateChangeSubscription();
 
-              // Tek bir metot ile hem tablo verisini hem de özet bilgileri güncelle
-              // Bu, gereksiz API çağrılarını önler
-              this.refreshOrderData().subscribe();
+              // Local işlemlerimizi yap
+              this.orderDetails.push(createdItem);
+              this.calculateTotals();
+              this.toastService.success('Sipariş detayı başarıyla eklendi.');
             },
             error: (error) => {
               console.error('Sipariş detayı eklenirken hata:', error);
-              this.toastService.error(
-                'Sipariş detayı eklenirken bir hata oluştu.'
-              );
+              this.toastService.error('Sipariş detayı eklenirken bir hata oluştu.');
             },
           });
         }
@@ -356,34 +340,25 @@ export class InvoiceUploadComponent implements OnInit {
   }
 
   onTableUpdate(event: any): void {
-    console.log('Tablo güncellendi:', event);
     // Tablodaki bir değişiklik olduğunda, tüm verileri yenile
     this.refreshOrderData().subscribe();
   }
 }
 
-export function FileValidator(): (
-  control: AbstractControl
-) => ValidationErrors | null {
+export function FileValidator(validTypes: string[], maxSize: number): (control: AbstractControl) => ValidationErrors | null {
   return (control: AbstractControl): ValidationErrors | null => {
     if (!control.value) {
       return null; // No file selected
     }
 
-    const validTypes = [
-      'application/pdf',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    ];
-    const maxSize = 10 * 1024 * 1024;
-
     if (!validTypes.includes(control.value.type)) {
-      return { invalidFileType: true }; // Invalid file type
-    }
-    if (control.value.size > maxSize) {
-      return { fileTooLarge: true }; // File size exceeds limit
+      return { invalidFileType: true };
     }
 
-    return null; // Validation passed
+    if (control.value.size > maxSize) {
+      return { fileTooLarge: true };
+    }
+
+    return null;
   };
 }
