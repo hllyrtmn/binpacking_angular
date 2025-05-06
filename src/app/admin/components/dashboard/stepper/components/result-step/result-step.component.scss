@@ -1,70 +1,404 @@
-:host {
+.logistics-result-screen {
   display: flex;
   flex-direction: column;
   height: 100%;
   padding: 20px;
+  background-color: #f9fafb;
 }
 
-h1 {
-  margin-bottom: 20px;
-}
-
-.controls {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.visualization-container {
-  flex: 1;
-  min-height: 500px;
-  margin-bottom: 20px;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-button {
-  margin-right: 10px;
-}
-
-.new-tab-button {
-  background-color: #2ecc71;
-  color: white;
+/* Header Styles */
+.result-header {
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  margin-bottom: 20px;
 }
 
-.new-tab-button:hover {
-  background-color: #27ae60;
+.header-icon {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: #006A6A;
+  margin-right: 16px;
+  box-shadow: 0 4px 8px rgba(0, 106, 106, 0.2);
+}
+
+.header-icon mat-icon {
+  color: white;
+  font-size: 28px;
+  height: 28px;
+  width: 28px;
+}
+
+.header-title h1 {
+  color: #006A6A;
+  margin: 0 0 4px;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.header-subtitle {
+  color: #666;
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Status Bar Styles */
+.status-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 12px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 200px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  background-color: rgba(0, 106, 106, 0.05);
+}
+
+.status-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: #006A6A;
+  margin-right: 12px;
+}
+
+.status-icon mat-icon {
+  color: white;
+  font-size: 22px;
+  height: 22px;
+  width: 22px;
+}
+
+.truck-icon {
+  background-color: #D6BB86;
+}
+
+.efficiency-icon {
+  background: linear-gradient(135deg, #006A6A, #D6BB86);
+}
+
+.status-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.status-label {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.status-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #006A6A;
+}
+
+/* Controls Container */
+.controls-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.calculate-button, .export-button {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.calculate-button {
+  background-color: #006A6A;
+  color: white;
+}
+
+.calculate-button:hover {
+  background-color: #005757;
+  box-shadow: 0 4px 8px rgba(0, 106, 106, 0.3);
+}
+
+.export-button {
+  background-color: #D6BB86;
+  color: white;
+}
+
+.export-button:hover {
+  background-color: #c4a96d;
+  box-shadow: 0 4px 8px rgba(214, 187, 134, 0.3);
 }
 
 .new-tab-icon {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  margin-right: 8px;
   position: relative;
+  width: 18px;
+  height: 18px;
 }
 
-.new-tab-icon::before {
-  content: "";
+.new-tab-square {
   position: absolute;
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border: 2px solid white;
   left: 0;
   bottom: 0;
 }
 
-.new-tab-icon::after {
-  content: "";
+.new-tab-arrow {
   position: absolute;
-  width: 8px;
-  height: 8px;
-  border: 2px solid white;
+  width: 0;
+  height: 0;
   top: 0;
   right: 0;
-  background-color: #2ecc71;
+  border-style: solid;
+  border-width: 0 8px 8px 0;
+  border-color: transparent white transparent transparent;
+}
+
+.view-controls {
+  display: flex;
+  gap: 2px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  padding: 2px;
+}
+
+.view-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  border-radius: 4px;
+  padding: 0 12px;
+  color: #666;
+}
+
+.view-button.active {
+  background-color: white;
+  color: #006A6A;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.view-button:hover:not(.active) {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Visualization Container */
+.visualization-container {
+  flex: 1;
+  min-height: 500px;
+  position: relative;
+  margin-bottom: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+/* Loading Overlay - Yeni Eklenen Stil */
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.loading-text {
+  margin-top: 16px;
+  color: #006A6A;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* Loading spinner için özel stil */
+::ng-deep .loading-overlay app-loading {
+  display: block;
+  width: 80px;
+  height: 80px;
+}
+
+::ng-deep .loading-overlay app-loading .loading-spinner {
+  width: 80px !important;
+  height: 80px !important;
+}
+
+::ng-deep .loading-overlay app-loading .loading-spinner circle {
+  stroke: #006A6A !important;
+  stroke-width: 4px !important;
+}
+
+.visualization-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.overlay-content {
+  text-align: center;
+  max-width: 320px;
+  padding: 20px;
+}
+
+.overlay-icon {
+  font-size: 64px;
+  height: 64px;
+  width: 64px;
+  color: #D6BB86;
+  margin-bottom: 20px;
+  opacity: 0.5;
+}
+
+.overlay-content p {
+  color: #666;
+  line-height: 1.6;
+}
+
+/* Legend Container */
+.legend-container {
+  padding: 16px;
+  background-color: white;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.legend-title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  color: #006A6A;
+  font-weight: 500;
+}
+
+.legend-title mat-icon {
+  margin-right: 8px;
+  font-size: 20px;
+  height: 20px;
+  width: 20px;
+}
+
+.legend-items {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  min-width: 150px;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  margin-right: 8px;
+}
+
+.legend-text {
+  font-size: 14px;
+  color: #555;
+}
+
+/* Navigation Controls */
+.navigation-controls {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.previous-button, .finish-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.previous-button {
+  background-color: #f5f5f5;
+  color: #555;
+}
+
+.previous-button:hover {
+  background-color: #e0e0e0;
+}
+
+.finish-button {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.finish-button:hover {
+  background-color: #3d8b40;
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .controls-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .action-buttons, .view-controls {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .navigation-controls {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .previous-button, .finish-button {
+    width: 100%;
+    justify-content: center;
+  }
 }

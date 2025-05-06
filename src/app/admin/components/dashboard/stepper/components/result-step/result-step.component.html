@@ -1,22 +1,133 @@
-<app-loading></app-loading>
-<h1>Sonuç Ekranı</h1>
-<div class="controls">
-  <button mat-button (click)="calculateBinpacking()">Paketleme Hesapla</button>
-  <button mat-button class="new-tab-button" (click)="openInNewTab()">
-    <span class="new-tab-icon"></span>
-    Yeni Sekmede Aç
-  </button>
-</div>
+<div class="logistics-result-screen">
+  <div class="result-header">
+    <div class="header-icon">
+      <mat-icon>view_in_ar</mat-icon>
+    </div>
+    <div class="header-title">
+      <h1>TIR Yükleme Optimizasyonu</h1>
+      <p class="header-subtitle">3 boyutlu yükleme planı</p>
+    </div>
+  </div>
 
-<div class="visualization-container">
-  <app-plotly
-    #plotlyComponent
-    [piecesData]="piecesData"
-    [truckDimension]="truckDimension">
-  </app-plotly>
-</div>
-<button mat-button matStepperPrevious>Geri</button>
+  <div class="status-bar">
+    <div class="status-item">
+      <div class="status-icon">
+        <mat-icon>inventory_2</mat-icon>
+      </div>
+      <div class="status-info">
+        <span class="status-label">Yüklenecek Ürün</span>
+        <span class="status-value">{{ piecesData.length || 0 }} adet</span>
+      </div>
+    </div>
 
+    <div class="status-item">
+      <div class="status-icon truck-icon">
+        <mat-icon>local_shipping</mat-icon>
+      </div>
+      <div class="status-info">
+        <span class="status-label">TIR Boyutları</span>
+        <span class="status-value">{{ truckDimension[0] || 0 }} x {{ truckDimension[1] || 0 }} x {{ truckDimension[2] || 0 }} m</span>
+      </div>
+    </div>
+
+    <div class="status-item">
+      <div class="status-icon efficiency-icon">
+        <mat-icon>data_usage</mat-icon>
+      </div>
+      <div class="status-info">
+        <span class="status-label">Doluluk Oranı</span>
+        <span class="status-value">{{ getUtilizationRate() }}%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls-container">
+    <div class="action-buttons">
+      <button mat-raised-button class="calculate-button" (click)="calculateBinpacking()">
+        <mat-icon>play_arrow</mat-icon>
+        <span>Optimizasyonu Başlat</span>
+      </button>
+
+      <button mat-raised-button class="export-button" (click)="openInNewTab()">
+        <div class="new-tab-icon">
+          <div class="new-tab-square"></div>
+          <div class="new-tab-arrow"></div>
+        </div>
+        <span>3D Görünümü Aç</span>
+      </button>
+    </div>
+
+    <div class="view-controls">
+      <button mat-button class="view-button active">
+        <mat-icon>view_in_ar</mat-icon>
+        <span>3D</span>
+      </button>
+      <button mat-button class="view-button">
+        <mat-icon>view_list</mat-icon>
+        <span>Liste</span>
+      </button>
+      <button mat-button class="view-button">
+        <mat-icon>grid_on</mat-icon>
+        <span>Izgara</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="visualization-container">
+    <!-- Loading Spinner -->
+    <div *ngIf="isLoading" class="loading-overlay">
+      <app-loading></app-loading>
+      <p class="loading-text">Optimizasyon hesaplanıyor...</p>
+    </div>
+
+    <!-- Empty State Overlay -->
+    <div class="visualization-overlay" *ngIf="!hasResults && !isLoading">
+      <div class="overlay-content">
+        <mat-icon class="overlay-icon">local_shipping</mat-icon>
+        <p>Optimizasyon hesaplaması başlatılmadı. Sonuçları görmek için "Optimizasyonu Başlat" butonuna tıklayın.</p>
+      </div>
+    </div>
+
+    <app-plotly
+      #plotlyComponent
+      [piecesData]="piecesData"
+      [truckDimension]="truckDimension">
+    </app-plotly>
+  </div>
+
+  <div class="legend-container">
+    <div class="legend-title">
+      <mat-icon>info</mat-icon>
+      <span>Yerleşim Bilgileri</span>
+    </div>
+    <div class="legend-items">
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #D6BB86;"></div>
+        <span class="legend-text">Paletler</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #006A6A;"></div>
+        <span class="legend-text">TIR İç Hacmi</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: rgba(255, 0, 0, 0.2);"></div>
+        <span class="legend-text">Kullanılamayan Alan</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="navigation-controls">
+    <button mat-raised-button matStepperPrevious class="previous-button">
+      <mat-icon>arrow_back</mat-icon>
+      <span>Sipariş Detaylarına Dön</span>
+    </button>
+
+    <button mat-raised-button class="finish-button">
+      <mat-icon>check</mat-icon>
+      <span>Sevkiyatı Tamamla</span>
+    </button>
+  </div>
+</div>
 <!--
 <app-loading></app-loading>
 <h1>Sonuç Ekranı</h1>

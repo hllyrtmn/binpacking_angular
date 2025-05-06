@@ -62,7 +62,8 @@ export function mapPackageToPackageDetail(uiPackageList: UiPackage[]): PackageDe
         package: {
           id: uiPackage.id,
           pallet: packagePallet,
-          order: uiPackage.order
+          order: uiPackage.order,
+          name: uiPackage.name
         },
         product: {
           id: uiProduct.id,

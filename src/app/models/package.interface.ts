@@ -5,4 +5,5 @@ import { Pallet } from "./pallet.interface";
 export interface Package extends BaseModel {
   order: Order;
   pallet?: Pallet | null;
+  name?:string | null;
 }

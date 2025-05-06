@@ -1,1 +1,245 @@
-<p>orders works!</p>
+<!-- orders.component.html -->
+<div class="logistics-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-icon">
+      <mat-icon>local_shipping</mat-icon>
+    </div>
+    <div class="header-title">
+      <h2>Sevkiyat Yönetimi</h2>
+      <p class="header-subtitle">Aktif siparişleri görüntüleyin ve yönetin</p>
+    </div>
+  </div>
+
+
+  <!-- Main Container with Responsive Grid Layout -->
+  <div class="main-grid-container">
+    <!-- Left Column: Order Selection and Details -->
+    <div class="grid-column order-column">
+      <!-- Order Selector -->
+      <div class="selector-container">
+        <mat-form-field appearance="outline" class="order-selector">
+          <mat-label style="margin-left: 20px;">Sipariş Seçin</mat-label>
+          <mat-select #orderSelect [(ngModel)]="selectedOrderResult" (selectionChange)="onOrderResultSelected()">
+            <!-- Search input inside select panel -->
+            <mat-select-trigger>
+              <div class="select-trigger-content">
+                <mat-icon *ngIf="selectedOrderResult">assignment</mat-icon>
+                {{ selectedOrderResult ?
+                   'Sipariş No: ' + (selectedOrderResult.order.name) + '(' + selectedOrderResult.order.company.company_name + ')' :
+                   'Sevkiyat Emri Seçin' }}
+              </div>
+            </mat-select-trigger>
+
+            <div class="select-search-container">
+              <mat-form-field appearance="outline" class="select-search-field" (click)="$event.stopPropagation()">
+                <mat-icon matPrefix>search</mat-icon>
+                <input
+                  matInput
+                  placeholder="Sevkiyat veya firma ara..."
+                  [ngModel]="searchTerm"
+                  (ngModelChange)="filterOrders($event)"
+                  (keydown.space)="$event.stopPropagation()"
+                  autocomplete="off">
+              </mat-form-field>
+            </div>
+
+            <mat-option *ngFor="let order of filteredOrderResults" [value]="order">
+              <div class="order-option">
+                <div class="order-icon">
+                  <mat-icon>receipt</mat-icon>
+                </div>
+                <div class="order-details">
+                  <span class="order-id">{{ order.order.name }}</span>
+                  <span class="company-name">{{ order.order.company.company_name }}</span>
+                </div>
+                <div class="order-date">
+                  {{ order.order.date | date:'dd.MM.yyyy' }}
+                </div>
+              </div>
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Order Summary Card -->
+      <div *ngIf="selectedOrderResult" class="card-container">
+        <mat-card class="compact-card">
+          <div class="card-ribbon"></div>
+          <div class="card-header">
+            <div class="card-title-section">
+              <mat-icon class="card-icon">description</mat-icon>
+              <div class="card-title-content">
+                <h3 class="card-title">Sevkiyat Özeti</h3>
+                <p class="card-subtitle">{{ selectedOrderResult.order.company.company_name }} - {{ selectedOrderResult.order.date | date }}</p>
+              </div>
+            </div>
+            <div class="status-badge">
+              <span class="status-dot active"></span>
+              Aktif
+            </div>
+          </div>
+
+          <div class="card-content">
+            <!-- Loading Indicator -->
+            <div *ngIf="loadingDetails" class="loading-container">
+              <div class="animated-truck">
+                <mat-icon>local_shipping</mat-icon>
+                <div class="truck-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+              <p>Sevkiyat detayları yükleniyor...</p>
+            </div>
+
+            <!-- Error Message -->
+            <div *ngIf="detailsError" class="error-container">
+              <div class="error-icon">
+                <mat-icon>error_outline</mat-icon>
+              </div>
+              <p class="error-message">{{ detailsError }}</p>
+              <button mat-button class="retry-button" (click)="loadOrderDetails(selectedOrderResult.order.id)">
+                <mat-icon>refresh</mat-icon>
+                Tekrar Dene
+              </button>
+            </div>
+
+            <!-- Order Details Rows -->
+            <div *ngIf="orderDetails && !loadingDetails && !detailsError" class="details-content">
+              <div class="dimensions-list">
+                <div *ngFor="let detail of orderDetails" class="dimension-item">
+                  <div class="dimension-info">
+                    <div class="product-box-icon"></div>
+                    <span class="dimension-label">{{ detail.product?.name || 'N/A' }}</span>
+                    <span class="count-badge">{{ detail.count || 0 }}</span>
+                  </div>
+                </div>
+
+                <!-- Total Values -->
+                <div class="totals-section">
+                  <div class="total-item">
+                    <div class="total-icon">
+                      <mat-icon>inventory_2</mat-icon>
+                    </div>
+                    <span class="total-label">Toplam Ürün:</span>
+                    <span class="total-value">{{ getTotalCount() }} Adet</span>
+                  </div>
+
+                  <div class="total-item">
+                    <div class="total-icon">
+                      <mat-icon>straighten</mat-icon>
+                    </div>
+                    <span class="total-label">Toplam Metre:</span>
+                    <span class="total-value">{{ getTotalMeter() }} Metre</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-card>
+      </div>
+
+      <!-- Files Card -->
+      <div *ngIf="files && files.length > 0" class="card-container">
+        <mat-card class="compact-card">
+          <div class="card-ribbon"></div>
+          <div class="card-header">
+            <div class="card-title-section">
+              <mat-icon class="card-icon">description</mat-icon>
+              <div class="card-title-content">
+                <h3 class="card-title">Sipariş Dosyaları</h3>
+                <p class="card-subtitle">Toplam dosya sayısı: {{ files.length }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-content">
+            <div class="files-list">
+              <div *ngFor="let file of files" class="file-item">
+                <div class="file-icon">
+                  <mat-icon>{{ getFileIcon(file.type) }}</mat-icon>
+                </div>
+                <div class="file-info">
+                  <span class="file-name">{{ file.name }}</span>
+                  <a [href]="file.file" target="_blank" class="file-link">
+                    <mat-icon class="download-icon">download</mat-icon>
+                    <span>İndir</span>
+                  </a>
+                </div>
+              </div>
+
+              <div *ngIf="files.length === 0" class="no-files">
+                <mat-icon>info_outline</mat-icon>
+                <p>Bu sipariş için dosya bulunamadı.</p>
+              </div>
+            </div>
+          </div>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Right Column: Package Configuration -->
+    <div class="grid-column package-column" *ngIf="groupedPackages && groupedPackages.length > 0">
+      <div class="package-details-container">
+        <div class="section-header">
+          <mat-icon>view_in_ar</mat-icon>
+          <h3>Palet Yapılandırması</h3>
+        </div>
+
+        <!-- Scrollable package grid -->
+        <div class="package-scrollable-container">
+          <div class="package-grid">
+            <div class="package-card compact-card" *ngFor="let packageGroup of groupedPackages; let index = index">
+              <div class="package-header" (click)="togglePackage(packageGroup)">
+                <div class="package-title">
+                  <div class="pallet-icon">
+                    <div class="pallet-base"></div>
+                    <div class="pallet-boxes"></div>
+                  </div>
+                  <div class="package-title-content">
+                    <span class="package-id">Palet {{ index + 1 }}</span>
+                    <span class="package-ref">{{ packageGroup.id | slice:0:6 }}</span>
+                  </div>
+                </div>
+                <div class="package-metrics">
+                  <div class="metric">
+                    <span class="metric-value">{{ packageGroup.dimension.width }} x {{ packageGroup.dimension.height }} x {{ packageGroup.dimension.depth }}</span>
+                    <span class="metric-unit">{{ packageGroup.dimension.unit }}</span>
+                  </div>
+                  <div class="package-count">
+                    <span class="package-count-badge">{{ packageGroup.items.length }}</span>
+                    <mat-icon class="expand-icon" [class.expanded]="packageGroup.expanded">expand_more</mat-icon>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Package Details - Fixed height with scrollable content -->
+              <div class="package-content" *ngIf="packageGroup.expanded">
+                <div class="package-product-list">
+                  <div *ngFor="let detail of packageGroup.items" class="package-product-item">
+                    <div class="product-icon">
+                      <mat-icon>inventory</mat-icon>
+                    </div>
+                    <div class="product-info">
+                      <div class="product-name">{{ detail.product.name }}</div>
+                      <div class="product-details">
+                        <span class="product-dimension">
+                          {{ detail.product.dimension.width }} x
+                          {{ detail.product.dimension.depth }} x
+                          {{ detail.product.dimension.height }} {{ detail.product.dimension.unit }}
+                        </span>
+                        <span class="product-count">{{ detail.count }} adet</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

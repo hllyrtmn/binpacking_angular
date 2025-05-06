@@ -95,6 +95,7 @@ export class PalletControlComponent implements OnInit {
             if (pkg.pallet) {
               pkg.pallet.id = pkg.pallet.id + '/' + index;
             }
+            pkg.name = 'Palet'+ index;
           });
           this.addNewEmptyPackage();
           this.calculateVolume();

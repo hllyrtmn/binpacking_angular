@@ -23,6 +23,7 @@ export class UiPackage implements IUiPackage {
   order: Order;
   company?: Company | undefined;
   id: string;
+  name:string;
 
   // TODO: buradaki methodlar observable veya signala donusturulmeli
   // veya cache mantigi kullanilmali performance artirmak icin
@@ -50,6 +51,7 @@ export class UiPackage implements IUiPackage {
     this.order = init.order!;
     this.company = init.company;
     this.id = init.id!;
+    this.name = init.name!;
   }
 
 }
