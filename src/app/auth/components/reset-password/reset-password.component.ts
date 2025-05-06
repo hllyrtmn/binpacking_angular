@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import {MatProgressBarModule} from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { UserService } from '../../../services/user.service';
@@ -24,7 +25,8 @@ import { UserService } from '../../../services/user.service';
     MatInputModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatProgressBarModule
   ],
   templateUrl: './reset-password.component.html',
   styleUrl: './reset-password.component.scss'
@@ -71,6 +73,48 @@ export class ResetPasswordComponent implements OnInit {
         this.isValidToken = false;
       }
     });
+  }
+
+  getPasswordStrength(): string {
+    const password = this.resetForm.get('password')?.value;
+    if (!password) return 'weak';
+
+    const hasNumbers = /\d/.test(password);
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    const strength =
+      (password.length >= 8 ? 1 : 0) +
+      (hasNumbers ? 1 : 0) +
+      (hasUppercase ? 1 : 0) +
+      (hasLowercase ? 1 : 0) +
+      (hasSpecial ? 1 : 0);
+
+    if (strength >= 4) return 'Strong';
+    if (strength >= 3) return 'Medium';
+    return 'weak';
+  }
+
+  getPasswordStrengthText(): string {
+    const strength = this.getPasswordStrength();
+    if (strength === 'strong') return 'Güçlü';
+    if (strength === 'medium') return 'Orta';
+    return 'Zayıf';
+  }
+
+  getStrengthIcon(): string {
+    const strength = this.getPasswordStrength();
+    if (strength === 'strong') return 'shield';
+    if (strength === 'medium') return 'security';
+    return 'lock_open';
+  }
+
+  getStrengthBarWidth(): string {
+    const strength = this.getPasswordStrength();
+    if (strength === 'strong') return '100%';
+    if (strength === 'medium') return '66%';
+    return '33%';
   }
 
   validateToken() {
@@ -128,31 +172,6 @@ export class ResetPasswordComponent implements OnInit {
   private passwordMatchValidator(g: FormGroup) {
     return g.get('password')?.value === g.get('confirmPassword')?.value
       ? null : { mismatch: true };
-  }
-
-  getPasswordStrength(): string {
-    const password = this.resetForm.get('password')?.value || '';
-
-    if (password.length === 0) return '';
-
-    let strength = 0;
-
-    // Length
-    if (password.length >= 8) strength++;
-    if (password.length >= 12) strength++;
-
-    // Contains numbers
-    if (/[0-9]/.test(password)) strength++;
-
-    // Contains lowercase and uppercase
-    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
-
-    // Contains special characters
-    if (/[^A-Za-z0-9]/.test(password)) strength++;
-
-    if (strength <= 2) return 'zayıf';
-    if (strength <= 4) return 'orta';
-    return 'güçlü';
   }
 
   private showError(message: string) {

@@ -426,3 +426,19 @@ mat-divider {
 .forgot-button mat-icon {
   margin-right: 8px;
 }
+
+.form-field.country-code {
+  flex: 0 0 40%;
+}
+
+.form-field.phone-number {
+  flex: 1;
+}
+
+/* Responsive görünüm için */
+@media (max-width: 768px) {
+  .form-field.country-code,
+  .form-field.phone-number {
+    flex: 1 1 100%;
+  }
+}

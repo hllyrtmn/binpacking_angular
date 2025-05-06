@@ -8,12 +8,21 @@
 
 .profile-photo {
     border-radius: 50%;
-    border: 0.2em solid #90d12e;
+    border: 0.2em solid #D6BB86;
+    background-color: #ffffff;
     margin-left: 15px;
     height: 2em;
     width: 2em;
 }
-
+.profile-picture {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 6px solid #D6BB86;
+  background-color: #ffffff;
+  transition: opacity 0.3s ease;
+}
 
 @keyframes profile {
     0% {}

@@ -123,14 +123,24 @@
                 <h3 class="section-title">Contact Information</h3>
 
                 <div class="form-row">
-                  <mat-form-field appearance="outline" class="form-field">
-                    <mat-label>Phone Number</mat-label>
-                    <input matInput formControlName="phone" placeholder="05XX XXX XX XX"
-                           (input)="onPhoneInput($event)" maxlength="11">
+                  <mat-form-field appearance="outline" class="form-field country-code">
+                    <mat-label>Ülke Kodu</mat-label>
+                    <mat-select formControlName="countryCode">
+                      <mat-option *ngFor="let country of countryCodes" [value]="country.code">
+                        {{country.country}} ({{country.code}})
+                      </mat-option>
+                    </mat-select>
+                    <mat-icon matSuffix>public</mat-icon>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="form-field phone-number">
+                    <mat-label>Telefon Numarası</mat-label>
+                    <input matInput formControlName="phone" placeholder="5XX XXX XX XX"
+                          (input)="onPhoneInput($event)" maxlength="13">
                     <mat-icon matSuffix>phone</mat-icon>
-                    <mat-hint>Enter without country code</mat-hint>
+                    <mat-hint>Başında 0 olmadan girin</mat-hint>
                     <mat-error *ngIf="profileForm.get('phone')?.hasError('pattern')">
-                      Only numbers allowed
+                      Sadece rakam girebilirsiniz
                     </mat-error>
                   </mat-form-field>
                 </div>
@@ -147,7 +157,7 @@
                   mat-raised-button
                   color="primary"
                   type="submit"
-                  [disabled]="isLoading || profileForm.invalid"
+                  [disabled]="isLoading || profileForm.invalid  || !formChanged "
                   class="submit-button"
                 >
                   <mat-spinner diameter="20" *ngIf="isLoading"></mat-spinner>

@@ -1,6 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+} from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
@@ -14,10 +19,12 @@ import { User } from '../../../models/user.interface';
 import { UserService } from '../../../services/user.service';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ForgotPasswordDialogComponent } from './forgot-password-dialog/forgot-password-dialog.component';
+import { MatSelectModule } from '@angular/material/select';
 
 @Component({
   selector: 'app-profile',
-  imports: [CommonModule,
+  imports: [
+    CommonModule,
     ReactiveFormsModule,
     MatCardModule,
     MatButtonModule,
@@ -28,9 +35,11 @@ import { ForgotPasswordDialogComponent } from './forgot-password-dialog/forgot-p
     MatSnackBarModule,
     MatProgressSpinnerModule,
     MatDividerModule,
-    MatDialogModule  ],
+    MatDialogModule,
+    MatSelectModule,
+  ],
   templateUrl: './profile.component.html',
-  styleUrl: './profile.component.scss'
+  styleUrl: './profile.component.scss',
 })
 export class ProfileComponent implements OnInit {
   private userService = inject(UserService);
@@ -38,6 +47,8 @@ export class ProfileComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog); // Dialog servisini inject edin
 
+  formChanged = false; // Form değişti mi?
+  changedFields: Partial<User> = {}; // Değişen alanlar
   profileForm!: FormGroup;
   passwordForm!: FormGroup;
   userProfile: User | null = null;
@@ -47,10 +58,71 @@ export class ProfileComponent implements OnInit {
   hidePassword = true;
   hideNewPassword = true;
   hideConfirmPassword = true;
+  countryCodes = [
+    { code: '+90', country: 'Türkiye' },
+    { code: '+1', country: 'ABD/Kanada' },
+    { code: '+44', country: 'Birleşik Krallık' },
+    { code: '+49', country: 'Almanya' },
+    { code: '+33', country: 'Fransa' },
+    { code: '+39', country: 'İtalya' },
+    { code: '+31', country: 'Hollanda' },
+    { code: '+7', country: 'Rusya' },
+    { code: '+86', country: 'Çin' },
+    { code: '+81', country: 'Japonya' },
+    // Diğer ülke kodları eklenebilir
+  ];
+  selectedCountryCode = '+90'; // Varsayılan olarak Türkiye kodu
 
   ngOnInit() {
     this.initializeForms();
     this.loadProfile();
+  }
+
+  private trackFormChanges() {
+    this.profileForm.valueChanges.subscribe(() => {
+      if (!this.userProfile) return;
+
+      // Değişen alanları kontrol et
+      this.changedFields = {};
+      const formValue = this.profileForm.value;
+
+      // Her alan için kontrol et
+      if (formValue.first_name !== this.userProfile.first_name) {
+        this.changedFields.first_name = formValue.first_name;
+      }
+
+      if (formValue.last_name !== this.userProfile.last_name) {
+        this.changedFields.last_name = formValue.last_name;
+      }
+
+      if (formValue.username !== this.userProfile.username) {
+        this.changedFields.username = formValue.username;
+      }
+
+      if (formValue.email !== this.userProfile.email) {
+        this.changedFields.email = formValue.email;
+      }
+
+      if (formValue.address !== this.userProfile.address) {
+        this.changedFields.address = formValue.address;
+      }
+
+      // Telefon için özel kontrol
+      const originalPhone = this.userProfile.phone || '';
+      this.selectedCountryCode = formValue.countryCode || '+90'; // Ülke kodunu sakla
+
+      // Telefon numarasını ülke kodu ile birleştirip karşılaştırmak için format fonksiyonunu kullanalım
+      const formattedNewPhone = this.userService['formatPhoneNumber'](
+        formValue.phone,
+        this.selectedCountryCode
+      );
+      if (formattedNewPhone !== originalPhone) {
+        this.changedFields.phone = formValue.phone; // Yalnızca numarayı saklıyoruz
+      }
+
+      // Form değişti mi?
+      this.formChanged = Object.keys(this.changedFields).length > 0;
+    });
   }
 
   private initializeForms() {
@@ -60,28 +132,34 @@ export class ProfileComponent implements OnInit {
       username: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       phone: [''],
-      address: ['']
+      countryCode: ['+90'], // Varsayılan ülke kodu
+      address: [''],
+      company: [null], // Company alanını ekleyelim
     });
 
-    this.passwordForm = this.fb.group({
-      old_password: ['', Validators.required],
-      new_password: ['', [Validators.required, Validators.minLength(8)]],
-      confirm_password: ['', Validators.required]
-    }, { validator: this.passwordMatchValidator });
+    this.passwordForm = this.fb.group(
+      {
+        old_password: ['', Validators.required],
+        new_password: ['', [Validators.required, Validators.minLength(8)]],
+        confirm_password: ['', Validators.required],
+      },
+      { validator: this.passwordMatchValidator }
+    );
   }
 
   private passwordMatchValidator(g: FormGroup) {
     return g.get('new_password')?.value === g.get('confirm_password')?.value
-      ? null : { mismatch: true };
+      ? null
+      : { mismatch: true };
   }
 
   openForgotPasswordDialog() {
     const dialogRef = this.dialog.open(ForgotPasswordDialogComponent, {
       width: '400px',
-      disableClose: true
+      disableClose: true,
     });
 
-    dialogRef.afterClosed().subscribe(result => {
+    dialogRef.afterClosed().subscribe((result) => {
       console.log('Forgot password dialog was closed');
     });
   }
@@ -96,6 +174,9 @@ export class ProfileComponent implements OnInit {
           this.profilePictureUrl = user.profile_picture;
         }
         this.isLoading = false;
+
+        // Profil yüklendikten sonra form değişikliklerini izlemeye başla
+        this.trackFormChanges();
       },
       error: (error) => {
         this.isLoading = false;
@@ -105,54 +186,78 @@ export class ProfileComponent implements OnInit {
   }
 
   private patchProfileForm(user: User) {
+    // Telefon numarasını ülke kodu ve numara olarak ayıralım
+    let phoneNumber = user.phone || '';
+    let countryCode = '+90'; // Varsayılan
+
+    // Eğer telefon numarası bir ülke kodu ile başlıyorsa, ayırma işlemini yapalım
+    if (phoneNumber && phoneNumber.startsWith('+')) {
+      // Ülke kodunu belirleyelim
+      const foundCode = this.countryCodes.find((c) =>
+        phoneNumber.startsWith(c.code)
+      );
+      if (foundCode) {
+        countryCode = foundCode.code;
+        phoneNumber = phoneNumber.substring(foundCode.code.length);
+      }
+    }
+
     this.profileForm.patchValue({
       first_name: user.first_name || '',
       last_name: user.last_name || '',
       username: user.username || '',
       email: user.email || '',
-      phone: user.phone || '',
-      address: user.address || ''
+      phone: phoneNumber, // Sadece telefon numarası
+      countryCode: countryCode, // Ülke kodu
+      address: user.address || '',
+      company: user.company, // Tüm company nesnesini saklıyoruz
     });
   }
 
   onUpdateProfile() {
-    if (this.profileForm.invalid) return;
+    if (this.profileForm.invalid || !this.formChanged) return;
 
     this.isLoading = true;
-    const profileData = this.profileForm.value;
 
-    console.log('Sending profile data:', profileData);
+    // Sadece değişen alanları ve ülke kodunu ayrı parametre olarak gönder
+    this.userService
+      .updateChangedFields(this.changedFields, this.selectedCountryCode)
+      .subscribe({
+        next: (user) => {
+          this.userProfile = user;
+          this.isLoading = false;
+          this.formChanged = false; // Değişiklikler kaydedildi
+          this.changedFields = {}; // Değişen alanları temizle
+          this.showSuccess('Profile updated successfully');
+        },
+        error: (error) => {
+          this.isLoading = false;
+          console.error('Full error object:', error);
 
-    this.userService.updateProfile(profileData).subscribe({
-      next: (user) => {
-        this.userProfile = user;
-        this.isLoading = false;
-        this.showSuccess('Profile updated successfully');
-      },
-      error: (error) => {
-        this.isLoading = false;
-        console.error('Full error object:', error);
-        console.error('Error status:', error.status);
-        console.error('Error message:', error.error);
+          let errorMessage = 'Error updating profile';
 
-        // Try to extract meaningful error message
-        let errorMessage = 'Error updating profile';
+          if (error.error) {
+            if (typeof error.error === 'object') {
+              const errors = Object.entries(error.error)
+                .map(([field, messages]) => {
+                  const messageText = Array.isArray(messages)
+                    ? messages.join(', ')
+                    : messages;
+                  return `${field}: ${messageText}`;
+                })
+                .join('\n');
 
-        if (error.error) {
-          // Check for field-specific errors
-          if (typeof error.error === 'object') {
-            const firstError = Object.entries(error.error).map(([field, messages]) => {
-              return `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`;
-            }).join('\n');
-            errorMessage = firstError || errorMessage;
-          } else if (typeof error.error === 'string') {
-            errorMessage = error.error;
+              if (errors) {
+                errorMessage = errors;
+              }
+            } else if (typeof error.error === 'string') {
+              errorMessage = error.error;
+            }
           }
-        }
 
-        this.showError(errorMessage);
-      }
-    });
+          this.showError(errorMessage);
+        },
+      });
   }
 
   onFileSelected(event: any) {
@@ -168,7 +273,7 @@ export class ProfileComponent implements OnInit {
         error: (error) => {
           this.isLoadingPicture = false;
           this.showError('Error updating profile picture');
-        }
+        },
       });
     }
   }
@@ -202,7 +307,7 @@ export class ProfileComponent implements OnInit {
             Object.entries(error.error).forEach(([field, messages]) => {
               // Convert field names to user-friendly names
               let fieldName = field;
-              switch(field) {
+              switch (field) {
                 case 'old_password':
                   fieldName = 'Current password';
                   break;
@@ -220,8 +325,10 @@ export class ProfileComponent implements OnInit {
                   break;
               }
 
-              const messageList = Array.isArray(messages) ? messages : [messages];
-              messageList.forEach(msg => {
+              const messageList = Array.isArray(messages)
+                ? messages
+                : [messages];
+              messageList.forEach((msg) => {
                 errors.push(fieldName ? `${fieldName}: ${msg}` : msg);
               });
             });
@@ -237,27 +344,47 @@ export class ProfileComponent implements OnInit {
         }
 
         this.showError(errorMessage);
-      }
+      },
     });
   }
 
   onPhoneInput(event: Event) {
     const input = event.target as HTMLInputElement;
-    // Only allow numbers
-    input.value = input.value.replace(/[^0-9]/g, '');
+    // Sadece rakamları al
+    let rawValue = input.value.replace(/[^0-9]/g, '');
 
-    // Format as 05XX XXX XX XX
-    if (input.value.length >= 4) {
-      input.value = input.value.slice(0, 4) + ' ' + input.value.slice(4);
-    }
-    if (input.value.length >= 8) {
-      input.value = input.value.slice(0, 8) + ' ' + input.value.slice(8);
-    }
-    if (input.value.length >= 11) {
-      input.value = input.value.slice(0, 11) + ' ' + input.value.slice(11);
+    // İlk rakamı kontrol et, eğer 0 ise kaldır (ülke kodu kullanacağımız için)
+    if (rawValue.startsWith('0')) {
+      rawValue = rawValue.substring(1);
     }
 
-    this.profileForm.get('phone')?.setValue(input.value.replace(/\s/g, ''));
+    // Formatlanmış değeri oluştur (5XX XXX XX XX)
+    let formattedValue = '';
+
+    if (rawValue.length > 0) {
+      formattedValue += rawValue.substring(0, Math.min(3, rawValue.length));
+    }
+
+    if (rawValue.length > 3) {
+      formattedValue +=
+        ' ' + rawValue.substring(3, Math.min(6, rawValue.length));
+    }
+
+    if (rawValue.length > 6) {
+      formattedValue +=
+        ' ' + rawValue.substring(6, Math.min(8, rawValue.length));
+    }
+
+    if (rawValue.length > 8) {
+      formattedValue +=
+        ' ' + rawValue.substring(8, Math.min(10, rawValue.length));
+    }
+
+    // Görüntülenen değeri formatlanmış şekilde ayarla
+    input.value = formattedValue;
+
+    // Form kontrolünün içeriğini sadece formatlanmamış rakamlar olarak ayarla
+    this.profileForm.get('phone')?.setValue(rawValue);
   }
 
   resetForm() {
@@ -296,7 +423,7 @@ export class ProfileComponent implements OnInit {
       duration: 3000,
       horizontalPosition: 'right',
       verticalPosition: 'top',
-      panelClass: ['success-snackbar']
+      panelClass: ['success-snackbar'],
     });
   }
 
@@ -305,8 +432,7 @@ export class ProfileComponent implements OnInit {
       duration: 5000,
       horizontalPosition: 'right',
       verticalPosition: 'top',
-      panelClass: ['error-snackbar']
+      panelClass: ['error-snackbar'],
     });
   }
 }
-

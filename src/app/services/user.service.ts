@@ -12,18 +12,16 @@ export class UserService {
   constructor(private http: HttpClient,private api: ApiService) {}
 
 
-  private formatPhoneNumber(phone: string | null): string | null {
+  private formatPhoneNumber(phone: string | null, countryCode: string = '+90'): string | null {
     if (!phone) return null;
 
-    // Remove any non-digit characters
+    // Sadece rakamları al
     const cleaned = phone.replace(/\D/g, '');
 
-    // Add country code if not present
-    if (cleaned && !cleaned.startsWith('90')) {
-      return '+90' + cleaned;
-    }
+    if (!cleaned) return null;
 
-    return cleaned ? '+' + cleaned : null;
+    // Ülke kodunu ekle
+    return countryCode + cleaned;
   }
 
   getProfile(): Observable<User> {
@@ -35,6 +33,17 @@ export class UserService {
       profileData.phone = this.formatPhoneNumber(profileData.phone);
     }
     return this.http.put<User>(`${this.api.getApiUrl()}/profile/`, profileData);
+  }
+
+  updateChangedFields(changedFields: Partial<User>, countryCode?: string): Observable<User> {
+    const fieldsToUpdate = {...changedFields};
+
+    // Telefon numarası değişmişse formatla
+    if (fieldsToUpdate.phone && countryCode) {
+      fieldsToUpdate.phone = this.formatPhoneNumber(fieldsToUpdate.phone, countryCode);
+    }
+
+    return this.http.patch<User>(`${this.api.getApiUrl()}/profile/`, fieldsToUpdate);
   }
 
   updateProfilePicture(file: File): Observable<User> {
