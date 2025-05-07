@@ -1,410 +1,759 @@
-/* Ana layout ayarları */
-html, body {
-  height: 100%;
-  margin: 0;
-  overflow: hidden;
-}
+/* =====================
+   GENEL AYARLAR
+===================== */
+/* Root değişkenleri kaldırıldı, doğrudan renk kullanılıyor */
 
-/* Ana layout ayarları */
-.row {
-  display: flex;
-  height: calc(100vh - 100px);
-  overflow: hidden; /* Bu zaten doğru */
-  position: relative;
-}
-
-/* Sabit kenar çubukları */
-.col-md-2 {
-  position: sticky;
-  top: 0;
-  height: 100%;
-  /* overflow-y: auto; kaldırıldı */
-  z-index: 10;
-}
-
-/* Orta bölüm stilleri */
-.col-md-8 {
-  flex-grow: 1;
-  overflow-y: auto;
-  height: 100%;
-  padding: 0 15px;
-}
-
-/* Container stilleri */
-.example-container {
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  margin-bottom: 16px;
-  background: white;
-  padding: 5px;
+/* Temel stillemeler */
+form {
+  background-color: #f8f9fa;
+  padding: 20px;
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
-.example-container h2 {
-  position: sticky;
-  top: 0;
-  background: white;
-  margin: 0;
-  padding: 10px 0;
-  z-index: 5;
-}
-
-/* Liste stilleri */
-.example-list {
-  width: 500px;
-  max-width: 100%;
-  border: solid 1px #ccc;
-  min-height: 60px;
-  background: white;
-  border-radius: 4px;
-  flex-grow: 1;
-  overflow-y: auto;
-  max-height: calc(100% - 50px);
-  height: 100%; /* Yüksekliği kontrol etmek için */
-}
-
-.example-box {
-  padding: 20px 10px;
-  border-bottom: solid 1px #ccc;
-  color: rgba(0, 0, 0, 0.87);
+/* =====================
+   BAŞLIK VE DASHBOARD
+===================== */
+.logistics-header {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  justify-content: space-between;
-  box-sizing: border-box;
-  cursor: move;
-  background: white;
+  margin-bottom: 20px;
+}
+
+.header-icon {
+  background-color: #006A6A;
+  color: #FFFFFF;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.header-icon mat-icon {
+  font-size: 26px;
+  height: 26px;
+  width: 26px;
+  color: #FFFFFF;
+}
+
+.header-titles h1 {
+  margin: 0;
+  color: #006A6A;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.header-subtitle {
+  color: #666666;
+  margin: 4px 0 0;
   font-size: 14px;
 }
 
-.example-box:last-child {
-  border: none;
-}
-
-/* Paket container stilleri */
-.packages-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  grid-gap: 16px;
-  width: 100%;
-  margin-bottom: 20px;
-  min-height: 250px;
-  overflow-y: auto;
-}
-
-.package-box {
-  border: 1px solid #006A6A;
-  border-radius: 4px;
-  background: white;
-  overflow: hidden;
-  height: 100%;
+/* Dashboard metrics */
+.logistics-dashboard {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
-.package-header {
-  background-color: #006A6A;
-  color: white;
-  padding: 2px;
-}
-
-.package-items {
-  min-height: 60px;
-  flex-grow: 1;
+.dashboard-item {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 16px;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 200px;
+  transition: all 0.3s ease;
+  border-left: 4px solid #006A6A;
 }
 
-/* Palet stilleri */
-.pallet-in-package {
-  border-radius: 4px;
-  background: white;
-  padding: 5px;
-  margin-bottom: 0;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
+.dashboard-item:nth-child(2) {
+  border-left-color: #D6BB86;
 }
 
-.pallet-header {
+.dashboard-item:nth-child(2) .dashboard-icon {
   background-color: #D6BB86;
-  color: white;
-  padding: 2px;
+}
+
+.dashboard-item:nth-child(3) {
+  border-left-color: #004A4A;
+}
+
+.dashboard-item:nth-child(3) .dashboard-icon {
+  background-color: #004A4A;
+}
+
+.dashboard-item:nth-child(4) {
+  border-left-color: #C0A670;
+}
+
+.dashboard-item:nth-child(4) .dashboard-icon {
+  background-color: #C0A670;
+}
+
+.dashboard-icon {
+  width: 40px;
+  height: 40px;
+  background-color: #006A6A;
+  color: #FFFFFF;
+  border-radius: 8px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: center;
+  margin-right: 12px;
 }
 
-.pallet-items {
-  min-height: 60px;
-  padding: 5px;
-  background: #f9f9f9;
-  flex-grow: 1;
+.dashboard-icon mat-icon {
+  color: #FFFFFF;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
 }
 
-.pallet-items:hover {
-  background-color: rgba(33, 150, 243, 0.1);
-  transition: background-color 0.3s ease;
-}
-
-/* Ürün stilleri */
-.product-in-pallet {
-  border-bottom: solid 1px #ccc;
-  color: rgba(0, 0, 0, 0.87);
+.dashboard-info {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  box-sizing: border-box;
-  cursor: move;
-  background: white;
+  flex-direction: column;
+}
+
+.dashboard-label {
   font-size: 12px;
+  color: #666666;
+  margin-bottom: 4px;
 }
 
-/* Yardımcı element stilleri */
-.small-icon-button {
+.dashboard-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #006A6A;
+}
+
+/* =====================
+   ANA KONTEYNER
+===================== */
+.logistics-container {
+  display: flex;
+  gap: 20px;
+  height: calc(100vh - 280px);
+  min-height: 400px;
+}
+
+/* Genel bölüm stilleri */
+.inventory-section, .pallets-section, .packages-section {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.inventory-section, .pallets-section {
+  flex: 0 0 240px;
+}
+
+.packages-section {
+  flex: 1;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: rgba(0, 106, 106, 0.1);
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.section-header.with-action {
+  display: flex;
+  justify-content: space-between;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+}
+
+.section-header mat-icon, .header-title mat-icon {
+  color: #006A6A;
+  margin-right: 8px;
+}
+
+.section-header h2 {
   margin: 0;
-  padding: 0;
-  width: 24px;
-  height: 24px;
-  line-height: 24px;
+  font-size: 16px;
+  color: #006A6A;
+  font-weight: 600;
 }
 
-.small-icon-button .mat-icon {
+.clear-button {
+  color: #666666;
+  font-size: 12px;
+  padding: 0 10px;
+  height: 30px;
+  line-height: 30px;
+  background-color: #f5f5f5;
+}
+
+.clear-button mat-icon {
+  font-size: 16px;
+  height: 16px;
+  width: 16px;
+  margin-right: 4px;
+  color: #666666;
+}
+
+.clear-button:hover {
+  background-color: #eeeeee;
+  color: #F44336;
+}
+
+.clear-button:hover mat-icon {
+  color: #F44336;
+}
+
+/* =====================
+   ENVANTER (SOL PANEL)
+===================== */
+.inventory-list {
+  padding: 8px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.product-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  cursor: move;
+  transition: all 0.3s ease;
+}
+
+.product-item:hover {
+  background-color: rgba(0, 106, 106, 0.1);
+  border-color: #006A6A;
+}
+
+.product-icon {
+  width: 20px;
+  height: 20px;
+  background-color: #006A6A;
+  border-radius: 4px;
+  margin-right: 10px;
+  position: relative;
+}
+
+.product-icon::before, .product-icon::after {
+  content: '';
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.product-icon::before {
+  top: 4px;
+  left: 2px;
+  right: 2px;
+  height: 2px;
+}
+
+.product-icon::after {
+  left: 4px;
+  top: 2px;
+  bottom: 2px;
+  width: 2px;
+}
+
+.product-icon.small {
+  width: 16px;
+  height: 16px;
+}
+
+.product-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-name {
+  font-size: 14px;
+  color: #333333;
+  line-height: 1.2;
+}
+
+.product-count {
+  font-size: 12px;
+  color: #666666;
+}
+
+.action-button {
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  color: #666666;
+}
+
+.action-button:hover {
+  color: #006A6A;
+  background-color: rgba(0, 106, 106, 0.1);
+}
+
+.action-button mat-icon {
   font-size: 16px;
   width: 16px;
   height: 16px;
   line-height: 16px;
+  color: #D6BB86;
 }
 
-.icon-display {
-  transform: scale(0.8);
+.action-button:hover mat-icon {
+  color: #006A6A;
 }
 
-.empty-message {
-  text-align: center;
-  color: #999;
-  padding: 20px;
-  font-style: italic;
+/* =====================
+   PAKET GRID (ORTA PANEL)
+===================== */
+.packages-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
 }
 
-/* Drop alanı stilleri */
-.can-drop {
-  background-color: rgba(76, 175, 80, 0.2) !important;
-  border: 2px dashed #4CAF50 !important;
-  transition: all 0.3s ease;
+.package-card {
+  border: 1px solid #006A6A;
+  border-radius: 8px;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  height: 300px;
+  overflow: hidden;
 }
 
-.cannot-drop {
-  background-color: rgba(244, 67, 54, 0.2) !important;
-  border: 2px dashed #F44336 !important;
-  transition: all 0.3s ease;
-  cursor: not-allowed !important;
+.package-header {
+  background-color: #006A6A;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-/* Angular CDK Drag & Drop animation stilleri */
-.cdk-drag-preview {
-  box-sizing: border-box;
+.package-title {
+  display: flex;
+  align-items: center;
+}
+
+.package-title mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  color: #FFFFFF;
+}
+
+.package-title span {
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+.package-actions {
+  display: flex;
+}
+
+.small-action {
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  color: #FFFFFF;
+}
+
+.small-action:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.small-action mat-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  line-height: 14px;
+  color: #FFFFFF;
+}
+
+.package-dropzone {
+  flex: 1;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+  position: relative;
+  background-color: #f8f9fa;
+}
+
+/* =====================
+   PALET (PAKET İÇİ)
+===================== */
+.pallet-container {
+  background-color: white;
   border-radius: 4px;
-  box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
-              0 8px 10px 1px rgba(0, 0, 0, 0.14),
-              0 3px 14px 2px rgba(0, 0, 0, 0.12);
-  border: none;
-  scrollbar-width: none;
+  border: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
-.cdk-drag-preview::-webkit-scrollbar {
-  display: none;
+.pallet-header {
+  background-color: #D6BB86;
+  padding: 6px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 4px 4px 0 0;
 }
 
-.cdk-drag-placeholder {
-  opacity: 0;
+.pallet-title {
+  display: flex;
+  align-items: center;
 }
 
-.cdk-drag-animating {
-  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+.pallet-title span {
+  color: #FFFFFF;
+  font-weight: 500;
+  font-size: 14px;
 }
 
-.example-list.cdk-drop-list-dragging .example-box:not(.cdk-drag-placeholder) {
-  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
-}
-
-/* CDK Drag ile ilgili elemanlarda scrollbar'ı gizle */
-.cdk-drag-handle::-webkit-scrollbar,
-.cdk-drag-placeholder::-webkit-scrollbar,
-.cdk-drag-animating::-webkit-scrollbar {
-  display: none;
-}
-
-.cdk-drag-handle,
-.cdk-drag-placeholder,
-.cdk-drag-animating {
-  scrollbar-width: none;
-}
-
-/* Draggable elemanlarda scrollbar'ı gizle */
-.example-box::-webkit-scrollbar,
-.product-in-pallet::-webkit-scrollbar,
-.pallet-in-package::-webkit-scrollbar {
-  display: none;
-}
-
-.example-box,
-.product-in-pallet,
-.pallet-in-package {
-  scrollbar-width: none;
-}
-
-/* Genel scrollbar stilleri */
-::-webkit-scrollbar {
-  width: 10px;
+.pallet-icon {
+  width: 16px;
   height: 10px;
+  background-color: #a08650;
+  margin-right: 8px;
+  position: relative;
 }
 
-::-webkit-scrollbar-track {
-  background: #f0f0f0;
-  border-radius: 5px;
-  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+.pallet-icon::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background-color: #bc9d5f;
 }
 
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #006A6A, #004A4A);
-  border-radius: 5px;
-  border: 1px solid #004040;
+.pallet-content {
+  flex: 1;
+  padding: 8px;
+  overflow-y: auto;
+  min-height: 100px;
+  background-color: #f5f5f5;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to bottom, #004A4A, #003030);
+.pallet-item {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  transition: all 0.3s ease;
 }
 
-::-webkit-scrollbar-thumb:active {
-  background: linear-gradient(to bottom, #003030, #002020);
+.pallet-item:hover {
+  background-color: rgba(214, 187, 134, 0.2);
+  border-color: #D6BB86;
 }
 
-/* Bölümlere özel scrollbar stilleri */
-.example-list::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #D6BB86, #C0A670);
-  border: 1px solid #B09060;
+.pallet-base-icon {
+  width: 20px;
+  height: 10px;
+  background-color: #D6BB86;
+  margin-right: 8px;
+  position: relative;
 }
 
-.example-list::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to bottom, #C0A670, #A89060);
+.pallet-base-icon::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background-color: #C0A670;
 }
 
-.col-md-8::-webkit-scrollbar {
-  width: 12px;
+.pallet-name {
+  font-size: 14px;
+  color: #333333;
 }
-
-.col-md-8::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #444, #333);
-  border: 1px solid #222;
-  background-image: url("data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M15 5v20M5 15h20' stroke='rgba(255,255,255,0.2)' stroke-width='2'/%3E%3C/svg%3E");
-}
-
-/* Firefox için scrollbar stilleri */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #006A6A #f0f0f0;
-}
-
-.example-list {
-  scrollbar-color: #D6BB86 #f0f0f0;
-}
-
-.col-md-8 {
-  scrollbar-width: auto;
-  scrollbar-color: #444 #f0f0f0;
-}
-
 
 .pallet-footer {
-  margin-top: 10px;
   padding: 10px;
   background-color: #f5f5f5;
   border-top: 1px solid #e0e0e0;
   border-radius: 0 0 4px 4px;
 }
 
-.footer-content {
+.pallet-metrics {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   align-items: center;
 }
 
-.footer-actions {
-  display: flex;
-  gap: 8px;
-}
-.summary-item {
+.metric {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
-.pallet-summary {
+.metric mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: #D6BB86;
+}
+
+.metric span {
+  font-size: 12px;
+  color: #333333;
+  font-weight: 500;
+}
+
+/* =====================
+   PALET TİPLERİ (SAĞ PANEL)
+===================== */
+.pallets-list {
+  padding: 8px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* =====================
+   BOŞ DURUMLAR
+===================== */
+.empty-state {
   display: flex;
-  gap: 15px;
+  flex-direction: column;
   align-items: center;
-}
-
-
-/* Summary information bar styles */
-.header-container {
-  position: relative;
-  display: flex;
   justify-content: center;
-  align-items: center;
-  margin-bottom: 10px;
+  padding: 20px;
+  text-align: center;
+  color: #666666;
+  height: 100%;
 }
 
-.header-container h2 {
+.empty-state mat-icon {
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+  color: #D6BB86;
+  opacity: 0.5;
+  margin-bottom: 12px;
+}
+
+.empty-state p {
+  font-size: 14px;
   margin: 0;
 }
 
-.clear-all-button {
-  position: absolute;
-  right: 0;
-  color: #6c757d;
-  transition: color 0.2s ease;
+/* =====================
+   DND STİLLERİ
+===================== */
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 4px;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+  background-color: white;
 }
 
-.clear-all-button:hover {
-  color: #dc3545;
+.cdk-drag-placeholder {
+  opacity: 0.3;
 }
 
-.package-info {
+.cdk-drag-animating {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.can-drop {
+  background-color: rgba(76, 175, 80, 0.1) !important;
+  border: 2px dashed #4CAF50 !important;
+}
+
+.cannot-drop {
+  background-color: rgba(244, 67, 54, 0.1) !important;
+  border: 2px dashed #F44336 !important;
+  cursor: not-allowed !important;
+}
+
+/* =====================
+   NAVİGASYON BUTONLARI
+===================== */
+.navigation-controls {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 15px;
-  background-color: #f5f5f5;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  margin-bottom: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
 }
 
-.package-info p {
+.stepper-controls {
   display: flex;
-  align-items: center;
-  margin: 0;
-  font-size: 14px;
-  color: rgba(0, 0, 0, 0.87);
-  white-space: nowrap;
+  gap: 12px;
 }
 
-.package-info p .mat-icon {
-  margin-right: 5px;
-  color: #006A6A;
-  transform: scale(0.8);
+.save-button,
+.next-button {
+  background-color: #006A6A !important;
+  color: #FFFFFF !important;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .package-info {
+.prev-button {
+  background-color: #f5f5f5 !important;
+  color: #666666 !important;
+}
+
+.save-button:hover,
+.next-button:hover {
+  background-color: #004A4A !important;
+  box-shadow: 0 4px 8px rgba(0, 106, 106, 0.3);
+}
+
+.prev-button:hover {
+  background-color: #e0e0e0 !important;
+}
+
+/* Buton renklerinin doğru görünmesi için */
+.save-button mat-icon,
+.next-button mat-icon {
+  color: #FFFFFF !important;
+}
+
+.prev-button mat-icon {
+  color: #666666 !important;
+}
+
+/* Buton yazıları için */
+.save-button span,
+.next-button span {
+  color: #FFFFFF !important;
+}
+
+.prev-button span {
+  color: #666666 !important;
+}
+
+/* =====================
+   RESPONSIVE
+===================== */
+@media (max-width: 1200px) {
+  .logistics-container {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
+    height: auto;
   }
+
+  .inventory-section, .pallets-section {
+    flex: 0 0 auto;
+    height: 250px;
+  }
+
+  .packages-section {
+    flex: 0 0 auto;
+    height: 600px;
+  }
+}
+
+@media (max-width: 768px) {
+  .logistics-dashboard {
+    flex-direction: column;
+  }
+
+  .dashboard-item {
+    min-width: 100%;
+  }
+
+  .packages-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .navigation-controls {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .save-button {
+    width: 100%;
+  }
+
+  .stepper-controls {
+    width: 100%;
+  }
+
+  .prev-button, .next-button {
+    flex: 1;
+  }
+}
+
+/* Tüm close ikonlarını hizalamak için */
+button mat-icon,
+.small-action mat-icon,
+.action-button mat-icon {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  line-height: 1 !important;
+  margin: auto !important;
+}
+
+/* Material ikonlar için özel düzeltme */
+.mat-icon {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  line-height: 1 !important;
+}
+
+/* Close ikonları için özel düzeltme */
+mat-icon:contains('close') {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  height: 100% !important;
+  width: 100% !important;
+  line-height: 1 !important;
+  margin: auto !important;
+}
+
+/* İkon butonlar için düzeltme */
+button[mat-icon-button] {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  line-height: 1 !important;
+}
+
+/* Kapat butonları için özel stil */
+.close-button,
+button[mat-icon-button] mat-icon,
+.small-action mat-icon {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  line-height: 1 !important;
+  height: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }

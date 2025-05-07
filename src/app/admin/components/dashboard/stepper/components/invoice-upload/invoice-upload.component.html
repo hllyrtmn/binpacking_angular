@@ -1,89 +1,151 @@
-<div class="isb-container">
+<div class="logistics-container">
   <!-- Page Header -->
-  <div class="isb-header">
-    <h2 class="mat-h2">İhracat Sipariş Bildirimi (ISB)</h2>
-    <mat-divider></mat-divider>
+  <div class="logistics-header">
+    <div class="header-icon">
+      <mat-icon>assignment</mat-icon>
+    </div>
+    <div class="header-titles">
+      <h1>İhracat Sipariş Bildirimi</h1>
+      <p class="header-subtitle">Siparişlerin detaylarını yönetin ve takip edin</p>
+    </div>
   </div>
 
   <!-- Empty State Card -->
-  <mat-card *ngIf="!order && !isLoading" class="isb-card">
-    <mat-card-content>
-      <div class="empty-state">
-        <mat-icon class="info-icon">description</mat-icon>
-        <h3 class="mat-h3">Sipariş Bilgisi Yok</h3>
-        <p>Henüz sipariş bilgisi yok. Excel dosyası yükleyebilir veya manuel olarak sipariş detayı ekleyebilirsiniz.</p>
+  <div class="logistics-card" *ngIf="!order && !isLoading">
+    <div class="empty-state">
+      <div class="empty-icon">
+        <mat-icon>description</mat-icon>
+      </div>
+      <h3>Sipariş Bilgisi Bulunamadı</h3>
+      <p>Mevcut bir sipariş bilgisi bulunmuyor. Excel dosyası yükleyebilir veya manuel olarak sipariş detayı ekleyebilirsiniz.</p>
 
-        <div class="action-buttons">
-          <button mat-raised-button class="primary-button" (click)="addOrderDetail()" [disabled]="manualAdd">
-            <mat-icon>add</mat-icon> Sipariş Detayı Ekle
-          </button>
+      <div class="action-options">
+        <button mat-raised-button class="action-button" (click)="addOrderDetail()" [disabled]="manualAdd">
+          <mat-icon>add</mat-icon>
+          <span>Manuel Giriş</span>
+        </button>
 
-          <div class="divider-text">ya da</div>
-
-          <button mat-raised-button class="primary-button file-select-button" (click)="fileInput.click()"
-            [disabled]="excelUpload">
-            <mat-icon>cloud_upload</mat-icon> {{ file?.name || "Dosya Seç" }}
-          </button>
-          <input (change)="onFileSelected($event)" #fileInput type="file" accept=".pdf,.xls,.xlsx" hidden />
+        <div class="divider">
+          <span>veya</span>
         </div>
 
-        <button *ngIf="file" mat-flat-button class="accent-button upload-button" [disabled]="!file || excelUpload"
-          (click)="uploadFile()">
-          <mat-icon>upload_file</mat-icon> İçeri Aktar
-        </button>
+        <div class="file-upload-container">
+          <button mat-raised-button class="action-button secondary" (click)="fileInput.click()" [disabled]="excelUpload">
+            <mat-icon>file_upload</mat-icon>
+            <span>{{ file?.name || "Excel Dosyası Seç" }}</span>
+          </button>
+          <input (change)="onFileSelected($event)" #fileInput type="file" accept=".pdf,.xls,.xlsx" hidden />
+
+          <button *ngIf="file" mat-raised-button class="upload-button" [disabled]="!file || excelUpload" (click)="uploadFile()">
+            <mat-icon>cloud_upload</mat-icon>
+            <span>İçeri Aktar</span>
+          </button>
+        </div>
       </div>
-    </mat-card-content>
-  </mat-card>
+    </div>
+  </div>
 
   <!-- Loading Indicator -->
   <div class="loading-container" *ngIf="isLoading">
-    <mat-card>
-      <mat-card-content class="loading-content">
-        <mat-spinner color="accent" diameter="40"></mat-spinner>
-        <p>Yükleniyor...</p>
-      </mat-card-content>
-    </mat-card>
+    <div class="loading-content">
+      <div class="animated-icon">
+        <mat-icon>local_shipping</mat-icon>
+        <div class="loading-dots">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+      <p>Sipariş verileri yükleniyor...</p>
+    </div>
   </div>
 
-  <!-- Order Details Table -->
-  <div *ngIf="order && !isLoading" class="details-container">
-    <div class="package-info">
-      <!-- <p><mat-icon>description</mat-icon> Sipariş No: {{order.orderNumber || 'N/A'}}</p> -->
-      <p><mat-icon>date_range</mat-icon> Tarih: {{getFormattedDate(order.date)}}</p>
-      <p><mat-icon>business</mat-icon> Müşteri: {{order.company?.company_name || 'N/A'}}</p>
+  <!-- Order Details Dashboard -->
+  <div *ngIf="order && !isLoading" class="details-section">
+    <!-- Order Summary -->
+    <div class="dashboard-panel">
+      <div class="dashboard-item">
+        <div class="dashboard-icon">
+          <mat-icon>receipt</mat-icon>
+        </div>
+        <div class="dashboard-info">
+          <span class="dashboard-label">Sipariş No</span>
+          <span class="dashboard-value">{{order.name || 'N/A'}}</span>
+        </div>
+      </div>
+
+      <div class="dashboard-item">
+        <div class="dashboard-icon">
+          <mat-icon>event</mat-icon>
+        </div>
+        <div class="dashboard-info">
+          <span class="dashboard-label">Sipariş Tarihi</span>
+          <span class="dashboard-value">{{getFormattedDate(order.date)}}</span>
+        </div>
+      </div>
+
+      <div class="dashboard-item">
+        <div class="dashboard-icon">
+          <mat-icon>business</mat-icon>
+        </div>
+        <div class="dashboard-info">
+          <span class="dashboard-label">Müşteri</span>
+          <span class="dashboard-value">{{order.company?.company_name || 'N/A'}}</span>
+        </div>
+      </div>
     </div>
 
-    <mat-card>
+    <!-- Order Details Table -->
+    <div class="logistics-card">
+      <div class="section-header with-action">
+        <div class="header-title">
+          <mat-icon>list_alt</mat-icon>
+          <h2>Sipariş Detayları</h2>
+        </div>
+      </div>
 
-      <mat-card-content>
-        <app-generic-table [service]="orderDetailService" [displayedColumns]="displayedColumns"
-          [filterableColumns]="filterableColumns" [nestedDisplayColumns]="nestedDisplayColumns" [parentId]="order.id"
-          [useParentId]="true" [parentIdFieldName]="'order_id'" [title]="''" [showRowNumbers]="true"
-          (addClick)="addOrderDetail()" (updateItem)="onTableUpdate($event)" [excludeFields]="excludeFields">
+      <div class="table-container">
+        <app-generic-table [service]="orderDetailService"
+                          [displayedColumns]="displayedColumns"
+                          [filterableColumns]="filterableColumns"
+                          [nestedDisplayColumns]="nestedDisplayColumns"
+                          [parentId]="order.id"
+                          [useParentId]="true"
+                          [parentIdFieldName]="'order_id'"
+                          [title]="''"
+                          [showRowNumbers]="true"
+                          (addClick)="addOrderDetail()"
+                          (updateItem)="onTableUpdate($event)"
+                          [excludeFields]="excludeFields">
         </app-generic-table>
-      </mat-card-content>
+      </div>
 
-      <div class="pallet-footer" *ngIf="orderDetails && orderDetails.length > 0">
-        <div class="footer-content">
-          <div class="pallet-summary">
-            <div class="summary-item">
-              <mat-icon class="icon-display">inventory_2</mat-icon>
+      <div class="summary-footer" *ngIf="orderDetails && orderDetails.length > 0">
+        <div class="summary-content">
+          <div class="summary-metrics">
+            <div class="metric">
+              <mat-icon>inventory_2</mat-icon>
               <span>{{orderDetails.length}} Kalem</span>
             </div>
-            <div class="summary-item">
-              <mat-icon class="icon-display">scale</mat-icon>
+            <div class="metric">
+              <mat-icon>scale</mat-icon>
               <span>{{totalWeight.toFixed(2)}} kg</span>
             </div>
           </div>
+
+          <div class="status-badge">
+            <span class="status-dot active"></span>
+            <span>Aktif</span>
+          </div>
         </div>
       </div>
-    </mat-card>
+    </div>
   </div>
 
-  <!-- Navigation Buttons -->
-  <div class="navigation-buttons">
-    <button mat-button class="primary-button" matStepperNext [disabled]="!order">
-      <span>İleri</span>
+  <!-- Navigation Controls -->
+  <div class="navigation-controls">
+    <button mat-raised-button class="next-button" matStepperNext [disabled]="!order">
+      <span>Sonraki Adım</span>
       <mat-icon>arrow_forward</mat-icon>
     </button>
   </div>

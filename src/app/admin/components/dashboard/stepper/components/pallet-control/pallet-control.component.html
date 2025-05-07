@@ -1,52 +1,117 @@
 <form [formGroup]="secondFormGroup">
-  <div class="row">
-    <!-- ÜRÜNLER BÖLÜMÜ -->
-    <div class="col-md-2">
-      <div class="example-container">
-        <h2 class="text-center">Ürünler</h2>
-        <div
-          cdkDropList
-          #productsList="cdkDropList"
-          id="productsList"
-          [cdkDropListData]="availableProducts"
-          [cdkDropListConnectedTo]="palletProductsLists"
-          class="example-list"
-          (cdkDropListDropped)="dropProductToPallet($event)"
-        >
-          <div class="example-box" *ngFor="let product of availableProducts" cdkDrag (cdkDragStarted)="dragStarted($event)" (cdkDragEnded)="dragEnded()"[cdkDragData]="product">
-            {{ product.name }} - {{product.count}} Adet
-            <button mat-icon-button class="small-icon-button" (click)="splitProduct(product)">
-              <mat-icon class="icon-display">content_cut</mat-icon>
-            </button>
-          </div>
+  <div class="logistics-header">
+    <div class="header-icon">
+      <mat-icon>inventory_2</mat-icon>
+    </div>
+    <div class="header-titles">
+      <h1>Palet Yerleştirme</h1>
+      <p class="header-subtitle">Ürünleri paletlere yerleştirin ve yük dağılımını optimize edin</p>
+    </div>
+  </div>
 
-          <div class="empty-message" *ngIf="availableProducts.length === 0">
-            Tüm ürünler paletlere yerleştirildi.
+  <div class="logistics-dashboard">
+    <div class="dashboard-item">
+      <div class="dashboard-icon">
+        <mat-icon>view_in_ar</mat-icon>
+      </div>
+      <div class="dashboard-info">
+        <span class="dashboard-label">Kalan Hacim</span>
+        <span class="dashboard-value">{{this.remainingVolume}} m³</span>
+      </div>
+    </div>
+
+    <div class="dashboard-item">
+      <div class="dashboard-icon">
+        <mat-icon>scale</mat-icon>
+      </div>
+      <div class="dashboard-info">
+        <span class="dashboard-label">Toplam Ağırlık</span>
+        <span class="dashboard-value">{{this.totalWeight}} kg</span>
+      </div>
+    </div>
+
+    <div class="dashboard-item">
+      <div class="dashboard-icon">
+        <mat-icon>fitness_center</mat-icon>
+      </div>
+      <div class="dashboard-info">
+        <span class="dashboard-label">Kalan Ağırlık</span>
+        <span class="dashboard-value">{{this.remainingWeight}} kg</span>
+      </div>
+    </div>
+
+    <div class="dashboard-item">
+      <div class="dashboard-icon">
+        <mat-icon>straighten</mat-icon>
+      </div>
+      <div class="dashboard-info">
+        <span class="dashboard-label">Toplam Metre</span>
+        <span class="dashboard-value">{{this.totalMeter}} m</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="logistics-container">
+    <!-- ÜRÜNLER BÖLÜMÜ -->
+    <div class="inventory-section">
+      <div class="section-header">
+        <mat-icon>category</mat-icon>
+        <h2>Envanter</h2>
+      </div>
+
+      <div
+        cdkDropList
+        #productsList="cdkDropList"
+        id="productsList"
+        [cdkDropListData]="availableProducts"
+        [cdkDropListConnectedTo]="palletProductsLists"
+        class="inventory-list"
+        (cdkDropListDropped)="dropProductToPallet($event)"
+      >
+        <div class="product-item" *ngFor="let product of availableProducts" cdkDrag (cdkDragStarted)="dragStarted($event)" (cdkDragEnded)="dragEnded()" [cdkDragData]="product">
+          <div class="product-icon"></div>
+          <div class="product-info">
+            <span class="product-name">{{ product.name }}</span>
+            <span class="product-count">{{product.count}} Adet</span>
           </div>
+          <button mat-icon-button class="action-button" (click)="splitProduct(product)" matTooltip="Ürünü böl">
+            <mat-icon>content_cut</mat-icon>
+          </button>
+        </div>
+
+        <div class="empty-state" *ngIf="availableProducts.length === 0">
+          <mat-icon>done_all</mat-icon>
+          <p>Tüm ürünler paletlere yerleştirildi.</p>
         </div>
       </div>
     </div>
 
     <!-- PAKETLER BÖLÜMÜ -->
-    <div class="col-md-8">
-      <div class="header-container">
-        <h2 class="text-center">Paketler</h2>
-        <button mat-icon-button class="clear-all-button" (click)="removeAllPackage()" matTooltip="Tüm paketleri temizle">
+    <div class="packages-section">
+      <div class="section-header with-action">
+        <div class="header-title">
+          <mat-icon>view_quilt</mat-icon>
+          <h2>Paletleme Alanı</h2>
+        </div>
+
+        <button mat-button class="clear-button" (click)="removeAllPackage()" matTooltip="Tüm paketleri temizle">
           <mat-icon>delete_sweep</mat-icon>
+          <span>Temizle</span>
         </button>
       </div>
 
-      <div class="package-info">
-        <p><mat-icon class="icon-display">view_in_ar</mat-icon>Kalan Hacim: {{this.remainingVolume}} cm3</p>
-        <p><mat-icon class="icon-display">scale</mat-icon>Toplam Agirlik: {{this.totalWeight}} Kg</p>
-        <p><mat-icon class="icon-display">fitness_center</mat-icon>Kalan Agirlik: {{this.remainingWeight}} Kg</p>
-        <p><mat-icon class="icon-display">straighten</mat-icon>Toplam Metre: {{this.totalMeter}} Metre</p>
-      </div>
-
-      <div class="packages-container">
-        <div class="package-box" *ngFor="let package of packages; let i = index">
+      <div class="packages-grid">
+        <div class="package-card" *ngFor="let package of packages; let i = index">
           <div class="package-header">
-            <h5 class="text-center">Palet {{i + 1}}</h5>
+            <div class="package-title">
+              <mat-icon>inbox</mat-icon>
+              <span>Palet {{i + 1}}</span>
+            </div>
+            <div class="package-actions">
+              <button mat-icon-button class="small-action" matTooltip="Paketi çıkar">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
           </div>
 
           <!-- Paket içeriği -->
@@ -55,108 +120,127 @@
             [id]="package.id"
             [cdkDropListData]="[]"
             [cdkDropListConnectedTo]="['palletsList']"
-            class="package-items"
+            class="package-dropzone"
             (cdkDropListDropped)="dropPalletToPackage($event)"
           >
             <!-- Eğer paket içinde palet varsa göster -->
-            <div class="pallet-in-package" *ngIf="package.pallet">
+            <div class="pallet-container" *ngIf="package.pallet">
               <div class="pallet-header">
-                <span class="text-center">Palet {{ package.pallet.name }}</span>
-                <button mat-icon-button class="small-icon-button" (click)="removePalletFromPackage(package)">
-                  <mat-icon class="icon-display">close</mat-icon>
+                <div class="pallet-title">
+                  <div class="pallet-icon"></div>
+                  <span>{{ package.pallet.name }}</span>
+                </div>
+                <button mat-icon-button class="small-action" (click)="removePalletFromPackage(package)" matTooltip="Paleti çıkar">
+                  <mat-icon>close</mat-icon>
                 </button>
               </div>
 
               <!-- Palet içindeki ürünler -->
               <div
-                  cdkDropList
-                  [id]="package.pallet.id"
-                  [cdkDropListData]="package.products"
-                  [cdkDropListConnectedTo]="palletProductsLists"
-                  class="pallet-items"
-                  (cdkDropListDropped)="dropProductToPallet($event)">
+                cdkDropList
+                [id]="package.pallet.id"
+                [cdkDropListData]="package.products"
+                [cdkDropListConnectedTo]="palletProductsLists"
+                class="pallet-content"
+                (cdkDropListDropped)="dropProductToPallet($event)">
+
                 <div
-                      class="product-in-pallet"
-                      *ngFor="let product of package.products; let j = index"
-                      cdkDrag
-                      [cdkDragData]="product"
-                      (cdkDragStarted)="dragStarted($event)"
-                      (cdkDragEnded)="dragEnded()">
-                      {{ product.name }} - {{product.count}} Adet
-                      <button mat-icon-button (click)="removeProductFromPackage(package, j)">
-                        <mat-icon class="icon-display">close</mat-icon>
-                      </button>
-                    </div>
+                  class="pallet-item"
+                  *ngFor="let product of package.products; let j = index"
+                  cdkDrag
+                  [cdkDragData]="product"
+                  (cdkDragStarted)="dragStarted($event)"
+                  (cdkDragEnded)="dragEnded()">
+                  <div class="product-icon small"></div>
+                  <div class="product-info">
+                    <span class="product-name">{{ product.name }}</span>
+                    <span class="product-count">{{product.count}} Adet</span>
+                  </div>
+                  <button mat-icon-button class="action-button" (click)="removeProductFromPackage(package, j)" matTooltip="Ürünü çıkar">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
 
                 <!-- Boş palet mesajı -->
-                <div class="empty-message" *ngIf="package.products.length === 0">
-                  Bu palet boş. Ürün sürükleyin.
+                <div class="empty-state" *ngIf="package.products.length === 0">
+                  <mat-icon>drag_indicator</mat-icon>
+                  <p>Bu palete ürün sürükleyin</p>
                 </div>
               </div>
 
-              <div class="pallet-footer d-flex justify-content-center align-items-center">
-                <div class="footer-content">
-                  <div class="pallet-summary d-flex justify-content-center">
-                    <div class="summary-item">
-                      <mat-icon class="icon-display">scale</mat-icon>
-                      <span>{{this.packageTotalWeight(package)}}</span>
-                    </div>
-                    <div class="summary-item">
-                      <mat-icon class="icon-display">straighten</mat-icon>
-                      <span>{{package.totalMeter}}</span>
-                    </div>
-                    <div class="summary-item">
-                      <mat-icon class="icon-display">view_in_ar</mat-icon>
-                      <span>{{package.totalVolume}}</span>
-                    </div>
+              <div class="pallet-footer">
+                <div class="pallet-metrics">
+                  <div class="metric">
+                    <mat-icon>scale</mat-icon>
+                    <span>{{this.packageTotalWeight(package)}} kg</span>
                   </div>
-                  <div class="footer-actions">
-                    <!-- Butonlar veya başka içerik varsa buraya -->
+                  <div class="metric">
+                    <mat-icon>straighten</mat-icon>
+                    <span>{{package.totalMeter}} m</span>
+                  </div>
+                  <div class="metric">
+                    <mat-icon>view_in_ar</mat-icon>
+                    <span>{{package.totalVolume}} m³</span>
                   </div>
                 </div>
               </div>
-
-
             </div>
 
             <!-- Boş paket mesajı -->
-            <div class="empty-message" *ngIf="!package.pallet">
-              Bu pakete bir palet yerleştirin.
+            <div class="empty-state" *ngIf="!package.pallet">
+              <mat-icon>add_box</mat-icon>
+              <p>Palet sürükleyin</p>
             </div>
-            <div class="text-center"></div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- PALETLER BÖLÜMÜ -->
-    <div class="col-md-2">
-      <div class="example-container">
-        <h2 class="text-center">Paletler</h2>
-        <div
-          cdkDropList
-          #palletsList="cdkDropList"
-          id="palletsList"
-          [cdkDropListData]="availablePallets"
-          [cdkDropListConnectedTo]="packageIds"
-          class="example-list"
-          (cdkDropListDropped)="dropPalletToPackage($event)"
-        >
-          <div class="example-box" *ngFor="let pallet of availablePallets" cdkDrag>
-            {{ pallet.name }}
-          </div>
+    <div class="pallets-section">
+      <div class="section-header">
+        <mat-icon>view_module</mat-icon>
+        <h2>Palet Tipleri</h2>
+      </div>
 
-          <div class="empty-message" *ngIf="availablePallets.length === 0">
-            Henüz palet bulunmamaktadır.
-          </div>
+      <div
+        cdkDropList
+        #palletsList="cdkDropList"
+        id="palletsList"
+        [cdkDropListData]="availablePallets"
+        [cdkDropListConnectedTo]="packageIds"
+        class="pallets-list"
+        (cdkDropListDropped)="dropPalletToPackage($event)"
+      >
+        <div class="pallet-item" *ngFor="let pallet of availablePallets" cdkDrag>
+          <div class="pallet-base-icon"></div>
+          <span class="pallet-name">{{ pallet.name }}</span>
+        </div>
+
+        <div class="empty-state" *ngIf="availablePallets.length === 0">
+          <mat-icon>info</mat-icon>
+          <p>Henüz palet bulunmamaktadır.</p>
         </div>
       </div>
     </div>
   </div>
-  <button mat-flat-button (click)="submitForm()">Kaydet</button>
 
-  <div class="mt-4">
-    <button mat-button matStepperPrevious>Geri</button>
-    <button mat-button matStepperNext>İleri</button>
+  <div class="navigation-controls">
+    <button mat-raised-button class="save-button" (click)="submitForm()">
+      <mat-icon>save</mat-icon>
+      <span>Kaydet</span>
+    </button>
+
+    <div class="stepper-controls">
+      <button mat-raised-button class="prev-button" matStepperPrevious>
+        <mat-icon>arrow_back</mat-icon>
+        <span>Geri</span>
+      </button>
+
+      <button mat-raised-button class="next-button" matStepperNext>
+        <span>İleri</span>
+        <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </div>
   </div>
 </form>
