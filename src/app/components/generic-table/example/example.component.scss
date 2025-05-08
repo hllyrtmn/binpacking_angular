@@ -1,0 +1,156 @@
+.page-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 24px;
+
+  h1 {
+    margin-bottom: 8px;
+    color: #333;
+    font-size: 24px;
+    font-weight: 500;
+  }
+
+  p {
+    color: #666;
+    margin-bottom: 0;
+  }
+}
+
+.action-buttons {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.product-details {
+  padding: 16px;
+}
+
+.product-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.product-details-section {
+  margin-bottom: 24px;
+
+  h3, h4 {
+    margin-bottom: 12px;
+    color: #333;
+    font-weight: 500;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+  }
+
+  p {
+    color: #555;
+    line-height: 1.5;
+  }
+}
+
+.detail-item {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+
+  .detail-label {
+    font-weight: 500;
+    color: #555;
+    width: 120px;
+    min-width: 120px;
+  }
+
+  .detail-value {
+    color: #333;
+  }
+}
+
+.product-details-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+/* Özel stil tanımları */
+:host ::ng-deep {
+  .high-price {
+    color: #d32f2f !important;
+    font-weight: 600;
+  }
+
+  .low-price {
+    color: #2e7d32 !important;
+    font-weight: 600;
+  }
+
+  .low-stock {
+    color: #ef6c00 !important;
+    font-weight: 600;
+  }
+
+  .out-of-stock {
+    color: #d32f2f !important;
+    font-weight: 600;
+    text-decoration: underline;
+  }
+
+  .status-active {
+    color: #2e7d32 !important;
+  }
+
+  .status-inactive {
+    color: #9e9e9e !important;
+  }
+
+  .status-discontinued {
+    color: #d32f2f !important;
+    text-decoration: line-through;
+  }
+
+  .status-pre-order {
+    color: #1976d2 !important;
+    font-style: italic;
+  }
+}
+
+/* Mobil görünüm için duyarlı tasarım */
+@media (max-width: 768px) {
+  .product-details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 16px;
+
+    .detail-label {
+      width: 100%;
+      margin-bottom: 4px;
+    }
+  }
+
+  .product-details-buttons {
+    flex-direction: column;
+
+    button {
+      width: 100%;
+    }
+  }
+
+  .action-buttons {
+    flex-direction: column;
+
+    button {
+      width: 100%;
+    }
+  }
+}

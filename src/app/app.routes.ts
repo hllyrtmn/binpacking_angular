@@ -4,6 +4,7 @@ import ADMIN_ROUTES from './admin/admin.routes';
 import { LayoutComponent } from './admin/components/layout/layout.component';
 import { ErrorComponent } from './components/error/error.component';
 import { TestComponent } from './components/test/test.component';
+import { ExampleComponent } from './components/generic-table/example/example.component';
 
 
 export const routes: Routes = [
@@ -30,6 +31,11 @@ export const routes: Routes = [
         path: 'error',
         component: ErrorComponent,
     },
+    {
+      path: 'example',
+      component: ExampleComponent,
+  },
+
     {
         path: '**', redirectTo: 'error'
     },

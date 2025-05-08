@@ -1,12 +1,72 @@
-<div class="table-container mat-elevation-z8">
+<div class="table-container mat-elevation-z8" #tableContainer>
   <div class="table-header">
     <h2>{{ title }}</h2>
     <div class="spacer"></div>
 
+    <!-- Global arama alanı -->
+    <div class="search-box" *ngIf="useServerSideSearch || useClientSideProcessing">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Ara</mat-label>
+        <input matInput
+               [value]="globalSearchTerm"
+               (input)="applyGlobalSearch($event)"
+               placeholder="Aramak için yazın...">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+    </div>
+
+    <!-- Sütun ayarları butonu -->
+    <button mat-icon-button
+            *ngIf="allowColumnToggle"
+            [matTooltip]="'Sütun Ayarları'"
+            (click)="openColumnSettingsDialog()">
+      <mat-icon>view_column</mat-icon>
+    </button>
+
+    <!-- Gelişmiş filtre butonu -->
+    <button mat-icon-button
+            [matTooltip]="'Gelişmiş Filtre'"
+            (click)="openAdvancedFilterDialog()">
+      <mat-icon>filter_alt</mat-icon>
+    </button>
+
     <!-- Aktif filtreleri temizleme butonu -->
-    <button mat-button color="primary" *ngIf="hasActiveFilters()" (click)="clearAllFilters()">
+    <button mat-button
+            color="primary"
+            *ngIf="hasActiveFilters()"
+            (click)="clearAllFilters()">
       <mat-icon>filter_list_off</mat-icon>
       Filtreleri Temizle
+    </button>
+
+    <!-- Dışa aktarma butonu -->
+    <button mat-button
+            color="primary"
+            *ngIf="enableExport"
+            [matMenuTriggerFor]="exportMenu">
+      <mat-icon>download</mat-icon>
+      Dışa Aktar
+    </button>
+    <mat-menu #exportMenu="matMenu">
+      <button mat-menu-item (click)="exportData('csv')">
+        <mat-icon>description</mat-icon>
+        <span>CSV</span>
+      </button>
+      <button mat-menu-item (click)="exportData('excel')">
+        <mat-icon>table_chart</mat-icon>
+        <span>Excel</span>
+      </button>
+      <button mat-menu-item (click)="exportData('pdf')">
+        <mat-icon>picture_as_pdf</mat-icon>
+        <span>PDF</span>
+      </button>
+    </mat-menu>
+
+    <!-- Yenile butonu -->
+    <button mat-icon-button
+            [matTooltip]="'Yenile'"
+            (click)="refreshData()">
+      <mat-icon>refresh</mat-icon>
     </button>
   </div>
 
@@ -15,102 +75,380 @@
     <mat-spinner></mat-spinner>
   </div>
 
+  <!-- Toplu İşlem Araç Çubuğu -->
+  <div class="bulk-actions-bar" *ngIf="showBulkActions && selection.selected.length > 0">
+    <div class="selected-count">
+      <mat-icon>check_circle</mat-icon>
+      <span>{{ selection.selected.length }} öğe seçildi</span>
+    </div>
+    <div class="bulk-actions">
+      <button mat-button color="warn" (click)="applyBulkAction('delete')">
+        <mat-icon>delete</mat-icon>
+        <span>Seçilenleri Sil</span>
+      </button>
+      <button mat-button (click)="selection.clear()">
+        <mat-icon>clear</mat-icon>
+        <span>Seçimi Temizle</span>
+      </button>
+    </div>
+  </div>
+
   <!-- Aktif filtreler -->
   <div class="active-filters" *ngIf="hasActiveFilters()">
     <div class="chip-list">
       <span class="filter-label">Aktif Filtreler:</span>
 
-      <!-- Her aktif filtre için çip -->
+      <!-- Global arama filtresi -->
+      <div *ngIf="globalSearchTerm" class="filter-chip">
+        <span class="chip-label">Arama: {{ globalSearchTerm }}</span>
+        <button mat-icon-button
+                class="chip-remove"
+                (click)="globalSearchTerm = ''; applyGlobalSearch($event)">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Basit filtreler için çipler -->
       <div *ngFor="let column of filterableColumns">
         <ng-container *ngIf="isFilterActive(column)">
           <div class="filter-chip">
             <span class="chip-label">{{ getColumnDisplayName(column) }}: {{ filterValues[column] }}</span>
-            <button mat-icon-button class="chip-remove" (click)="filterValues[column] = ''; loadData()">
+            <button mat-icon-button
+                    class="chip-remove"
+                    (click)="filterValues[column] = ''; loadData()">
               <mat-icon>close</mat-icon>
             </button>
           </div>
         </ng-container>
       </div>
+
+      <!-- Gelişmiş filtreler için çipler -->
+      <div *ngFor="let filter of advancedFilters; let i = index">
+        <div class="filter-chip advanced">
+          <span class="chip-label">
+            {{ getColumnDisplayName(filter.column) }}
+            {{ filter.type === 'contains' ? 'içerir' :
+               filter.type === 'equals' ? 'eşittir' :
+               filter.type === 'startsWith' ? 'ile başlar' :
+               filter.type === 'endsWith' ? 'ile biter' :
+               filter.type === 'greaterThan' ? 'büyüktür' :
+               filter.type === 'lessThan' ? 'küçüktür' :
+               filter.type === 'between' ? 'aralığında' : ''
+            }}
+            {{ filter.value }}
+            {{ filter.type === 'between' ? ' - ' + filter.valueEnd : '' }}
+          </span>
+          <button mat-icon-button
+                  class="chip-remove"
+                  (click)="advancedFilters.splice(i, 1); loadData()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Table -->
-  <table mat-table [dataSource]="dataSource" matSort matSortDisableClear>
+  <!-- Mobil Kart Görünümü -->
+  <div *ngIf="isMobileView && stackedCardViewOnMobile" class="mobile-card-view">
+    <!-- Mobil kart görünümü için yükleniyor mesajı -->
+    <div *ngIf="isLoading" class="mobile-loading">
+      <mat-spinner diameter="40"></mat-spinner>
+      <span>Yükleniyor...</span>
+    </div>
 
-    <ng-container matColumnDef="rowNumber">
-      <th mat-header-cell *matHeaderCellDef class="text-center">
-        <button *ngIf="showAddButton"
-          mat-icon-button
-          (click)="onAddButtonClick($event)"
-          matTooltip="Yeni Ekle">
-          <mat-icon>add_circle</mat-icon>
-        </button>
-      </th>
-      <td mat-cell *matCellDef="let row; let i = index" class="row-number-cell">
-        {{ getRowNumber(i) }}
-      </td>
-    </ng-container>
+    <!-- Kartlar -->
+    <div *ngFor="let row of dataSource.data; let i = index" class="mobile-card">
+      <!-- Seçim checkbox'u -->
+      <div *ngIf="enableRowSelection" class="mobile-card-select">
+        <mat-checkbox
+          [checked]="isSelected(row)"
+          (change)="$event ? selection.toggle(row) : null">
+        </mat-checkbox>
+      </div>
 
-    <!-- Dynamic Columns -->
-    <ng-container *ngFor="let column of displayedColumns" [matColumnDef]="column">
-      <th mat-header-cell *matHeaderCellDef mat-sort-header>
-        <div class="header-content">
-          {{ getColumnDisplayName(column) }}
+      <!-- Başlık ve işlemler -->
+      <div class="mobile-card-header">
+        <span class="mobile-card-title">{{ i + 1 }}. {{ getNestedPropertyValue(row, displayedColumns[0]) }}</span>
+        <div class="mobile-card-actions">
+          <button mat-icon-button
+                  *ngIf="expandableRows"
+                  [matTooltip]="expandedElement === row ? 'Daralt' : 'Genişlet'"
+                  (click)="$event.stopPropagation(); toggleRowExpand(row, $event)">
+            <mat-icon>{{ expandedElement === row ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</mat-icon>
+          </button>
+          <button mat-icon-button
+                  [matTooltip]="'Düzenle'"
+                  (click)="openAddOrUpdateDialog(row); $event.stopPropagation();">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button
+              color="warn"
+              [matTooltip]="'Sil'"
+              (click)="confirmDelete(getId(row)); $event.stopPropagation();">
+        <mat-icon>delete</mat-icon>
+      </button>
+        </div>
+      </div>
 
-          <!-- Filtre ikonu - eğer filtre uygulanabilir bir sütunsa -->
-          <button
+      <!-- Alan değerleri -->
+      <div class="mobile-card-content">
+        <div *ngFor="let column of getVisibleColumns()" class="mobile-card-field">
+          <ng-container *ngIf="column !== displayedColumns[0]"> <!-- İlk sütunu başlıkta gösteriyoruz -->
+            <span class="mobile-card-label">{{ getColumnDisplayName(column) }}:</span>
+            <span class="mobile-card-value" [ngClass]="getCellClass(column, getNestedPropertyValue(row, column))">
+              {{ formatCellValue(column, getNestedPropertyValue(row, column)) }}
+            </span>
+          </ng-container>
+        </div>
+      </div>
+
+      <!-- Genişletilmiş detay içeriği -->
+      <div *ngIf="expandableRows && expandedElement === row" class="mobile-card-detail">
+        <ng-container *ngTemplateOutlet="rowDetailTemplate ?? null; context: {$implicit: row}"></ng-container>
+      </div>
+    </div>
+
+    <!-- Boş durum mesajı -->
+    <div *ngIf="dataSource.data.length === 0 && !isLoading" class="mobile-empty-state">
+      <mat-icon class="mobile-empty-icon">info</mat-icon>
+      <p>Hiç kayıt bulunamadı.</p>
+      <div *ngIf="hasActiveFilters()">
+        <p>Aktif filtreleri temizlemeyi deneyin.</p>
+        <button mat-raised-button color="primary" (click)="clearAllFilters()">Filtreleri Temizle</button>
+      </div>
+    </div>
+
+    <!-- Mobil daha fazla yükle butonu -->
+    <div *ngIf="useLazyLoading && !allDataLoaded && dataSource.data.length > 0" class="mobile-load-more">
+      <button mat-button color="primary" (click)="loadMoreData()">
+        <mat-icon>more_horiz</mat-icon>
+        <span>Daha Fazla Yükle</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Normal Tablo Görünümü -->
+  <div *ngIf="!(isMobileView && stackedCardViewOnMobile)" class="table-view">
+    <!-- Sanal kaydırma ile tablo -->
+    <cdk-virtual-scroll-viewport *ngIf="useVirtualScroll && !expandableRows"
+                              itemSize="48"
+                              class="virtual-scroll-viewport">
+      <table mat-table
+            [dataSource]="dataSource"
+            matSort
+            matSortDisableClear
+            cdkDropList
+            cdkDropListOrientation="horizontal"
+            (cdkDropListDropped)="onColumnDrop($event)"
+            [trackBy]="trackByFn">
+
+        <!-- Tablo içeriği -->
+        <ng-container *ngTemplateOutlet="tableContent"></ng-container>
+      </table>
+    </cdk-virtual-scroll-viewport>
+
+    <!-- Normal tablo -->
+    <table *ngIf="!useVirtualScroll || expandableRows"
+          mat-table
+          [dataSource]="dataSource"
+          matSort
+          matSortDisableClear
+          cdkDropList
+          cdkDropListOrientation="horizontal"
+          (cdkDropListDropped)="onColumnDrop($event)"
+          [trackBy]="trackByFn">
+
+      <!-- Tablo içeriği -->
+      <ng-container *ngTemplateOutlet="tableContent"></ng-container>
+    </table>
+
+    <!-- Tablo içeriği template -->
+    <ng-template #tableContent>
+      <!-- Genişletme Sütunu -->
+      <ng-container *ngIf="expandableRows" matColumnDef="expand">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let row">
+          <button mat-icon-button
+                  (click)="toggleRowExpand(row, $event)"
+                  [matTooltip]="expandedElement === row ? 'Daralt' : 'Genişlet'">
+            <mat-icon>{{ expandedElement === row ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <!-- Seçim Sütunu -->
+      <ng-container *ngIf="enableRowSelection" matColumnDef="select">
+        <th mat-header-cell *matHeaderCellDef>
+          <mat-checkbox (change)="$event ? masterToggle() : null"
+                      [checked]="selection.hasValue() && isAllSelected()"
+                      [indeterminate]="selection.hasValue() && !isAllSelected()">
+          </mat-checkbox>
+        </th>
+        <td mat-cell *matCellDef="let row">
+          <mat-checkbox (click)="$event.stopPropagation()"
+                      (change)="$event ? selection.toggle(row) : null"
+                      [checked]="isSelected(row)">
+          </mat-checkbox>
+        </td>
+      </ng-container>
+
+      <!-- Sıra Numarası Sütunu -->
+      <ng-container matColumnDef="rowNumber">
+        <th mat-header-cell *matHeaderCellDef class="text-center">
+          <button *ngIf="showAddButton"
             mat-icon-button
-            *ngIf="filterableColumns.includes(column)"
-            class="filter-icon"
-            [class.active-filter]="isFilterActive(column)"
-            (click)="openFilterDialog(column, $event)"
-            [matTooltip]="isFilterActive(column) ? 'Filtreyi Düzenle' : 'Filtrele'">
-            <mat-icon>filter_alt</mat-icon>
+            (click)="onAddButtonClick($event)"
+            matTooltip="Yeni Ekle">
+            <mat-icon>add_circle</mat-icon>
           </button>
-        </div>
-      </th>
-      <td mat-cell *matCellDef="let row" [class.numeric-cell]="isNumeric(getNestedPropertyValue(row, column))">
-        <!-- Display nested property values -->
-        <span>{{ getNestedPropertyValue(row, column) }}</span>
-      </td>
-    </ng-container>
+        </th>
+        <td mat-cell *matCellDef="let row; let i = index" class="row-number-cell">
+          {{ getRowNumber(i) }}
+        </td>
+      </ng-container>
 
-    <!-- Actions Column -->
-    <ng-container matColumnDef="actions">
-      <th mat-header-cell *matHeaderCellDef>İşlemler</th>
-      <td mat-cell *matCellDef="let row">
-        <div class="action-buttons">
-          <button class="btn" mat-icon-button color="warn" (click)="confirmDelete(row.id); $event.stopPropagation();" matTooltip="Sil">
-            <mat-icon>delete</mat-icon>
-          </button>
-          <button class="btn" mat-icon-button  (click)="openAddOrUpdateDialog(row); $event.stopPropagation();" matTooltip="Güncelle">
-            <mat-icon>update</mat-icon>
-          </button>
-        </div>
+      <!-- Dinamik Sütunlar -->
+      <ng-container *ngFor="let column of getVisibleColumns()" [matColumnDef]="column">
+        <th mat-header-cell
+            *matHeaderCellDef
+            mat-sort-header
+            [disabled]="!column"
+            cdkDrag
+            [cdkDragDisabled]="!allowColumnReordering">
+          <div class="header-content">
+            {{ getColumnDisplayName(column) }}
 
-      </td>
-    </ng-container>
+            <!-- Filtre ikonu - eğer filtre uygulanabilir bir sütunsa -->
+            <button
+              mat-icon-button
+              *ngIf="filterableColumns.includes(column)"
+              class="filter-icon"
+              [class.active-filter]="isFilterActive(column)"
+              (click)="openFilterDialog(column, $event)"
+              [matTooltip]="isFilterActive(column) ? 'Filtreyi Düzenle' : 'Filtrele'">
+              <mat-icon>filter_alt</mat-icon>
+            </button>
+          </div>
+        </th>
+        <td mat-cell
+            *matCellDef="let row"
+            [ngClass]="getCellClass(column, getNestedPropertyValue(row, column))"
+            (dblclick)="startEditing(row, column, $event)">
 
-    <tr mat-header-row *matHeaderRowDef="getDisplayColumnWithActions()"></tr>
-    <tr mat-row *matRowDef="let row; columns: getDisplayColumnWithActions();"
-        (click)="onRowClick(row)"></tr>
-  </table>
+          <!-- Düzenleme modu -->
+          <ng-container *ngIf="isEditing(row, column); else displayMode">
+            <div class="cell-editor">
+              <input *ngIf="columnFormats[column]?.type !== 'date'"
+                    #editInput
+                    [type]="columnFormats[column].type === 'number' || columnFormats[column].type === 'currency' ? 'number' : 'text'"
+                    [value]="getNestedPropertyValue(row, column)"
+                    (keydown.enter)="saveEdit(row, column, editInput.value)"
+                    (keydown.escape)="cancelEdit()"
+                    (blur)="saveEdit(row, column, editInput.value)"
+                    [step]="columnFormats[column].type === 'currency' ? '0.01' : '1'"
+                    class="cell-edit-input"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    autofocus>
 
-  <!-- Empty state -->
-  <div class="empty-state" *ngIf="dataSource.data.length === 0 && !isLoading">
-    <mat-icon>info</mat-icon>
-    <p>Hiç kayıt bulunamadı.</p>
-    <div *ngIf="hasActiveFilters()">
-      <p>Aktif filtreleri temizlemeyi deneyin.</p>
-      <button mat-raised-button color="primary" (click)="clearAllFilters()">Filtreleri Temizle</button>
+              <input *ngIf="columnFormats[column]?.type === 'date'"
+                    #editDateInput
+                    type="date"
+                    [value]="getNestedPropertyValue(row, column) | date:'yyyy-MM-dd'"
+                    (keydown.enter)="saveEdit(row, column, editDateInput.value)"
+                    (keydown.escape)="cancelEdit()"
+                    (blur)="saveEdit(row, column, editDateInput.value)"
+                    class="cell-edit-input"
+                    autofocus>
+            </div>
+          </ng-container>
+
+          <!-- Normal görüntüleme modu -->
+          <ng-template #displayMode>
+            <div [class.editable-cell]="editableColumns.includes(column)">
+              {{ formatCellValue(column, getNestedPropertyValue(row, column)) }}
+              <mat-icon *ngIf="editableColumns.includes(column)" class="edit-indicator">edit</mat-icon>
+            </div>
+          </ng-template>
+        </td>
+      </ng-container>
+
+      <!-- İşlemler Sütunu -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>İşlemler</th>
+        <td mat-cell *matCellDef="let row">
+          <div class="action-buttons">
+            <button class="btn"
+                    mat-icon-button
+                    color="warn"
+                    (click)="confirmDelete(row.id); $event.stopPropagation();"
+                    matTooltip="Sil">
+              <mat-icon>delete</mat-icon>
+            </button>
+            <button class="btn"
+                    mat-icon-button
+                    (click)="openAddOrUpdateDialog(row); $event.stopPropagation();"
+                    matTooltip="Güncelle">
+              <mat-icon>update</mat-icon>
+            </button>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Header ve Satır Tanımları -->
+      <tr mat-header-row *matHeaderRowDef="getDisplayColumnWithActions(); sticky: true"></tr>
+      <tr mat-row
+          *matRowDef="let row; columns: getDisplayColumnWithActions();"
+          (click)="onRowClick(row)"
+          [class.expanded-row]="expandableRows && expandedElement === row"
+          [class.selected-row]="isSelected(row)"></tr>
+
+      <!-- Genişletilmiş Satır İçeriği -->
+      <ng-container *ngIf="expandableRows">
+        <tr mat-row
+    *matRowDef="let row; columns: ['expandedDetail']; when: isExpanded"
+    class="detail-row"></tr>
+      </ng-container>
+
+      <!-- Genişletilmiş Detay Sütunu -->
+      <ng-container matColumnDef="expandedDetail">
+        <td mat-cell
+            *matCellDef="let row"
+            [attr.colspan]="getDisplayColumnWithActions().length">
+          <div class="row-detail" [@detailExpand]="row === expandedElement ? 'expanded' : 'collapsed'">
+            <ng-container *ngTemplateOutlet="rowDetailTemplate ?? null; context: {$implicit: row}"></ng-container>
+          </div>
+        </td>
+      </ng-container>
+    </ng-template>
+
+    <!-- Boş durum -->
+    <div class="empty-state" *ngIf="isTableEmpty">
+      <mat-icon>info</mat-icon>
+      <p>Hiç kayıt bulunamadı.</p>
+      <div *ngIf="hasActiveFilters()">
+        <p>Aktif filtreleri temizlemeyi deneyin.</p>
+        <button mat-raised-button color="primary" (click)="clearAllFilters()">Filtreleri Temizle</button>
+      </div>
     </div>
-  </div>
 
-  <!-- Paginator -->
-  <mat-paginator
-    [length]="totalItems"
-    [pageSize]="pageSize"
-    [pageSizeOptions]="[5, 10, 25, 100]"
-    (page)="onPageChange($event)">
-  </mat-paginator>
+    <!-- Lazy Loading için "Daha Fazla Yükle" butonu -->
+    <div *ngIf="useLazyLoading && !allDataLoaded && dataSource.data.length > 0" class="load-more-container">
+      <button mat-button color="primary" (click)="loadMoreData()">
+        <mat-icon>more_horiz</mat-icon>
+        <span>Daha Fazla Yükle</span>
+      </button>
+    </div>
+
+    <!-- Paginator - Lazy Loading kullanılmıyorsa -->
+    <mat-paginator *ngIf="!useLazyLoading"
+      [length]="totalItems"
+      [pageSize]="currentPageSize"
+      [pageSizeOptions]="[5, 10, 25, 50, 100]"
+      [showFirstLastButtons]="true"
+      (page)="onPageChange($event)">
+    </mat-paginator>
+  </div>
 </div>

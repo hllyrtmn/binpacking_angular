@@ -1,0 +1,544 @@
+# Generic Table Bileşeni Kullanım Dokümantasyonu
+
+Generic Table bileşeni, Angular uygulamalarınızda esnek, özelleştirilebilir, performanslı ve modern bir tablo bileşenidir. Birçok veri türüyle uyumlu çalışabilir ve dinamik olarak yapılandırılabilir.
+
+## Özellikler
+
+- ✅ Server-side ve client-side veri işleme desteği
+- ✅ Filtreleme, sıralama ve sayfalama
+- ✅ Satır seçimi ve toplu işlemler
+- ✅ Genişletilebilir satırlar ve detay görünümü
+- ✅ Sanal kaydırma (Virtual Scrolling) desteği
+- ✅ Tembel yükleme (Lazy Loading) desteği
+- ✅ Inline hücre düzenleme
+- ✅ Sütun görünürlüğü ve sıralama ayarları
+- ✅ Dışa aktarma (CSV, Excel, PDF)
+- ✅ Duyarlı tasarım ve mobil kart görünümü
+- ✅ İç içe nesne özelliklerini görüntüleme ve düzenleme
+- ✅ Tablo durumu kaydetme ve geri yükleme
+- ✅ Gelişmiş filtreleme seçenekleri
+- ✅ Özelleştirilebilir veri formatları ve temalar
+
+## Temel Kullanım
+
+Generic Table bileşeninin temel kullanımı oldukça basittir. En azından bir `GenericCrudService` ve hangi sütunların gösterileceğini belirten bir `displayedColumns` dizisi tanımlamanız gerekir.
+
+```html
+<app-generic-table
+  [service]="userService"
+  [displayedColumns]="['id', 'name', 'email', 'department.name']"
+  [title]="'Kullanıcılar'">
+</app-generic-table>
+```
+
+## Örnekler
+
+### 1. Temel Tablo
+
+```html
+<app-generic-table
+  [service]="orderDetailService"
+  [displayedColumns]="['product_name', 'quantity', 'price', 'total']"
+  [title]="'Sipariş Detayları'">
+</app-generic-table>
+```
+
+### 2. Üst Nesneye Bağlı Tablo (Parent-Child İlişkisi)
+
+```html
+<app-generic-table
+  [service]="orderDetailService"
+  [displayedColumns]="['product_name', 'quantity', 'price', 'total']"
+  [parentId]="order.id"
+  [useParentId]="true"
+  [parentIdFieldName]="'order_id'"
+  [title]="'Sipariş Detayları'">
+</app-generic-table>
+```
+
+### 3. Filtreler ve Özel İşlemler
+
+```html
+<app-generic-table
+  [service]="productService"
+  [displayedColumns]="['name', 'category.name', 'price', 'stock']"
+  [filterableColumns]="['name', 'category.name', 'price']"
+  [title]="'Ürünler'"
+  [showRowNumbers]="true"
+  (addClick)="addNewProduct()"
+  (updateItem)="onProductUpdate($event)"
+  [excludeFields]="['created_at', 'updated_at']">
+</app-generic-table>
+```
+
+### 4. Gelişmiş Özelliklerle Tam Fonksiyonel Tablo
+
+```html
+<app-generic-table
+  [service]="productService"
+  [displayedColumns]="['name', 'category.name', 'price', 'stock', 'supplier.name']"
+  [filterableColumns]="['name', 'category.name', 'price', 'stock']"
+  [title]="'Ürün Yönetimi'"
+  [showRowNumbers]="true"
+  [enableRowSelection]="true"
+  [showBulkActions]="true"
+  [allowColumnToggle]="true"
+  [allowColumnReordering]="true"
+  [editableColumns]="['price', 'stock']"
+  [enableExport]="true"
+  [expandableRows]="true"
+  [rowDetailTemplate]="productDetailTemplate"
+  [useClientSideProcessing]="true"
+  [columnFormats]="{
+    'price': { type: 'currency', format: 'TRY', cssClass: 'price-column' },
+    'stock': { type: 'number' }
+  }"
+  [saveTableState]="true"
+  [tableStateId]="'product-table'"
+  [stackedCardViewOnMobile]="true"
+  (rowClick)="onProductSelect($event)"
+  (rowDeleted)="onProductDelete($event)"
+  (updateItem)="onProductUpdate($event)"
+  (itemAdded)="onProductAdded($event)"
+  (bulkActionSelected)="onBulkAction($event)"
+  (cellValueChanged)="onCellValueChanged($event)">
+</app-generic-table>
+
+<!-- Ürün Detay Template -->
+<ng-template #productDetailTemplate let-product>
+  <div class="product-details">
+    <div class="product-description">
+      <h3>Ürün Açıklaması</h3>
+      <p>{{ product.description }}</p>
+    </div>
+    <div class="product-stats">
+      <div class="stat-item">
+        <span class="stat-label">Son Güncelleme:</span>
+        <span class="stat-value">{{ product.updated_at | date:'dd.MM.yyyy HH:mm' }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Eklenme Tarihi:</span>
+        <span class="stat-value">{{ product.created_at | date:'dd.MM.yyyy' }}</span>
+      </div>
+    </div>
+  </div>
+</ng-template>
+```
+
+## Giriş Parametreleri (Inputs)
+
+### Temel Parametreler
+
+| Parametre            | Tipi                                                                | Varsayılan | Açıklama                                      |
+|----------------------|---------------------------------------------------------------------|-----------|------------------------------------------------|
+| service              | GenericCrudService<T>                                               | *gerekli* | API çağrılarını yapacak servis                 |
+| displayedColumns     | string[]                                                            | []        | Gösterilecek sütunlar listesi                  |
+| title                | string                                                              | 'Items'   | Tablo başlığı                                  |
+| filterableColumns    | string[]                                                            | []        | Filtrelenebilir sütunlar listesi               |
+| relationOptions      | {[key: string]: any[]}                                              | {}        | Dropdown seçim listeleri için ilişkili veriler |
+| columnDefinitions    | {key: string, label: string, type?: string, required?: boolean}[]   | []        | Sütun tanımları                                |
+| nestedDisplayColumns | {[key: string]: string} | {} | İç içe sütunlar için görünen isimler |
+| showRowNumbers       | boolean                                                             | true      | Sıra numaralarını göster/gizle                 |
+| showAddButton        | boolean                                                             | true      | Ekle butonunu göster/gizle                     |
+| excludeFields        | string[]                                                            | []        | Formlardan hariç tutulacak alanlar             |
+
+### Üst Nesne (Parent) Parametreleri
+
+| Parametre | Tipi | Varsayılan | Açıklama |
+|-----------|------|-----------|----------|
+| parentId | string \| null | null | Üst nesne ID'si |
+| useParentId | boolean | false | Üst nesne ID'sini kullan |
+| parentIdFieldName | string | 'order_id' | Üst nesne ID'si için API parametre adı |
+
+### Veri Kaynağı Esnekliği
+
+| Parametre | Tipi | Varsayılan | Açıklama |
+|-----------|------|-----------|----------|
+| externalDataSource | T[] | [] | Dışarıdan gelen veri kaynağı |
+| useExternalData | boolean | false | Dışarıdan gelen veriyi kullan |
+
+### Performans İyileştirmeleri
+
+| Parametre | Tipi | Varsayılan | Açıklama |
+|-----------|------|-----------|----------|
+| useVirtualScroll | boolean | false | Sanal kaydırma kullan |
+| useLazyLoading | boolean | false | Tembel yükleme kullan |
+| lazyLoadThreshold | number | 200 | Tembel yükleme eşiği (piksel) |
+| pageSize | number | 10 | Sayfa başına öğe sayısı |
+| useClientSideProcessing | boolean | false | İstemci tarafında işleme |
+
+### Satır Seçimi ve Toplu İşlemler
+
+| Parametre | Tipi | Varsayılan | Açıklama |
+|-----------|------|-----------|----------|
+| enableRowSelection | boolean | false | Satır seçimini etkinleştir |
+| showBulkActions | boolean | false | Toplu işlem butonlarını göster |
+
+### Sütun Ayarları
+
+| Parametre | Tipi | Varsayılan | Açıklama |
+|-----------|------|-----------|----------|
+| allowColumnToggle | boolean | false | Sütun görünürlüğünü değiştirmeyi etkinleştir |
+| hiddenColumns | string[] | [] | Başlangıçta gizlenecek sütunlar |
+| allowColumnReordering | boolean | false | Sütun sırasını değiştirmeyi etkinleştir |
+
+### Dışa Aktarma
+
+| Parametre | Tipi | Varsayılan | Açıklama |
+|-----------|------|-----------|----------|
+| enableExport | boolean | false | Dışa aktarma özelliğini etkinleştir |
+| exportFilename | string | 'table-data' | Dışa aktarılan dosyanın adı |
+
+### Genişletilmiş Satırlar
+
+| Parametre | Tipi | Varsayılan | Açıklama |
+|-----------|------|-----------|----------|
+| expandableRows | boolean | false | Genişletilebilir satırları etkinleştir |
+| rowDetailTemplate | TemplateRef<any> | - | Satır detayı için şablon |
+
+### İleri Düzey Filtreleme
+
+| Parametre | Tipi | Varsayılan | Açıklama |
+|-----------|------|-----------|----------|
+| advancedFilters | AdvancedFilter[] | [] | Gelişmiş filtreler |
+| useServerSideSearch | boolean | false | Sunucu tarafında arama |
+| searchFields | string[] | [] | Arama yapılacak alanlar |
+
+### Özel Formatlar
+
+| Parametre | Tipi | Varsayılan | Açıklama |
+|-----------|------|-----------|----------|
+| columnFormats | {[key: string]: ColumnFormat} | {} | Sütun formatları |
+| editableColumns | string[] | [] | Düzenlenebilir sütunlar |
+
+### Durumu Kaydetme
+
+| Parametre | Tipi | Varsayılan | Açıklama |
+|-----------|------|-----------|----------|
+| tableStateId | string | '' | Tablo durumu ID'si |
+| saveTableState | boolean | false | Tablo durumunu kaydet |
+
+### Duyarlı Tasarım
+
+| Parametre | Tipi | Varsayılan | Açıklama |
+|-----------|------|-----------|----------|
+| responsiveBreakpoint | number | 768 | Duyarlı tasarım eşik değeri (piksel) |
+| stackedCardViewOnMobile | boolean | false | Mobilde kart görünümünü etkinleştir |
+
+## Olaylar (Outputs)
+
+| Olay | Tipi | Açıklama |
+|------|------|----------|
+| rowClick | EventEmitter<T> | Satıra tıklandığında tetiklenir |
+| rowDeleted | EventEmitter<any> | Satır silindiğinde tetiklenir |
+| addClick | EventEmitter<void> | Ekle butonuna tıklandığında tetiklenir |
+| updateItem | EventEmitter<T> | Öğe güncellendiğinde tetiklenir |
+| itemAdded | EventEmitter<T> | Yeni öğe eklendiğinde tetiklenir |
+| bulkActionSelected | EventEmitter<{action: string, items: T[]}> | Toplu işlem seçildiğinde tetiklenir |
+| cellValueChanged | EventEmitter<{row: T, column: string, value: any}> | Hücre değeri değiştiğinde tetiklenir |
+
+## Gelişmiş Yapılandırma Örnekleri
+
+### Sütun Formatları
+
+```typescript
+// Component sınıfınızda
+columnFormats = {
+  'price': {
+    type: 'currency',
+    format: 'TRY',
+    cssClass: 'price-column',
+    themeRules: [
+      {
+        condition: (value) => Number(value) > 1000,
+        cssClass: 'high-price'
+      },
+      {
+        condition: (value) => Number(value) < 100,
+        cssClass: 'low-price'
+      }
+    ]
+  },
+  'stock': {
+    type: 'number',
+    cssClass: 'stock-column',
+    themeRules: [
+      {
+        condition: (value) => Number(value) <= 5,
+        cssClass: 'low-stock'
+      }
+    ]
+  },
+  'created_at': {
+    type: 'date',
+    format: 'medium' // 'short', 'medium', 'long', 'full'
+  },
+  'status': {
+    type: 'custom',
+    formatter: (value) => {
+      switch (value) {
+        case 'active': return 'Aktif';
+        case 'inactive': return 'Pasif';
+        case 'pending': return 'Beklemede';
+        default: return value;
+      }
+    },
+    themeRules: [
+      {
+        condition: (value) => value === 'active',
+        cssClass: 'status-active'
+      },
+      {
+        condition: (value) => value === 'inactive',
+        cssClass: 'status-inactive'
+      },
+      {
+        condition: (value) => value === 'pending',
+        cssClass: 'status-pending'
+      }
+    ]
+  }
+};
+```
+
+### Gelişmiş Filtreler
+
+```typescript
+// Component sınıfınızda
+advancedFilters = [
+  {
+    column: 'price',
+    type: 'greaterThan',
+    value: 1000
+  },
+  {
+    column: 'created_at',
+    type: 'between',
+    value: '2023-01-01',
+    valueEnd: '2023-12-31'
+  },
+  {
+    column: 'category.name',
+    type: 'contains',
+    value: 'Elektronik'
+  }
+];
+```
+
+## Örnekler ve Kullanım Senaryoları
+
+### Basit Sipariş Tablosu ve Detaylar
+
+```typescript
+// orders.component.ts
+import { Component, OnInit } from '@angular/core';
+import { OrderService, OrderDetailService } from '../../services';
+
+@Component({
+  selector: 'app-orders',
+  templateUrl: './orders.component.html'
+})
+export class OrdersComponent implements OnInit {
+  // Sütun tanımları
+  orderColumns = ['order_number', 'customer.name', 'date', 'total', 'status'];
+  orderFilterColumns = ['order_number', 'customer.name', 'date', 'status'];
+
+  // Seçilen sipariş
+  selectedOrder: any = null;
+
+  // Sütun formatları
+  orderColumnFormats = {
+    'date': { type: 'date', format: 'medium' },
+    'total': { type: 'currency', format: 'TRY' },
+    'status': {
+      type: 'custom',
+      formatter: (value) => {
+        switch (value) {
+          case 'completed': return 'Tamamlandı';
+          case 'pending': return 'Beklemede';
+          case 'cancelled': return 'İptal Edildi';
+          default: return value;
+        }
+      },
+      themeRules: [
+        {
+          condition: (value) => value === 'completed',
+          cssClass: 'status-success'
+        },
+        {
+          condition: (value) => value === 'pending',
+          cssClass: 'status-warning'
+        },
+        {
+          condition: (value) => value === 'cancelled',
+          cssClass: 'status-danger'
+        }
+      ]
+    }
+  };
+
+  // Detay sütunları
+  detailColumns = ['product.name', 'quantity', 'unit_price', 'total'];
+  detailColumnFormats = {
+    'unit_price': { type: 'currency', format: 'TRY' },
+    'total': { type: 'currency', format: 'TRY' }
+  };
+
+  constructor(
+    public orderService: OrderService,
+    public orderDetailService: OrderDetailService
+  ) {}
+
+  ngOnInit(): void {}
+
+  onOrderSelect(order: any): void {
+    this.selectedOrder = order;
+  }
+
+  addNewOrder(): void {
+    // Yeni sipariş ekleme işlemleri
+  }
+
+  addOrderDetail(): void {
+    // Seçili siparişe detay ekleme işlemleri
+  }
+}
+```
+
+```html
+<!-- orders.component.html -->
+<div class="orders-page">
+  <div class="orders-list">
+    <app-generic-table
+      [service]="orderService"
+      [displayedColumns]="orderColumns"
+      [filterableColumns]="orderFilterColumns"
+      [title]="'Siparişler'"
+      [columnFormats]="orderColumnFormats"
+      [saveTableState]="true"
+      [tableStateId]="'orders-table'"
+      [enableExport]="true"
+      [stackedCardViewOnMobile]="true"
+      (rowClick)="onOrderSelect($event)"
+      (addClick)="addNewOrder()">
+    </app-generic-table>
+  </div>
+
+  <div *ngIf="selectedOrder" class="order-details">
+    <h3>Sipariş #{{ selectedOrder.order_number }} Detayları</h3>
+
+    <app-generic-table
+      [service]="orderDetailService"
+      [displayedColumns]="detailColumns"
+      [title]="'Sipariş Detayları'"
+      [parentId]="selectedOrder.id"
+      [useParentId]="true"
+      [parentIdFieldName]="'order_id'"
+      [columnFormats]="detailColumnFormats"
+      [showRowNumbers]="true"
+      (addClick)="addOrderDetail()">
+    </app-generic-table>
+  </div>
+</div>
+```
+
+## Stil Özelleştirme
+
+Generic Table bileşeninin stilini özelleştirmek için, CSS sınıflarını veya mixin'leri kullanabilirsiniz:
+
+```scss
+// Stil özelleştirmeleri
+:host ::ng-deep {
+  // Tablo konteyneri
+  .table-container {
+    margin: 0;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  // Tablo başlığı
+  .table-header {
+    background-color: #f8f9fa;
+    h2 {
+      color: #2c3e50;
+      font-weight: 600;
+    }
+  }
+
+  // Satır stilleri
+  .mat-row {
+    &:hover {
+      background-color: #f1f8ff;
+    }
+
+    &.selected-row {
+      background-color: #e3f2fd;
+    }
+  }
+
+  // Sütun başlıkları
+  th.mat-header-cell {
+    font-weight: 600;
+    color: #495057;
+  }
+
+  // Özel durum sınıfları
+  .status-success {
+    color: #28a745;
+    font-weight: 600;
+  }
+
+  .status-warning {
+    color: #ffc107;
+    font-weight: 600;
+  }
+
+  .status-danger {
+    color: #dc3545;
+    font-weight: 600;
+  }
+
+  // Düşük stok uyarısı
+  .low-stock {
+    color: #dc3545;
+    font-weight: 600;
+  }
+}
+```
+
+## Performans İpuçları
+
+1. **Büyük Veri Kümeleri**:
+   - Büyük veri kümeleri için `useVirtualScroll` veya `useLazyLoading` kullanın
+   - Server-side paging kullanmak için `useLazyLoading=false` (varsayılan) ayarını koruyun
+
+2. **Filtreleme ve Arama**:
+   - Büyük tablolarda, server-side filtreleme için `useClientSideProcessing=false` (varsayılan) kullanın
+   - Hızlı client-side filtreleme için `useClientSideProcessing=true` ayarlayın
+
+3. **Detaylı Görünüm**:
+   - Çok fazla satır ve sütun varsa, detayları `expandableRows` ile gizleyin
+
+4. **Mobil Uyumluluk**:
+   - Mobil cihazlarda daha iyi bir kullanıcı deneyimi için `stackedCardViewOnMobile=true` kullanın
+
+## En İyi Uygulamalar
+
+1. **Sütun Tanımları**:
+   - Her zaman eksik alanlar için yedek olması için `columnDefinitions` sağlayın
+   - İç içe alanlar için uygun `nestedDisplayColumns` tanımları yapın
+
+2. **Filtreler**:
+   - Sadece gerekli sütunları `filterableColumns` listesine ekleyin
+   - Karmaşık filtreler için `advancedFilters` kullanın
+
+3. **Veri Formatları**:
+   - Okunabilirlik için `columnFormats` kullanarak uygun formatlar belirleyin
+   - Önemli değerler için tema kuralları ekleyin (`themeRules`)
+
+4. **Durum Yönetimi**:
+   - Kullanıcı tercihlerini saklamak için `saveTableState=true` ve benzersiz bir `tableStateId` ayarlayın
+
+## Sonuç
+
+Generic Table bileşeni, Angular uygulamalarınızda tablo verilerini yönetmek için esnek, güçlü ve özelleştirilebilir bir çözüm sunar. Temel kullanımdan gelişmiş özelliklere kadar çeşitli ihtiyaçlara uyum sağlar ve kullanıcı deneyimini artırmak için birçok özellik içerir.

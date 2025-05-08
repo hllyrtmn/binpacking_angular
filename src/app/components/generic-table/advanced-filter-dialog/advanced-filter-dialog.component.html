@@ -1,0 +1,181 @@
+<h2 mat-dialog-title>Gelişmiş Filtre</h2>
+    <mat-dialog-content>
+      <form [formGroup]="filterForm" class="filter-form">
+        <!-- Sütun Seçimi -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Sütun</mat-label>
+          <mat-select formControlName="column" (selectionChange)="onColumnChange()">
+            <mat-option *ngFor="let col of data.columns" [value]="col.key">
+              {{ col.label }}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="filterForm.get('column')?.hasError('required')">
+            Sütun seçimi zorunludur
+          </mat-error>
+        </mat-form-field>
+
+        <!-- İşlem Türü -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>İşlem</mat-label>
+          <mat-select formControlName="type" (selectionChange)="onOperatorChange()">
+            <ng-container *ngIf="isTextColumn()">
+              <mat-option value="contains">İçerir</mat-option>
+              <mat-option value="equals">Eşittir</mat-option>
+              <mat-option value="startsWith">İle başlar</mat-option>
+              <mat-option value="endsWith">İle biter</mat-option>
+            </ng-container>
+
+            <ng-container *ngIf="isNumberColumn()">
+              <mat-option value="equals">Eşittir</mat-option>
+              <mat-option value="greaterThan">Büyüktür</mat-option>
+              <mat-option value="lessThan">Küçüktür</mat-option>
+              <mat-option value="between">Aralığında</mat-option>
+            </ng-container>
+
+            <ng-container *ngIf="isDateColumn()">
+              <mat-option value="equals">Eşittir</mat-option>
+              <mat-option value="greaterThan">Sonra</mat-option>
+              <mat-option value="lessThan">Önce</mat-option>
+              <mat-option value="between">Aralığında</mat-option>
+            </ng-container>
+          </mat-select>
+          <mat-error *ngIf="filterForm.get('type')?.hasError('required')">
+            İşlem türü zorunludur
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Değer Alanları -->
+        <div class="values-container">
+          <!-- Metin değeri -->
+          <ng-container *ngIf="isTextColumn()">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Değer</mat-label>
+              <input matInput formControlName="value" placeholder="Filtrelenecek değeri girin">
+              <mat-error *ngIf="filterForm.get('value')?.hasError('required')">
+                Değer zorunludur
+              </mat-error>
+            </mat-form-field>
+          </ng-container>
+
+          <!-- Sayısal değer -->
+          <ng-container *ngIf="isNumberColumn()">
+            <div class="value-inputs" [class.between-values]="isBetweenOperator()">
+              <mat-form-field appearance="outline" class="value-field">
+                <mat-label>{{ isBetweenOperator() ? 'Minimum Değer' : 'Değer' }}</mat-label>
+                <input matInput formControlName="value" type="number" placeholder="0">
+                <mat-error *ngIf="filterForm.get('value')?.hasError('required')">
+                  Değer zorunludur
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field
+                *ngIf="isBetweenOperator()"
+                appearance="outline"
+                class="value-field">
+                <mat-label>Maksimum Değer</mat-label>
+                <input matInput formControlName="valueEnd" type="number" placeholder="100">
+                <mat-error *ngIf="filterForm.get('valueEnd')?.hasError('required')">
+                  Maksimum değer zorunludur
+                </mat-error>
+              </mat-form-field>
+            </div>
+          </ng-container>
+
+          <!-- Tarih değeri -->
+          <ng-container *ngIf="isDateColumn()">
+            <div class="value-inputs" [class.between-values]="isBetweenOperator()">
+              <mat-form-field appearance="outline" class="value-field">
+                <mat-label>{{ isBetweenOperator() ? 'Başlangıç Tarihi' : 'Tarih' }}</mat-label>
+                <input matInput [matDatepicker]="startPicker" formControlName="value">
+                <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+                <mat-datepicker #startPicker></mat-datepicker>
+                <mat-error *ngIf="filterForm.get('value')?.hasError('required')">
+                  Tarih zorunludur
+                </mat-error>
+              </mat-form-field>
+
+              <mat-form-field
+                *ngIf="isBetweenOperator()"
+                appearance="outline"
+                class="value-field">
+                <mat-label>Bitiş Tarihi</mat-label>
+                <input matInput [matDatepicker]="endPicker" formControlName="valueEnd">
+                <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+                <mat-datepicker #endPicker></mat-datepicker>
+                <mat-error *ngIf="filterForm.get('valueEnd')?.hasError('required')">
+                  Bitiş tarihi zorunludur
+                </mat-error>
+              </mat-form-field>
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- Filtre Ekleme Butonu -->
+        <div class="form-actions">
+          <button
+            mat-raised-button
+            color="primary"
+            [disabled]="!isFormValid()"
+            (click)="addFilter()"
+            class="add-filter-btn">
+            <mat-icon>add</mat-icon> Filtre Ekle
+          </button>
+        </div>
+      </form>
+
+      <mat-divider *ngIf="filters.length > 0" class="divider"></mat-divider>
+
+      <!-- Mevcut Filtreler -->
+      <div *ngIf="filters.length > 0" class="current-filters">
+        <h3>Mevcut Filtreler</h3>
+        <mat-chip-listbox>
+          <mat-chip-option
+            *ngFor="let filter of filters; let i = index"
+            [removable]="true"
+            (removed)="removeFilter(i)"
+            class="filter-chip"
+            [matTooltip]="getFilterDescription(filter)">
+
+            <div class="chip-content">
+              <span class="chip-column">{{ getColumnLabel(filter.column) }}</span>
+              <span class="chip-operator">{{ getOperatorLabel(filter.type) }}</span>
+              <span class="chip-value">
+                {{ formatFilterValue(filter) }}
+              </span>
+            </div>
+
+            <mat-icon matChipRemove>cancel</mat-icon>
+          </mat-chip-option>
+        </mat-chip-listbox>
+
+        <!-- Tüm Filtreleri Temizle -->
+        <button
+          *ngIf="filters.length > 1"
+          mat-button
+          color="warn"
+          class="clear-all-btn"
+          (click)="clearAllFilters()">
+          <mat-icon>filter_list_off</mat-icon>
+          Tüm Filtreleri Temizle
+        </button>
+      </div>
+
+      <!-- Filtreleme Mantığı -->
+      <div *ngIf="filters.length > 1" class="filter-logic">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Filtreleme Mantığı</mat-label>
+          <mat-select [(ngModel)]="filterLogic">
+            <mat-option value="and">VE (Tüm koşulları sağlayanlar)</mat-option>
+            <mat-option value="or">VEYA (Herhangi bir koşulu sağlayanlar)</mat-option>
+          </mat-select>
+          <mat-hint>Filtrelerin nasıl uygulanacağını belirler</mat-hint>
+        </mat-form-field>
+      </div>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>İptal</button>
+      <button mat-raised-button color="primary" (click)="saveFilters()" [disabled]="filters.length === 0">
+        Uygula
+      </button>
+    </mat-dialog-actions>

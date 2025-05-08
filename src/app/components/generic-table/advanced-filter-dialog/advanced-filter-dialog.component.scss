@@ -1,0 +1,92 @@
+.filter-form {
+  margin-bottom: 16px;
+}
+
+.full-width {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.value-inputs {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+
+  &.between-values {
+    margin-bottom: 16px;
+  }
+}
+
+.value-field {
+  flex: 1;
+}
+
+.divider {
+  margin: 24px 0;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.add-filter-btn {
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+.current-filters {
+  margin-top: 16px;
+
+  h3 {
+    margin-bottom: 12px;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  mat-chip-list {
+    margin-bottom: 16px;
+  }
+}
+
+.filter-chip {
+  margin-bottom: 8px;
+  background-color: #e3f2fd;
+
+  &:hover {
+    background-color: #bbdefb;
+  }
+}
+
+.chip-content {
+  display: flex;
+  align-items: center;
+  max-width: 300px;
+}
+
+.chip-column {
+  font-weight: 500;
+  margin-right: 4px;
+}
+
+.chip-operator {
+  color: rgba(0, 0, 0, 0.6);
+  margin-right: 4px;
+  font-style: italic;
+}
+
+.chip-value {
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clear-all-btn {
+  margin-top: 8px;
+}
+
+.filter-logic {
+  margin-top: 24px;
+}

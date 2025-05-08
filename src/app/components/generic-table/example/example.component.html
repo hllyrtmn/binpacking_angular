@@ -1,0 +1,136 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Ürün Kataloğu (Statik Veri Örneği)</h1>
+    <p>Statik veri ile Generic Table bileşeninin tüm özelliklerini gösteren örnek uygulama.</p>
+  </div>
+
+  <div class="action-buttons">
+    <button mat-raised-button color="primary" (click)="useClientSideProcessing()">
+      <mat-icon>filter_alt</mat-icon>
+      İstemci Tarafı Filtreleme ({{ isClientSide ? 'Aktif' : 'Pasif' }})
+    </button>
+
+    <button mat-raised-button color="accent" (click)="useCardView()">
+      <mat-icon>{{ isCardView ? 'view_list' : 'view_module' }}</mat-icon>
+      {{ isCardView ? 'Tablo Görünümü' : 'Kart Görünümü' }}
+    </button>
+
+    <button mat-raised-button color="warn" (click)="resetData()">
+      <mat-icon>refresh</mat-icon>
+      Verileri Sıfırla
+    </button>
+  </div>
+
+  <app-generic-table
+    #productTable
+    [displayedColumns]="displayedColumns"
+    [filterableColumns]="filterableColumns"
+    [nestedDisplayColumns]="nestedDisplayColumns"
+    [title]="'Ürün Listesi'"
+    [showRowNumbers]="true"
+    [enableRowSelection]="true"
+    [showBulkActions]="true"
+    [allowColumnToggle]="true"
+    [allowColumnReordering]="true"
+    [editableColumns]="editableColumns"
+    [enableExport]="true"
+    [exportFilename]="'urun-listesi-ornek'"
+    [expandableRows]="true"
+    [rowDetailTemplate]="productDetailTemplate"
+    [useClientSideProcessing]="isClientSide"
+    [saveTableState]="true"
+    [tableStateId]="'static-example-table'"
+    [stackedCardViewOnMobile]="isCardView"
+    [externalDataSource]="products"
+    [useExternalData]="true"
+    (rowClick)="onProductSelect($event)"
+    (rowDeleted)="onProductDelete($event)"
+    (updateItem)="onProductUpdate($event)"
+    (itemAdded)="onProductAdded($event)"
+    (bulkActionSelected)="onBulkAction($event)"
+    (cellValueChanged)="onCellValueChanged($event)">
+  </app-generic-table>
+
+  <!-- Ürün Detay Template -->
+  <ng-template #productDetailTemplate let-product>
+    <div class="product-details">
+      <div class="product-details-section">
+        <h3>Ürün Açıklaması</h3>
+        <p>{{ product.description || 'Bu ürün için henüz açıklama eklenmemiş.' }}</p>
+      </div>
+
+      <div class="product-details-grid">
+        <div class="product-details-section">
+          <h4>Detaylı Bilgiler</h4>
+          <div class="detail-item">
+            <span class="detail-label">Ürün Kodu:</span>
+            <span class="detail-value">{{ product.sku }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Barkod:</span>
+            <span class="detail-value">{{ product.barcode }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Boyutlar:</span>
+            <span class="detail-value">{{ product.dimensions }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Ağırlık:</span>
+            <span class="detail-value">{{ product.weight }} kg</span>
+          </div>
+        </div>
+
+        <div class="product-details-section">
+          <h4>Satış ve Stok Bilgileri</h4>
+          <div class="detail-item">
+            <span class="detail-label">Toplam Satış:</span>
+            <span class="detail-value">{{ product.total_sales }} adet</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Son 30 Gün:</span>
+            <span class="detail-value">{{ product.month_sales }} adet</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Minimum Stok:</span>
+            <span class="detail-value">{{ product.min_stock }} adet</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Optimal Stok:</span>
+            <span class="detail-value">{{ product.optimal_stock }} adet</span>
+          </div>
+        </div>
+
+        <div class="product-details-section">
+          <h4>Tedarik Bilgileri</h4>
+          <div class="detail-item">
+            <span class="detail-label">Ana Tedarikçi:</span>
+            <span class="detail-value">{{ product.supplier?.name }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Tedarikçi Kodu:</span>
+            <span class="detail-value">{{ product.supplier_code }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Son Sipariş:</span>
+            <span class="detail-value">{{ product.last_order_date | date:'dd.MM.yyyy' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Teslimat Süresi:</span>
+            <span class="detail-value">{{ product.lead_time }} gün</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="product-details-buttons">
+        <button mat-raised-button color="primary" (click)="openProductDetails(product)">
+          <mat-icon>visibility</mat-icon>
+          Detayları Görüntüle
+        </button>
+        <button mat-raised-button (click)="addToOrder(product)">
+          <mat-icon>add_shopping_cart</mat-icon>
+          Siparişe Ekle
+        </button>
+      </div>
+    </div>
+  </ng-template>
+</div>

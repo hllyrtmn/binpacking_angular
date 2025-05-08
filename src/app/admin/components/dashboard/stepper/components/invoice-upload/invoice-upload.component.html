@@ -106,18 +106,18 @@
 
       <div class="table-container">
         <app-generic-table [service]="orderDetailService"
-                          [displayedColumns]="displayedColumns"
-                          [filterableColumns]="filterableColumns"
-                          [nestedDisplayColumns]="nestedDisplayColumns"
-                          [parentId]="order.id"
-                          [useParentId]="true"
-                          [parentIdFieldName]="'order_id'"
-                          [title]="''"
-                          [showRowNumbers]="true"
-                          (addClick)="addOrderDetail()"
-                          (updateItem)="onTableUpdate($event)"
-                          [excludeFields]="excludeFields">
-        </app-generic-table>
+                   [displayedColumns]="displayedColumns"
+                   [filterableColumns]="filterableColumns"
+                   [nestedDisplayColumns]="nestedDisplayColumns"
+                   [parentId]="order.id"
+                   [useParentId]="true"
+                   [parentIdFieldName]="'order_id'"
+                   [title]="''"
+                   [showRowNumbers]="true"
+                   (addClick)="addOrderDetail()"
+                   (updateItem)="onTableUpdate($event)"
+                   [excludeFields]="excludeFields">
+</app-generic-table>
       </div>
 
       <div class="summary-footer" *ngIf="orderDetails && orderDetails.length > 0">

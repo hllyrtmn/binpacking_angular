@@ -1,0 +1,100 @@
+<h2 mat-dialog-title>Sütun Ayarları</h2>
+    <mat-dialog-content>
+      <div class="search-container">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Sütun Ara</mat-label>
+          <input matInput [(ngModel)]="searchTerm" placeholder="Aramak için yazın...">
+          <button *ngIf="searchTerm" matSuffix mat-icon-button (click)="searchTerm = ''">
+            <mat-icon>close</mat-icon>
+          </button>
+          <mat-icon *ngIf="!searchTerm" matSuffix>search</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="column-list-container">
+        <div class="column-list-header">
+          <div class="column-list-header-title">Sütun adı</div>
+          <div class="column-list-header-actions">
+            <button mat-button color="primary" (click)="toggleAll(true)" [disabled]="allVisible">
+              <mat-icon>visibility</mat-icon> Tümünü Göster
+            </button>
+            <button mat-button color="warn" (click)="toggleAll(false)" [disabled]="noneVisible">
+              <mat-icon>visibility_off</mat-icon> Tümünü Gizle
+            </button>
+          </div>
+        </div>
+
+        <mat-divider></mat-divider>
+
+        <div
+          cdkDropList
+          (cdkDropListDropped)="drop($event)"
+          class="column-list">
+
+          <div
+            *ngFor="let column of filteredColumns"
+            cdkDrag
+            [cdkDragDisabled]="!column.visible"
+            class="column-item"
+            [class.column-visible]="column.visible"
+            [class.column-hidden]="!column.visible">
+
+            <div class="column-item-content">
+              <div class="drag-handle" *ngIf="column.visible">
+                <mat-icon>drag_indicator</mat-icon>
+              </div>
+
+              <mat-checkbox [(ngModel)]="column.visible" color="primary" class="column-checkbox">
+                {{ column.label }}
+              </mat-checkbox>
+
+              <div class="spacer"></div>
+
+              <button
+                mat-icon-button
+                color="primary"
+                *ngIf="!column.visible"
+                (click)="column.visible = true"
+                class="show-button">
+                <mat-icon>visibility</mat-icon>
+              </button>
+
+              <button
+                mat-icon-button
+                color="warn"
+                *ngIf="column.visible"
+                (click)="column.visible = false"
+                class="hide-button">
+                <mat-icon>visibility_off</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-text" *ngIf="filteredColumns.length === 0">
+        <mat-icon>info</mat-icon>
+        <span>Arama kriterine uygun sütun bulunamadı.</span>
+      </div>
+
+      <div class="summary-info" *ngIf="filteredColumns.length > 0">
+        <div class="info-item">
+          <span class="info-label">Toplam sütun:</span>
+          <span class="info-value">{{ columns.length }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Görünür sütun:</span>
+          <span class="info-value">{{ visibleCount }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Gizli sütun:</span>
+          <span class="info-value">{{ hiddenCount }}</span>
+        </div>
+      </div>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+      <button mat-button (click)="resetToDefault()">Varsayılana Sıfırla</button>
+      <button mat-button mat-dialog-close>İptal</button>
+      <button mat-raised-button color="primary" (click)="save()">Uygula</button>
+    </mat-dialog-actions>
