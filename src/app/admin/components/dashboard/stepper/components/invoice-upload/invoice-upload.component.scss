@@ -203,6 +203,24 @@
   background-color: #004A4A !important;
 }
 
+//* Save Button
+
+.save-button {
+  background-color: #C0A670 !important;
+  color: #ffffff !important;
+  align-self: center;
+
+}
+
+.save-button mat-icon,
+.save-button span {
+  color: #ffffff !important;
+}
+
+.save-button:hover:not([disabled]) {
+  background-color: #bea77a !important;
+}
+
 /* =====================
    YÜKLENİYOR GÖSTERGE
 ===================== */

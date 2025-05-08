@@ -1,12 +1,14 @@
 import { Injectable, signal } from '@angular/core';
 import { ApiService } from '../../../../../services/api.service';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { BehaviorSubject, map, Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { FileResponse } from '../interfaces/file-response.interface';
 import { mapToOrderDetailDtoList } from '../../../../../models/mappers/order-detail.mapper';
 import { mapPackageDetailToPackage } from '../../../../../models/mappers/package-detail.mapper';
 import { UiPallet } from '../components/ui-models/ui-pallet.model';
 import { PackageDetail } from '../../../../../models/package-detail.interface';
+import { OrderDetail } from '../../../../../models/order-detail.interface';
+import { Order } from '../../../../../models/order.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -47,13 +49,10 @@ export class RepositoryService {
     this.orderId.set(orderId);
   }
 
-  uploadFile(file: File): Observable<FileResponse> {
-    // api/orders/files
-    // { id: string, file: string, order:string}
-    // only upload file and return this.
-    // doesn't any proccess
+  uploadFile(file: File, orderId: string): Observable<FileResponse> {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('order_id', orderId); // Burada order_id olarak gönderiyoruz
 
     return this.http.post<FileResponse>(
       `${this.api.getApiUrl()}/orders/files/`,
@@ -61,12 +60,12 @@ export class RepositoryService {
     );
   }
 
-  processFile(file_id: string): Observable<{ status: string }> {
-    // api/orders/procces-file/{id}
-    // this only return status
-    return this.http.post<{ status: string }>(
-      `${this.api.getApiUrl()}/orders/process-file/${file_id}/`,
-      {}
+  processFile(file: File): Observable<{ message: string, order: Order, orderDetail:OrderDetail[] }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post<{ message: string, order: Order, orderDetail:OrderDetail[] }>(
+      `${this.api.getApiUrl()}/orders/process-file/`,formData
     );
   }
 
@@ -86,6 +85,11 @@ export class RepositoryService {
       packageDetails: packageDetailList
     }
     return this.http.post<any>(`${this.api.getApiUrl()}/logistics/create-package-detail/${order_id}/`, payload)
+  }
+
+  bulkOrderDetail(orderDetails: any[]): Observable<any> {
+    // Doğrudan liste gönderiyoruz, payload içinde sarmalamıyoruz
+    return this.http.post<any>(`${this.api.getApiUrl()}/orders/create-order-details/`, orderDetails);
   }
 
   createReport(order_id:string = this.orderId()):Observable<any>{

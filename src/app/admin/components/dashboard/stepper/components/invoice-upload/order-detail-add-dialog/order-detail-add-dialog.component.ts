@@ -161,8 +161,8 @@ export class OrderDetailAddDialogComponent implements OnInit {
       const requestData = {
         apiRequestItem:{"count": this.orderDetailForm.value['count'],
         "unit_price": this.orderDetailForm.value['unit_price'],
-        "product_id": this.orderDetailForm.value['product']['id'],
-        "order_id": this.orderDetailForm.value['order']['id'],},
+        "product_id": this.orderDetailForm.value['product'],
+        "order_id": this.orderDetailForm.value['order'],},
         orderDetail : this.orderDetailForm.value
       }
       this.dialogRef.close(requestData);

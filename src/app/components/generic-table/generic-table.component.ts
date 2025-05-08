@@ -33,6 +33,21 @@ import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.componen
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { AddOrUpdateDialogComponent } from './add-or-update-dialog/add-or-update-dialog-component';
 import { ToastService } from '../../services/toast.service';
+import { Observable, of } from 'rxjs';
+
+// Interface for external data source
+export interface ExternalDataParams {
+  offset: number;
+  limit: number;
+  ordering?: string;
+  [key: string]: any; // Any additional filter parameters
+}
+
+// Interface for external data result
+export interface ExternalDataResult<T> {
+  results: T[];
+  count: number;
+}
 
 @Component({
   selector: 'app-generic-table',
@@ -58,7 +73,7 @@ import { ToastService } from '../../services/toast.service';
   styleUrl: './generic-table.component.scss',
 })
 export class GenericTableComponent<T> implements OnInit, AfterViewInit {
-  @Input() service!: GenericCrudService<T>;
+  @Input() service?: GenericCrudService<T>; // Optional now
   @Input() displayedColumns: string[] = [];
   @Input() title: string = 'Items';
   @Input() filterableColumns: string[] = [];
@@ -77,6 +92,16 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
   @Input() parentId: string | null = null; // Bağlı olduğu üst nesne ID'si
   @Input() useParentId: boolean = false; // Üst nesne ID kullanılacak mı belirteci
   @Input() parentIdFieldName: string = 'order_id'; // API'ye gönderilecek parametre adı
+
+  // External data source inputs
+  @Input() externalData?: T[]; // External data array input
+  @Input() externalTotalCount?: number; // Total count for pagination
+  @Input() externalDataFetcher?: (params: ExternalDataParams) => Observable<ExternalDataResult<T>>; // Function to fetch external data
+
+  // Outputs for external data operations
+  @Output() externalDataUpdate = new EventEmitter<{ item: T, data: any }>(); // Event for updating an item externally
+  @Output() externalDataCreate = new EventEmitter<any>(); // Event for creating an item externally
+  @Output() externalDataDelete = new EventEmitter<any>(); // Event for deleting an item externally
 
   @Output() rowClick = new EventEmitter<T>();
   @Output() rowDeleted = new EventEmitter<any>();
@@ -97,6 +122,7 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
   isLoading: boolean = false;
   currentSortField: string = '';
   currentSortDirection: string = '';
+  isExternalMode: boolean = false; // Flag to determine if using external data source
 
   /**
    * Bir değerin sayısal olup olmadığını kontrol eder
@@ -158,12 +184,20 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
+    // Determine if we're using external data mode
+    this.isExternalMode = !!this.externalDataFetcher || this.externalData !== undefined;
+
     // Filterablecolumns için filterValues objesini oluştur
     this.filterableColumns.forEach((column) => {
       this.filterValues[column] = '';
     });
 
-    this.loadData();
+    // If external data is directly provided, use it (without fetching)
+    if (this.externalData && !this.externalDataFetcher) {
+      this.updateDataFromExternalSource(this.externalData, this.externalTotalCount || this.externalData.length);
+    } else {
+      this.loadData();
+    }
   }
 
   ngAfterViewInit() {
@@ -182,6 +216,16 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    // If external data changes directly, update the data source
+    if (changes['externalData'] && !changes['externalData'].firstChange) {
+      if (this.externalData) {
+        this.updateDataFromExternalSource(
+          this.externalData,
+          this.externalTotalCount || this.externalData.length
+        );
+      }
+    }
+
     // parentId, useParentId veya parentIdFieldName değiştiğinde veriyi yeniden yükle
     if (
       (changes['parentId'] && this.useParentId) ||
@@ -199,6 +243,17 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
       // Veriyi yeniden yükle
       this.loadData();
     }
+  }
+
+  /**
+   * Update the data source with external data
+   * @param data The data array
+   * @param totalCount The total count for pagination
+   */
+  private updateDataFromExternalSource(data: T[], totalCount: number): void {
+    this.dataSource.data = data;
+    this.totalItems = totalCount;
+    this.isLoading = false;
   }
 
   /**
@@ -296,13 +351,11 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
       this.dataSource.data = [];
       this.totalItems = 0;
       this.isLoading = false;
-      // Opsiyonel: Kullanıcıya bir mesaj göster
-      // this.toastService.info('Lütfen önce bir üst nesne seçin', 'Bilgi');
-      return; // API çağrısı yapmadan çık
+      return;
     }
 
     // Temel parametreler
-    const params: any = {
+    const params: ExternalDataParams = {
       offset: this.currentPage * this.pageSize,
       limit: this.pageSize,
     };
@@ -315,12 +368,10 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
 
     // Sıralama parametresi ekle
     if (this.currentSortField && this.currentSortDirection) {
-      params.ordering = `${this.currentSortDirection === 'desc' ? '-' : ''}${this.currentSortField
-        }`;
+      params.ordering = `${this.currentSortDirection === 'desc' ? '-' : ''}${this.currentSortField}`;
     } else if (this.sort && this.sort.active) {
       // MatSort'tan sıralama bilgisini al
-      params.ordering = `${this.sort.direction === 'desc' ? '-' : ''}${this.sort.active
-        }`;
+      params.ordering = `${this.sort.direction === 'desc' ? '-' : ''}${this.sort.active}`;
     }
 
     // Filtre değerlerini ekle
@@ -331,33 +382,60 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
       }
     });
 
-    this.service.getAll(params).subscribe({
-      next: (page: Page<T>) => {
-        if (page && 'results' in page && Array.isArray(page.results)) {
-          // Verileri temizle ve yeni verileri ekle
-          this.dataSource.data = [];
-          setTimeout(() => {
-            this.dataSource.data = page.results;
-            this.totalItems = page.count;
-          }, 0);
-        } else {
-          this.toastService.error(
-            'API yanıtı beklenen formatta değil',
-            'Uyarı'
-          );
+    // Choose the data source strategy based on inputs
+    if (this.isExternalMode && this.externalDataFetcher) {
+      // Use the external data fetcher function
+      this.externalDataFetcher(params).subscribe({
+        next: (result: ExternalDataResult<T>) => {
+          this.updateDataFromExternalSource(result.results, result.count);
+          this.toastService.success('Veri yüklendi', 'Başarılı');
+        },
+        error: (error) => {
+          this.toastService.error('Veri yüklenirken hata', 'Uyarı');
           this.dataSource.data = [];
           this.totalItems = 0;
+          this.isLoading = false;
         }
-        this.toastService.success('Veri yüklendi', 'Başarılı');
-        this.isLoading = false;
-      },
-      error: (error) => {
-        this.toastService.error('Veri yüklenirken hata', 'Uyarı');
-        this.isLoading = false;
-        this.dataSource.data = [];
-        this.totalItems = 0;
-      },
-    });
+      });
+    } else if (!this.isExternalMode && this.service) {
+      // Use the service (original behavior)
+      this.service.getAll(params).subscribe({
+        next: (page: Page<T>) => {
+          if (page && 'results' in page && Array.isArray(page.results)) {
+            this.dataSource.data = [];
+            setTimeout(() => {
+              this.dataSource.data = page.results;
+              this.totalItems = page.count;
+            }, 0);
+          } else {
+            this.toastService.error(
+              'API yanıtı beklenen formatta değil',
+              'Uyarı'
+            );
+            this.dataSource.data = [];
+            this.totalItems = 0;
+          }
+          this.toastService.success('Veri yüklendi', 'Başarılı');
+          this.isLoading = false;
+        },
+        error: (error) => {
+          this.toastService.error('Veri yüklenirken hata', 'Uyarı');
+          this.isLoading = false;
+          this.dataSource.data = [];
+          this.totalItems = 0;
+        },
+      });
+    } else if( this.externalData && this.externalData.length > 0){
+        this.toastService.success('Veri Yüklendi',"Başarılı")
+    }
+     else {
+      // No valid data source
+      console.error('No data source provided (neither service nor externalDataFetcher)');
+      this.toastService.error('Veri kaynağı bulunamadı', 'Hata');
+      this.isLoading = false;
+      this.dataSource.data = [];
+      this.totalItems = 0;
+    }
   }
 
   onPageChange(event: PageEvent): void {
@@ -401,18 +479,11 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
     // Debug için bilgileri konsola yaz
     console.log('Dialog açılıyor. Sütun tanımları:', this.columnDefinitions);
 
-    // TODO: product name alani required olara add dialog icersinde gorundu
-    // bunu kaldirmak icin ya columndefinicion inputunu gondermen gerekiyor
-    // veya excludeFiled inputu olusturup dialoglara gondererek bu fieldlari
-    // formun icinden kaldir veya hic ekleme dememiz gerekiyor
-    // load data surekli cagriliyor.
-    // her seferinde cagrilmasin
     const dialogRef = this.dialog.open(AddOrUpdateDialogComponent, {
       width: '500px',
       data: {
         row: row, // Düzenleme için mevcut satır verisi (eğer yeni ekleme ise undefined)
         columns: this.columnDefinitions, // Sütun tanımları
-        //options: this.getDialogOptions(), // Dropdown seçeneklerini dinamik olarak al
         visibleFields: this.displayedColumns.filter(
           (col) => col !== 'actions' && col !== 'rowNumber' && !this.excludeFields.includes(col)
         ), // Dinamik olarak belirlenen alanlar
@@ -424,22 +495,32 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
         if (row) {
           // Mevcut öğeyi güncelle
           this.isLoading = true;
-          this.service.update((row as any).id, result).subscribe({
-            next: (updatedItem) => {
-              this.updateItem.emit(updatedItem); // Güncellenmiş nesneyi bildir
-              this.toastService.success(
-                'Başarı ile güncellendi',
-                'Güncellendi'
-              );
-              this.loadData(); // Tabloyu yenile
-              this.isLoading = false;
-            },
-            error: (error) => {
-              console.error('Güncelleme hatası:', error);
-              this.toastService.error('Hata oluştu', 'Güncellenemedi');
-              this.isLoading = false;
-            },
-          });
+
+          // Check if using external mode or service
+          if (this.isExternalMode) {
+            // Emit event for external update
+            this.externalDataUpdate.emit({ item: row, data: result });
+            this.toastService.success('Güncelleme isteği gönderildi', 'Bilgi');
+            this.isLoading = false;
+          } else if (this.service) {
+            // Use the service (original behavior)
+            this.service.update((row as any).id, result).subscribe({
+              next: (updatedItem) => {
+                this.updateItem.emit(updatedItem); // Güncellenmiş nesneyi bildir
+                this.toastService.success(
+                  'Başarı ile güncellendi',
+                  'Güncellendi'
+                );
+                this.loadData(); // Tabloyu yenile
+                this.isLoading = false;
+              },
+              error: (error) => {
+                console.error('Güncelleme hatası:', error);
+                this.toastService.error('Hata oluştu', 'Güncellenemedi');
+                this.isLoading = false;
+              },
+            });
+          }
         } else {
           // Yeni öğe ekle
           this.isLoading = true;
@@ -449,20 +530,29 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
             result[this.parentIdFieldName] = this.parentId;
           }
 
-          this.service.create(result).subscribe({
-            next: (createdItem) => {
-              this.itemAdded.emit(createdItem); // Yeni eklenen öğeyi bildir
-              this.toastService.success('Başarı ile eklendi', 'Eklendi');
-              this.dataSource.data.unshift(createdItem);
-              this.isLoading = false;
-            },
-            error: (error) => {
-              console.log('ekleme verisi', result);
-              console.error('Ekleme hatası:', error);
-              this.toastService.error('Hata oluştu', 'Eklenemedi');
-              this.isLoading = false;
-            },
-          });
+          // Check if using external mode or service
+          if (this.isExternalMode) {
+            // Emit event for external create
+            this.externalDataCreate.emit(result);
+            this.toastService.success('Ekleme isteği gönderildi', 'Bilgi');
+            this.isLoading = false;
+          } else if (this.service) {
+            // Use the service (original behavior)
+            this.service.create(result).subscribe({
+              next: (createdItem) => {
+                this.itemAdded.emit(createdItem); // Yeni eklenen öğeyi bildir
+                this.toastService.success('Başarı ile eklendi', 'Eklendi');
+                this.dataSource.data.unshift(createdItem);
+                this.isLoading = false;
+              },
+              error: (error) => {
+                console.log('ekleme verisi', result);
+                console.error('Ekleme hatası:', error);
+                this.toastService.error('Hata oluştu', 'Eklenemedi');
+                this.isLoading = false;
+              },
+            });
+          }
         }
       }
     });
@@ -483,22 +573,46 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
 
   deleteItem(id: any): void {
     this.isLoading = true;
-    this.service.delete(id).subscribe({
-      next: () => {
-        this.rowDeleted.emit(id);
-        let index = this.dataSource.data.findIndex((item: any) => item.id === id);
-        if (index !== -1) {
-          this.dataSource.data.splice(index, 1);
-          this.dataSource._updateChangeSubscription();
-        }
-        this.toastService.success('Başari ile silindi', 'Silindi');
-      },
-      error: (error) => {
-        this.toastService.success('Silinemedi', 'Hata');
 
-        this.isLoading = false;
-      },
-    });
+    // Check if using external mode or service
+    if (this.isExternalMode) {
+      // Emit event for external delete
+      this.externalDataDelete.emit(id);
+      this.rowDeleted.emit(id);
+
+      // Optionally remove the item from the local data source
+      let index = this.dataSource.data.findIndex((item: any) => item.id === id);
+      if (index !== -1) {
+        const newData = [...this.dataSource.data];
+        newData.splice(index, 1);
+        this.dataSource.data = newData;
+      }
+
+      this.toastService.success('Silme isteği gönderildi', 'Bilgi');
+      this.isLoading = false;
+    } else if (this.service) {
+      // Use the service (original behavior)
+      this.service.delete(id).subscribe({
+        next: () => {
+          this.rowDeleted.emit(id);
+          let index = this.dataSource.data.findIndex((item: any) => item.id === id);
+          if (index !== -1) {
+            const newData = [...this.dataSource.data];
+            newData.splice(index, 1);
+            this.dataSource.data = newData;
+          }
+          this.toastService.success('Başari ile silindi', 'Silindi');
+          this.isLoading = false;
+        },
+        error: (error) => {
+          this.toastService.error('Silinemedi', 'Hata');
+          this.isLoading = false;
+        },
+      });
+    } else {
+      this.toastService.error('Silme işlemi için geçerli bir kaynak bulunamadı', 'Hata');
+      this.isLoading = false;
+    }
   }
 
   /**
@@ -554,4 +668,19 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
       .join(' ');
   }
 
+  /**
+   * Manually update the data source with new data (useful for parent components)
+   * @param data Data to set
+   * @param totalCount Total count for pagination
+   */
+  public updateData(data: T[], totalCount?: number): void {
+    this.updateDataFromExternalSource(data, totalCount || data.length);
+  }
+
+  /**
+   * Manually trigger a data refresh
+   */
+  public refreshData(): void {
+    this.loadData();
+  }
 }

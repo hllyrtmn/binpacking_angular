@@ -20,7 +20,7 @@
       <p>Mevcut bir sipariş bilgisi bulunmuyor. Excel dosyası yükleyebilir veya manuel olarak sipariş detayı ekleyebilirsiniz.</p>
 
       <div class="action-options">
-        <button mat-raised-button class="action-button" (click)="addOrderDetail()" [disabled]="manualAdd">
+        <button mat-raised-button class="action-button" (click)="createOrderDetail()">
           <mat-icon>add</mat-icon>
           <span>Manuel Giriş</span>
         </button>
@@ -105,7 +105,8 @@
       </div>
 
       <div class="table-container">
-        <app-generic-table [service]="orderDetailService"
+        <app-generic-table [externalData]="orderDetails"
+                          [externalTotalCount]="orderDetails.length"
                           [displayedColumns]="displayedColumns"
                           [filterableColumns]="filterableColumns"
                           [nestedDisplayColumns]="nestedDisplayColumns"
@@ -114,8 +115,9 @@
                           [parentIdFieldName]="'order_id'"
                           [title]="''"
                           [showRowNumbers]="true"
-                          (addClick)="addOrderDetail()"
-                          (updateItem)="onTableUpdate($event)"
+                          (addClick)="createOrderDetail()"
+                          (externalDataUpdate)="updateOrderDetail($event)"
+                          (externalDataDelete)="deleteOrderDetail($event)"
                           [excludeFields]="excludeFields">
         </app-generic-table>
       </div>
@@ -132,7 +134,10 @@
               <span>{{totalWeight.toFixed(2)}} kg</span>
             </div>
           </div>
-
+          <button mat-raised-button class="save-button" [disabled]="false" (click)="submit()">
+            <mat-icon>save</mat-icon>
+            <span>Kaydet</span>
+          </button>
           <div class="status-badge">
             <span class="status-dot active"></span>
             <span>Aktif</span>
