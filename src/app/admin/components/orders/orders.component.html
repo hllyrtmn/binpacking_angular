@@ -200,12 +200,12 @@
                   </div>
                   <div class="package-title-content">
                     <span class="package-id">Palet {{ index + 1 }}</span>
-                    <span class="package-ref">{{ packageGroup.id | slice:0:6 }}</span>
+                    <span class="package-ref">Ebat: {{ packageGroup.dimension.width }} x {{ packageGroup.dimension.depth }}</span>
                   </div>
                 </div>
                 <div class="package-metrics">
                   <div class="metric">
-                    <span class="metric-value">{{ packageGroup.dimension.width }} x {{ packageGroup.dimension.height }} x {{ packageGroup.dimension.depth }}</span>
+                    <span class="metric-value">{{ packageGroup.dimension.width }} x {{ packageGroup.dimension.depth }}</span>
                     <span class="metric-unit">{{ packageGroup.dimension.unit }}</span>
                   </div>
                   <div class="package-count">
@@ -223,15 +223,7 @@
                       <mat-icon>inventory</mat-icon>
                     </div>
                     <div class="product-info">
-                      <div class="product-name">{{ detail.product.name }}</div>
-                      <div class="product-details">
-                        <span class="product-dimension">
-                          {{ detail.product.dimension.width }} x
-                          {{ detail.product.dimension.depth }} x
-                          {{ detail.product.dimension.height }} {{ detail.product.dimension.unit }}
-                        </span>
-                        <span class="product-count">{{ detail.count }} adet</span>
-                      </div>
+                      <div class="product-name">{{ detail.product.name }}.{{ detail.count }}</div>
                     </div>
                   </div>
                 </div>

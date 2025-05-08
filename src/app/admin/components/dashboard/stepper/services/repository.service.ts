@@ -88,6 +88,10 @@ export class RepositoryService {
     return this.http.post<any>(`${this.api.getApiUrl()}/logistics/create-package-detail/${order_id}/`, payload)
   }
 
+  createReport(order_id:string = this.orderId()):Observable<any>{
+    return this.http.get<any>(`${this.api.getApiUrl()}/logistics/create-report/${order_id}/`)
+  }
+
   calculatePacking(order_id: string = this.orderId()) {
     return this.http.get<any>(`${this.api.getApiUrl()}/logistics/calculate-packing/${order_id}/`)
   }

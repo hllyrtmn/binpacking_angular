@@ -95,6 +95,31 @@
     </app-plotly>
   </div>
 
+  <!-- Dosya Listesi - Yeni Eklenmiş Bölüm -->
+  <div class="report-files-container">
+    <div class="report-files-header">
+      <mat-icon>description</mat-icon>
+      <span>Sevkiyat Raporları</span>
+    </div>
+    <div class="report-files-list">
+      <div class="report-file-item" *ngFor="let file of reportFiles">
+        <div class="file-icon">
+          <mat-icon>{{ getFileIcon(file.type) }}</mat-icon>
+        </div>
+        <div class="file-info">
+          <a [href]="file.file" target="_blank" class="file-link">
+            <span class="file-name">{{file.name}}</span>
+            <mat-icon class="download-icon">open_in_new</mat-icon>
+          </a>
+        </div>
+      </div>
+      <div class="empty-files" *ngIf="!reportFiles || reportFiles.length === 0">
+        <mat-icon>info</mat-icon>
+        <span>Henüz rapor dosyası bulunmamaktadır.</span>
+      </div>
+    </div>
+  </div>
+
   <div class="legend-container">
     <div class="legend-title">
       <mat-icon>info</mat-icon>
@@ -128,23 +153,3 @@
     </button>
   </div>
 </div>
-<!--
-<app-loading></app-loading>
-<h1>Sonuç Ekranı</h1>
-<div class="controls">
-  <button mat-button (click)="calculateBinpacking()">Paketleme Hesapla</button>
-  <button mat-button class="new-tab-button" (click)="openInNewTab()">
-    <span class="new-tab-icon"></span>
-    Yeni Sekmede Aç
-  </button>
-</div>
-
-<div class="visualization-container">
-  <app-threejs
-    #threejsComponent
-    [piecesData]="piecesData"
-    [truckDimension]="truckDimension">
-  </app-threejs>
-</div>
-
-<button mat-button matStepperPrevious>Geri</button> -->

@@ -12,6 +12,9 @@ import { ThreejsService } from '../../../../../../services/threejs.service';
 import { ThreejsVisualizationComponent } from '../../../../../../components/threejs/threejs.component';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
+import { ToastService } from '../../../../../../services/toast.service';
+import { switchMap } from 'rxjs';
+import { File } from '../../../../../../models/file.interface';
 @Component({
   selector: 'app-result-step',
   standalone: true,
@@ -171,10 +174,12 @@ export class ResultStepComponent implements OnDestroy {
   repositoryService = inject(RepositoryService);
   stepperService = inject(StepperStore);
   sanitizer = inject(DomSanitizer);
+  toastService = inject(ToastService)
   plotlyService = inject(PlotlyService);
   threejsService = inject(ThreejsService);
   isLoading: boolean = false; // Yükleme sırasında true yapın
   hasResults: boolean = false; // Sonuçlar hazır olduğunda true yapın
+  reportFiles:any = [];
 
   getUtilizationRate(): number {
     // Doluluk oranı hesaplama mantığınıza göre
@@ -187,8 +192,8 @@ export class ResultStepComponent implements OnDestroy {
     this.isLoading = true;
     this.hasResults = false;
 
-    this.repositoryService.calculatePacking().subscribe({
-      next: (response) => {
+    this.repositoryService.calculatePacking().pipe(
+      switchMap(response => {
         console.log('Paketleme verisi alındı:', response);
 
         // String ise parse et
@@ -208,21 +213,59 @@ export class ResultStepComponent implements OnDestroy {
           this.updatePopupVisualization();
         }
 
+        // Paketleme başarıyla tamamlandıktan sonra rapor oluşturmaya geç
+        return this.repositoryService.createReport();
+      })
+    ).subscribe({
+      next: (reportResponse) => {
+        console.log('Rapor başarıyla oluşturuldu:', reportResponse);
+
+        this.reportFiles = reportResponse.files;
         // İşlem tamamlandığında loading gizle ve sonuçları göster
         this.isLoading = false;
         this.hasResults = true;
+
+        // İsteğe bağlı: Rapor oluşturulduğunda kullanıcıya bilgi verebilirsiniz
+        this.toastService.success('Paketleme ve rapor başarıyla oluşturuldu.');
       },
       error: (error) => {
-        console.error('Paketleme hesaplanırken hata oluştu:', error);
+        console.error('İşlem sırasında hata oluştu:', error);
 
         // İşlem hata verdiğinde loading gizle
         this.isLoading = false;
         this.hasResults = false;
 
-        // Hata mesajı göster - ileride bir hata bildirim sistemi eklenebilir
-        // this.showErrorMessage('Paketleme hesaplanırken bir hata oluştu. Lütfen tekrar deneyin.');
+        // Hatanın nereden kaynaklandığını belirleyebilirsiniz
+        const errorMessage = error.message || 'Bir hata oluştu. Lütfen tekrar deneyin.';
+        this.toastService.error(errorMessage);
       }
     });
+  }
+
+  getFileIcon(fileType: string | null): string {
+    if (!fileType) return 'insert_drive_file';
+
+    const type = fileType.toLowerCase();
+
+    if (type.includes('pdf')) {
+      return 'picture_as_pdf';
+    } else if (type.includes('image') || type.includes('jpg') || type.includes('jpeg') || type.includes('png')) {
+      return 'image';
+    } else if (type.includes('excel') || type.includes('sheet') || type.includes('xlsx') || type.includes('xls')) {
+      return 'table_chart';
+    } else if (type.includes('word') || type.includes('doc')) {
+      return 'description';
+    } else if (type.includes('zip') || type.includes('rar') || type.includes('archive')) {
+      return 'folder_zip';
+    } else if (type.includes('text') || type.includes('txt')) {
+      return 'article';
+    } else if (type.includes('video')) {
+      return 'videocam';
+    } else if (type.includes('audio')) {
+      return 'audiotrack';
+    }
+
+    return 'insert_drive_file'; // Varsayılan ikon
   }
 
   openInNewTab(): void {

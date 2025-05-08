@@ -201,14 +201,15 @@ export class InvoiceUploadComponent implements OnInit {
       .uploadFile(this.file)
       .pipe(
         tap((response) => {
-          this.order = response.order;
-          this.repositoryService.setOrderId(response.order.id);
           this.toastService.success('Dosya başarıyla yüklendi.');
           this.toastService.info('Dosya işleniyor...');
         }),
-        switchMap((response) =>
-          this.processFile(response.id).pipe(
-            tap(() => {
+        switchMap((uploadResponse) =>
+          this.processFile(uploadResponse.id).pipe(
+            tap((processResponse) => {
+              console.log("process file response", processResponse);
+              this.order = processResponse.order; // <-- Doğru olan bu
+              this.repositoryService.setOrderId(processResponse.order.id);
               this.toastService.success('Dosya başarıyla işlendi.');
               this.resetForm();
             })
@@ -234,7 +235,7 @@ export class InvoiceUploadComponent implements OnInit {
       });
   }
 
-  private processFile(fileId: string): Observable<{ status: string }> {
+  private processFile(fileId: string): Observable<any> {
     return this.repositoryService.processFile(fileId);
   }
 
