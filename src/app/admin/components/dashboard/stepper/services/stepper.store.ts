@@ -1,37 +1,71 @@
-import { Injectable } from "@angular/core";
-import { throwError } from "rxjs";
-import { signal, Signal } from "@angular/core";
-import { StatusChangeEvent } from "@angular/forms";
+import { Injectable, WritableSignal } from "@angular/core";
+import { signal } from "@angular/core";
 
 interface step {
     id: number,
-    completed: Signal<boolean>,
-    editable: Signal<boolean>
+    completed: WritableSignal<boolean>,
+    editable: WritableSignal<boolean>,
+    is_dirty: WritableSignal<boolean>,
 }
+
 
 export enum STATUSES {
     completed = "completed",
-    editable = "editable"
+    editable = "editable",
+    dirty = "is_dirty"
 }
 
 @Injectable({ providedIn: 'root' })
 export class StepperStore {
-    private _steps = [
-        { id: 1, completed: signal(false), editable: signal(false) },
-        { id: 2, completed: signal(false), editable: signal(false) },
-        { id: 3, completed: signal(false), editable: signal(false) }
+
+
+    private _steps: step[] = [
+        {
+            id: 1,
+            completed: signal(false),
+            editable: signal(false),
+            is_dirty: signal(false)
+        },
+        {
+            id: 2,
+            completed: signal(false),
+            editable: signal(false),
+            is_dirty: signal(false)
+        },
+        {
+            id: 3,
+            completed: signal(false),
+            editable: signal(false),
+            is_dirty: signal(false)
+        }
     ]
+
     public steps = [
-        { id: 1, completed: this._steps[0].completed.asReadonly(), editable: this._steps[0].editable.asReadonly() },
-        { id: 2, completed: this._steps[1].completed.asReadonly(), editable: this._steps[1].editable.asReadonly() },
-        { id: 3, completed: this._steps[2].completed.asReadonly(), editable: this._steps[2].editable.asReadonly() }
+        {
+            id: 1,
+            completed: this._steps[0].completed.asReadonly(),
+            editable: this._steps[0].editable.asReadonly(),
+            is_dirty: this._steps[0].is_dirty.asReadonly()
+        },
+        {
+            id: 2,
+            completed: this._steps[1].completed.asReadonly(),
+            editable: this._steps[1].editable.asReadonly(),
+            is_dirty: this._steps[0].is_dirty.asReadonly()
+        },
+        {
+            id: 3,
+            completed: this._steps[2].completed.asReadonly(),
+            editable: this._steps[2].editable.asReadonly(),
+            is_dirty: this._steps[0].is_dirty.asReadonly()
+        }
     ]
 
     resetStepper() {
         this._steps = [
-            { id: 1, completed: signal(false), editable: signal(false) },
-            { id: 2, completed: signal(false), editable: signal(false) },
-            { id: 3, completed: signal(false), editable: signal(false) }
+            { id: 1, completed: signal(false), editable: signal(false), is_dirty: signal(false) },
+            { id: 2, completed: signal(false), editable: signal(false), is_dirty: signal(false) },
+            { id: 3, completed: signal(false), editable: signal(false), is_dirty: signal(false) }
         ]
     }
 
