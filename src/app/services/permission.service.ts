@@ -18,7 +18,7 @@ export class PermissionService {
   loadPermissions() {
     const url = `${this.apiService.getApiUrl()}/permissions/user_permissions/current_user/`
     return new Promise<void>((resolve, reject) => {
-      firstValueFrom(this.http.get<any>(url)).then((response:any) => {
+      firstValueFrom(this.http.get<any>(url)).then((response: any) => {
         this.userPermissions = response;
         resolve();
       }).catch((reason => {
@@ -29,7 +29,7 @@ export class PermissionService {
 
 
   hasPermission(requiredPermission: IRequiredPermission[]): boolean {
-    if(requiredPermission.length > this.userPermissions.length) return false;
+    if (requiredPermission.length > this.userPermissions.length) return false;
     let isApproved: boolean = true;
     requiredPermission.forEach(requiredPermission => {
       let hasPermission: boolean = false;
@@ -41,6 +41,7 @@ export class PermissionService {
       });
       if (!hasPermission) {
         isApproved = false;
+        return;
       }
     })
     return isApproved;
