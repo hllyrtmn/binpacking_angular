@@ -1,9 +1,14 @@
-import { BaseModel } from "./base-model.interface";
-import { Order } from "./order.interface";
-import { Pallet } from "./pallet.interface";
+import { BaseModel } from './base-model.interface';
+import { Order } from './order.interface';
+import { Pallet } from './pallet.interface';
 
 export interface Package extends BaseModel {
-  order: Order;
+  // Ya pallet nesnesi ya da pallet_id olabilir
   pallet?: Pallet | null;
-  name?:string | null;
+  pallet_id?: string;
+
+  // Ya order nesnesi ya da order_id olabilir
+  order?: Order;
+  order_id?: string;
+  name?: string | null;
 }

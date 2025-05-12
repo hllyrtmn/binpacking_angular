@@ -349,8 +349,7 @@ export class InvoiceUploadComponent implements OnInit {
 
     const formattedOrder = {
       id: this.order.id,
-      invoice_company_id: this.order.invoice_company?.id,
-      company_id: this.order.company?.id,
+      company_relation_id: this.order.company_relation.id,
       date: this.order.date,
       weigth_type: this.order.weigth_type,
       name: this.order.name

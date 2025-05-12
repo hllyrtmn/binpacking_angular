@@ -8,6 +8,7 @@ export interface IUiPackage extends Package {
   totalMeter:number;
   totalWeight:number;
   totalVolume:number
+  isSavedInDb: boolean;
   // addProduct(product: IUiProduct): void;
   // removeProduct(product: IUiProduct): void;
   // addPallet(pallet: IUiPallet): void;

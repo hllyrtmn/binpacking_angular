@@ -75,10 +75,10 @@ export class OrdersComponent implements OnInit {
       return;
     }
 
-    this.filteredOrderResults = this.orderResults.filter(order => {
-      const orderId = order.order.id.toLowerCase();
-      const companyName = order.order.company.company_name.toLowerCase();
-      const country = order.order.company.country.toLowerCase();
+    this.filteredOrderResults = this.orderResults.filter(o_r => {
+      const orderId = o_r.order.id.toLowerCase();
+      const companyName = o_r.order.company_relation.target_company_name.toLowerCase();
+      const country = o_r.order.company_relation.target_company_name.toLowerCase();
 
       return orderId.includes(this.searchTerm) ||
              companyName.includes(this.searchTerm) ||

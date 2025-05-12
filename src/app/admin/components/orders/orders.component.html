@@ -26,7 +26,7 @@
               <div class="select-trigger-content">
                 <mat-icon *ngIf="selectedOrderResult">assignment</mat-icon>
                 {{ selectedOrderResult ?
-                   'Sipariş No: ' + (selectedOrderResult.order.name) + '(' + selectedOrderResult.order.company.company_name + ')' :
+                   'Sipariş No: ' + (selectedOrderResult.order.name) + '(' + selectedOrderResult.order.company_relation.target_company_name + ')' :
                    'Sevkiyat Emri Seçin' }}
               </div>
             </mat-select-trigger>
@@ -44,17 +44,17 @@
               </mat-form-field>
             </div>
 
-            <mat-option *ngFor="let order of filteredOrderResults" [value]="order">
+            <mat-option *ngFor="let o_r of filteredOrderResults" [value]="o_r">
               <div class="order-option">
                 <div class="order-icon">
                   <mat-icon>receipt</mat-icon>
                 </div>
                 <div class="order-details">
-                  <span class="order-id">{{ order.order.name }}</span>
-                  <span class="company-name">{{ order.order.company.company_name }}</span>
+                  <span class="order-id">{{ o_r.order.name }}</span>
+                  <span class="company-name">{{ o_r.order.company_relation.target_company_name }}</span>
                 </div>
                 <div class="order-date">
-                  {{ order.order.date | date:'dd.MM.yyyy' }}
+                  {{ o_r.order.date | date:'dd.MM.yyyy' }}
                 </div>
               </div>
             </mat-option>
@@ -71,7 +71,7 @@
               <mat-icon class="card-icon">description</mat-icon>
               <div class="card-title-content">
                 <h3 class="card-title">Sevkiyat Özeti</h3>
-                <p class="card-subtitle">{{ selectedOrderResult.order.company.company_name }} - {{ selectedOrderResult.order.date | date }}</p>
+                <p class="card-subtitle">{{ selectedOrderResult.order.company_relation.target_company_name }} - {{ selectedOrderResult.order.date | date }}</p>
               </div>
             </div>
             <div class="status-badge">

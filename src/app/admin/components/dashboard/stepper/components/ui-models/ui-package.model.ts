@@ -24,6 +24,7 @@ export class UiPackage implements IUiPackage {
   company?: Company | undefined;
   id: string;
   name:string;
+  isSavedInDb: boolean; // Add this flag to track if the package is already saved in DB
 
   // TODO: buradaki methodlar observable veya signala donusturulmeli
   // veya cache mantigi kullanilmali performance artirmak icin
@@ -52,6 +53,7 @@ export class UiPackage implements IUiPackage {
     this.company = init.company;
     this.id = init.id!;
     this.name = init.name!;
+    this.isSavedInDb = init.isSavedInDb || false; // Default is false
   }
 
 }
