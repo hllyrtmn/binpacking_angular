@@ -79,7 +79,7 @@ export class InvoiceUploadComponent implements OnInit {
   // Form ve state değişkenleri
   // save changes methodu eklenecek
   // bu method base component veya turevi bir yapiya eklenim kalitilabilir.
-  // suanlik dumduz yazilacak. 
+  // suanlik dumduz yazilacak.
   // backend deki orm mantigi uidaki modellere islenirse
   // save chagnes ozelligi generic olarak parent class a eklenebilir
   // inherit edilebilir.
@@ -87,7 +87,7 @@ export class InvoiceUploadComponent implements OnInit {
 
   // kaydet butonu kaldirilmasi
   // save changes durumuna gore davranis saglanmasi
-  // 
+  //
   uploadForm: FormGroup;
   file: File | null = null;
   tempFile: File | null = null;
