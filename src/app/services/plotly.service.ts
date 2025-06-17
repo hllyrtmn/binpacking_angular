@@ -1,343 +1,719 @@
-
 import { Injectable } from '@angular/core';
-import * as Plotly from 'plotly.js-dist-min';
-import * as _ from 'lodash';
-import * as d3 from 'd3';
-import { Layout } from 'plotly.js';
-import { Config } from 'plotly.js';
+
+declare var Plotly: any;
 
 @Injectable({
   providedIn: 'root'
 })
 export class PlotlyService {
-  constructor() { }
 
-  // Creates the vertices of a 3D cube at the given position with given dimensions
-  private cubeData(position3d: number[], size: number[] = [1, 1, 1]): number[][] {
-    // Create a unit cube
-    const cube = [
-      [0, 0, 0],
-      [1, 0, 0],
-      [1, 1, 0],
-      [0, 1, 0],
-      [0, 0, 1],
-      [1, 0, 1],
-      [1, 1, 1],
-      [0, 1, 1]
-    ];
+  private readonly COLORS = [
+    '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6',
+    '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1',
+    '#14b8a6', '#fbbf24', '#8b5cf6', '#f87171', '#34d399',
+    '#60a5fa', '#a78bfa', '#fb7185', '#fde047', '#67e8f9'
+  ];
 
-    // Scale the cube to the desired size
-    const scaledCube = cube.map(vertex =>
-      vertex.map((coord, i) => coord * size[i])
-    );
+  // Keep track of plot instances for cleanup
+  private plotInstances = new Map<HTMLElement, any>();
 
-    // Translate the cube to the desired position
-    return scaledCube.map(vertex =>
-      vertex.map((coord, i) => coord + position3d[i])
-    );
-  }
+  constructor() {}
 
-  // Triangulates cube faces for Plotly Mesh3d visualization
-  private triangulateCubeFaces(positions: number[][], sizes: number[][] | null = null): {
-    vertices: number[][],
-    I: number[],
-    J: number[],
-    K: number[]
-  } {
-    if (!sizes) {
-      sizes = Array(positions.length).fill([1, 1, 1]);
-    }
-
-    if (sizes.length !== positions.length) {
-      throw new Error('Positions and sizes arrays must have the same length');
-    }
-
-    // Create cubes for each position and size
-    const allCubes = positions.map((pos, idx) =>
-      sizes![idx][2] !== 0 ? this.cubeData(pos, sizes![idx]) : null
-    ).filter(cube => cube !== null) as number[][][];
-
-    // Flatten all vertices to a single array
-    const allVertices = allCubes.flat();
-
-    // Find unique vertices
-    const uniqueVerticesMap = new Map();
-    let vertexIdx = 0;
-
-    allVertices.forEach(vertex => {
-      const key = vertex.join(',');
-      if (!uniqueVerticesMap.has(key)) {
-        uniqueVerticesMap.set(key, vertexIdx++);
-      }
-    });
-
-    // Create the unique vertices array
-    const vertices: number[][] = Array.from(uniqueVerticesMap.keys()).map(key =>
-      key.split(',').map(Number)
-    );
-
-    // Create indices arrays for triangulation
-    const I: number[] = [];
-    const J: number[] = [];
-    const K: number[] = [];
-
-    for (let k = 0; k < allCubes.length; k++) {
-      const cubeIndices = allCubes[k].map(vertex =>
-        uniqueVerticesMap.get(vertex.join(','))
-      );
-
-      // Triangulation pattern (same as Python code)
-      const indices = [
-        [0, 2, 0, 5, 0, 7, 5, 2, 3, 6, 7, 5],
-        [1, 3, 4, 1, 3, 4, 1, 6, 7, 2, 4, 6],
-        [2, 0, 5, 0, 7, 0, 2, 5, 6, 3, 5, 7]
-      ];
-
-      for (let i = 0; i < 12; i++) {
-        I.push(cubeIndices[indices[0][i]]);
-        J.push(cubeIndices[indices[1][i]]);
-        K.push(cubeIndices[indices[2][i]]);
-      }
-    }
-
-    return { vertices, I, J, K };
-  }
-
-  // Renders the 3D visualization of the truck loading solution
-  public drawSolution(element: HTMLElement, pieces: any[], truckDimension: number[]): any {
+  /**
+   * Main method to draw the truck loading solution
+   */
+  drawSolution(element: HTMLElement, pieces: any[], truckDimension: number[]): any {
     if (!pieces || pieces.length === 0) {
-      console.error('No pieces data provided');
-      return;
+      this.clearPlot(element);
+      return null;
     }
 
-    // Parse pieces data if it's a string
-    let parsedPieces = pieces;
-    if (typeof pieces === 'string') {
-      try {
-        parsedPieces = JSON.parse(pieces);
-      } catch (e) {
-        console.error('Failed to parse pieces data:', e);
-        return;
-      }
+    try {
+      console.log(`🎨 Rendering ${pieces.length} packages in 3D...`);
+
+      // Process package data for 3D visualization
+      const { traces, layout } = this.createVisualizationData(pieces, truckDimension);
+
+      // Enhanced configuration for better UX
+      const config = {
+        responsive: true,
+        displayModeBar: true,
+        displaylogo: false,
+        modeBarButtonsToRemove: [
+          'pan2d', 'select2d', 'lasso2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d',
+          'autoScale2d', 'resetScale2d', 'hoverClosestCartesian', 'hoverCompareCartesian',
+          'toggleHover', 'resetViews', 'sendDataToCloud', 'hoverClosest3d'
+        ],
+        modeBarButtonsToAdd: [
+          {
+            name: 'Görünümü Sıfırla',
+            icon: Plotly.Icons.home,
+            click: () => this.resetCamera(element)
+          },
+          {
+            name: 'Resim İndir',
+            icon: Plotly.Icons.camera,
+            click: () => this.exportAsImage(element)
+          }
+        ]
+      };
+
+      // Create the plot
+      Plotly.newPlot(element, traces, layout, config).then(() => {
+        console.log('✅ 3D visualization rendered successfully');
+        this.plotInstances.set(element, { traces, layout, config });
+      });
+
+      // Setup interactions
+      this.setupInteractions(element);
+
+      return { traces, layout, config };
+
+    } catch (error) {
+      console.error('❌ Error creating Plotly visualization:', error);
+      this.showError(element, 'Görselleştirme oluşturulurken bir hata oluştu.');
+      return null;
     }
+  }
 
-    const positions: number[][] = [];
-    const sizes: number[][] = [];
-    const sortedSize: Set<string>[] = [];
-    const texts: string[] = [];
+  /**
+   * Create visualization data for Plotly
+   */
+  private createVisualizationData(pieces: any[], truckDimension: number[]): { traces: any[], layout: any } {
+    const traces: any[] = [];
 
-    // Process each piece
-    parsedPieces.forEach((piece: number[]) => {
-      positions.push(piece.slice(0, 3));
-      sizes.push(piece.slice(3, 6));
-      sortedSize.push(new Set(piece.slice(3, 6).map(String)));
-      texts.push(`Palet ${piece[6]}<br>Ağırlık: ${piece[7]} kg<br>X: ${piece[3]} <br>Y: ${piece[4]}`);
-    });
+    // 1. Create truck container outline
+    traces.push(this.createTruckOutline(truckDimension));
 
-    // Define colors using Plotly's qualitative color scales
-    const colors = [
-      ...d3.schemeSet1 || [],
-      ...d3.schemeSet2 || [],
-      ...d3.schemeSet3 || []
+    // 2. Create package meshes
+    const packageTraces = this.createPackageMeshes(pieces);
+    traces.push(...packageTraces);
+
+    // 3. Create package edges for better visibility
+    const edgeTraces = this.createPackageEdges(pieces);
+    traces.push(...edgeTraces);
+
+    // 4. Create layout
+    const layout = this.createLayout(truckDimension);
+
+    return { traces, layout };
+  }
+
+  /**
+   * Create truck container outline
+   */
+  private createTruckOutline(truckDimension: number[]): any {
+    const [L, W, H] = truckDimension;
+
+    // Truck container edges - more comprehensive wireframe
+    const x = [
+      // Bottom rectangle
+      0, L, L, 0, 0, null,
+      // Top rectangle
+      0, L, L, 0, 0, null,
+      // Vertical edges
+      0, 0, null, L, L, null, L, L, null, 0, 0, null
     ];
 
-    // Generate mesh data for 3D visualization
-    const { vertices, I, J, K } = this.triangulateCubeFaces(positions, sizes);
+    const y = [
+      // Bottom rectangle
+      0, 0, W, W, 0, null,
+      // Top rectangle
+      0, 0, W, W, 0, null,
+      // Vertical edges
+      0, 0, null, 0, 0, null, W, W, null, W, W, null
+    ];
 
-    // Prepare colors for each face
-    const faceColors: string[] = [];
+    const z = [
+      // Bottom rectangle
+      0, 0, 0, 0, 0, null,
+      // Top rectangle
+      H, H, H, H, H, null,
+      // Vertical edges
+      0, H, null, 0, H, null, 0, H, null, 0, H, null
+    ];
 
-    for (let i = 0; i < parsedPieces.length; i++) {
-      const sizeKey = Array.from(sortedSize[i]).join(',');
-      const colorIndex = i % colors.length;
-
-      // Each cube has 12 triangular faces
-      for (let j = 0; j < 12; j++) {
-        faceColors.push(colors[colorIndex]);
-      }
-    }
-
-    // Extract X, Y, Z coordinates from vertices
-    const X = vertices.map(v => v[0]);
-    const Y = vertices.map(v => v[1]);
-    const Z = vertices.map(v => v[2]);
-
-    // Prepare hover texts
-    const hoverTextsExpanded: string[] = [];
-    texts.forEach(text => {
-      // Each cube has 12 faces
-      for (let i = 0; i < 12; i++) {
-        hoverTextsExpanded.push(text);
-      }
-    });
-
-    // Create the 3D mesh
-    const mesh3d = {
-      type: 'mesh3d',
-      x: X,
-      y: Y,
-      z: Z,
-      i: I,
-      j: J,
-      k: K,
-      facecolor: faceColors,
-      flatshading: true,
-      opacity: 1,
-      hovertext: hoverTextsExpanded,
-      hovertemplate: '<b>%{hovertext}</b><br><extra></extra>'
+    return {
+      type: 'scatter3d',
+      mode: 'lines',
+      x: x,
+      y: y,
+      z: z,
+      line: {
+        color: '#64748b',
+        width: 3
+      },
+      name: 'Tır Konteyneri',
+      showlegend: false,
+      hoverinfo: 'skip'
     };
+  }
 
-    // Create annotations for each piece
-    const annotations: any[] = [];
-    positions.forEach((pos, idx) => {
-      const size = sizes[idx];
-      const text = texts[idx];
+  /**
+   * Create 3D meshes for packages
+   */
+  private createPackageMeshes(pieces: any[]): any[] {
+    const traces: any[] = [];
 
-      annotations.push({
-        type: 'scatter3d',
-        x: [pos[0] + size[0] / 2],
-        y: [pos[1] + size[1] / 2],
-        z: [pos[2] + size[2]],
-        mode: 'text',
-        text: [text],
-        textposition: 'middle center',
-        name: text,
+    pieces.forEach((piece, index) => {
+      const [x, y, z, l, w, h, packageId, weight] = piece;
+
+      // Create vertices for the box
+      const vertices = this.createBoxVertices(x, y, z, l, w, h);
+
+      // Create mesh3d trace
+      const trace = {
+        type: 'mesh3d',
+        x: vertices.x,
+        y: vertices.y,
+        z: vertices.z,
+        i: vertices.i,
+        j: vertices.j,
+        k: vertices.k,
+        color: this.COLORS[index % this.COLORS.length],
+        opacity: 0.8,
+        name: `Palet ${packageId}`,
+        hovertemplate:
+          `<b>Palet ${packageId}</b><br>` +
+          `Boyutlar: ${l}×${w}×${h} mm<br>` +
+          `Ağırlık: ${weight} kg<br>` +
+          `Pozisyon: (${x}, ${y}, ${z})<br>` +
+          `Hacim: ${(l * w * h / 1000000).toFixed(2)} m³<br>` +
+          '<extra></extra>',
         showlegend: false,
-        marker: {
-          size: 6,
-          color: 'black',
-          symbol: 'circle'
-        }
-      });
+        // Add custom data for later reference
+        customdata: [packageId, weight, l * w * h]
+      };
+
+      traces.push(trace);
     });
 
-    // Calculate range for axes
-    const xRange = [Math.min(...X), truckDimension[0]];
-    const yRange = [Math.min(...Y), truckDimension[1]];
-    const zRange = [Math.min(...Z), truckDimension[2]];
+    return traces;
+  }
 
-    // Calculate aspect ratio
-    const maxRange = Math.max(...truckDimension);
-    const aspectRatio = {
-      x: truckDimension[0] / maxRange,
-      y: truckDimension[1] / maxRange,
-      z: truckDimension[2] / maxRange
+  /**
+   * Create package edges for better visibility
+   */
+  private createPackageEdges(pieces: any[]): any[] {
+    const traces: any[] = [];
+
+    pieces.forEach((piece, index) => {
+      const [x, y, z, l, w, h, packageId] = piece;
+
+      // Create edge lines for the box
+      const edges = this.createBoxEdges(x, y, z, l, w, h);
+
+      const trace = {
+        type: 'scatter3d',
+        mode: 'lines',
+        x: edges.x,
+        y: edges.y,
+        z: edges.z,
+        line: {
+          color: '#1f2937',
+          width: 1.5
+        },
+        name: `Kenar ${packageId}`,
+        showlegend: false,
+        hoverinfo: 'skip'
+      };
+
+      traces.push(trace);
+    });
+
+    return traces;
+  }
+
+  /**
+   * Create box vertices for mesh3d
+   */
+  private createBoxVertices(x: number, y: number, z: number, l: number, w: number, h: number) {
+    // 8 vertices of a box
+    const vertices = {
+      x: [x, x+l, x+l, x, x, x+l, x+l, x],
+      y: [y, y, y+w, y+w, y, y, y+w, y+w],
+      z: [z, z, z, z, z+h, z+h, z+h, z+h]
     };
 
-    // Create edge traces for each piece
-    const edgeTraces: any[] = [];
-    positions.forEach((pos, idx) => {
-      const size = sizes[idx];
-      const x0 = pos[0];
-      const y0 = pos[1];
-      const z0 = pos[2];
-      const w = size[0];
-      const l = size[1];
-      const h = size[2];
+    // Triangulation for 12 faces (2 per box face)
+    const faces = {
+      i: [0, 0, 0, 1, 1, 2, 2, 3, 4, 4, 4, 5, 5, 6, 6, 7],
+      j: [1, 2, 3, 2, 3, 3, 0, 0, 5, 6, 7, 6, 7, 7, 4, 4],
+      k: [2, 3, 0, 3, 0, 0, 1, 1, 6, 7, 4, 7, 4, 4, 5, 5]
+    };
 
-      // Define edges
-      const edges = [
-        [[x0, x0 + w], [y0, y0], [z0, z0]],
-        [[x0, x0], [y0, y0 + l], [z0, z0]],
-        [[x0, x0], [y0, y0], [z0, z0 + h]],
-        [[x0 + w, x0 + w], [y0, y0 + l], [z0, z0]],
-        [[x0, x0 + w], [y0 + l, y0 + l], [z0, z0]],
-        [[x0, x0 + w], [y0, y0], [z0 + h, z0 + h]],
-        [[x0, x0], [y0, y0 + l], [z0 + h, z0 + h]],
-        [[x0 + w, x0 + w], [y0, y0 + l], [z0 + h, z0 + h]],
-        [[x0, x0 + w], [y0 + l, y0 + l], [z0 + h, z0 + h]]
-      ];
+    return { ...vertices, ...faces };
+  }
 
-      edges.forEach(edge => {
-        edgeTraces.push({
-          type: 'scatter3d',
-          x: edge[0],
-          y: edge[1],
-          z: edge[2],
-          mode: 'lines',
-          line: {
-            color: 'black',
-            width: 1
-          },
-          showlegend: false
-        });
-      });
-    });
+  /**
+   * Create box edges
+   */
+  private createBoxEdges(x: number, y: number, z: number, l: number, w: number, h: number) {
+    const edges = {
+      x: [
+        // Bottom face
+        x, x+l, x+l, x, x, null,
+        // Top face
+        x, x+l, x+l, x, x, null,
+        // Vertical edges
+        x, x, null, x+l, x+l, null, x+l, x+l, null, x, x, null
+      ],
+      y: [
+        // Bottom face
+        y, y, y+w, y+w, y, null,
+        // Top face
+        y, y, y+w, y+w, y, null,
+        // Vertical edges
+        y, y, null, y, y, null, y+w, y+w, null, y+w, y+w, null
+      ],
+      z: [
+        // Bottom face
+        z, z, z, z, z, null,
+        // Top face
+        z+h, z+h, z+h, z+h, z+h, null,
+        // Vertical edges
+        z, z+h, null, z, z+h, null, z, z+h, null, z, z+h, null
+      ]
+    };
 
-    // Layout configuration
-    const layout :Partial<Layout> =  {
-      autosize: true,
-      margin: {
-        l: 0,
-        r: 0,
-        b: 0,
-        t: 40
-      },
+    return edges;
+  }
+
+  /**
+   * Create enhanced layout
+   */
+  private createLayout(truckDimension: number[]): any {
+    const [L, W, H] = truckDimension;
+    const maxDim = Math.max(L, W, H);
+
+    return {
       title: {
-        text: 'Truck Loading Solution',
-        x: 0.5
+        text: '',
+        font: { size: 16, color: '#1f2937' }
       },
-      dragmode: false,
       scene: {
         xaxis: {
-          title: `X Ekseni ${Math.floor(truckDimension[0])}`,
-          range: xRange,
-          showticklabels: false,
-          showgrid: false,
-          zeroline: false
+          title: `Uzunluk (${L} mm)`,
+          range: [0, L],
+          showgrid: true,
+          gridcolor: '#e5e7eb',
+          showline: true,
+          linecolor: '#9ca3af',
+          tickfont: { size: 10, color: '#6b7280' },
+          showspikes: false
         },
         yaxis: {
-          title: `Y Ekseni ${Math.floor(truckDimension[1])}`,
-          range: yRange,
-          showticklabels: false,
-          showgrid: false,
-          zeroline: false
+          title: `Genişlik (${W} mm)`,
+          range: [0, W],
+          showgrid: true,
+          gridcolor: '#e5e7eb',
+          showline: true,
+          linecolor: '#9ca3af',
+          tickfont: { size: 10, color: '#6b7280' },
+          showspikes: false
         },
         zaxis: {
-          range: zRange,
-          showticklabels: false,
-          showgrid: false,
-          zeroline: false
+          title: `Yükseklik (${H} mm)`,
+          range: [0, H],
+          showgrid: true,
+          gridcolor: '#e5e7eb',
+          showline: true,
+          linecolor: '#9ca3af',
+          tickfont: { size: 10, color: '#6b7280' },
+          showspikes: false
         },
-        aspectratio: aspectRatio,
+        aspectratio: {
+          x: L / maxDim,
+          y: W / maxDim,
+          z: H / maxDim
+        },
         camera: {
-          eye: { x: 0, y: 0, z: 0.6 },
-          up: { x: 0, y: 1, z: 0 }
-        }
-      }
-    };
-
-    // Config options for plot
-    const config : Partial<Config> = {
-      responsive: true,
-      displayModeBar: true,
-      scrollZoom: false,
-      staticPlot: false,
-      modeBarButtonsToRemove: [
-        'zoom2d', 'pan2d', 'select2d', 'lasso2d', 'zoomIn2d', 'zoomOut2d',
-        'autoScale2d', 'resetScale2d', 'hoverClosestCartesian', 'hoverCompareCartesian',
-        'orbitRotation', 'tableRotation', 'resetCameraDefault3d', 'resetCameraLastSave3d'
-      ],
-      modeBarButtonsToAdd: ['toImage'],
-      toImageButtonOptions: {
-        format: 'png',
-        filename: 'truck_loading_solution'
-      }
-    };
-
-    // Create and render the plot
-    Plotly.newPlot(
-      element,
-      [mesh3d, ...annotations, ...edgeTraces],
-      layout,
-      config
-    );
-
-    // Return color information for potential future use
-    return {
-      sortedSize,
-      colors
+          eye: { x: 1.5, y: 1.5, z: 1.2 },
+          up: { x: 0, y: 0, z: 1 },
+          center: { x: 0, y: 0, z: 0 }
+        },
+        bgcolor: '#f8fafc',
+        dragmode: 'orbit'
+      },
+      paper_bgcolor: 'rgba(0,0,0,0)',
+      plot_bgcolor: 'rgba(0,0,0,0)',
+      margin: { l: 0, r: 0, b: 0, t: 0 },
+      showlegend: false,
+      hovermode: 'closest'
     };
   }
 
+  /**
+   * Setup plot interactions
+   */
+  private setupInteractions(element: HTMLElement): void {
+    // Add hover effects
+    (element as any).on('plotly_hover', (data: any) => {
+      if (data.points && data.points.length > 0) {
+        const point = data.points[0];
+        if (point.data.type === 'mesh3d') {
+          // Increase opacity on hover
+          const update = { opacity: 1.0 };
+          Plotly.restyle(element, update, point.curveNumber);
+        }
+      }
+    });
+
+    (element as any).on('plotly_unhover', (data: any) => {
+      if (data.points && data.points.length > 0) {
+        const point = data.points[0];
+        if (point.data.type === 'mesh3d') {
+          // Reset opacity
+          const update = { opacity: 0.8 };
+          Plotly.restyle(element, update, point.curveNumber);
+        }
+      }
+    });
+
+    // Add double-click to reset view
+    (element as any).on('plotly_doubleclick', () => {
+      this.resetCamera(element);
+    });
+
+    // Add relayout event for view changes
+    (element as any).on('plotly_relayout', (eventData: any) => {
+      if (eventData['scene.camera']) {
+        console.log('📹 Camera view changed:', eventData['scene.camera']);
+      }
+    });
+  }
+
+  /**
+   * Update camera position
+   */
+  updateCamera(element: HTMLElement, cameraConfig: any): void {
+    const update = {
+      'scene.camera': cameraConfig
+    };
+    Plotly.relayout(element, update).then(() => {
+      console.log('📹 Camera updated:', cameraConfig);
+    }).catch((error: any) => {
+      console.warn('Camera update failed:', error);
+    });
+  }
+
+  /**
+   * Reset camera to default position
+   */
+  resetCamera(element: HTMLElement): void {
+    const cameraConfig = {
+      eye: { x: 1.5, y: 1.5, z: 1.2 },
+      up: { x: 0, y: 0, z: 1 },
+      center: { x: 0, y: 0, z: 0 }
+    };
+    this.updateCamera(element, cameraConfig);
+  }
+
+  /**
+   * Highlight specific package
+   */
+  highlightPackage(element: HTMLElement, packageId: number): void {
+    try {
+      const gd = element as any;
+      const data = gd.data || [];
+
+      // Find the trace that corresponds to the package
+      let targetTraceIndex = -1;
+      for (let i = 0; i < data.length; i++) {
+        const trace = data[i];
+        if (trace.name === `Palet ${packageId}`) {
+          targetTraceIndex = i;
+          break;
+        }
+      }
+
+      if (targetTraceIndex >= 0) {
+        // Highlight the specific package
+        const updates = data.map((_: any, index: number) => {
+          if (index === targetTraceIndex) {
+            return { opacity: 1.0, 'line.width': 3 };
+          } else if (data[index].type === 'mesh3d') {
+            return { opacity: 0.4 };
+          }
+          return {};
+        });
+
+        Plotly.restyle(element, updates).then(() => {
+          console.log(`📦 Package ${packageId} highlighted`);
+
+          // Reset after 3 seconds
+          setTimeout(() => {
+            const resetUpdates = data.map((_: any, index: number) => {
+              if (data[index].type === 'mesh3d') {
+                return { opacity: 0.8, 'line.width': 1.5 };
+              }
+              return {};
+            });
+            Plotly.restyle(element, resetUpdates);
+          }, 3000);
+        });
+      }
+    } catch (error) {
+      console.warn('Package highlighting failed:', error);
+    }
+  }
+
+  /**
+   * Toggle wireframe mode
+   */
+  toggleWireframe(element: HTMLElement, enabled: boolean): void {
+    try {
+      const gd = element as any;
+      const data = gd.data || [];
+      const updates: any[] = [];
+
+      data.forEach((trace: any, index: number) => {
+        if (trace.type === 'mesh3d') {
+          updates[index] = {
+            opacity: enabled ? 0.2 : 0.8,
+            'line.width': enabled ? 2 : 1.5
+          };
+        }
+      });
+
+      if (updates.length > 0) {
+        Plotly.restyle(element, updates).then(() => {
+          console.log(`🔳 Wireframe mode: ${enabled ? 'ON' : 'OFF'}`);
+        });
+      }
+    } catch (error) {
+      console.warn('Wireframe toggle failed:', error);
+    }
+  }
+
+  /**
+   * Update plot data without full re-render
+   */
+  updateData(element: HTMLElement, newPieces: any[]): void {
+    try {
+      if (!newPieces || newPieces.length === 0) {
+        this.clearPlot(element);
+        return;
+      }
+
+      // Get current truck dimensions from existing plot
+      const gd = element as any;
+      if (!gd.layout || !gd.layout.scene) {
+        console.warn('Cannot update data: missing layout information');
+        return;
+      }
+
+      const xRange = gd.layout.scene.xaxis.range;
+      const yRange = gd.layout.scene.yaxis.range;
+      const zRange = gd.layout.scene.zaxis.range;
+      const truckDimension = [xRange[1], yRange[1], zRange[1]];
+
+      // Create new visualization data
+      const { traces } = this.createVisualizationData(newPieces, truckDimension);
+
+      // Update the plot
+      Plotly.react(element, traces, gd.layout).then(() => {
+        console.log('📊 Plot data updated successfully');
+      });
+
+    } catch (error) {
+      console.error('Data update failed:', error);
+    }
+  }
+
+  /**
+   * Resize plot
+   */
+  resize(element: HTMLElement): void {
+    if (Plotly && element) {
+      Plotly.Plots.resize(element);
+    }
+  }
+
+  /**
+   * Clear plot
+   */
+  clearPlot(element: HTMLElement): void {
+    try {
+      this.plotInstances.delete(element);
+      Plotly.purge(element);
+    } catch (error) {
+      console.warn('Plot clear failed:', error);
+    }
+  }
+
+  /**
+   * Purge plot
+   */
+  purge(element: HTMLElement): void {
+    try {
+      this.plotInstances.delete(element);
+      Plotly.purge(element);
+    } catch (error) {
+      console.warn('Plot purge failed:', error);
+    }
+  }
+
+  /**
+   * Export plot as image
+   */
+  exportAsImage(element: HTMLElement, filename: string = 'truck-loading', format: string = 'png'): void {
+    const options = {
+      format: format,
+      width: 1920,
+      height: 1080,
+      filename: filename,
+      scale: 1
+    };
+
+    Plotly.downloadImage(element, options).then(() => {
+      console.log(`📷 Image exported: ${filename}.${format}`);
+    }).catch((error: any) => {
+      console.error('Image export failed:', error);
+    });
+  }
+
+  /**
+   * Show error message
+   */
+  private showError(element: HTMLElement, message: string): void {
+    element.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #ef4444; font-size: 14px; font-family: Arial, sans-serif;">
+        <div style="text-align: center; padding: 2rem; background: #fef2f2; border-radius: 8px; border: 1px solid #fecaca;">
+          <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+          <div style="font-weight: 600; margin-bottom: 8px;">Görselleştirme Hatası</div>
+          <div style="font-size: 12px; color: #991b1b;">${message}</div>
+          <button onclick="location.reload()" style="margin-top: 16px; padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Sayfayı Yenile
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Get plot statistics
+   */
+  getPlotStats(element: HTMLElement): any {
+    try {
+      const gd = element as any;
+      const data = gd.data || [];
+
+      const packageCount = data.filter((trace: any) => trace.type === 'mesh3d').length;
+      const totalTraces = data.length;
+
+      return {
+        packageCount,
+        totalTraces,
+        isFullscreen: !!document.fullscreenElement,
+        plotDimensions: {
+          width: element.offsetWidth,
+          height: element.offsetHeight
+        }
+      };
+    } catch (error) {
+      console.warn('Failed to get plot stats:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Take screenshot of current view
+   */
+  async takeScreenshot(element: HTMLElement): Promise<string | null> {
+    try {
+      const imgData = await Plotly.toImage(element, {
+        format: 'png',
+        width: element.offsetWidth,
+        height: element.offsetHeight,
+        scale: 1
+      });
+
+      console.log('📸 Screenshot taken successfully');
+      return imgData;
+    } catch (error) {
+      console.error('Screenshot failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Animate camera movement
+   */
+  animateCameraTo(element: HTMLElement, targetCamera: any, duration: number = 1000): void {
+    const steps = 30;
+    const stepDuration = duration / steps;
+
+    try {
+      const gd = element as any;
+      const currentCamera = gd.layout.scene.camera;
+
+      let step = 0;
+      const animate = () => {
+        if (step >= steps) return;
+
+        step++;
+        const progress = step / steps;
+
+        // Linear interpolation
+        const interpolatedCamera = {
+          eye: {
+            x: currentCamera.eye.x + (targetCamera.eye.x - currentCamera.eye.x) * progress,
+            y: currentCamera.eye.y + (targetCamera.eye.y - currentCamera.eye.y) * progress,
+            z: currentCamera.eye.z + (targetCamera.eye.z - currentCamera.eye.z) * progress
+          },
+          center: targetCamera.center || currentCamera.center,
+          up: targetCamera.up || currentCamera.up
+        };
+
+        Plotly.relayout(element, { 'scene.camera': interpolatedCamera });
+
+        if (step < steps) {
+          setTimeout(animate, stepDuration);
+        }
+      };
+
+      animate();
+    } catch (error) {
+      console.warn('Camera animation failed:', error);
+      // Fallback to direct camera update
+      this.updateCamera(element, targetCamera);
+    }
+  }
+
+  /**
+   * Check if Plotly is loaded and ready
+   */
+  isPlotlyReady(): boolean {
+    return typeof Plotly !== 'undefined' && Plotly.newPlot;
+  }
+
+  /**
+   * Get Plotly version info
+   */
+  getPlotlyInfo(): any {
+    if (this.isPlotlyReady()) {
+      return {
+        version: Plotly.version || 'unknown',
+        build: Plotly.BUILD || 'unknown',
+        ready: true
+      };
+    }
+    return { ready: false };
+  }
+
+  /**
+   * Cleanup all plot instances
+   */
+  cleanup(): void {
+    this.plotInstances.forEach((_, element) => {
+      try {
+        this.purge(element);
+      } catch (error) {
+        console.warn('Cleanup failed for element:', error);
+      }
+    });
+    this.plotInstances.clear();
+    console.log('🧹 PlotlyService cleanup completed');
+  }
 }

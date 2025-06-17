@@ -36,7 +36,7 @@
               "node_modules/ngx-toastr/toastr.css",
               "node_modules/bootstrap/dist/css/bootstrap.min.css"
             ],
-            "scripts": []
+            "scripts": ["node_modules/plotly.js-dist-min/plotly.min.js"]
           },
           "configurations": {
             "production": {
@@ -103,6 +103,7 @@
               "src/styles.scss"
             ],
             "scripts": [
+              "node_modules/plotly.js-dist-min/plotly.min.js",
               "node_modules/bootstrap/dist/js/bootstrap.bundle.min.js"
             ]
           }
