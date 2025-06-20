@@ -1,11 +1,112 @@
 /* =====================
-   GENEL AYARLAR
+   OPTIMIZE EDİLMİŞ PALET YERLEŞTIRME SCSS
 ===================== */
-/* Root değişkenleri kaldırıldı, doğrudan renk kullanılıyor */
 
-/* Temel stillemeler */
+// Ana değişkenler
+$primary-color: #006A6A;
+$secondary-color: #D6BB86;
+$accent-color: #004A4A;
+$light-accent: #C0A670;
+$background-color: #f8f9fa;
+$text-dark: #333333;
+$text-light: #666666;
+$border-color: #e0e0e0;
+$white: #FFFFFF;
+
+// Split input değişkenleri
+$split-main-width: 32px;
+$split-main-height: 26px;
+$split-pallet-width: 24px;
+$split-pallet-height: 18px;
+$split-button-size: 28px;
+$split-pallet-button-size: 20px;
+
+// Mixin'ler
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin split-input-base($width, $height, $font-size: 11px) {
+  width: $width !important;
+  height: $height !important;
+  border: 1px solid $border-color !important;
+  border-radius: 3px !important;
+  background-color: $white !important;
+  font-size: $font-size !important;
+  text-align: center !important;
+  color: $text-dark !important;
+  padding: 0 2px !important;
+  margin: 0 !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  transition: all 0.3s ease !important;
+
+  &::placeholder {
+    color: #999999 !important;
+    font-size: #{$font-size - 1px} !important;
+    text-align: center !important;
+  }
+
+  &:focus {
+    border-color: $primary-color !important;
+    color: $primary-color !important;
+    box-shadow: 0 0 0 1px rgba(0, 106, 106, 0.2) !important;
+  }
+
+  &:hover:not(:focus) {
+    border-color: $primary-color !important;
+  }
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+  }
+
+  &[type=number] {
+    appearance: textfield !important;
+    -moz-appearance: textfield !important;
+  }
+}
+
+@mixin split-button-base($size, $icon-size: 16px) {
+  width: $size !important;
+  height: $size !important;
+  min-width: $size !important;
+  line-height: 1 !important;
+  color: $text-light !important;
+  flex-shrink: 0 !important;
+  @include flex-center;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 3px !important;
+
+  &:hover {
+    color: $primary-color !important;
+    background-color: rgba(0, 106, 106, 0.1) !important;
+  }
+
+  mat-icon {
+    font-size: $icon-size !important;
+    width: $icon-size !important;
+    height: $icon-size !important;
+    line-height: 1 !important;
+    color: $secondary-color !important;
+    @include flex-center;
+  }
+
+  &:hover mat-icon {
+    color: $primary-color !important;
+  }
+}
+
+/* =====================
+   TEMEL STILLEMELER
+===================== */
 form {
-  background-color: #f8f9fa;
+  background-color: $background-color;
   padding: 20px;
   height: 100%;
   display: flex;
@@ -22,39 +123,38 @@ form {
 }
 
 .header-icon {
-  background-color: #006A6A;
-  color: #FFFFFF;
+  background-color: $primary-color;
+  color: $white;
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @include flex-center;
   margin-right: 16px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+  mat-icon {
+    font-size: 26px;
+    height: 26px;
+    width: 26px;
+    color: $white;
+  }
 }
 
-.header-icon mat-icon {
-  font-size: 26px;
-  height: 26px;
-  width: 26px;
-  color: #FFFFFF;
-}
-
-.header-titles h1 {
-  margin: 0;
-  color: #006A6A;
-  font-size: 24px;
-  font-weight: 600;
+.header-titles {
+  h1 {
+    margin: 0;
+    color: $primary-color;
+    font-size: 24px;
+    font-weight: 600;
+  }
 }
 
 .header-subtitle {
-  color: #666666;
+  color: $text-light;
   margin: 4px 0 0;
   font-size: 14px;
 }
 
-/* Dashboard metrics */
 .logistics-dashboard {
   display: flex;
   flex-wrap: wrap;
@@ -63,7 +163,7 @@ form {
 }
 
 .dashboard-item {
-  background-color: white;
+  background-color: $white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   padding: 16px;
@@ -72,50 +172,39 @@ form {
   flex: 1;
   min-width: 200px;
   transition: all 0.3s ease;
-  border-left: 4px solid #006A6A;
-}
+  border-left: 4px solid $primary-color;
 
-.dashboard-item:nth-child(2) {
-  border-left-color: #D6BB86;
-}
+  &:nth-child(2) {
+    border-left-color: $secondary-color;
+    .dashboard-icon { background-color: $secondary-color; }
+  }
 
-.dashboard-item:nth-child(2) .dashboard-icon {
-  background-color: #D6BB86;
-}
+  &:nth-child(3) {
+    border-left-color: $accent-color;
+    .dashboard-icon { background-color: $accent-color; }
+  }
 
-.dashboard-item:nth-child(3) {
-  border-left-color: #004A4A;
-}
-
-.dashboard-item:nth-child(3) .dashboard-icon {
-  background-color: #004A4A;
-}
-
-.dashboard-item:nth-child(4) {
-  border-left-color: #C0A670;
-}
-
-.dashboard-item:nth-child(4) .dashboard-icon {
-  background-color: #C0A670;
+  &:nth-child(4) {
+    border-left-color: $light-accent;
+    .dashboard-icon { background-color: $light-accent; }
+  }
 }
 
 .dashboard-icon {
   width: 40px;
   height: 40px;
-  background-color: #006A6A;
-  color: #FFFFFF;
+  background-color: $primary-color;
+  color: $white;
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @include flex-center;
   margin-right: 12px;
-}
 
-.dashboard-icon mat-icon {
-  color: #FFFFFF;
-  font-size: 20px;
-  width: 20px;
-  height: 20px;
+  mat-icon {
+    color: $white;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
 }
 
 .dashboard-info {
@@ -125,14 +214,14 @@ form {
 
 .dashboard-label {
   font-size: 12px;
-  color: #666666;
+  color: $text-light;
   margin-bottom: 4px;
 }
 
 .dashboard-value {
   font-size: 18px;
   font-weight: 600;
-  color: #006A6A;
+  color: $primary-color;
 }
 
 /* =====================
@@ -145,9 +234,8 @@ form {
   min-height: 400px;
 }
 
-/* Genel bölüm stilleri */
 .inventory-section, .pallets-section, .packages-section {
-  background-color: white;
+  background-color: $white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   display: flex;
@@ -164,165 +252,328 @@ form {
   flex: 1;
 }
 
+/* =====================
+   OPTIMIZE EDİLMİŞ BAŞLIK
+===================== */
 .section-header {
   display: flex;
   align-items: center;
   padding: 12px 16px;
   background-color: rgba(0, 106, 106, 0.1);
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid $border-color;
+
+  mat-icon {
+    color: $primary-color;
+    margin-right: 8px;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 16px;
+    color: $primary-color;
+    font-weight: 600;
+  }
+
+  &.with-action {
+    justify-content: space-between;
+    min-height: 48px;
+  }
 }
 
-.section-header.with-action {
-  display: flex;
-  justify-content: space-between;
-}
-
-.header-title {
+.header-content-inline {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  gap: 16px;
 }
 
-.section-header mat-icon, .header-title mat-icon {
-  color: #006A6A;
-  margin-right: 8px;
+.header-title-section {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  h2 {
+    white-space: nowrap;
+  }
 }
 
-.section-header h2 {
-  margin: 0;
-  font-size: 16px;
-  color: #006A6A;
+.pallet-stats-inline {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: nowrap;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: $white;
+  border-radius: 4px;
+  padding: 4px 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-left: 3px solid;
+  transition: all 0.3s ease;
+  min-width: 70px;
+  flex-shrink: 1;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  }
+
+  mat-icon {
+    font-size: 14px !important;
+    width: 14px !important;
+    height: 14px !important;
+    flex-shrink: 0;
+  }
+
+  &.heaviest {
+    border-left-color: #F44336;
+    mat-icon { color: #F44336; }
+    &:hover { background-color: rgba(244, 67, 54, 0.05); }
+  }
+
+  &.lightest {
+    border-left-color: #4CAF50;
+    mat-icon { color: #4CAF50; }
+    &:hover { background-color: rgba(76, 175, 80, 0.05); }
+  }
+
+  &.average {
+    border-left-color: #FF9800;
+    mat-icon { color: #FF9800; }
+    &:hover { background-color: rgba(255, 152, 0, 0.05); }
+  }
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.stat-label {
+  font-size: 9px;
+  color: $text-light;
+  line-height: 1.1;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 11px;
   font-weight: 600;
+  color: $text-dark;
+  line-height: 1.1;
+  white-space: nowrap;
 }
 
 .clear-button {
-  color: #666666;
+  color: $text-light;
   font-size: 12px;
   padding: 0 10px;
   height: 30px;
   line-height: 30px;
   background-color: #f5f5f5;
-}
+  flex-shrink: 0;
 
-.clear-button mat-icon {
-  font-size: 16px;
-  height: 16px;
-  width: 16px;
-  margin-right: 4px;
-  color: #666666;
-}
+  mat-icon {
+    font-size: 16px;
+    height: 16px;
+    width: 16px;
+    margin-right: 4px;
+    color: $text-light;
+  }
 
-.clear-button:hover {
-  background-color: #eeeeee;
-  color: #F44336;
-}
+  &:hover {
+    background-color: #eeeeee;
+    color: #F44336;
 
-.clear-button:hover mat-icon {
-  color: #F44336;
+    mat-icon {
+      color: #F44336;
+    }
+  }
 }
 
 /* =====================
-   ENVANTER (SOL PANEL)
+   ENVANTER VE ÜRÜNLER
 ===================== */
-.inventory-list {
+.inventory-list, .pallets-list {
   padding: 8px;
   overflow-y: auto;
   flex: 1;
 }
 
-.product-item {
+.product-item, .pallet-item {
   display: flex;
   align-items: center;
-  padding: 10px;
   border-radius: 4px;
   margin-bottom: 8px;
-  background-color: white;
-  border: 1px solid #e0e0e0;
+  background-color: $white;
+  border: 1px solid $border-color;
   cursor: move;
   transition: all 0.3s ease;
+
+  &:hover {
+    background-color: rgba(0, 106, 106, 0.1);
+    border-color: $primary-color;
+  }
 }
 
-.product-item:hover {
-  background-color: rgba(0, 106, 106, 0.1);
-  border-color: #006A6A;
+.product-item {
+  padding: 8px 10px;
+  min-height: 38px;
+
+  .product-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-right: 8px;
+    min-width: 0;
+
+    .product-name {
+      font-size: 14px;
+      color: $text-dark;
+      line-height: 1.2;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .product-count {
+      font-size: 12px;
+      color: $text-light;
+      line-height: 1.2;
+    }
+  }
+}
+
+.pallet-item {
+  padding: 4px 6px;
+  margin-bottom: 3px;
+  min-height: 28px;
+
+  &:hover {
+    background-color: rgba(214, 187, 134, 0.2);
+    border-color: $secondary-color;
+  }
+
+  .product-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-right: 4px;
+    min-width: 0;
+  }
+
+  .split-product-container {
+    gap: 3px;
+    height: 20px;
+  }
+
+  .mini-split-input {
+    @include split-input-base($split-pallet-width, $split-pallet-height, 9px);
+    border-radius: 2px !important;
+  }
+
+  .split-button,
+  .action-button:not(.split-button) {
+    @include split-button-base($split-pallet-button-size, 12px);
+  }
 }
 
 .product-icon {
   width: 20px;
   height: 20px;
-  background-color: #006A6A;
+  background-color: $primary-color;
   border-radius: 4px;
   margin-right: 10px;
   position: relative;
+
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    background-color: rgba(255, 255, 255, 0.5);
+  }
+
+  &::before {
+    top: 4px;
+    left: 2px;
+    right: 2px;
+    height: 2px;
+  }
+
+  &::after {
+    left: 4px;
+    top: 2px;
+    bottom: 2px;
+    width: 2px;
+  }
+
+  &.small {
+    width: 16px;
+    height: 16px;
+  }
 }
 
-.product-icon::before, .product-icon::after {
-  content: '';
-  position: absolute;
-  background-color: rgba(255, 255, 255, 0.5);
-}
-
-.product-icon::before {
-  top: 4px;
-  left: 2px;
-  right: 2px;
-  height: 2px;
-}
-
-.product-icon::after {
-  left: 4px;
-  top: 2px;
-  bottom: 2px;
-  width: 2px;
-}
-
-.product-icon.small {
-  width: 16px;
-  height: 16px;
-}
-
-.product-info {
-  flex: 1;
+/* =====================
+   SPLIT INPUT OPTIMIZE
+===================== */
+.split-product-container {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  height: 28px;
 }
 
-.product-name {
-  font-size: 14px;
-  color: #333333;
-  line-height: 1.2;
+.mini-split-input {
+  @include split-input-base($split-main-width, $split-main-height);
 }
 
-.product-count {
-  font-size: 12px;
-  color: #666666;
+.split-button {
+  @include split-button-base($split-button-size);
 }
 
 .action-button {
   width: 28px;
   height: 28px;
   line-height: 28px;
-  color: #666666;
-}
+  color: $text-light;
 
-.action-button:hover {
-  color: #006A6A;
-  background-color: rgba(0, 106, 106, 0.1);
-}
+  &:hover {
+    color: $primary-color;
+    background-color: rgba(0, 106, 106, 0.1);
+  }
 
-.action-button mat-icon {
-  font-size: 16px;
-  width: 16px;
-  height: 16px;
-  line-height: 16px;
-  color: #D6BB86;
-}
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    color: $secondary-color;
+  }
 
-.action-button:hover mat-icon {
-  color: #006A6A;
+  &:hover mat-icon {
+    color: $primary-color;
+  }
 }
 
 /* =====================
-   PAKET GRID (ORTA PANEL)
+   PAKET GRID
 ===================== */
 .packages-grid {
   display: grid;
@@ -334,9 +585,9 @@ form {
 }
 
 .package-card {
-  border: 1px solid #006A6A;
+  border: 1px solid $primary-color;
   border-radius: 8px;
-  background-color: white;
+  background-color: $white;
   display: flex;
   flex-direction: column;
   height: 300px;
@@ -344,7 +595,7 @@ form {
 }
 
 .package-header {
-  background-color: #006A6A;
+  background-color: $primary-color;
   padding: 8px 12px;
   display: flex;
   justify-content: space-between;
@@ -354,19 +605,19 @@ form {
 .package-title {
   display: flex;
   align-items: center;
-}
 
-.package-title mat-icon {
-  font-size: 18px;
-  width: 18px;
-  height: 18px;
-  margin-right: 8px;
-  color: #FFFFFF;
-}
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-right: 8px;
+    color: $white;
+  }
 
-.package-title span {
-  color: #FFFFFF;
-  font-weight: 500;
+  span {
+    color: $white;
+    font-weight: 500;
+  }
 }
 
 .package-actions {
@@ -377,19 +628,19 @@ form {
   width: 24px;
   height: 24px;
   line-height: 24px;
-  color: #FFFFFF;
-}
+  color: $white;
 
-.small-action:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-}
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
 
-.small-action mat-icon {
-  font-size: 14px;
-  width: 14px;
-  height: 14px;
-  line-height: 14px;
-  color: #FFFFFF;
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    line-height: 14px;
+    color: $white;
+  }
 }
 
 .package-dropzone {
@@ -399,23 +650,23 @@ form {
   flex-direction: column;
   min-height: 200px;
   position: relative;
-  background-color: #f8f9fa;
+  background-color: $background-color;
 }
 
 /* =====================
-   PALET (PAKET İÇİ)
+   PALET CONTAINER
 ===================== */
 .pallet-container {
-  background-color: white;
+  background-color: $white;
   border-radius: 4px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid $border-color;
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
 .pallet-header {
-  background-color: #D6BB86;
+  background-color: $secondary-color;
   padding: 6px 10px;
   display: flex;
   justify-content: space-between;
@@ -426,12 +677,12 @@ form {
 .pallet-title {
   display: flex;
   align-items: center;
-}
 
-.pallet-title span {
-  color: #FFFFFF;
-  font-weight: 500;
-  font-size: 14px;
+  span {
+    color: $white;
+    font-weight: 500;
+    font-size: 14px;
+  }
 }
 
 .pallet-icon {
@@ -440,16 +691,39 @@ form {
   background-color: #a08650;
   margin-right: 8px;
   position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background-color: #bc9d5f;
+  }
 }
 
-.pallet-icon::before {
-  content: '';
-  position: absolute;
-  top: -4px;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background-color: #bc9d5f;
+.pallet-base-icon {
+  width: 20px;
+  height: 10px;
+  background-color: $secondary-color;
+  margin-right: 8px;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background-color: $light-accent;
+  }
+}
+
+.pallet-name {
+  font-size: 14px;
+  color: $text-dark;
 }
 
 .pallet-content {
@@ -460,49 +734,10 @@ form {
   background-color: #f5f5f5;
 }
 
-.pallet-item {
-  display: flex;
-  align-items: center;
-  padding: 8px;
-  border-radius: 4px;
-  margin-bottom: 6px;
-  background-color: white;
-  border: 1px solid #e0e0e0;
-  transition: all 0.3s ease;
-}
-
-.pallet-item:hover {
-  background-color: rgba(214, 187, 134, 0.2);
-  border-color: #D6BB86;
-}
-
-.pallet-base-icon {
-  width: 20px;
-  height: 10px;
-  background-color: #D6BB86;
-  margin-right: 8px;
-  position: relative;
-}
-
-.pallet-base-icon::before {
-  content: '';
-  position: absolute;
-  top: -4px;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background-color: #C0A670;
-}
-
-.pallet-name {
-  font-size: 14px;
-  color: #333333;
-}
-
 .pallet-footer {
   padding: 10px;
   background-color: #f5f5f5;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid $border-color;
   border-radius: 0 0 4px 4px;
 }
 
@@ -516,28 +751,19 @@ form {
   display: flex;
   align-items: center;
   gap: 6px;
-}
 
-.metric mat-icon {
-  font-size: 16px;
-  width: 16px;
-  height: 16px;
-  color: #D6BB86;
-}
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    color: $secondary-color;
+  }
 
-.metric span {
-  font-size: 12px;
-  color: #333333;
-  font-weight: 500;
-}
-
-/* =====================
-   PALET TİPLERİ (SAĞ PANEL)
-===================== */
-.pallets-list {
-  padding: 8px;
-  overflow-y: auto;
-  flex: 1;
+  span {
+    font-size: 12px;
+    color: $text-dark;
+    font-weight: 500;
+  }
 }
 
 /* =====================
@@ -550,22 +776,22 @@ form {
   justify-content: center;
   padding: 20px;
   text-align: center;
-  color: #666666;
+  color: $text-light;
   height: 100%;
-}
 
-.empty-state mat-icon {
-  font-size: 32px;
-  width: 32px;
-  height: 32px;
-  color: #D6BB86;
-  opacity: 0.5;
-  margin-bottom: 12px;
-}
+  mat-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    color: $secondary-color;
+    opacity: 0.5;
+    margin-bottom: 12px;
+  }
 
-.empty-state p {
-  font-size: 14px;
-  margin: 0;
+  p {
+    font-size: 14px;
+    margin: 0;
+  }
 }
 
 /* =====================
@@ -575,7 +801,7 @@ form {
   box-sizing: border-box;
   border-radius: 4px;
   box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
-  background-color: white;
+  background-color: $white;
 }
 
 .cdk-drag-placeholder {
@@ -606,7 +832,7 @@ form {
   align-items: center;
   margin-top: 20px;
   padding-top: 16px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid $border-color;
 }
 
 .stepper-controls {
@@ -614,45 +840,52 @@ form {
   gap: 12px;
 }
 
-.save-button,
-.next-button {
-  background-color: #006A6A !important;
-  color: #FFFFFF !important;
+.save-button, .next-button {
+  background-color: $primary-color !important;
+  color: $white !important;
+
+  &:hover {
+    background-color: $accent-color !important;
+    box-shadow: 0 4px 8px rgba(0, 106, 106, 0.3);
+  }
+
+  mat-icon, span {
+    color: $white !important;
+  }
 }
 
 .prev-button {
   background-color: #f5f5f5 !important;
-  color: #666666 !important;
+  color: $text-light !important;
+
+  &:hover {
+    background-color: #e0e0e0 !important;
+  }
+
+  mat-icon, span {
+    color: $text-light !important;
+  }
 }
 
-.save-button:hover,
-.next-button:hover {
-  background-color: #004A4A !important;
-  box-shadow: 0 4px 8px rgba(0, 106, 106, 0.3);
+/* =====================
+   İKON HİZALAMA
+===================== */
+button mat-icon,
+.small-action mat-icon,
+.action-button mat-icon {
+  @include flex-center;
+  line-height: 1 !important;
+  margin: auto !important;
 }
 
-.prev-button:hover {
-  background-color: #e0e0e0 !important;
+.mat-icon {
+  @include flex-center;
+  line-height: 1 !important;
 }
 
-/* Buton renklerinin doğru görünmesi için */
-.save-button mat-icon,
-.next-button mat-icon {
-  color: #FFFFFF !important;
-}
-
-.prev-button mat-icon {
-  color: #666666 !important;
-}
-
-/* Buton yazıları için */
-.save-button span,
-.next-button span {
-  color: #FFFFFF !important;
-}
-
-.prev-button span {
-  color: #666666 !important;
+button[mat-icon-button] {
+  @include flex-center;
+  line-height: 1 !important;
 }
 
 /* =====================
@@ -672,6 +905,33 @@ form {
   .packages-section {
     flex: 0 0 auto;
     height: 600px;
+  }
+
+  .header-content-inline {
+    gap: 12px;
+  }
+
+  .pallet-stats-inline {
+    gap: 8px;
+  }
+
+  .stat-item {
+    min-width: 60px;
+    padding: 3px 6px;
+
+    mat-icon {
+      font-size: 12px !important;
+      width: 12px !important;
+      height: 12px !important;
+    }
+  }
+
+  .stat-label {
+    font-size: 8px;
+  }
+
+  .stat-value {
+    font-size: 10px;
   }
 }
 
@@ -704,56 +964,115 @@ form {
   .prev-button, .next-button {
     flex: 1;
   }
+
+  .section-header.with-action {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+    padding: 10px 16px;
+  }
+
+  .header-content-inline {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .header-title-section {
+    width: 100%;
+  }
+
+  .pallet-stats-inline {
+    width: 100%;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .stat-item {
+    flex: 1;
+    min-width: 0;
+    padding: 3px 4px;
+    justify-content: center;
+
+    mat-icon {
+      font-size: 10px !important;
+      width: 10px !important;
+      height: 10px !important;
+    }
+  }
+
+  .stat-label, .stat-value {
+    text-align: center;
+  }
+
+  .stat-label {
+    font-size: 7px;
+  }
+
+  .stat-value {
+    font-size: 9px;
+  }
+
+  .clear-button {
+    align-self: center;
+    width: auto;
+  }
+
+  .split-product-container {
+    gap: 3px;
+    height: 24px;
+  }
+
+  .mini-split-input {
+    @include split-input-base(28px, 22px, 10px);
+  }
+
+  .split-button {
+    @include split-button-base(24px, 14px);
+  }
+
+  .product-item {
+    min-height: 34px;
+  }
+
+  .pallet-item {
+    min-height: 24px;
+    padding: 3px 4px !important;
+
+    .split-product-container {
+      height: 16px;
+    }
+
+    .mini-split-input {
+      @include split-input-base(20px, 16px, 8px);
+
+      &::placeholder {
+        font-size: 7px !important;
+      }
+    }
+
+    .split-button,
+    .action-button:not(.split-button) {
+      @include split-button-base(16px, 10px);
+    }
+  }
 }
 
-/* Tüm close ikonlarını hizalamak için */
-button mat-icon,
-.small-action mat-icon,
-.action-button mat-icon {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  line-height: 1 !important;
-  margin: auto !important;
-}
+@media (max-width: 480px) {
+  .pallet-stats-inline {
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+  }
 
-/* Material ikonlar için özel düzeltme */
-.mat-icon {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  line-height: 1 !important;
-}
+  .stat-item {
+    width: 100%;
+    justify-content: flex-start;
+    min-width: auto;
+    flex: none;
+  }
 
-/* Close ikonları için özel düzeltme */
-mat-icon:contains('close') {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  height: 100% !important;
-  width: 100% !important;
-  line-height: 1 !important;
-  margin: auto !important;
-}
-
-/* İkon butonlar için düzeltme */
-button[mat-icon-button] {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  line-height: 1 !important;
-}
-
-/* Kapat butonları için özel stil */
-.close-button,
-button[mat-icon-button] mat-icon,
-.small-action mat-icon {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  line-height: 1 !important;
-  height: 100% !important;
-  width: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
+  .stat-info {
+    text-align: left;
+  }
 }
