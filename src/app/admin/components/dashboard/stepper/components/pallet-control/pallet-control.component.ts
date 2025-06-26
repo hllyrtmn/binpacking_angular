@@ -72,7 +72,7 @@ export class PalletControlComponent implements OnInit {
     width: 11800,
     depth: 2350,
     height: 2400,
-    weighLimit: 25000
+    weighLimit: 25000,
   };
 
   // Calculated values
@@ -108,7 +108,7 @@ export class PalletControlComponent implements OnInit {
       next: (response) => {
         this.packages = response;
         this.order = this.packages[0].order;
-        console.log("ana data", this.packages);
+        console.log('ana data', this.packages);
 
         // Convert all products to UiProduct instances
         this.packages.forEach((pkg, index) => {
@@ -130,7 +130,7 @@ export class PalletControlComponent implements OnInit {
             console.log('🎯 Component yüklendi, debug hazır!');
           }, 1000);
         }
-      }
+      },
     });
   }
 
@@ -153,8 +153,8 @@ export class PalletControlComponent implements OnInit {
     if (!this.packages?.length) return [];
 
     return this.packages
-      .filter(pkg => pkg.pallet && pkg.products?.length > 0)
-      .map(pkg => this.packageTotalWeight(pkg));
+      .filter((pkg) => pkg.pallet && pkg.products?.length > 0)
+      .map((pkg) => this.packageTotalWeight(pkg));
   }
 
   /**
@@ -210,12 +210,15 @@ export class PalletControlComponent implements OnInit {
   calculateVolume(): void {
     const totalVolume = this.packages.reduce((total, pkg) => {
       const palletVolume = Math.floor(pkg.pallet?.dimension.volume ?? 0);
-      const productsVolume = pkg.products.reduce((pTotal, product) =>
-        pTotal + Math.floor(product.dimension.volume), 0);
+      const productsVolume = pkg.products.reduce(
+        (pTotal, product) => pTotal + Math.floor(product.dimension.volume),
+        0
+      );
       return total + palletVolume + productsVolume;
     }, 0);
 
-    const trailerVolume = this.trailer.depth * this.trailer.height * this.trailer.width;
+    const trailerVolume =
+      this.trailer.depth * this.trailer.height * this.trailer.width;
     this.remainingVolume = Math.floor((trailerVolume - totalVolume) / 1000);
   }
 
@@ -225,8 +228,11 @@ export class PalletControlComponent implements OnInit {
   calculateWeight(): void {
     const totalWeight = this.packages.reduce((total, pkg) => {
       const palletWeight = Math.floor(pkg.pallet?.weight ?? 0);
-      const productsWeight = pkg.products.reduce((pTotal, product) =>
-        pTotal + Math.floor(product.weight_type.std * product.count), 0);
+      const productsWeight = pkg.products.reduce(
+        (pTotal, product) =>
+          pTotal + Math.floor(product.weight_type.std * product.count),
+        0
+      );
       return total + palletWeight + productsWeight;
     }, 0);
 
@@ -238,14 +244,21 @@ export class PalletControlComponent implements OnInit {
    * Calculate total meter
    */
   calculateTotalMeter(): void {
-    this.totalMeter = this.packages.reduce((total, pkg) => {
-      if (pkg.products.length === 0) return total;
+    this.totalMeter =
+      this.packages.reduce((total, pkg) => {
+        if (pkg.products.length === 0) return total;
 
-      const packageMeter = pkg.products.reduce((pTotal, product) =>
-        pTotal + Math.round(Math.floor(product.count * Math.floor(product.dimension.depth))), 0);
+        const packageMeter = pkg.products.reduce(
+          (pTotal, product) =>
+            pTotal +
+            Math.round(
+              Math.floor(product.count * Math.floor(product.dimension.depth))
+            ),
+          0
+        );
 
-      return total + packageMeter;
-    }, 0) / 1000;
+        return total + packageMeter;
+      }, 0) / 1000;
   }
 
   /**
@@ -253,8 +266,11 @@ export class PalletControlComponent implements OnInit {
    */
   packageTotalWeight(pkg: UiPackage): number {
     const palletWeight = Math.floor(pkg.pallet?.weight ?? 0);
-    const productsWeight = pkg.products.reduce((total, product) =>
-      total + Math.floor(product.weight_type.std * product.count), 0);
+    const productsWeight = pkg.products.reduce(
+      (total, product) =>
+        total + Math.floor(product.weight_type.std * product.count),
+      0
+    );
 
     return palletWeight + productsWeight;
   }
@@ -275,7 +291,11 @@ export class PalletControlComponent implements OnInit {
   /**
    * Ana ürün sığma kontrol metodu - Enhanced Debug Version
    */
-  canFitProductToPallet(product: UiProduct, pallet: UiPallet, existingProducts: UiProduct[]): boolean {
+  canFitProductToPallet(
+    product: UiProduct,
+    pallet: UiPallet,
+    existingProducts: UiProduct[]
+  ): boolean {
     if (this.debugMode) {
       console.group(`🔍 FITTING CHECK: ${product.name} -> ${pallet.name}`);
 
@@ -293,9 +313,16 @@ export class PalletControlComponent implements OnInit {
           width: product.dimension.width,
           depth: product.dimension.depth,
           height: product.dimension.height,
-          volume: product.dimension.width * product.dimension.depth * product.dimension.height
+          volume:
+            product.dimension.width *
+            product.dimension.depth *
+            product.dimension.height,
         },
-        totalVolume: product.dimension.width * product.dimension.depth * product.dimension.height * product.count
+        totalVolume:
+          product.dimension.width *
+          product.dimension.depth *
+          product.dimension.height *
+          product.count,
       });
 
       // Palet bilgileri
@@ -305,19 +332,26 @@ export class PalletControlComponent implements OnInit {
           width: pallet.dimension.width,
           depth: pallet.dimension.depth,
           height: pallet.dimension.height,
-          volume: pallet.dimension.width * pallet.dimension.depth * pallet.dimension.height
-        }
+          volume:
+            pallet.dimension.width *
+            pallet.dimension.depth *
+            pallet.dimension.height,
+        },
       });
 
       // Mevcut ürünler bilgisi
       console.log('📚 MEVCUT ÜRÜNLER:', {
         count: existingProducts.length,
-        products: existingProducts.map(p => ({
+        products: existingProducts.map((p) => ({
           name: p.name,
           count: p.count,
-          volume: p.dimension.width * p.dimension.depth * p.dimension.height * p.count
+          volume:
+            p.dimension.width *
+            p.dimension.depth *
+            p.dimension.height *
+            p.count,
         })),
-        totalUsedVolume: this.calculateUsedVolumeEnhanced(existingProducts)
+        totalUsedVolume: this.calculateUsedVolumeEnhanced(existingProducts),
       });
     }
 
@@ -343,7 +377,11 @@ export class PalletControlComponent implements OnInit {
     if (this.debugMode) {
       console.log('\n🔍 ADIM 2: HACİM KONTROLÜ');
     }
-    const volumeResult = this.checkVolumeAvailable(product, pallet, existingProducts);
+    const volumeResult = this.checkVolumeAvailable(
+      product,
+      pallet,
+      existingProducts
+    );
 
     if (!volumeResult) {
       if (this.debugMode) {
@@ -383,7 +421,7 @@ export class PalletControlComponent implements OnInit {
         depth: productDepth,
         depth_type: typeof productDepth,
         height: productHeight,
-        height_type: typeof productHeight
+        height_type: typeof productHeight,
       });
 
       console.log('Pallet raw data:', {
@@ -393,13 +431,21 @@ export class PalletControlComponent implements OnInit {
         depth: palletDepth,
         depth_type: typeof palletDepth,
         height: palletHeight,
-        height_type: typeof palletHeight
+        height_type: typeof palletHeight,
       });
 
       // String karşılaştırması kontrolü
       console.log('🧪 STRING COMPARISON TEST:');
-      console.log(`   "${productWidth}" <= "${palletWidth}" = ${productWidth <= palletWidth}`);
-      console.log(`   "${productDepth}" <= "${palletDepth}" = ${productDepth <= palletDepth}`);
+      console.log(
+        `   "${productWidth}" <= "${palletWidth}" = ${
+          productWidth <= palletWidth
+        }`
+      );
+      console.log(
+        `   "${productDepth}" <= "${palletDepth}" = ${
+          productDepth <= palletDepth
+        }`
+      );
 
       // Number'a zorla çevirme testi
       const productWidthNum = Number(productWidth);
@@ -416,7 +462,7 @@ export class PalletControlComponent implements OnInit {
         depth: productDepthNum,
         depth_isNaN: isNaN(productDepthNum),
         height: productHeightNum,
-        height_isNaN: isNaN(productHeightNum)
+        height_isNaN: isNaN(productHeightNum),
       });
 
       console.log('Pallet numbers:', {
@@ -425,13 +471,25 @@ export class PalletControlComponent implements OnInit {
         depth: palletDepthNum,
         depth_isNaN: isNaN(palletDepthNum),
         height: palletHeightNum,
-        height_isNaN: isNaN(palletHeightNum)
+        height_isNaN: isNaN(palletHeightNum),
       });
 
       console.log('🧮 NUMBER COMPARISON TEST:');
-      console.log(`   ${productWidthNum} <= ${palletWidthNum} = ${productWidthNum <= palletWidthNum}`);
-      console.log(`   ${productDepthNum} <= ${palletDepthNum} = ${productDepthNum <= palletDepthNum}`);
-      console.log(`   ${productHeightNum} <= ${palletHeightNum} = ${productHeightNum <= palletHeightNum}`);
+      console.log(
+        `   ${productWidthNum} <= ${palletWidthNum} = ${
+          productWidthNum <= palletWidthNum
+        }`
+      );
+      console.log(
+        `   ${productDepthNum} <= ${palletDepthNum} = ${
+          productDepthNum <= palletDepthNum
+        }`
+      );
+      console.log(
+        `   ${productHeightNum} <= ${palletHeightNum} = ${
+          productHeightNum <= palletHeightNum
+        }`
+      );
     }
 
     // Güvenli sayı çevirimi
@@ -447,22 +505,26 @@ export class PalletControlComponent implements OnInit {
       console.log('Safe product dimensions:', {
         width: safeProductWidth,
         depth: safeProductDepth,
-        height: safeProductHeight
+        height: safeProductHeight,
       });
       console.log('Safe pallet dimensions:', {
         width: safePalletWidth,
         depth: safePalletDepth,
-        height: safePalletHeight
+        height: safePalletHeight,
       });
     }
 
     // Yükseklik kontrolü
     if (this.debugMode) {
-      console.log(`📐 Yükseklik kontrolü: ${safeProductHeight} <= ${safePalletHeight}`);
+      console.log(
+        `📐 Yükseklik kontrolü: ${safeProductHeight} <= ${safePalletHeight}`
+      );
     }
     if (safeProductHeight > safePalletHeight) {
       if (this.debugMode) {
-        console.error(`❌ Ürün yüksekliği (${safeProductHeight}) palet yüksekliğinden (${safePalletHeight}) büyük!`);
+        console.error(
+          `❌ Ürün yüksekliği (${safeProductHeight}) palet yüksekliğinden (${safePalletHeight}) büyük!`
+        );
       }
       return false;
     }
@@ -477,8 +539,12 @@ export class PalletControlComponent implements OnInit {
 
     if (this.debugMode) {
       console.log(`🔄 Normal yönlendirme:`);
-      console.log(`   width: ${safeProductWidth} <= ${safePalletWidth} = ${normalWidthFit}`);
-      console.log(`   depth: ${safeProductDepth} <= ${safePalletDepth} = ${normalDepthFit}`);
+      console.log(
+        `   width: ${safeProductWidth} <= ${safePalletWidth} = ${normalWidthFit}`
+      );
+      console.log(
+        `   depth: ${safeProductDepth} <= ${safePalletDepth} = ${normalDepthFit}`
+      );
       console.log(`   Normal fit: ${fitsNormal}`);
     }
 
@@ -489,14 +555,22 @@ export class PalletControlComponent implements OnInit {
 
     if (this.debugMode) {
       console.log(`🔃 Döndürülmüş yönlendirme:`);
-      console.log(`   width: ${safeProductWidth} <= ${safePalletDepth} = ${rotatedWidthFit}`);
-      console.log(`   depth: ${safeProductDepth} <= ${safePalletWidth} = ${rotatedDepthFit}`);
+      console.log(
+        `   width: ${safeProductWidth} <= ${safePalletDepth} = ${rotatedWidthFit}`
+      );
+      console.log(
+        `   depth: ${safeProductDepth} <= ${safePalletWidth} = ${rotatedDepthFit}`
+      );
       console.log(`   Rotated fit: ${fitsRotated}`);
     }
 
     const finalResult = fitsNormal || fitsRotated;
     if (this.debugMode) {
-      console.log(`📊 BOYUT SONUÇ: ${finalResult ? '✅ SİĞİYOR' : '❌ SİĞMİYOR'} (normal: ${fitsNormal}, rotated: ${fitsRotated})`);
+      console.log(
+        `📊 BOYUT SONUÇ: ${
+          finalResult ? '✅ SİĞİYOR' : '❌ SİĞMİYOR'
+        } (normal: ${fitsNormal}, rotated: ${fitsRotated})`
+      );
     }
 
     return finalResult;
@@ -505,7 +579,11 @@ export class PalletControlComponent implements OnInit {
   /**
    * Hacim kontrolü - Enhanced Debug Version
    */
-  private checkVolumeAvailable(product: UiProduct, pallet: UiPallet, existingProducts: UiProduct[]): boolean {
+  private checkVolumeAvailable(
+    product: UiProduct,
+    pallet: UiPallet,
+    existingProducts: UiProduct[]
+  ): boolean {
     // Güvenli boyut değerleri al
     const palletWidth = this.safeNumber(pallet.dimension.width);
     const palletDepth = this.safeNumber(pallet.dimension.depth);
@@ -518,11 +596,17 @@ export class PalletControlComponent implements OnInit {
     const productCount = this.safeNumber(product.count);
 
     if (this.debugMode) {
-      console.log(`📦 Palet toplam hacmi: ${palletTotalVolume.toFixed(2)} (${palletWidth} x ${palletDepth} x ${palletHeight})`);
+      console.log(
+        `📦 Palet toplam hacmi: ${palletTotalVolume.toFixed(
+          2
+        )} (${palletWidth} x ${palletDepth} x ${palletHeight})`
+      );
 
       // Birim kontrolü
       if (palletTotalVolume > 1000000) {
-        console.warn(`⚠️  Palet hacmi çok büyük (${palletTotalVolume}), birim problemi olabilir (mm³ vs m³)`);
+        console.warn(
+          `⚠️  Palet hacmi çok büyük (${palletTotalVolume}), birim problemi olabilir (mm³ vs m³)`
+        );
       }
     }
 
@@ -533,13 +617,20 @@ export class PalletControlComponent implements OnInit {
     }
 
     // Yeni ürünün hacmi
-    const newProductVolume = productWidth * productDepth * productHeight * productCount;
+    const newProductVolume =
+      productWidth * productDepth * productHeight * productCount;
     if (this.debugMode) {
-      console.log(`📦 Yeni ürün hacmi: ${newProductVolume.toFixed(2)} (${productWidth} x ${productDepth} x ${productHeight} x ${productCount})`);
+      console.log(
+        `📦 Yeni ürün hacmi: ${newProductVolume.toFixed(
+          2
+        )} (${productWidth} x ${productDepth} x ${productHeight} x ${productCount})`
+      );
 
       // Birim kontrolü
       if (newProductVolume > 1000000) {
-        console.warn(`⚠️  Ürün hacmi çok büyük (${newProductVolume}), birim problemi olabilir`);
+        console.warn(
+          `⚠️  Ürün hacmi çok büyük (${newProductVolume}), birim problemi olabilir`
+        );
       }
     }
 
@@ -552,13 +643,19 @@ export class PalletControlComponent implements OnInit {
     // Kontrol
     const fits = newProductVolume <= remainingVolume;
     if (this.debugMode) {
-      console.log(`🔍 Hacim kontrolü: ${newProductVolume.toFixed(2)} <= ${remainingVolume.toFixed(2)} = ${fits}`);
+      console.log(
+        `🔍 Hacim kontrolü: ${newProductVolume.toFixed(
+          2
+        )} <= ${remainingVolume.toFixed(2)} = ${fits}`
+      );
     }
 
     if (!fits) {
       if (this.debugMode) {
         const shortage = newProductVolume - remainingVolume;
-        console.error(`❌ Hacim yetersiz! ${shortage.toFixed(2)} fazla hacim gerekiyor`);
+        console.error(
+          `❌ Hacim yetersiz! ${shortage.toFixed(2)} fazla hacim gerekiyor`
+        );
 
         // Kaç adet sığabileceğini hesapla
         const singleProductVolume = productWidth * productDepth * productHeight;
@@ -567,7 +664,11 @@ export class PalletControlComponent implements OnInit {
       }
     } else {
       if (this.debugMode) {
-        console.log(`✅ Hacim yeterli! ${(remainingVolume - newProductVolume).toFixed(2)} hacim kalacak`);
+        console.log(
+          `✅ Hacim yeterli! ${(remainingVolume - newProductVolume).toFixed(
+            2
+          )} hacim kalacak`
+        );
       }
     }
 
@@ -600,10 +701,16 @@ export class PalletControlComponent implements OnInit {
       totalVolume += productVolume;
 
       if (this.debugMode) {
-        console.log(`   📦 ${index + 1}. ${product.name}: ${productVolume.toFixed(2)} (${width} x ${depth} x ${height} x ${count})`);
+        console.log(
+          `   📦 ${index + 1}. ${product.name}: ${productVolume.toFixed(
+            2
+          )} (${width} x ${depth} x ${height} x ${count})`
+        );
 
         if (productVolume > 1000000) {
-          console.warn(`      ⚠️  Bu ürünün hacmi çok büyük, birim problemi olabilir`);
+          console.warn(
+            `      ⚠️  Bu ürünün hacmi çok büyük, birim problemi olabilir`
+          );
         }
       }
     });
@@ -658,7 +765,10 @@ export class PalletControlComponent implements OnInit {
     console.log('📦 PRODUCT OBJECT INSPECTION:');
     console.log('   Full product object:', product);
     console.log('   product.dimension:', product.dimension);
-    console.log('   Object.keys(product.dimension):', Object.keys(product.dimension || {}));
+    console.log(
+      '   Object.keys(product.dimension):',
+      Object.keys(product.dimension || {})
+    );
 
     // Dimension property direct access
     try {
@@ -674,7 +784,10 @@ export class PalletControlComponent implements OnInit {
     console.log('\n📋 PALLET OBJECT INSPECTION:');
     console.log('   Full pallet object:', pallet);
     console.log('   pallet.dimension:', pallet.dimension);
-    console.log('   Object.keys(pallet.dimension):', Object.keys(pallet.dimension || {}));
+    console.log(
+      '   Object.keys(pallet.dimension):',
+      Object.keys(pallet.dimension || {})
+    );
 
     // Dimension property direct access
     try {
@@ -693,13 +806,15 @@ export class PalletControlComponent implements OnInit {
    * Unit detection helper
    */
   detectUnits(product: UiProduct, pallet: UiPallet): void {
-    const productVolume = this.safeNumber(product.dimension.width) *
-                         this.safeNumber(product.dimension.depth) *
-                         this.safeNumber(product.dimension.height);
+    const productVolume =
+      this.safeNumber(product.dimension.width) *
+      this.safeNumber(product.dimension.depth) *
+      this.safeNumber(product.dimension.height);
 
-    const palletVolume = this.safeNumber(pallet.dimension.width) *
-                        this.safeNumber(pallet.dimension.depth) *
-                        this.safeNumber(pallet.dimension.height);
+    const palletVolume =
+      this.safeNumber(pallet.dimension.width) *
+      this.safeNumber(pallet.dimension.depth) *
+      this.safeNumber(pallet.dimension.height);
 
     console.group('📏 UNIT DETECTION');
 
@@ -707,10 +822,16 @@ export class PalletControlComponent implements OnInit {
     console.log(`Pallet volume: ${palletVolume}`);
 
     if (productVolume > 1000000 || palletVolume > 1000000) {
-      console.warn('⚠️  Hacimler çok büyük - muhtemelen mm³ birimi kullanılıyor');
-      console.log('💡 Önerilen çözüm: Boyutları 1000 ile böl (mm -> m dönüşümü)');
+      console.warn(
+        '⚠️  Hacimler çok büyük - muhtemelen mm³ birimi kullanılıyor'
+      );
+      console.log(
+        '💡 Önerilen çözüm: Boyutları 1000 ile böl (mm -> m dönüşümü)'
+      );
     } else if (productVolume < 1 || palletVolume < 1) {
-      console.warn('⚠️  Hacimler çok küçük - muhtemelen farklı birim problemi var');
+      console.warn(
+        '⚠️  Hacimler çok küçük - muhtemelen farklı birim problemi var'
+      );
     } else {
       console.log('✅ Birimler normal görünüyor');
     }
@@ -721,10 +842,14 @@ export class PalletControlComponent implements OnInit {
   /**
    * Palet için kalan hacmi hesapla
    */
-  getRemainingPalletVolume(pallet: UiPallet, existingProducts: UiProduct[]): number {
-    const palletTotalVolume = this.safeNumber(pallet.dimension.width) *
-                             this.safeNumber(pallet.dimension.depth) *
-                             this.safeNumber(pallet.dimension.height);
+  getRemainingPalletVolume(
+    pallet: UiPallet,
+    existingProducts: UiProduct[]
+  ): number {
+    const palletTotalVolume =
+      this.safeNumber(pallet.dimension.width) *
+      this.safeNumber(pallet.dimension.depth) *
+      this.safeNumber(pallet.dimension.height);
     const usedVolume = this.calculateUsedVolume(existingProducts);
     return Math.max(0, palletTotalVolume - usedVolume);
   }
@@ -732,10 +857,14 @@ export class PalletControlComponent implements OnInit {
   /**
    * Palet doluluk oranını hesapla
    */
-  getPalletFillPercentage(pallet: UiPallet, existingProducts: UiProduct[]): number {
-    const palletTotalVolume = this.safeNumber(pallet.dimension.width) *
-                             this.safeNumber(pallet.dimension.depth) *
-                             this.safeNumber(pallet.dimension.height);
+  getPalletFillPercentage(
+    pallet: UiPallet,
+    existingProducts: UiProduct[]
+  ): number {
+    const palletTotalVolume =
+      this.safeNumber(pallet.dimension.width) *
+      this.safeNumber(pallet.dimension.depth) *
+      this.safeNumber(pallet.dimension.height);
     const usedVolume = this.calculateUsedVolume(existingProducts);
     return Math.round((usedVolume / palletTotalVolume) * 100);
   }
@@ -743,19 +872,27 @@ export class PalletControlComponent implements OnInit {
   /**
    * Ürünün palete kaç adet sığabileceğini hesapla
    */
-  getMaxProductCount(product: UiProduct, pallet: UiPallet, existingProducts: UiProduct[]): number {
+  getMaxProductCount(
+    product: UiProduct,
+    pallet: UiPallet,
+    existingProducts: UiProduct[]
+  ): number {
     // Boyut kontrolü
     if (!this.checkDimensionsFit(product, pallet)) {
       return 0;
     }
 
     // Kalan hacim
-    const remainingVolume = this.getRemainingPalletVolume(pallet, existingProducts);
+    const remainingVolume = this.getRemainingPalletVolume(
+      pallet,
+      existingProducts
+    );
 
     // Tek ürün hacmi
-    const singleProductVolume = this.safeNumber(product.dimension.width) *
-                               this.safeNumber(product.dimension.depth) *
-                               this.safeNumber(product.dimension.height);
+    const singleProductVolume =
+      this.safeNumber(product.dimension.width) *
+      this.safeNumber(product.dimension.depth) *
+      this.safeNumber(product.dimension.height);
 
     // Maksimum sığabilecek adet
     return Math.floor(remainingVolume / singleProductVolume);
@@ -772,7 +909,8 @@ export class PalletControlComponent implements OnInit {
     if (this.debugMode) {
       // Global window objesine debug metodları ekle
       (window as any).palletDebug = {
-        test: (productName: string, palletName: string) => this.testProductFitting(productName, palletName),
+        test: (productName: string, palletName: string) =>
+          this.testProductFitting(productName, palletName),
         testAll: (productName: string) => this.testAllPallets(productName),
         toggleDebug: () => {
           this.debugMode = !this.debugMode;
@@ -780,17 +918,24 @@ export class PalletControlComponent implements OnInit {
         },
         listProducts: () => {
           console.log('📦 Mevcut ürünler:');
-          this.availableProducts.forEach((p, i) => console.log(`   ${i + 1}. ${p.name} (${p.count} adet)`));
+          this.availableProducts.forEach((p, i) =>
+            console.log(`   ${i + 1}. ${p.name} (${p.count} adet)`)
+          );
         },
         listPallets: () => {
           console.log('📋 Mevcut paletler:');
           this.packages.forEach((pkg, i) => {
             if (pkg.pallet) {
-              const productCount = pkg.products.reduce((sum, p) => sum + p.count, 0);
-              console.log(`   ${i + 1}. ${pkg.pallet.name} (${productCount} ürün)`);
+              const productCount = pkg.products.reduce(
+                (sum, p) => sum + p.count,
+                0
+              );
+              console.log(
+                `   ${i + 1}. ${pkg.pallet.name} (${productCount} ürün)`
+              );
             }
           });
-        }
+        },
       };
 
       console.log(`
@@ -812,8 +957,10 @@ Console'da kullanabileceğin komutlar:
    * Manuel debug testi için
    */
   testProductFitting(productName: string, palletName: string): void {
-    const product = this.availableProducts.find(p => p.name === productName);
-    const packageWithPallet = this.packages.find(pkg => pkg.pallet?.name === palletName);
+    const product = this.availableProducts.find((p) => p.name === productName);
+    const packageWithPallet = this.packages.find(
+      (pkg) => pkg.pallet?.name === palletName
+    );
 
     if (!product) {
       console.error(`❌ Ürün bulunamadı: ${productName}`);
@@ -826,14 +973,18 @@ Console'da kullanabileceğin komutlar:
     }
 
     console.log(`\n🧪 MANUEL TEST: ${productName} -> ${palletName}`);
-    this.debugProductFitting(product, packageWithPallet.pallet, packageWithPallet.products);
+    this.debugProductFitting(
+      product,
+      packageWithPallet.pallet,
+      packageWithPallet.products
+    );
   }
 
   /**
    * Tüm paletleri test et
    */
   testAllPallets(productName: string): void {
-    const product = this.availableProducts.find(p => p.name === productName);
+    const product = this.availableProducts.find((p) => p.name === productName);
 
     if (!product) {
       console.error(`❌ Ürün bulunamadı: ${productName}`);
@@ -849,13 +1000,21 @@ Console'da kullanabileceğin komutlar:
         const canFit = this.quickDebug(product, pkg.pallet, pkg.products);
 
         if (canFit) {
-          const maxCount = this.getMaxProductCount(product, pkg.pallet, pkg.products);
+          const maxCount = this.getMaxProductCount(
+            product,
+            pkg.pallet,
+            pkg.products
+          );
           console.log(`   ✅ Maksimum ${maxCount} adet sığar`);
         } else {
-          const remainingVolume = this.getRemainingPalletVolume(pkg.pallet, pkg.products);
-          const singleVolume = this.safeNumber(product.dimension.width) *
-                              this.safeNumber(product.dimension.depth) *
-                              this.safeNumber(product.dimension.height);
+          const remainingVolume = this.getRemainingPalletVolume(
+            pkg.pallet,
+            pkg.products
+          );
+          const singleVolume =
+            this.safeNumber(product.dimension.width) *
+            this.safeNumber(product.dimension.depth) *
+            this.safeNumber(product.dimension.height);
           const maxCount = Math.floor(remainingVolume / singleVolume);
           console.log(`   ❌ Sığmaz (maksimum ${maxCount} adet)`);
         }
@@ -866,7 +1025,11 @@ Console'da kullanabileceğin komutlar:
   /**
    * Debug bilgileri için detaylı analiz
    */
-  debugProductFitting(product: UiProduct, pallet: UiPallet, existingProducts: UiProduct[]): void {
+  debugProductFitting(
+    product: UiProduct,
+    pallet: UiPallet,
+    existingProducts: UiProduct[]
+  ): void {
     console.log('\n='.repeat(80));
     console.log('🔍 DETAYLI ÜRÜN SİĞMA ANALİZİ');
     console.log('='.repeat(80));
@@ -883,35 +1046,55 @@ Console'da kullanabileceğin komutlar:
     console.log('='.repeat(80));
   }
 
-  private logBasicInfo(product: UiProduct, pallet: UiPallet, existingProducts: UiProduct[]): void {
+  private logBasicInfo(
+    product: UiProduct,
+    pallet: UiPallet,
+    existingProducts: UiProduct[]
+  ): void {
     console.group('📋 TEMEL BİLGİLER');
 
     console.table({
       'Ürün Adı': product.name,
       'Ürün Adedi': product.count,
       'Palet Adı': pallet.name,
-      'Mevcut Ürün Sayısı': existingProducts.length
+      'Mevcut Ürün Sayısı': existingProducts.length,
     });
 
-    const productVolume = this.safeNumber(product.dimension.width) *
-                         this.safeNumber(product.dimension.depth) *
-                         this.safeNumber(product.dimension.height);
-    const palletVolume = this.safeNumber(pallet.dimension.width) *
-                        this.safeNumber(pallet.dimension.depth) *
-                        this.safeNumber(pallet.dimension.height);
+    const productVolume =
+      this.safeNumber(product.dimension.width) *
+      this.safeNumber(product.dimension.depth) *
+      this.safeNumber(product.dimension.height);
+    const palletVolume =
+      this.safeNumber(pallet.dimension.width) *
+      this.safeNumber(pallet.dimension.depth) *
+      this.safeNumber(pallet.dimension.height);
 
     console.table({
-      'Ürün Boyutları': `${this.safeNumber(product.dimension.width)} x ${this.safeNumber(product.dimension.depth)} x ${this.safeNumber(product.dimension.height)}`,
-      'Palet Boyutları': `${this.safeNumber(pallet.dimension.width)} x ${this.safeNumber(pallet.dimension.depth)} x ${this.safeNumber(pallet.dimension.height)}`,
+      'Ürün Boyutları': `${this.safeNumber(
+        product.dimension.width
+      )} x ${this.safeNumber(product.dimension.depth)} x ${this.safeNumber(
+        product.dimension.height
+      )}`,
+      'Palet Boyutları': `${this.safeNumber(
+        pallet.dimension.width
+      )} x ${this.safeNumber(pallet.dimension.depth)} x ${this.safeNumber(
+        pallet.dimension.height
+      )}`,
       'Ürün Hacmi (tek)': productVolume.toFixed(2),
-      'Ürün Hacmi (toplam)': (productVolume * this.safeNumber(product.count)).toFixed(2),
-      'Palet Hacmi': palletVolume.toFixed(2)
+      'Ürün Hacmi (toplam)': (
+        productVolume * this.safeNumber(product.count)
+      ).toFixed(2),
+      'Palet Hacmi': palletVolume.toFixed(2),
     });
 
     console.groupEnd();
   }
 
-  private logStepByStepChecks(product: UiProduct, pallet: UiPallet, existingProducts: UiProduct[]): void {
+  private logStepByStepChecks(
+    product: UiProduct,
+    pallet: UiPallet,
+    existingProducts: UiProduct[]
+  ): void {
     console.group('🔍 ADIM ADIM KONTROLLER');
 
     // Boyut kontrolü detayları
@@ -924,18 +1107,38 @@ Console'da kullanabileceğin komutlar:
     const safePalletDepth = this.safeNumber(pallet.dimension.depth);
 
     const heightOk = safeProductHeight <= safePalletHeight;
-    const normalFit = safeProductWidth <= safePalletWidth && safeProductDepth <= safePalletDepth;
-    const rotatedFit = safeProductWidth <= safePalletDepth && safeProductDepth <= safePalletWidth;
+    const normalFit =
+      safeProductWidth <= safePalletWidth &&
+      safeProductDepth <= safePalletDepth;
+    const rotatedFit =
+      safeProductWidth <= safePalletDepth &&
+      safeProductDepth <= safePalletWidth;
 
-    console.log(`   Yükseklik: ${safeProductHeight} <= ${safePalletHeight} = ${heightOk ? '✅' : '❌'}`);
-    console.log(`   Normal: ${safeProductWidth} <= ${safePalletWidth} && ${safeProductDepth} <= ${safePalletDepth} = ${normalFit ? '✅' : '❌'}`);
-    console.log(`   Döndürülmüş: ${safeProductWidth} <= ${safePalletDepth} && ${safeProductDepth} <= ${safePalletWidth} = ${rotatedFit ? '✅' : '❌'}`);
+    console.log(
+      `   Yükseklik: ${safeProductHeight} <= ${safePalletHeight} = ${
+        heightOk ? '✅' : '❌'
+      }`
+    );
+    console.log(
+      `   Normal: ${safeProductWidth} <= ${safePalletWidth} && ${safeProductDepth} <= ${safePalletDepth} = ${
+        normalFit ? '✅' : '❌'
+      }`
+    );
+    console.log(
+      `   Döndürülmüş: ${safeProductWidth} <= ${safePalletDepth} && ${safeProductDepth} <= ${safePalletWidth} = ${
+        rotatedFit ? '✅' : '❌'
+      }`
+    );
 
     // Hacim kontrolü detayları
     console.log('\n2️⃣ HACİM KONTROLÜ:');
     const palletVolume = safePalletWidth * safePalletDepth * safePalletHeight;
     const usedVolume = this.calculateUsedVolume(existingProducts);
-    const productVolume = safeProductWidth * safeProductDepth * safeProductHeight * this.safeNumber(product.count);
+    const productVolume =
+      safeProductWidth *
+      safeProductDepth *
+      safeProductHeight *
+      this.safeNumber(product.count);
     const remainingVolume = palletVolume - usedVolume;
     const volumeOk = productVolume <= remainingVolume;
 
@@ -943,12 +1146,20 @@ Console'da kullanabileceğin komutlar:
     console.log(`   Kullanılan: ${usedVolume.toFixed(2)}`);
     console.log(`   Kalan: ${remainingVolume.toFixed(2)}`);
     console.log(`   Ürün ihtiyacı: ${productVolume.toFixed(2)}`);
-    console.log(`   Sonuç: ${productVolume.toFixed(2)} <= ${remainingVolume.toFixed(2)} = ${volumeOk ? '✅' : '❌'}`);
+    console.log(
+      `   Sonuç: ${productVolume.toFixed(2)} <= ${remainingVolume.toFixed(
+        2
+      )} = ${volumeOk ? '✅' : '❌'}`
+    );
 
     console.groupEnd();
   }
 
-  private logSuggestions(product: UiProduct, pallet: UiPallet, existingProducts: UiProduct[]): void {
+  private logSuggestions(
+    product: UiProduct,
+    pallet: UiPallet,
+    existingProducts: UiProduct[]
+  ): void {
     console.group('💡 ÖNERİLER');
 
     const safePalletWidth = this.safeNumber(pallet.dimension.width);
@@ -957,16 +1168,23 @@ Console'da kullanabileceğin komutlar:
     const palletVolume = safePalletWidth * safePalletDepth * safePalletHeight;
     const usedVolume = this.calculateUsedVolume(existingProducts);
     const remainingVolume = palletVolume - usedVolume;
-    const singleProductVolume = this.safeNumber(product.dimension.width) *
-                               this.safeNumber(product.dimension.depth) *
-                               this.safeNumber(product.dimension.height);
+    const singleProductVolume =
+      this.safeNumber(product.dimension.width) *
+      this.safeNumber(product.dimension.depth) *
+      this.safeNumber(product.dimension.height);
     const maxCount = Math.floor(remainingVolume / singleProductVolume);
 
     if (maxCount > 0 && maxCount < this.safeNumber(product.count)) {
       console.log(`🔧 Ürünü bölebilirsin: Maksimum ${maxCount} adet sığar`);
-      console.log(`📦 Önerilen split: ${maxCount} adet bu palete, ${this.safeNumber(product.count) - maxCount} adet başka palete`);
+      console.log(
+        `📦 Önerilen split: ${maxCount} adet bu palete, ${
+          this.safeNumber(product.count) - maxCount
+        } adet başka palete`
+      );
     } else if (maxCount === 0) {
-      console.log(`⚠️  Bu ürün hiç sığmıyor. Farklı palet dene veya mevcut ürünleri başka palete taşı`);
+      console.log(
+        `⚠️  Bu ürün hiç sığmıyor. Farklı palet dene veya mevcut ürünleri başka palete taşı`
+      );
     } else {
       console.log(`✅ Ürün tamamen sığıyor, problem başka bir yerde olabilir`);
     }
@@ -985,13 +1203,25 @@ Console'da kullanabileceğin komutlar:
   /**
    * Hızlı debug için kısa versiyon
    */
-  quickDebug(product: UiProduct, pallet: UiPallet, existingProducts: UiProduct[]): boolean {
+  quickDebug(
+    product: UiProduct,
+    pallet: UiPallet,
+    existingProducts: UiProduct[]
+  ): boolean {
     const dimensionOk = this.checkDimensionsFit(product, pallet);
-    const volumeOk = this.checkVolumeAvailable(product, pallet, existingProducts);
+    const volumeOk = this.checkVolumeAvailable(
+      product,
+      pallet,
+      existingProducts
+    );
 
     if (this.debugMode) {
       console.log(`🔍 Quick Debug: ${product.name} -> ${pallet.name}`);
-      console.log(`   Boyut: ${dimensionOk ? '✅' : '❌'}, Hacim: ${volumeOk ? '✅' : '❌'}`);
+      console.log(
+        `   Boyut: ${dimensionOk ? '✅' : '❌'}, Hacim: ${
+          volumeOk ? '✅' : '❌'
+        }`
+      );
     }
 
     return dimensionOk && volumeOk;
@@ -1012,7 +1242,7 @@ Console'da kullanabileceğin komutlar:
    * Ensure UiProduct instances array
    */
   private ensureUiProducts(products: any[]): UiProduct[] {
-    return products.map(product => this.ensureUiProduct(product));
+    return products.map((product) => this.ensureUiProduct(product));
   }
 
   /**
@@ -1033,7 +1263,10 @@ Console'da kullanabileceğin komutlar:
   /**
    * Replace product in list
    */
-  private replaceProductInList(oldProduct: UiProduct, newProducts: UiProduct[]): void {
+  private replaceProductInList(
+    oldProduct: UiProduct,
+    newProducts: UiProduct[]
+  ): void {
     const index = this.availableProducts.indexOf(oldProduct);
     if (index !== -1) {
       this.availableProducts.splice(index, 1, ...newProducts);
@@ -1048,7 +1281,7 @@ Console'da kullanabileceğin komutlar:
   consolidateProducts(products: UiProduct[]): UiProduct[] {
     const consolidatedMap = new Map<string, UiProduct>();
 
-    products.forEach(product => {
+    products.forEach((product) => {
       const uiProduct = this.ensureUiProduct(product);
       const mainId = uiProduct.id.split('/')[0];
 
@@ -1056,10 +1289,13 @@ Console'da kullanabileceğin komutlar:
       if (existing) {
         existing.count += uiProduct.count;
       } else {
-        consolidatedMap.set(mainId, new UiProduct({
-          ...uiProduct,
-          id: mainId
-        }));
+        consolidatedMap.set(
+          mainId,
+          new UiProduct({
+            ...uiProduct,
+            id: mainId,
+          })
+        );
       }
     });
 
@@ -1076,17 +1312,26 @@ Console'da kullanabileceğin komutlar:
   dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
     const product = event.previousContainer.data[event.previousIndex];
     const targetPalletId = event.container.id;
-    const targetPackage = this.packages.find(p => p.pallet && p.pallet.id === targetPalletId);
+    const targetPackage = this.packages.find(
+      (p) => p.pallet && p.pallet.id === targetPalletId
+    );
 
     if (targetPackage && targetPackage.pallet) {
-
       // Debug mode aktifse detaylı analiz yap
       if (this.debugMode) {
         console.log('\n🎯 DROP EVENT TRIGGERED');
-        this.debugProductFitting(product, targetPackage.pallet, targetPackage.products);
+        this.debugProductFitting(
+          product,
+          targetPackage.pallet,
+          targetPackage.products
+        );
       }
 
-      const canFit = this.canFitProductToPallet(product, targetPackage.pallet, targetPackage.products);
+      const canFit = this.canFitProductToPallet(
+        product,
+        targetPackage.pallet,
+        targetPackage.products
+      );
 
       if (!canFit) {
         // Debug mode'da ek bilgiler göster
@@ -1094,23 +1339,36 @@ Console'da kullanabileceğin komutlar:
           console.error('🚫 DROP REJETEDİ - Detaylı analiz yukarıda');
 
           // Kullanıcı için önerileri de göster
-          const singleVolume = this.safeNumber(product.dimension.width) *
-                              this.safeNumber(product.dimension.depth) *
-                              this.safeNumber(product.dimension.height);
-          const remainingVolume = this.getRemainingPalletVolume(targetPackage.pallet, targetPackage.products);
+          const singleVolume =
+            this.safeNumber(product.dimension.width) *
+            this.safeNumber(product.dimension.depth) *
+            this.safeNumber(product.dimension.height);
+          const remainingVolume = this.getRemainingPalletVolume(
+            targetPackage.pallet,
+            targetPackage.products
+          );
           const maxCount = Math.floor(remainingVolume / singleVolume);
 
           if (maxCount > 0) {
-            console.log(`💡 ÖNERİ: Ürünü böl - ${maxCount} adet bu palete sığabilir`);
+            console.log(
+              `💡 ÖNERİ: Ürünü böl - ${maxCount} adet bu palete sığabilir`
+            );
           }
         }
 
         // Daha detaylı hata mesajı
-        const remainingVolume = this.getRemainingPalletVolume(targetPackage.pallet, targetPackage.products);
-        const fillPercentage = this.getPalletFillPercentage(targetPackage.pallet, targetPackage.products);
-        const singleVolume = this.safeNumber(product.dimension.width) *
-                            this.safeNumber(product.dimension.depth) *
-                            this.safeNumber(product.dimension.height);
+        const remainingVolume = this.getRemainingPalletVolume(
+          targetPackage.pallet,
+          targetPackage.products
+        );
+        const fillPercentage = this.getPalletFillPercentage(
+          targetPackage.pallet,
+          targetPackage.products
+        );
+        const singleVolume =
+          this.safeNumber(product.dimension.width) *
+          this.safeNumber(product.dimension.depth) *
+          this.safeNumber(product.dimension.height);
         const maxCount = Math.floor(remainingVolume / singleVolume);
 
         let errorMessage = `Bu ürün palete sığmıyor. Palet doluluk: %${fillPercentage}`;
@@ -1118,7 +1376,9 @@ Console'da kullanabileceğin komutlar:
         if (maxCount > 0 && maxCount < this.safeNumber(product.count)) {
           errorMessage += `. Maksimum ${maxCount} adet sığabilir, ürünü bölebilirsiniz.`;
         } else if (maxCount === 0) {
-          errorMessage += `. Kalan hacim: ${remainingVolume.toFixed(2)} - çok küçük.`;
+          errorMessage += `. Kalan hacim: ${remainingVolume.toFixed(
+            2
+          )} - çok küçük.`;
         }
 
         this.toastService.error(errorMessage, 'Ürün Palete Sığmıyor!');
@@ -1132,7 +1392,11 @@ Console'da kullanabileceğin komutlar:
 
     // Normal drop işlemi devam ediyor...
     if (event.previousContainer === event.container) {
-      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+      moveItemInArray(
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex
+      );
     } else {
       transferArrayItem(
         event.previousContainer.data,
@@ -1157,7 +1421,9 @@ Console'da kullanabileceğin komutlar:
       return;
     }
 
-    const packageIndex = this.packages.findIndex(p => p.id === event.container.id);
+    const packageIndex = this.packages.findIndex(
+      (p) => p.id === event.container.id
+    );
 
     if (packageIndex === -1 || this.packages[packageIndex].pallet !== null) {
       return;
@@ -1187,14 +1453,25 @@ Console'da kullanabileceğin komutlar:
 
     this.packages.forEach((pkg, index) => {
       if (pkg.pallet) {
-
         // Debug için hızlı kontrol
         if (this.debugMode) {
-          const quickResult = this.quickDebug(product, pkg.pallet, pkg.products);
-          console.log(`   Palet ${index + 1} (${pkg.pallet.name}): ${quickResult ? '✅ Sığar' : '❌ Sığmaz'}`);
+          const quickResult = this.quickDebug(
+            product,
+            pkg.pallet,
+            pkg.products
+          );
+          console.log(
+            `   Palet ${index + 1} (${pkg.pallet.name}): ${
+              quickResult ? '✅ Sığar' : '❌ Sığmaz'
+            }`
+          );
         }
 
-        const canFit = this.canFitProductToPallet(product, pkg.pallet, pkg.products);
+        const canFit = this.canFitProductToPallet(
+          product,
+          pkg.pallet,
+          pkg.products
+        );
         const palletElement = document.getElementById(pkg.pallet.id);
 
         if (palletElement) {
@@ -1202,17 +1479,28 @@ Console'da kullanabileceğin komutlar:
             palletElement.classList.add('can-drop');
             palletElement.classList.remove('cannot-drop');
 
-            const maxCount = this.getMaxProductCount(product, pkg.pallet, pkg.products);
+            const maxCount = this.getMaxProductCount(
+              product,
+              pkg.pallet,
+              pkg.products
+            );
             palletElement.title = `✅ Bu palete maksimum ${maxCount} adet sığabilir`;
           } else {
             palletElement.classList.add('cannot-drop');
             palletElement.classList.remove('can-drop');
 
-            const fillPercentage = this.getPalletFillPercentage(pkg.pallet, pkg.products);
-            const singleVolume = this.safeNumber(product.dimension.width) *
-                                this.safeNumber(product.dimension.depth) *
-                                this.safeNumber(product.dimension.height);
-            const remainingVolume = this.getRemainingPalletVolume(pkg.pallet, pkg.products);
+            const fillPercentage = this.getPalletFillPercentage(
+              pkg.pallet,
+              pkg.products
+            );
+            const singleVolume =
+              this.safeNumber(product.dimension.width) *
+              this.safeNumber(product.dimension.depth) *
+              this.safeNumber(product.dimension.height);
+            const remainingVolume = this.getRemainingPalletVolume(
+              pkg.pallet,
+              pkg.products
+            );
             const maxCount = Math.floor(remainingVolume / singleVolume);
 
             if (maxCount > 0) {
@@ -1235,7 +1523,7 @@ Console'da kullanabileceğin komutlar:
    */
   dragEnded(): void {
     this.currentDraggedProduct = null;
-    document.querySelectorAll('.can-drop, .cannot-drop').forEach(el => {
+    document.querySelectorAll('.can-drop, .cannot-drop').forEach((el) => {
       el.classList.remove('can-drop');
       el.classList.remove('cannot-drop');
     });
@@ -1260,11 +1548,16 @@ Console'da kullanabileceğin komutlar:
   /**
    * Validate split count
    */
-  private validateSplitCount(product: UiProduct, splitCount?: number | null): number | null {
+  private validateSplitCount(
+    product: UiProduct,
+    splitCount?: number | null
+  ): number | null {
     if (splitCount !== undefined && splitCount !== null) {
       if (splitCount <= 0 || splitCount >= product.count) {
         this.toastService.warning(
-          `Geçersiz adet girişi. 1 ile ${product.count - 1} arasında bir değer giriniz.`,
+          `Geçersiz adet girişi. 1 ile ${
+            product.count - 1
+          } arasında bir değer giriniz.`,
           'Uyarı'
         );
         return null;
@@ -1302,7 +1595,9 @@ Console'da kullanabileceğin komutlar:
       this.replaceProductInList(product, [firstPart, secondPart]);
 
       this.toastService.success(
-        `${product.name} ${splitCount} ve ${product.count - splitCount} adet olarak bölündü.`,
+        `${product.name} ${splitCount} ve ${
+          product.count - splitCount
+        } adet olarak bölündü.`,
         'Başarılı'
       );
     } else {
@@ -1334,7 +1629,7 @@ Console'da kullanabileceğin komutlar:
   removeAllPackage(): void {
     const allProducts: UiProduct[] = [];
 
-    this.packages.forEach(pkg => {
+    this.packages.forEach((pkg) => {
       if (pkg.products?.length > 0) {
         allProducts.push(...this.ensureUiProducts(pkg.products));
         pkg.products = [];
@@ -1364,7 +1659,9 @@ Console'da kullanabileceğin komutlar:
         packageItem.products = [];
       }
 
-      const palletIndex = this.selectedPallets.findIndex(p => p.id === packageItem.pallet?.id);
+      const palletIndex = this.selectedPallets.findIndex(
+        (p) => p.id === packageItem.pallet?.id
+      );
       if (palletIndex !== -1) {
         this.selectedPallets.splice(palletIndex, 1);
       }
@@ -1378,14 +1675,14 @@ Console'da kullanabileceğin komutlar:
    * Add new empty package
    */
   addNewEmptyPackage(): void {
-    const emptyPackages = this.packages.filter(p => p.pallet === null);
+    const emptyPackages = this.packages.filter((p) => p.pallet === null);
 
     if (emptyPackages.length < 2) {
       const newPackage = new UiPackage({
         id: Guid(),
         pallet: null,
         products: [],
-        order: this.order
+        order: this.order,
       });
 
       this.packages.push(newPackage);
@@ -1401,7 +1698,7 @@ Console'da kullanabileceğin komutlar:
    */
   get palletProductsLists(): string[] {
     const allPalletIds: string[] = ['productsList'];
-    this.packages.forEach(pkg => {
+    this.packages.forEach((pkg) => {
       if (pkg.pallet) {
         allPalletIds.push(pkg.pallet.id);
       }
@@ -1414,8 +1711,8 @@ Console'da kullanabileceğin komutlar:
    */
   get packageIds(): string[] {
     return this.packages
-      .filter(pkg => pkg.pallet === null)
-      .map(pkg => pkg.id);
+      .filter((pkg) => pkg.pallet === null)
+      .map((pkg) => pkg.id);
   }
 
   /* =====================
@@ -1431,10 +1728,10 @@ Console'da kullanabileceğin komutlar:
     console.log('Submitteki data', packageData);
 
     this.repository.bulkCreatePackageDetail(packageData).subscribe({
-      next: response => {
-        this.toastService.success("Kaydedildi", "Başarılı");
+      next: (response) => {
+        this.toastService.success('Kaydedildi', 'Başarılı');
         this.stepperService.setStepStatus(2, STATUSES.completed, true);
-      }
+      },
     });
   }
 }

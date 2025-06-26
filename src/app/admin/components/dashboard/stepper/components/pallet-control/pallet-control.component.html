@@ -244,9 +244,19 @@
                     <mat-icon>straighten</mat-icon>
                     <span>{{ package.totalMeter }} m</span>
                   </div>
-                  <div class="metric">
-                    <mat-icon>view_in_ar</mat-icon>
-                    <span>{{ package.totalVolume }} m³</span>
+                  <div class="metric efficiency-metric">
+                    <mat-icon>analytics</mat-icon>
+                    <div class="efficiency-container">
+                      <span class="efficiency-value">{{ getPalletFillPercentage(package.pallet, package.products) }}%</span>
+                      <div class="efficiency-bar">
+                        <div class="efficiency-fill"
+                             [style.width.%]="getPalletFillPercentage(package.pallet, package.products)"
+                             [class.high-efficiency]="getPalletFillPercentage(package.pallet, package.products) >= 80"
+                             [class.medium-efficiency]="getPalletFillPercentage(package.pallet, package.products) >= 50 && getPalletFillPercentage(package.pallet, package.products) < 80"
+                             [class.low-efficiency]="getPalletFillPercentage(package.pallet, package.products) < 50">
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
