@@ -2,9 +2,36 @@
 
 @use "@angular/material" as mat;
 
+// Global reset ve layout düzenlemeleri
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; // Yatay scroll'u kaldır
+}
+
+body {
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  overflow-y: auto; // Dikey scroll kontrolü
+}
+
+// App root container - router-outlet için
+app-root {
+  display: block;
+  height: 100vh;
+  overflow: hidden;
+}
+
+// Material toolbar override
 mat-toolbar {
   display: flex;
   align-items: center;
+  position: fixed !important; // Toolbar'ı sabit konumda tut
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  height: 64px; // Sabit yükseklik
 
   @include mat.toolbar-overrides(
     (
@@ -18,6 +45,28 @@ mat-toolbar {
       icon-color: var(--mat-sys-on-primary),
     )
   );
+}
+
+// Ana sayfa container'ı - navbar olan sayfalar için
+.page-with-navbar {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+// Sayfa içeriği container'ı
+.page-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-top: 64px; // Navbar yüksekliği
+  height: calc(100vh - 64px);
+}
+
+// Router outlet container
+router-outlet + * {
+  height: 100vh;
+  overflow: hidden;
 }
 
 .selected-theme {
@@ -42,12 +91,6 @@ html {
   );
 }
 
-body {
-  height: 100%;
-  margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
-}
-
 table {
   width: 100%;
 }
@@ -62,8 +105,11 @@ th {
   width: 5%;
 }
 
+// Container düzenlemeleri - scroll problemi için güncellendi
 .container {
   margin: 1.5em;
+  min-height: calc(100vh - 64px - 3em); // Toolbar ve margin'ları çıkar
+  padding-bottom: 2em; // Alt boşluk
 }
 
 .container .row {
@@ -84,5 +130,20 @@ th {
 @media screen and (max-width: 600px) {
   .container .row {
     display: inline;
+  }
+
+  // Mobil için toolbar düzenlemesi
+  mat-toolbar {
+    position: fixed !important;
+    height: 56px; // Mobilde daha küçük
+  }
+
+  .main-content {
+    padding-top: 56px;
+    height: calc(100vh - 56px);
+  }
+
+  .container {
+    min-height: calc(100vh - 56px - 3em);
   }
 }

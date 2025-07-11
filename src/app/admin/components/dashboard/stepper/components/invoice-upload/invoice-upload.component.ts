@@ -31,6 +31,7 @@ import { Order } from '../../../../../../models/order.interface';
 import { OrderDetail } from '../../../../../../models/order-detail.interface';
 import { GenericTableComponent } from '../../../../../../components/generic-table/generic-table.component';
 import { OrderDetailAddDialogComponent } from './order-detail-add-dialog/order-detail-add-dialog.component';
+import { SessionStorageService } from '../../services/session-storage.service';
 
 // Sabit değişkenler
 const VALID_FILE_TYPES = [
@@ -75,6 +76,7 @@ export class InvoiceUploadComponent implements OnInit {
   private readonly toastService = inject(ToastService);
   private readonly orderService = inject(OrderService);
   private readonly dialog = inject(MatDialog);
+  private readonly sessionService = inject(SessionStorageService);
   //TODO: manual eklerken default order olusacak ve panelde order bilgisi o anda isaretlenip guncellenebilecek bu kismin tek eksigi bu kaldi
   // Form ve state değişkenleri
   // save changes methodu eklenecek
@@ -141,9 +143,45 @@ export class InvoiceUploadComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    console.log('🎬 Invoice Upload Component başlatılıyor...');
     // Sipariş varsa, detayları yükle
+    this.restoreFromSession();
+
     if (this.order?.id) {
       this.calculateTotals();
+    }
+  }
+
+  private restoreFromSession(): void {
+    console.log('📖 Session\'dan veri restore ediliyor...');
+
+    try {
+      const restoredData = this.sessionService.restoreStep1Data();
+
+      if (restoredData) {
+        console.log('✅ Session\'dan veriler bulundu:', restoredData);
+
+        // Restore edilen verileri component'e ata
+        if (restoredData.order) {
+          this.order = restoredData.order;
+        }
+        this.orderDetails = restoredData.orderDetails;
+
+        if (restoredData.hasFile && restoredData.fileName) {
+          console.log(`📄 Dosya bilgisi restore edildi: ${restoredData.fileName}`);
+          // Not: Actual file object'i restore edemeyiz, sadece bilgisini gösterebiliriz
+        }
+
+        // Totalleri yeniden hesapla
+        this.calculateTotals();
+
+        // Kullanıcıya bilgi ver
+        this.toastService.info('Önceki verileriniz restore edildi');
+      } else {
+        console.log('ℹ️ Session\'da veri bulunamadı, yeni başlangıç');
+      }
+    } catch (error) {
+      console.error('❌ Session restore hatası:', error);
     }
   }
 
@@ -362,7 +400,6 @@ export class InvoiceUploadComponent implements OnInit {
       switchMap((orderResponse) => {
         this.repositoryService.setOrderId(orderResponse.id);
 
-        // OrderDetails'i, WriteSerializer formatına uygun olarak dönüştür
         const formattedOrderDetails = this.orderDetails.map(detail => ({
           order_id: orderResponse.id,
           product_id: detail.product.id,
@@ -370,7 +407,6 @@ export class InvoiceUploadComponent implements OnInit {
           unit_price: detail.unit_price
         }));
 
-        // Dosya varsa önce yükle, sonra detayları kaydet
         if (this.tempFile) {
           return this.repositoryService.uploadFile(this.tempFile, orderResponse.id).pipe(
             switchMap(() => this.repositoryService.bulkOrderDetail(formattedOrderDetails))
@@ -384,8 +420,19 @@ export class InvoiceUploadComponent implements OnInit {
       })
     ).subscribe({
       next: (result) => {
+        // MEVCUT KOD AYNI KALACAK
         this.invoiceUploaded.emit();
         this.toastService.success('İşlem başarıyla tamamlandı');
+
+        // YENİ: Session'a kaydet
+        console.log('💾 Step 1 verileri session\'a kaydediliyor...');
+        this.sessionService.saveStep1Data(
+          this.order,
+          this.orderDetails,
+          !!this.tempFile,
+          this.tempFile?.name
+        );
+        console.log('✅ Step 1 session\'a kaydedildi');
       },
       error: (error) => {
         console.error('İşlem sırasında hata oluştu:', error);

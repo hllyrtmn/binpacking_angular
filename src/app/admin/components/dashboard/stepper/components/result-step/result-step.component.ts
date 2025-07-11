@@ -4,7 +4,6 @@ import { MatButton } from '@angular/material/button';
 import { MatStepperPrevious } from '@angular/material/stepper';
 import { RepositoryService } from '../../services/repository.service';
 import { StepperStore } from '../../services/stepper.store';
-import { SafeHtml } from '@angular/platform-browser';
 import { DomSanitizer } from '@angular/platform-browser';
 import { PlotlyVisualizationComponent } from "../../../../../../components/plotly/plotly.component";
 import { PlotlyService } from '../../../../../../services/plotly.service';
@@ -13,6 +12,7 @@ import { CommonModule } from '@angular/common';
 import { ToastService } from '../../../../../../services/toast.service';
 import { switchMap, takeUntil, catchError, finalize } from 'rxjs/operators';
 import { Subject, EMPTY } from 'rxjs';
+import { SessionStorageService } from '../../services/session-storage.service';
 
 // Package interface for type safety
 interface PackageData {
@@ -94,6 +94,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   private progressInterval: any = null;
 
   // Services
+  private readonly sessionService = inject(SessionStorageService);
   repositoryService = inject(RepositoryService);
   stepperService = inject(StepperStore);
   sanitizer = inject(DomSanitizer);
@@ -102,8 +103,69 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
-    console.log('🎬 ResultStepComponent initialized');
+  console.log('🎬 ResultStepComponent initialized');
+
+  // Prerequisite kontrolü
+  if (!this.checkPrerequisites()) {
+    return;
   }
+
+  // Session restore
+  this.restoreFromSession();
+}
+
+private checkPrerequisites(): boolean {
+  const step1Completed = this.sessionService.isStepCompleted(1);
+  const step2Completed = this.sessionService.isStepCompleted(2);
+
+  if (!step1Completed || !step2Completed) {
+    let message = 'Önceki adımları tamamlayın: ';
+    if (!step1Completed) message += 'Step 1 ';
+    if (!step2Completed) message += 'Step 2 ';
+
+    this.toastService.warning(message);
+    return false;
+  }
+
+  return true;
+}
+
+private restoreFromSession(): void {
+  try {
+    const restoredData = this.sessionService.restoreStep3Data();
+
+    if (restoredData) {
+      console.log('✅ Step 3 session\'dan veriler bulundu');
+
+      this.hasResults = true;
+      this.showVisualization = true;
+      this.isLoading = false;
+
+      if (restoredData.optimizationResult) {
+        this.piecesData = restoredData.optimizationResult;
+        this.safeProcessOptimizationResult({ data: restoredData.optimizationResult });
+      }
+
+      if (restoredData.reportFiles) {
+        this.reportFiles = restoredData.reportFiles;
+      }
+
+      this.toastService.info('Optimizasyon sonuçları restore edildi');
+    }
+  } catch (error) {
+    console.error('❌ Result step session restore hatası:', error);
+  }
+}
+
+private saveResultsToSession(): void {
+  try {
+    console.log('💾 Step 3 sonuçları session\'a kaydediliyor...');
+    this.sessionService.saveStep3Data(this.piecesData, this.reportFiles);
+    console.log('✅ Step 3 sonuçları session\'a kaydedildi');
+  } catch (error) {
+    console.error('❌ Step 3 sonuçları session\'a kaydedilemedi:', error);
+  }
+}
 
   ngOnDestroy(): void {
     console.log('🗑️ ResultStepComponent destroying...');
@@ -155,7 +217,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
 
     this.repositoryService.calculatePacking()
       .pipe(
-        takeUntil(this.destroy$), // Important: Auto cleanup on destroy
+        takeUntil(this.destroy$),
         switchMap(response => {
           if (this.isDestroyed) {
             throw new Error('Component destroyed');
@@ -176,10 +238,9 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         catchError(error => {
           console.error('❌ İşlem sırasında hata oluştu:', error);
           this.handleError(error);
-          return EMPTY; // Return empty observable to complete the stream
+          return EMPTY;
         }),
         finalize(() => {
-          // Always cleanup, regardless of success or error
           this.processingLock = false;
           this.stopProgressSimulation();
         })
@@ -197,6 +258,9 @@ export class ResultStepComponent implements OnInit, OnDestroy {
           setTimeout(() => {
             if (!this.isDestroyed) {
               this.safeFinalize();
+
+              // YENİ: Session'a kaydet
+              this.saveResultsToSession();
             }
           }, 500);
         },
@@ -207,6 +271,8 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         }
       });
   }
+
+
 
   private safeResetState(): void {
     if (this.isDestroyed) return;

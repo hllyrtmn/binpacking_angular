@@ -14,6 +14,7 @@ import { LoadingComponent } from "../../../../components/loading/loading.compone
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { ResultStepComponent } from './components/result-step/result-step.component';
 import { StepperStore, STATUSES } from './services/stepper.store';
+import { SessionStorageService } from './services/session-storage.service';
 
 @Component({
   selector: 'app-stepper',
@@ -31,7 +32,7 @@ import { StepperStore, STATUSES } from './services/stepper.store';
 export class StepperComponent {
 
   @ViewChild('palletControlComponent') palletControlComponent!: PalletControlComponent;
-
+  private sessionService = inject(SessionStorageService);
   order_id: string = '';
 
   stepperService = inject(StepperStore);
@@ -61,6 +62,27 @@ export class StepperComponent {
     this.stepperOrientation = breakpointObserver
       .observe('(min-width: 800px)')
       .pipe(map(({ matches }) => matches ? 'horizontal' : 'vertical'));
+
+    // YENİ: User activity listener ekleyin
+    this.setupActivityRefresh();
+  }
+
+  private setupActivityRefresh(): void {
+    // Her 5 dakikada bir session'ı refresh et (user aktifse)
+    setInterval(() => {
+      if (this.sessionService.hasExistingSession()) {
+        this.sessionService.refreshSession();
+      }
+    }, 5 * 60 * 1000); // 5 dakika
+
+    // User activity olduğunda refresh et
+    ['click', 'keypress', 'scroll'].forEach(eventType => {
+      document.addEventListener(eventType, () => {
+        if (this.sessionService.hasExistingSession()) {
+          this.sessionService.refreshSession();
+        }
+      }, { passive: true });
+    });
   }
 
   invoiceUploaded() {
