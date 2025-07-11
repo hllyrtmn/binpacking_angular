@@ -1,15 +1,21 @@
 <mat-stepper #stepper class="responsive-stepper" [linear]="true" [orientation]="(stepperOrientation | async)!">
   <app-loading></app-loading>
-  <mat-step [completed]="stepperService.steps[0].completed()" label="(ISB) İhraacat Sipariş Bildirimi Yükleme"
+
+  <mat-step [completed]="stepperService.steps[0].completed()" label="(ISB) İhracat Sipariş Bildirimi Yükleme"
     [editable]="stepperService.steps[0].editable()">
-    <app-invoice-upload (invoiceUploaded)="invoiceUploaded()"></app-invoice-upload>
+    <!-- YENİ: Template reference ekleyin -->
+    <app-invoice-upload #invoiceUploadComponent (invoiceUploaded)="invoiceUploaded()"></app-invoice-upload>
   </mat-step>
+
   <mat-step [completed]="stepperService.steps[1].completed()" label="Palet Kontrolü"
     [editable]="stepperService.steps[1].editable()">
+    <!-- YENİ: Template reference ekleyin -->
     <app-pallet-control #palletControlComponent></app-pallet-control>
   </mat-step>
+
   <mat-step [completed]="stepperService.steps[2].completed()" label="Sonuc ekrani"
     [editable]="stepperService.steps[2].editable()">
-    <app-result-step></app-result-step>
+    <!-- YENİ: Template reference ekleyin -->
+    <app-result-step #resultStepComponent (shipmentCompleted)="onShipmentCompleted()"></app-result-step>
   </mat-step>
 </mat-stepper>

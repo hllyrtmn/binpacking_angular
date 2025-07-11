@@ -1,11 +1,20 @@
-import { Component, OnDestroy, ViewChild, inject, ChangeDetectorRef, OnInit } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  ViewChild,
+  inject,
+  ChangeDetectorRef,
+  OnInit,
+  EventEmitter,
+  Output,
+} from '@angular/core';
 import { LoadingComponent } from '../../../../../../components/loading/loading.component';
 import { MatButton } from '@angular/material/button';
 import { MatStepperPrevious } from '@angular/material/stepper';
 import { RepositoryService } from '../../services/repository.service';
-import { StepperStore } from '../../services/stepper.store';
+import { StepperStore, STATUSES } from '../../services/stepper.store';
 import { DomSanitizer } from '@angular/platform-browser';
-import { PlotlyVisualizationComponent } from "../../../../../../components/plotly/plotly.component";
+import { PlotlyVisualizationComponent } from '../../../../../../components/plotly/plotly.component';
 import { PlotlyService } from '../../../../../../services/plotly.service';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
@@ -13,6 +22,7 @@ import { ToastService } from '../../../../../../services/toast.service';
 import { switchMap, takeUntil, catchError, finalize } from 'rxjs/operators';
 import { Subject, EMPTY } from 'rxjs';
 import { SessionStorageService } from '../../services/session-storage.service';
+import { AutoSaveService } from '../../services/auto-save.service';
 
 // Package interface for type safety
 interface PackageData {
@@ -47,13 +57,14 @@ interface LoadingStats {
     MatButton,
     MatStepperPrevious,
     PlotlyVisualizationComponent,
-    MatIconModule
+    MatIconModule,
   ],
   templateUrl: './result-step.component.html',
-  styleUrl: './result-step.component.scss'
+  styleUrl: './result-step.component.scss',
 })
 export class ResultStepComponent implements OnInit, OnDestroy {
   @ViewChild('plotlyComponent') plotlyComponent!: PlotlyVisualizationComponent;
+  @Output() shipmentCompleted = new EventEmitter<void>();
 
   // **ÖNEMLİ: Component lifecycle ve cleanup için**
   private destroy$ = new Subject<void>();
@@ -71,7 +82,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     utilizationRate: 0,
     cogScore: 0,
     totalWeight: 0,
-    efficiency: 0
+    efficiency: 0,
   };
 
   // UI state
@@ -86,7 +97,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   algorithmStats = {
     executionTime: 0,
     generations: 0,
-    bestFitness: 0
+    bestFitness: 0,
   };
 
   // Popup window reference
@@ -94,6 +105,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   private progressInterval: any = null;
 
   // Services
+  private readonly autoSaveService = inject(AutoSaveService);
   private readonly sessionService = inject(SessionStorageService);
   repositoryService = inject(RepositoryService);
   stepperService = inject(StepperStore);
@@ -102,70 +114,148 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   plotlyService = inject(PlotlyService);
   cdr = inject(ChangeDetectorRef);
 
+  private lastResultState: string = '';
+  private resultAutoSaveTimeout: any;
+
   ngOnInit(): void {
-  console.log('🎬 ResultStepComponent initialized');
+    console.log('🎬 ResultStepComponent initialized');
 
-  // Prerequisite kontrolü
-  if (!this.checkPrerequisites()) {
-    return;
-  }
-
-  // Session restore
-  this.restoreFromSession();
-}
-
-private checkPrerequisites(): boolean {
-  const step1Completed = this.sessionService.isStepCompleted(1);
-  const step2Completed = this.sessionService.isStepCompleted(2);
-
-  if (!step1Completed || !step2Completed) {
-    let message = 'Önceki adımları tamamlayın: ';
-    if (!step1Completed) message += 'Step 1 ';
-    if (!step2Completed) message += 'Step 2 ';
-
-    this.toastService.warning(message);
-    return false;
-  }
-
-  return true;
-}
-
-private restoreFromSession(): void {
-  try {
-    const restoredData = this.sessionService.restoreStep3Data();
-
-    if (restoredData) {
-      console.log('✅ Step 3 session\'dan veriler bulundu');
-
-      this.hasResults = true;
-      this.showVisualization = true;
-      this.isLoading = false;
-
-      if (restoredData.optimizationResult) {
-        this.piecesData = restoredData.optimizationResult;
-        this.safeProcessOptimizationResult({ data: restoredData.optimizationResult });
-      }
-
-      if (restoredData.reportFiles) {
-        this.reportFiles = restoredData.reportFiles;
-      }
-
-      this.toastService.info('Optimizasyon sonuçları restore edildi');
+    if (!this.checkPrerequisites()) {
+      return;
     }
-  } catch (error) {
-    console.error('❌ Result step session restore hatası:', error);
-  }
-}
 
-private saveResultsToSession(): void {
-  try {
-    console.log('💾 Step 3 sonuçları session\'a kaydediliyor...');
-    this.sessionService.saveStep3Data(this.piecesData, this.reportFiles);
-    console.log('✅ Step 3 sonuçları session\'a kaydedildi');
-  } catch (error) {
-    console.error('❌ Step 3 sonuçları session\'a kaydedilemedi:', error);
+    this.restoreFromSession();
+
+    // YENİ: Auto-save listener'ları setup et
+    this.setupAutoSaveListeners();
   }
-}
+
+  private setupAutoSaveListeners(): void {
+    // Result state changes'i takip et
+    this.watchResultChanges();
+  }
+
+  private watchResultChanges(): void {
+    setInterval(() => {
+      // Loading state'de auto-save'i skip et
+      if (this.isLoading || this.processingLock) {
+        return;
+      }
+
+      const currentState = this.getCurrentResultState();
+
+      if (currentState !== this.lastResultState && this.hasResults) {
+        this.triggerAutoSave('user-action');
+        this.lastResultState = currentState;
+      }
+    }, 3000); // 3 saniye interval (result için daha uzun)
+  }
+
+  private getCurrentResultState(): string {
+    try {
+      return JSON.stringify({
+        hasResults: this.hasResults,
+        showVisualization: this.showVisualization,
+        piecesDataLength: this.piecesData?.length || 0,
+        reportFilesLength: this.reportFiles?.length || 0,
+        loadingStats: this.loadingStats,
+        algorithmStats: this.algorithmStats,
+      });
+    } catch (error) {
+      return '';
+    }
+  }
+
+  private triggerAutoSave(
+    changeType: 'user-action' | 'api-response' = 'user-action'
+  ): void {
+    // Clear existing timeout
+    if (this.resultAutoSaveTimeout) {
+      clearTimeout(this.resultAutoSaveTimeout);
+    }
+
+    // Debounce auto-save
+    this.resultAutoSaveTimeout = setTimeout(
+      () => {
+        if (
+          this.hasResults &&
+          (this.piecesData?.length > 0 || this.reportFiles?.length > 0)
+        ) {
+          this.autoSaveService.triggerStep3AutoSave(
+            {
+              optimizationResult: this.piecesData,
+              reportFiles: this.reportFiles,
+              loadingStats: this.loadingStats,
+              algorithmStats: this.algorithmStats,
+              truckDimension: this.truckDimension,
+              hasResults: this.hasResults,
+              showVisualization: this.showVisualization,
+            },
+            changeType
+          );
+        }
+      },
+      changeType === 'api-response' ? 500 : 2000
+    ); // Calculation için hızlı kaydet
+  }
+
+  private checkPrerequisites(): boolean {
+    const step1Completed = this.sessionService.isStepCompleted(1);
+    const step2Completed = this.sessionService.isStepCompleted(2);
+
+    if (!step1Completed || !step2Completed) {
+      let message = 'Önceki adımları tamamlayın: ';
+      if (!step1Completed) message += 'Step 1 ';
+      if (!step2Completed) message += 'Step 2 ';
+
+      this.toastService.warning(message);
+      return false;
+    }
+
+    return true;
+  }
+
+  private restoreFromSession(): void {
+    try {
+      const restoredData = this.sessionService.restoreStep3Data();
+
+      if (restoredData) {
+        console.log("✅ Step 3 session'dan veriler bulundu");
+
+        this.hasResults = true;
+        this.showVisualization = true;
+        this.isLoading = false;
+
+        if (restoredData.optimizationResult) {
+          this.piecesData = restoredData.optimizationResult;
+          this.safeProcessOptimizationResult({
+            data: restoredData.optimizationResult,
+          });
+        }
+
+        if (restoredData.reportFiles) {
+          this.reportFiles = restoredData.reportFiles;
+        }
+
+        this.toastService.info('Optimizasyon sonuçları restore edildi');
+      }
+    } catch (error) {
+      console.error('❌ Result step session restore hatası:', error);
+    }
+  }
+
+  private saveResultsToSession(): void {
+    try {
+      console.log("💾 Step 3 sonuçları session'a kaydediliyor...");
+      this.sessionService.saveStep3Data(this.piecesData, this.reportFiles);
+      console.log("✅ Step 3 sonuçları session'a kaydedildi");
+
+      // Stepper store'u da güncelle
+      this.stepperService.setStepStatus(3, STATUSES.completed, true);
+    } catch (error) {
+      console.error("❌ Step 3 sonuçları session'a kaydedilemedi:", error);
+    }
+  }
 
   ngOnDestroy(): void {
     console.log('🗑️ ResultStepComponent destroying...');
@@ -176,6 +266,12 @@ private saveResultsToSession(): void {
     // Signal destruction to all observables
     this.destroy$.next();
     this.destroy$.complete();
+
+    // Clear auto-save timeout
+    if (this.resultAutoSaveTimeout) {
+      clearTimeout(this.resultAutoSaveTimeout);
+      this.resultAutoSaveTimeout = null;
+    }
 
     // Clear progress interval
     if (this.progressInterval) {
@@ -215,10 +311,11 @@ private saveResultsToSession(): void {
     // Start progress simulation
     this.startProgressSimulation();
 
-    this.repositoryService.calculatePacking()
+    this.repositoryService
+      .calculatePacking()
       .pipe(
         takeUntil(this.destroy$),
-        switchMap(response => {
+        switchMap((response) => {
           if (this.isDestroyed) {
             throw new Error('Component destroyed');
           }
@@ -232,10 +329,13 @@ private saveResultsToSession(): void {
           this.optimizationProgress = Math.min(80, this.optimizationProgress);
           this.safeUpdateUI();
 
+          // YENİ: İlk hesaplama sonrası auto-save
+          this.triggerAutoSave('api-response');
+
           // Create report after successful packing
           return this.repositoryService.createReport();
         }),
-        catchError(error => {
+        catchError((error) => {
           console.error('❌ İşlem sırasında hata oluştu:', error);
           this.handleError(error);
           return EMPTY;
@@ -251,7 +351,9 @@ private saveResultsToSession(): void {
 
           console.log('📊 Rapor başarıyla oluşturuldu:', reportResponse);
 
-          this.reportFiles = Array.isArray(reportResponse?.files) ? reportResponse.files : [];
+          this.reportFiles = Array.isArray(reportResponse?.files)
+            ? reportResponse.files
+            : [];
           this.optimizationProgress = 100;
 
           // Finalize the process safely
@@ -259,8 +361,8 @@ private saveResultsToSession(): void {
             if (!this.isDestroyed) {
               this.safeFinalize();
 
-              // YENİ: Session'a kaydet
-              this.saveResultsToSession();
+              // YENİ: Final completion sonrası auto-save
+              this.triggerAutoSave('api-response');
             }
           }, 500);
         },
@@ -268,11 +370,27 @@ private saveResultsToSession(): void {
           if (!this.isDestroyed) {
             this.handleError(error);
           }
-        }
+        },
       });
   }
 
+  forceSaveStep3(): void {
+    if (this.hasResults) {
+      this.autoSaveService.forceSave(3, {
+        optimizationResult: this.piecesData,
+        reportFiles: this.reportFiles,
+        loadingStats: this.loadingStats,
+        algorithmStats: this.algorithmStats,
+        truckDimension: this.truckDimension,
+        hasResults: this.hasResults,
+        showVisualization: this.showVisualization,
+      });
 
+      this.toastService.success('Result verileri zorla kaydedildi');
+    } else {
+      this.toastService.warning('Kaydetmek için önce optimizasyonu çalıştırın');
+    }
+  }
 
   private safeResetState(): void {
     if (this.isDestroyed) return;
@@ -301,7 +419,10 @@ private saveResultsToSession(): void {
           try {
             packingData = JSON.parse(response.data);
           } catch (parseError) {
-            console.warn('⚠️ Failed to parse response data string:', parseError);
+            console.warn(
+              '⚠️ Failed to parse response data string:',
+              parseError
+            );
             packingData = null;
           }
         } else if (response.data.data) {
@@ -329,10 +450,9 @@ private saveResultsToSession(): void {
         this.algorithmStats = {
           executionTime: response.stats.execution_time || 0,
           generations: response.stats.generations || 0,
-          bestFitness: response.stats.best_fitness || 0
+          bestFitness: response.stats.best_fitness || 0,
         };
       }
-
     } catch (error) {
       console.error('❌ Veri işleme hatası:', error);
       this.piecesData = [];
@@ -344,18 +464,20 @@ private saveResultsToSession(): void {
     if (this.isDestroyed || !Array.isArray(this.piecesData)) return;
 
     try {
-      this.processedPackages = this.piecesData.map((piece: any, index: number) => ({
-        id: piece[6] || index,
-        x: piece[0] || 0,
-        y: piece[1] || 0,
-        z: piece[2] || 0,
-        length: piece[3] || 0,
-        width: piece[4] || 0,
-        height: piece[5] || 0,
-        weight: piece[7] || 0,
-        color: this.getPackageColor(index),
-        dimensions: `${piece[3] || 0}×${piece[4] || 0}×${piece[5] || 0}mm`
-      }));
+      this.processedPackages = this.piecesData.map(
+        (piece: any, index: number) => ({
+          id: piece[6] || index,
+          x: piece[0] || 0,
+          y: piece[1] || 0,
+          z: piece[2] || 0,
+          length: piece[3] || 0,
+          width: piece[4] || 0,
+          height: piece[5] || 0,
+          weight: piece[7] || 0,
+          color: this.getPackageColor(index),
+          dimensions: `${piece[3] || 0}×${piece[4] || 0}×${piece[5] || 0}mm`,
+        })
+      );
 
       console.log(`📊 ${this.processedPackages.length} packages processed`);
     } catch (error) {
@@ -371,11 +493,19 @@ private saveResultsToSession(): void {
     }
 
     try {
-      const totalVolume = this.truckDimension[0] * this.truckDimension[1] * this.truckDimension[2];
-      const usedVolume = this.processedPackages.reduce((sum, pkg) =>
-        sum + (pkg.length * pkg.width * pkg.height), 0);
+      const totalVolume =
+        this.truckDimension[0] *
+        this.truckDimension[1] *
+        this.truckDimension[2];
+      const usedVolume = this.processedPackages.reduce(
+        (sum, pkg) => sum + pkg.length * pkg.width * pkg.height,
+        0
+      );
 
-      const totalWeight = this.processedPackages.reduce((sum, pkg) => sum + pkg.weight, 0);
+      const totalWeight = this.processedPackages.reduce(
+        (sum, pkg) => sum + pkg.weight,
+        0
+      );
       const cogScore = this.calculateCOGScore();
       const utilizationRate = Math.round((usedVolume / totalVolume) * 100);
 
@@ -385,7 +515,7 @@ private saveResultsToSession(): void {
         utilizationRate: utilizationRate,
         cogScore: cogScore,
         totalWeight: Math.round(totalWeight),
-        efficiency: Math.round((utilizationRate + cogScore) / 2)
+        efficiency: Math.round((utilizationRate + cogScore) / 2),
       };
     } catch (error) {
       console.error('❌ Stats calculation error:', error);
@@ -402,7 +532,7 @@ private saveResultsToSession(): void {
       let weightedY = 0;
       let weightedZ = 0;
 
-      this.processedPackages.forEach(pkg => {
+      this.processedPackages.forEach((pkg) => {
         const centerX = pkg.x + pkg.length / 2;
         const centerY = pkg.y + pkg.width / 2;
         const centerZ = pkg.z + pkg.height / 2;
@@ -426,14 +556,14 @@ private saveResultsToSession(): void {
 
       const distance = Math.sqrt(
         Math.pow(cogX - idealX, 2) +
-        Math.pow(cogY - idealY, 2) +
-        Math.pow(cogZ - idealZ, 2)
+          Math.pow(cogY - idealY, 2) +
+          Math.pow(cogZ - idealZ, 2)
       );
 
       const maxDistance = Math.sqrt(
         Math.pow(this.truckDimension[0] / 2, 2) +
-        Math.pow(this.truckDimension[1] / 2, 2) +
-        Math.pow(this.truckDimension[2] * 0.6, 2)
+          Math.pow(this.truckDimension[1] / 2, 2) +
+          Math.pow(this.truckDimension[2] * 0.6, 2)
       );
 
       return Math.round(Math.max(0, 100 - (distance / maxDistance) * 100));
@@ -452,6 +582,9 @@ private saveResultsToSession(): void {
 
     this.safeUpdateUI();
     this.toastService.success('Paketleme ve rapor başarıyla oluşturuldu.');
+
+    // YENİ: Finalize sonrası auto-save
+    this.saveResultsToSession();
   }
 
   private handleError(error: any): void {
@@ -541,13 +674,27 @@ private saveResultsToSession(): void {
 
     if (type.includes('pdf')) {
       return 'picture_as_pdf';
-    } else if (type.includes('image') || type.includes('jpg') || type.includes('jpeg') || type.includes('png')) {
+    } else if (
+      type.includes('image') ||
+      type.includes('jpg') ||
+      type.includes('jpeg') ||
+      type.includes('png')
+    ) {
       return 'image';
-    } else if (type.includes('excel') || type.includes('sheet') || type.includes('xlsx') || type.includes('xls')) {
+    } else if (
+      type.includes('excel') ||
+      type.includes('sheet') ||
+      type.includes('xlsx') ||
+      type.includes('xls')
+    ) {
       return 'table_chart';
     } else if (type.includes('word') || type.includes('doc')) {
       return 'description';
-    } else if (type.includes('zip') || type.includes('rar') || type.includes('archive')) {
+    } else if (
+      type.includes('zip') ||
+      type.includes('rar') ||
+      type.includes('archive')
+    ) {
       return 'folder_zip';
     } else if (type.includes('text') || type.includes('txt')) {
       return 'article';
@@ -565,7 +712,12 @@ private saveResultsToSession(): void {
   // ========================================
 
   openInNewTab(): void {
-    if (!this.hasResults || !this.piecesData || this.piecesData.length === 0 || this.isDestroyed) {
+    if (
+      !this.hasResults ||
+      !this.piecesData ||
+      this.piecesData.length === 0 ||
+      this.isDestroyed
+    ) {
       this.toastService.warning('Önce optimizasyonu çalıştırın.');
       return;
     }
@@ -575,13 +727,19 @@ private saveResultsToSession(): void {
       const dimensionsStr = JSON.stringify(this.truckDimension);
 
       // Create a new window with 3D visualization
-      const newWindow = window.open('', '_blank',
-        'width=1200,height=800,scrollbars=yes,resizable=yes');
+      const newWindow = window.open(
+        '',
+        '_blank',
+        'width=1200,height=800,scrollbars=yes,resizable=yes'
+      );
 
       if (newWindow) {
         newWindow.document.write(this.createPopupHTML(dataStr, dimensionsStr));
         newWindow.document.close();
         this.popupWindow = newWindow;
+
+        // YENİ: Popup açma activity'si için auto-save
+        this.triggerAutoSave('user-action');
       }
     } catch (error) {
       console.error('❌ Yeni sekme açılırken hata oluştu:', error);
@@ -699,17 +857,26 @@ private saveResultsToSession(): void {
   // Event Handlers
   // ========================================
 
-  onPackageSelected(packageData: PackageData): void {
+  onPackageSelected(packageData: any): void {
     if (this.isDestroyed) return;
 
     console.log('📦 Paket seçildi:', packageData);
-    // Handle package selection (could show details modal, etc.)
+
+    // Package selection info'yu state'e ekleyebiliriz
+    // Bu durumda auto-save trigger edebiliriz
+    this.triggerAutoSave('user-action');
   }
 
+  /**
+   * View change'de auto-save (kullanıcı view mode değiştirirse)
+   */
   onViewChanged(viewType: string): void {
     if (this.isDestroyed) return;
 
     console.log('👁️ Görünüm değiştirildi:', viewType);
+
+    // View preference'ını kaydedebiliriz
+    this.triggerAutoSave('user-action');
   }
 
   // ========================================
@@ -723,14 +890,22 @@ private saveResultsToSession(): void {
       utilizationRate: 0,
       cogScore: 0,
       totalWeight: 0,
-      efficiency: 0
+      efficiency: 0,
     };
   }
 
   private getPackageColor(index: number): string {
     const colors = [
-      '#006A6A', '#D6BB86', '#004A4A', '#C0A670', '#8b5cf6',
-      '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'
+      '#006A6A',
+      '#D6BB86',
+      '#004A4A',
+      '#C0A670',
+      '#8b5cf6',
+      '#06b6d4',
+      '#84cc16',
+      '#f97316',
+      '#ec4899',
+      '#6366f1',
     ];
     return colors[index % colors.length];
   }
@@ -753,7 +928,9 @@ private saveResultsToSession(): void {
 
   saveResults(): void {
     if (!this.hasResults || this.isDestroyed) {
-      this.toastService.warning('Kaydetmek için önce optimizasyonu çalıştırın.');
+      this.toastService.warning(
+        'Kaydetmek için önce optimizasyonu çalıştırın.'
+      );
       return;
     }
 
@@ -764,7 +941,7 @@ private saveResultsToSession(): void {
         packagesData: this.piecesData,
         statistics: this.loadingStats,
         algorithmStats: this.algorithmStats,
-        reportFiles: this.reportFiles
+        reportFiles: this.reportFiles,
       };
 
       const dataStr = JSON.stringify(results, null, 2);
@@ -773,13 +950,18 @@ private saveResultsToSession(): void {
 
       const link = document.createElement('a');
       link.href = url;
-      link.download = `truck-loading-results-${new Date().toISOString().split('T')[0]}.json`;
+      link.download = `truck-loading-results-${
+        new Date().toISOString().split('T')[0]
+      }.json`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
       this.toastService.success('Sonuçlar başarıyla kaydedildi.');
+
+      // YENİ: Manual save sonrası auto-save trigger
+      this.triggerAutoSave('user-action');
     } catch (error) {
       console.error('❌ Sonuçları kaydetme hatası:', error);
       this.toastService.error('Sonuçlar kaydedilemedi.');
@@ -798,5 +980,95 @@ private saveResultsToSession(): void {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
 
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+
+  /**
+   * Sevkiyatı tamamla ve yeni workflow'a hazırla
+   */
+completeShipment(): void {
+    if (!this.hasResults) {
+      this.toastService.warning('Önce optimizasyonu tamamlayın');
+      return;
+    }
+
+    const confirmed = confirm(
+      'Sevkiyatı tamamlamak istediğinizden emin misiniz?\n\n' +
+      '✅ Tüm veriler kaydedilecek\n' +
+      '🗑️ Geçici veriler temizlenecek\n' +
+      '🆕 Yeni sipariş için hazırlanacak'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    console.log('🏁 Sevkiyat tamamlanıyor...');
+
+    try {
+      // 1. Final save to session (backup)
+      this.saveResultsToSession();
+
+      // 2. Auto-save history'yi temizle
+      this.autoSaveService.clearHistory();
+
+      // 3. Session'ı temizle
+      this.sessionService.clearSession();
+
+      // 4. Stepper'ı reset et
+      this.stepperService.resetStepper();
+
+      // 5. Component state'ini temizle
+      this.resetComponentState();
+
+      // 6. Success notification
+      this.toastService.success(
+        'Sevkiyat başarıyla tamamlandı! Yeni sipariş işlemeye başlayabilirsiniz.',
+        'Tamamlandı!'
+      );
+
+      // 7. YENİ: Parent'a completion signal gönder
+      setTimeout(() => {
+        this.shipmentCompleted.emit();
+        console.log('📤 Shipment completion event emitted');
+      }, 1500); // 1.5 saniye sonra navigate et (toast görünsün)
+
+      console.log('✅ Sevkiyat tamamlandı ve sistem yeni işlem için hazırlandı');
+
+    } catch (error) {
+      console.error('❌ Sevkiyat tamamlama hatası:', error);
+      this.toastService.error('Sevkiyat tamamlanırken hata oluştu');
+    }
+  }
+
+  /**
+   * Component state'ini temizle
+   */
+  private resetComponentState(): void {
+    this.hasResults = false;
+    this.showVisualization = false;
+    this.isLoading = false;
+    this.piecesData = [];
+    this.reportFiles = [];
+    this.optimizationProgress = 0;
+    this.processedPackages = [];
+
+    // Reset loading stats
+    this.loadingStats = {
+      totalPackages: 0,
+      packagesLoaded: 0,
+      utilizationRate: 0,
+      cogScore: 0,
+      totalWeight: 0,
+      efficiency: 0,
+    };
+
+    // Reset algorithm stats
+    this.algorithmStats = {
+      executionTime: 0,
+      generations: 0,
+      bestFitness: 0,
+    };
+
+    console.log('🔄 Component state reset edildi');
   }
 }

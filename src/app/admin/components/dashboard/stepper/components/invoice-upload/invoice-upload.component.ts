@@ -32,6 +32,7 @@ import { OrderDetail } from '../../../../../../models/order-detail.interface';
 import { GenericTableComponent } from '../../../../../../components/generic-table/generic-table.component';
 import { OrderDetailAddDialogComponent } from './order-detail-add-dialog/order-detail-add-dialog.component';
 import { SessionStorageService } from '../../services/session-storage.service';
+import { AutoSaveService } from '../../services/auto-save.service';
 
 // Sabit değişkenler
 const VALID_FILE_TYPES = [
@@ -77,6 +78,8 @@ export class InvoiceUploadComponent implements OnInit {
   private readonly orderService = inject(OrderService);
   private readonly dialog = inject(MatDialog);
   private readonly sessionService = inject(SessionStorageService);
+  private readonly autoSaveService = inject(AutoSaveService);
+  private lastFormState: string = '';
   //TODO: manual eklerken default order olusacak ve panelde order bilgisi o anda isaretlenip guncellenebilecek bu kismin tek eksigi bu kaldi
   // Form ve state değişkenleri
   // save changes methodu eklenecek
@@ -93,7 +96,7 @@ export class InvoiceUploadComponent implements OnInit {
   uploadForm: FormGroup;
   file: File | null = null;
   tempFile: File | null = null;
-  order!: Order;
+  order!: Order | null;
   orderDetails: OrderDetail[] = [];
   totalWeight: number = 0;
   isLoading = false;
@@ -144,11 +147,70 @@ export class InvoiceUploadComponent implements OnInit {
 
   ngOnInit(): void {
     console.log('🎬 Invoice Upload Component başlatılıyor...');
-    // Sipariş varsa, detayları yükle
     this.restoreFromSession();
 
     if (this.order?.id) {
       this.calculateTotals();
+    }
+
+    // YENİ: Form change listener'ları setup et
+    this.setupAutoSaveListeners();
+  }
+
+  /**
+   * YENİ METHOD: Auto-save listener'ları setup et
+   */
+  private setupAutoSaveListeners(): void {
+    // Form değişikliklerini takip et
+    this.uploadForm.valueChanges.subscribe(() => {
+      this.triggerAutoSave('form');
+    });
+
+    // Order changes'i takip et (manuel değişiklikler için)
+    this.watchOrderChanges();
+  }
+
+  /**
+   * YENİ METHOD: Order değişikliklerini takip et
+   */
+  private watchOrderChanges(): void {
+    // Order ve orderDetails'da değişiklik olduğunda auto-save trigger et
+    setInterval(() => {
+      const currentState = this.getCurrentFormState();
+
+      if (currentState !== this.lastFormState && this.order && this.orderDetails.length > 0) {
+        this.triggerAutoSave('user-action');
+        this.lastFormState = currentState;
+      }
+    }, 1000); // Her saniye kontrol et
+  }
+
+  /**
+   * YENİ METHOD: Current form state'i al
+   */
+  private getCurrentFormState(): string {
+    try {
+      return JSON.stringify({
+        order: this.order,
+        orderDetails: this.orderDetails,
+        hasFile: !!this.tempFile
+      });
+    } catch (error) {
+      return '';
+    }
+  }
+
+  /**
+   * YENİ METHOD: Auto-save trigger et
+   */
+  private triggerAutoSave(changeType: 'form' | 'user-action' | 'api-response' = 'user-action'): void {
+    if (this.order && this.orderDetails.length > 0) {
+      this.autoSaveService.triggerStep1AutoSave({
+        order: this.order,
+        orderDetails: this.orderDetails,
+        hasFile: !!this.tempFile,
+        fileName: this.tempFile?.name
+      }, changeType);
     }
   }
 
@@ -296,6 +358,9 @@ export class InvoiceUploadComponent implements OnInit {
         this.calculateTotals();
         this.toastService.success('Dosya İşlendi');
         this.resetForm();
+
+        // YENİ: File processing sonrası auto-save
+        this.triggerAutoSave('api-response');
       },
       error: (error) => {
         this.toastService.error('Dosya işlenirken bir hata oluştu.', error);
@@ -337,7 +402,8 @@ export class InvoiceUploadComponent implements OnInit {
       this.orderService.createOrder().subscribe({
         next: (response) => {
           this.order = response;
-          this.openOrderDetailDialog(this.order);
+          if(this.order){
+          this.openOrderDetailDialog(this.order);}
         },
         error: (error) => {
           this.toastService.error('Sipariş oluşturulurken bir hata oluştu.');
@@ -361,13 +427,13 @@ export class InvoiceUploadComponent implements OnInit {
     dialogRef.afterClosed().subscribe({
       next: (result) => {
         if (result && result.orderDetail) {
-          // Veri kaynağına yeni detayı ekle
           this.genericTable.dataSource.data.unshift(result.orderDetail);
           this.genericTable.dataSource._updateChangeSubscription();
-
-          // Toplamları güncelle
           this.calculateTotals();
           this.toastService.success('Sipariş detayı başarıyla eklendi.');
+
+          // YENİ: Dialog'dan sonra auto-save
+          this.triggerAutoSave('user-action');
         }
       },
       error: (err) => {
@@ -450,10 +516,12 @@ export class InvoiceUploadComponent implements OnInit {
 
     const index = this.orderDetails.findIndex(detay => detay.id === item.id);
     if (index !== -1) {
-      // Mevcut öğeyi güncelle
       this.orderDetails[index] = { ...this.orderDetails[index], ...data };
-      this.genericTable.dataSource.data = [...this.orderDetails]; // İmmutable güncelleme
+      this.genericTable.dataSource.data = [...this.orderDetails];
       this.calculateTotals();
+
+      // YENİ: Update sonrası auto-save
+      this.triggerAutoSave('user-action');
     }
   }
 
@@ -464,8 +532,58 @@ export class InvoiceUploadComponent implements OnInit {
     const index = this.orderDetails.findIndex((item: any) => item.id === id);
     if (index !== -1) {
       this.orderDetails = this.orderDetails.filter((item: any) => item.id !== id);
-      this.genericTable.dataSource.data = [...this.orderDetails]; // İmmutable güncelleme
+      this.genericTable.dataSource.data = [...this.orderDetails];
       this.calculateTotals();
+
+      // YENİ: Delete sonrası auto-save
+      this.triggerAutoSave('user-action');
+    }
+  }
+
+  forceSaveStep1(): void {
+    if (this.order && this.orderDetails.length > 0) {
+      this.autoSaveService.forceSave(1, {
+        order: this.order,
+        orderDetails: this.orderDetails,
+        hasFile: !!this.tempFile,
+        fileName: this.tempFile?.name
+      });
+
+      this.toastService.success('Veriler zorla kaydedildi');
+    }
+  }
+
+  resetComponentState(): void {
+    console.log('🔄 Invoice Upload component reset ediliyor...');
+
+    try {
+      // 1. Ana data properties'i reset et
+      this.order = null;
+      this.orderDetails = [];
+      this.file = null;
+      this.tempFile = null;
+      this.totalWeight = 0;
+
+      // 2. UI state'i reset et
+      this.isLoading = false;
+      this.excelUpload = false;
+      this.dataRefreshInProgress = false;
+
+      // 3. Form'u reset et
+      this.uploadForm.reset();
+
+      // 4. Generic table'ı reset et (eğer var ise)
+      if (this.genericTable?.dataSource) {
+        this.genericTable.dataSource.data = [];
+      }
+
+      // 5. Auto-save state'ini reset et
+      this.lastFormState = '';
+
+      console.log('✅ Invoice Upload component reset edildi');
+
+    } catch (error) {
+      console.error('❌ Invoice Upload reset hatası:', error);
     }
   }
 }

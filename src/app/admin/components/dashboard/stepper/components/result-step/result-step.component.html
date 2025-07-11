@@ -17,7 +17,10 @@
       </div>
       <div class="status-info">
         <span class="status-label">Yüklenecek Ürün</span>
-        <span class="status-value">{{ loadingStats.packagesLoaded || 0 }} / {{ loadingStats.totalPackages || 0 }} adet</span>
+        <span class="status-value"
+          >{{ loadingStats.packagesLoaded || 0 }} /
+          {{ loadingStats.totalPackages || 0 }} adet</span
+        >
       </div>
     </div>
 
@@ -27,7 +30,10 @@
       </div>
       <div class="status-info">
         <span class="status-label">TIR Boyutları</span>
-        <span class="status-value">{{ truckDimension[0] || 0 }} x {{ truckDimension[1] || 0 }} x {{ truckDimension[2] || 0 }} mm</span>
+        <span class="status-value"
+          >{{ truckDimension[0] || 0 }} x {{ truckDimension[1] || 0 }} x
+          {{ truckDimension[2] || 0 }} mm</span
+        >
       </div>
     </div>
 
@@ -37,7 +43,9 @@
       </div>
       <div class="status-info">
         <span class="status-label">Doluluk Oranı</span>
-        <span class="status-value" [class]="getEfficiencyClass()">{{ loadingStats.utilizationRate || 0 }}%</span>
+        <span class="status-value" [class]="getEfficiencyClass()"
+          >{{ loadingStats.utilizationRate || 0 }}%</span
+        >
       </div>
     </div>
 
@@ -47,7 +55,9 @@
       </div>
       <div class="status-info">
         <span class="status-label">COG Skoru</span>
-        <span class="status-value" [class]="getCogScoreClass()">{{ loadingStats.cogScore || 0 }}/100</span>
+        <span class="status-value" [class]="getCogScoreClass()"
+          >{{ loadingStats.cogScore || 0 }}/100</span
+        >
       </div>
     </div>
   </div>
@@ -56,33 +66,47 @@
   <div class="progress-container" *ngIf="isLoading">
     <div class="progress-header">
       <span class="progress-label">Optimizasyon İlerliyor...</span>
-      <span class="progress-percentage">{{ optimizationProgress | number:'1.0-0' }}%</span>
+      <span class="progress-percentage"
+        >{{ optimizationProgress | number : "1.0-0" }}%</span
+      >
     </div>
     <div class="progress-bar">
       <div class="progress-fill" [style.width.%]="optimizationProgress"></div>
     </div>
     <div class="progress-info">
-      <span *ngIf="optimizationProgress < 30">📊 Algoritma hazırlanıyor...</span>
-      <span *ngIf="optimizationProgress >= 30 && optimizationProgress < 70">🔄 Paketler yerleştiriliyor...</span>
-      <span *ngIf="optimizationProgress >= 70 && optimizationProgress < 90">📋 Raporlar oluşturuluyor...</span>
+      <span *ngIf="optimizationProgress < 30"
+        >📊 Algoritma hazırlanıyor...</span
+      >
+      <span *ngIf="optimizationProgress >= 30 && optimizationProgress < 70"
+        >🔄 Paketler yerleştiriliyor...</span
+      >
+      <span *ngIf="optimizationProgress >= 70 && optimizationProgress < 90"
+        >📋 Raporlar oluşturuluyor...</span
+      >
       <span *ngIf="optimizationProgress >= 90">✅ Tamamlanıyor...</span>
     </div>
   </div>
 
   <div class="controls-container">
     <div class="action-buttons">
-      <button mat-raised-button
-              class="calculate-button"
-              [disabled]="isLoading"
-              (click)="calculateBinpacking()">
-        <mat-icon>{{ isLoading ? 'hourglass_empty' : 'play_arrow' }}</mat-icon>
-        <span>{{ isLoading ? 'Hesaplanıyor...' : 'Optimizasyonu Başlat' }}</span>
+      <button
+        mat-raised-button
+        class="calculate-button"
+        [disabled]="isLoading"
+        (click)="calculateBinpacking()"
+      >
+        <mat-icon>{{ isLoading ? "hourglass_empty" : "play_arrow" }}</mat-icon>
+        <span>{{
+          isLoading ? "Hesaplanıyor..." : "Optimizasyonu Başlat"
+        }}</span>
       </button>
 
-      <button mat-raised-button
-              class="export-button"
-              [disabled]="!hasResults || isLoading"
-              (click)="openInNewTab()">
+      <button
+        mat-raised-button
+        class="export-button"
+        [disabled]="!hasResults || isLoading"
+        (click)="openInNewTab()"
+      >
         <div class="new-tab-icon">
           <div class="new-tab-square"></div>
           <div class="new-tab-arrow"></div>
@@ -92,7 +116,11 @@
     </div>
 
     <div class="view-controls">
-      <button mat-button class="view-button" [class.active]="showVisualization && hasResults">
+      <button
+        mat-button
+        class="view-button"
+        [class.active]="showVisualization && hasResults"
+      >
         <mat-icon>view_in_ar</mat-icon>
         <span>3D</span>
       </button>
@@ -112,7 +140,13 @@
     <!-- Loading Overlay -->
     <div *ngIf="isLoading" class="loading-overlay">
       <app-loading></app-loading>
-      <p class="loading-text">{{ optimizationProgress < 80 ? 'Optimizasyon hesaplanıyor...' : 'Raporlar hazırlanıyor...' }}</p>
+      <p class="loading-text">
+        {{
+          optimizationProgress < 80
+            ? "Optimizasyon hesaplanıyor..."
+            : "Raporlar hazırlanıyor..."
+        }}
+      </p>
     </div>
 
     <!-- Empty State Overlay -->
@@ -120,11 +154,24 @@
       <div class="overlay-content">
         <mat-icon class="overlay-icon">local_shipping</mat-icon>
         <h3>Optimizasyon Bekleniyor</h3>
-        <p>Tır yükleme optimizasyonunu başlatmak için yukarıdaki "Optimizasyonu Başlat" butonuna tıklayın.</p>
-        <div class="quick-stats" *ngIf="truckDimension && truckDimension.length > 0">
+        <p>
+          Tır yükleme optimizasyonunu başlatmak için yukarıdaki "Optimizasyonu
+          Başlat" butonuna tıklayın.
+        </p>
+        <div
+          class="quick-stats"
+          *ngIf="truckDimension && truckDimension.length > 0"
+        >
           <div class="quick-stat">
             <span class="stat-icon">📐</span>
-            <span>Tır Hacmi: {{ (truckDimension[0] * truckDimension[1] * truckDimension[2] / 1000000) | number:'1.0-1' }} m³</span>
+            <span
+              >Tır Hacmi:
+              {{
+                (truckDimension[0] * truckDimension[1] * truckDimension[2]) /
+                  1000000 | number : "1.0-1"
+              }}
+              m³</span
+            >
           </div>
         </div>
       </div>
@@ -138,7 +185,8 @@
       [truckDimension]="truckDimension"
       [showHelp]="true"
       (packageSelected)="onPackageSelected($event)"
-      (viewChanged)="onViewChanged($event)">
+      (viewChanged)="onViewChanged($event)"
+    >
     </app-plotly>
 
     <!-- Results Summary (visible after calculation) -->
@@ -152,7 +200,10 @@
           <div class="card-content">
             <div class="big-number">{{ loadingStats.packagesLoaded }}</div>
             <div class="card-label">Paket Yüklendi</div>
-            <div class="card-detail">{{ loadingStats.totalPackages }} paketten {{ loadingStats.packagesLoaded }} tanesi yüklendi</div>
+            <div class="card-detail">
+              {{ loadingStats.totalPackages }} paketten
+              {{ loadingStats.packagesLoaded }} tanesi yüklendi
+            </div>
           </div>
         </div>
 
@@ -164,7 +215,10 @@
           <div class="card-content">
             <div class="big-number">%{{ loadingStats.utilizationRate }}</div>
             <div class="card-label">Doluluk Oranı</div>
-            <div class="card-detail">{{ loadingStats.totalWeight | number:'1.0-0' }} kg toplam ağırlık</div>
+            <div class="card-detail">
+              {{ loadingStats.totalWeight | number : "1.0-0" }} kg toplam
+              ağırlık
+            </div>
           </div>
         </div>
 
@@ -177,16 +231,35 @@
             <div class="big-number">{{ loadingStats.cogScore }}/100</div>
             <div class="card-label">COG Skoru</div>
             <div class="card-detail">
-              <span *ngIf="loadingStats.cogScore >= 80" class="status-excellent">Mükemmel denge</span>
-              <span *ngIf="loadingStats.cogScore >= 60 && loadingStats.cogScore < 80" class="status-good">İyi denge</span>
-              <span *ngIf="loadingStats.cogScore >= 40 && loadingStats.cogScore < 60" class="status-warning">Orta denge</span>
-              <span *ngIf="loadingStats.cogScore < 40" class="status-poor">Dikkat gerekli</span>
+              <span *ngIf="loadingStats.cogScore >= 80" class="status-excellent"
+                >Mükemmel denge</span
+              >
+              <span
+                *ngIf="
+                  loadingStats.cogScore >= 60 && loadingStats.cogScore < 80
+                "
+                class="status-good"
+                >İyi denge</span
+              >
+              <span
+                *ngIf="
+                  loadingStats.cogScore >= 40 && loadingStats.cogScore < 60
+                "
+                class="status-warning"
+                >Orta denge</span
+              >
+              <span *ngIf="loadingStats.cogScore < 40" class="status-poor"
+                >Dikkat gerekli</span
+              >
             </div>
           </div>
         </div>
 
         <!-- Algorithm Performance Card (if data available) -->
-        <div class="summary-card secondary" *ngIf="algorithmStats.executionTime > 0">
+        <div
+          class="summary-card secondary"
+          *ngIf="algorithmStats.executionTime > 0"
+        >
           <div class="card-header">
             <mat-icon>speed</mat-icon>
             <h4>Algoritma Performansı</h4>
@@ -195,7 +268,9 @@
             <div class="performance-stats">
               <div class="perf-item">
                 <span class="perf-label">Süre:</span>
-                <span class="perf-value">{{ algorithmStats.executionTime | number:'1.1-1' }}s</span>
+                <span class="perf-value"
+                  >{{ algorithmStats.executionTime | number : "1.1-1" }}s</span
+                >
               </div>
               <div class="perf-item">
                 <span class="perf-label">Nesil:</span>
@@ -203,7 +278,9 @@
               </div>
               <div class="perf-item">
                 <span class="perf-label">Fitness:</span>
-                <span class="perf-value">{{ algorithmStats.bestFitness | number:'1.1-1' }}%</span>
+                <span class="perf-value"
+                  >{{ algorithmStats.bestFitness | number : "1.1-1" }}%</span
+                >
               </div>
             </div>
           </div>
@@ -217,24 +294,36 @@
     <div class="report-files-header">
       <mat-icon>description</mat-icon>
       <span>Sevkiyat Raporları ve Dosyalar</span>
-      <span class="file-count" *ngIf="reportFiles && reportFiles.length > 0">({{ reportFiles.length }})</span>
+      <span class="file-count" *ngIf="reportFiles && reportFiles.length > 0"
+        >({{ reportFiles.length }})</span
+      >
     </div>
     <div class="report-files-list">
-      <div class="report-file-item" *ngFor="let file of reportFiles; trackBy: trackByFileId">
+      <div
+        class="report-file-item"
+        *ngFor="let file of reportFiles; trackBy: trackByFileId"
+      >
         <div class="file-icon">
-          <mat-icon [ngClass]="'file-type-' + getFileIcon(file.type)">{{ getFileIcon(file.type) }}</mat-icon>
+          <mat-icon [ngClass]="'file-type-' + getFileIcon(file.type)">{{
+            getFileIcon(file.type)
+          }}</mat-icon>
         </div>
         <div class="file-info">
           <a [href]="file.file" target="_blank" class="file-link">
             <span class="file-name">{{ file.name }}</span>
-            <span class="file-size" *ngIf="file.size">{{ formatFileSize(file.size) }}</span>
+            <span class="file-size" *ngIf="file.size">{{
+              formatFileSize(file.size)
+            }}</span>
             <mat-icon class="download-icon">open_in_new</mat-icon>
           </a>
         </div>
       </div>
       <div class="empty-files" *ngIf="!reportFiles || reportFiles.length === 0">
         <mat-icon>info</mat-icon>
-        <span>Henüz rapor dosyası oluşturulmadı. Optimizasyon tamamlandıktan sonra raporlar burada görünecek.</span>
+        <span
+          >Henüz rapor dosyası oluşturulmadı. Optimizasyon tamamlandıktan sonra
+          raporlar burada görünecek.</span
+        >
       </div>
     </div>
   </div>
@@ -265,9 +354,15 @@
     <div class="interaction-help">
       <h4>Etkileşim Kontrolleri:</h4>
       <div class="help-items">
-        <span class="help-item">🖱️ <strong>Sol Tık + Sürükle:</strong> Döndür</span>
-        <span class="help-item">🔄 <strong>Tekerlek:</strong> Yakınlaştır/Uzaklaştır</span>
-        <span class="help-item">🖱️ <strong>Sağ Tık + Sürükle:</strong> Kaydır</span>
+        <span class="help-item"
+          >🖱️ <strong>Sol Tık + Sürükle:</strong> Döndür</span
+        >
+        <span class="help-item"
+          >🔄 <strong>Tekerlek:</strong> Yakınlaştır/Uzaklaştır</span
+        >
+        <span class="help-item"
+          >🖱️ <strong>Sağ Tık + Sürükle:</strong> Kaydır</span
+        >
       </div>
     </div>
   </div>
@@ -280,17 +375,21 @@
     </button>
 
     <div class="finish-actions">
-      <button mat-stroked-button
-              class="save-button"
-              [disabled]="!hasResults"
-              (click)="saveResults()">
+      <button
+        mat-stroked-button
+        class="save-button"
+        [disabled]="!hasResults"
+        (click)="saveResults()"
+      >
         <mat-icon>save</mat-icon>
         <span>Sonuçları Kaydet</span>
       </button>
 
-      <button mat-raised-button
-              class="finish-button"
-              [disabled]="!hasResults">
+      <button
+        mat-raised-button
+        class="finish-button"
+        [disabled]="!hasResults"
+        (click)="completeShipment()">
         <mat-icon>check</mat-icon>
         <span>Sevkiyatı Tamamla</span>
       </button>

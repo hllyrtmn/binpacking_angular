@@ -30,8 +30,10 @@ import { SessionStorageService } from './services/session-storage.service';
   styleUrl: './stepper.component.scss'
 })
 export class StepperComponent {
-
+  @ViewChild('stepper') stepper!: MatStepper;
+  @ViewChild('invoiceUploadComponent') invoiceUploadComponent!: InvoiceUploadComponent;
   @ViewChild('palletControlComponent') palletControlComponent!: PalletControlComponent;
+  @ViewChild('resultStepComponent') resultStepComponent!: ResultStepComponent;
   private sessionService = inject(SessionStorageService);
   order_id: string = '';
 
@@ -39,7 +41,97 @@ export class StepperComponent {
 
   selectedIndex: number = 0;
 
+  ngOnInit() {
+    // Mevcut kodunuz...
+
+    // Session ile sync yap
+    this.stepperService.syncWithSession();
+  }
+
   logger = (item: any) => console.log(item);
+
+   onShipmentCompleted(): void {
+    console.log('🔄 Shipment completed, starting full reset process...');
+
+    try {
+      // 1. Tüm component'leri reset et
+      this.resetAllComponents();
+
+      // 2. Stepper navigation
+      if (this.stepper) {
+        console.log('🎯 Navigating to Step 1...');
+
+        // Linear mode'u kapat
+        this.stepper.linear = false;
+
+        // Step 1'e git
+        this.stepper.selectedIndex = 0;
+
+        // 1 saniye sonra linear mode'u tekrar aç
+        setTimeout(() => {
+          if (this.stepper) {
+            this.stepper.linear = true;
+            this.resetStepEditableStates();
+            console.log('✅ Full reset completed - ready for new workflow');
+          }
+        }, 1000);
+
+      } else {
+        console.error('❌ Stepper reference bulunamadı!');
+      }
+
+    } catch (error) {
+      console.error('❌ Full reset hatası:', error);
+    }
+  }
+
+  private resetAllComponents(): void {
+    console.log('🔄 Tüm componentler reset ediliyor...');
+
+    try {
+      // Invoice Upload reset
+      if (this.invoiceUploadComponent) {
+        this.invoiceUploadComponent.resetComponentState();
+      } else {
+        console.warn('⚠️ Invoice Upload component reference bulunamadı');
+      }
+
+      // Pallet Control reset
+      if (this.palletControlComponent) {
+        this.palletControlComponent.resetComponentState();
+      } else {
+        console.warn('⚠️ Pallet Control component reference bulunamadı');
+      }
+
+      // Result Step zaten kendi reset'ini yapıyor
+
+      console.log('✅ Tüm componentler reset edildi');
+
+    } catch (error) {
+      console.error('❌ Component reset hatası:', error);
+    }
+  }
+
+  private resetStepEditableStates(): void {
+    try {
+      console.log('⚙️ Step editable states reset ediliyor...');
+
+      // Step 1'i editable yap, diğerlerini kapat
+      this.stepperService.setStepStatus(1, STATUSES.editable, true);
+      this.stepperService.setStepStatus(2, STATUSES.editable, false);
+      this.stepperService.setStepStatus(3, STATUSES.editable, false);
+
+      // Completion durumlarını da reset et
+      this.stepperService.setStepStatus(1, STATUSES.completed, false);
+      this.stepperService.setStepStatus(2, STATUSES.completed, false);
+      this.stepperService.setStepStatus(3, STATUSES.completed, false);
+
+      console.log('✅ Step states reset edildi');
+
+    } catch (error) {
+      console.error('❌ Step states reset hatası:', error);
+    }
+  }
 
   orderIdComeOn(id: string) {
     this.order_id = id;

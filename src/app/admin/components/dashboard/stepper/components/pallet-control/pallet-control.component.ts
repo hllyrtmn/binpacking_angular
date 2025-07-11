@@ -31,6 +31,7 @@ import { ToastService } from '../../../../../../services/toast.service';
 import { mapPackageToPackageDetail } from '../../../../../../models/mappers/package-detail.mapper';
 import { StepperStore, STATUSES } from '../../services/stepper.store';
 import { SessionStorageService } from '../../services/session-storage.service';
+import { AutoSaveService } from '../../services/auto-save.service';
 
 @Component({
   selector: 'app-pallet-control',
@@ -57,6 +58,12 @@ export class PalletControlComponent implements OnInit {
   toastService: ToastService = inject(ToastService);
   stepperService = inject(StepperStore);
   private readonly sessionService = inject(SessionStorageService);
+  private readonly autoSaveService = inject(AutoSaveService);
+
+  // YENİ: Form change tracking
+  private lastPackageState: string = '';
+  private autoSaveTimeout: any;
+  private isDragInProgress: boolean = false;
   // Main data properties
   packages: UiPackage[] = [];
   availableProducts: UiProduct[] = [];
@@ -96,76 +103,220 @@ export class PalletControlComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-  console.log('🎬 Pallet Control Component başlatılıyor...');
+  // YENİ METHOD: Force save (emergency durumlar için)
+  forceSaveStep2(): void {
+    this.autoSaveService.forceSave(2, {
+      packages: this.packages,
+      totalWeight: this.totalWeight,
+      totalMeter: this.totalMeter,
+      remainingVolume: this.remainingVolume,
+      remainingWeight: this.remainingWeight
+    });
 
-  // Step 1 kontrolü
-  if (!this.sessionService.isStepCompleted(1)) {
-    this.toastService.warning('Önce sipariş bilgilerini tamamlayın');
-    return;
+    this.toastService.success('Pallet verileri zorla kaydedildi');
   }
 
-  // Session restore
-  this.restoreFromSession();
-}
+  /**
+   * Component destroy'da cleanup
+   */
+  ngOnDestroy(): void {
+    if (this.autoSaveTimeout) {
+      clearTimeout(this.autoSaveTimeout);
+    }
+  }
 
-private restoreFromSession(): void {
-  console.log('📖 Pallet Control - Session\'dan veri restore ediliyor...');
+  ngOnInit(): void {
+    console.log('🎬 Pallet Control Component başlatılıyor...');
 
-  try {
-    const restoredPackages = this.sessionService.restoreStep2Data();
+    // Step 1 kontrolü
+    if (!this.sessionService.isStepCompleted(1)) {
+      this.toastService.warning('Önce sipariş bilgilerini tamamlayın');
+      return;
+    }
 
-    if (restoredPackages && restoredPackages.length > 0) {
-      console.log('✅ Step 2 session\'dan veriler bulundu:', restoredPackages);
+    // Session restore
+    this.restoreFromSession();
+    this.setupAutoSaveListeners();
+  }
 
-      this.packages = restoredPackages.map(pkg => new UiPackage(pkg));
-      this.loadPallets();
-      this.updateAllCalculations();
+  resetComponentState(): void {
+    console.log('🔄 Pallet Control component reset ediliyor...');
 
-      this.toastService.info('Pallet konfigürasyonunuz restore edildi');
-    } else {
-      console.log('ℹ️ Step 2 session\'da veri yok, component\'i yapılandırıyoruz');
+    try {
+      // 1. Ana data properties'i reset et
+      this.packages = [];
+      this.availableProducts = [];
+      this.availablePallets = [];
+      this.selectedPallets = [];
+      this.order = null;
+
+      // 2. Calculation values'ı reset et
+      this.remainingVolume = 0;
+      this.remainingWeight = 0;
+      this.totalWeight = 0;
+      this.totalMeter = 0;
+
+      // 3. Drag state'i reset et
+      this.currentDraggedProduct = null;
+      this.isDragInProgress = false;
+
+      // 4. Form'u reset et
+      this.secondFormGroup.reset();
+
+      // 5. Cache'i temizle
+      this._calculationCache.clear();
+      this._lastCalculationHash = '';
+      this._activePalletWeights = [];
+
+      // 6. Auto-save state'ini reset et
+      this.lastPackageState = '';
+      if (this.autoSaveTimeout) {
+        clearTimeout(this.autoSaveTimeout);
+        this.autoSaveTimeout = null;
+      }
+
+      // 7. Clone count'ı reset et
+      this.cloneCount = 1;
+
+      console.log('✅ Pallet Control component reset edildi');
+
+    } catch (error) {
+      console.error('❌ Pallet Control reset hatası:', error);
+    }
+  }
+
+  private setupAutoSaveListeners(): void {
+    this.watchPackageChanges();
+
+    this.secondFormGroup.valueChanges.subscribe(() => {
+      this.triggerAutoSave('form');
+    });
+  }
+
+  private watchPackageChanges(): void {
+    setInterval(() => {
+      if (this.isDragInProgress) {
+        return;
+      }
+
+      const currentState = this.getCurrentPackageState();
+
+      if (currentState !== this.lastPackageState && this.packages.length > 0) {
+        this.triggerAutoSave('user-action');
+        this.lastPackageState = currentState;
+      }
+    }, 1500);
+  }
+
+  private getCurrentPackageState(): string {
+    try {
+      const packageSummary = this.packages.map((pkg) => ({
+        id: pkg.id,
+        palletId: pkg.pallet?.id,
+        productCount: pkg.products.length,
+        totalWeight: pkg.totalWeight,
+        totalVolume: pkg.totalVolume,
+      }));
+
+      return JSON.stringify({
+        packages: packageSummary,
+        totalPackages: this.packages.length,
+        totalWeight: this.totalWeight,
+        remainingVolume: this.remainingVolume,
+      });
+    } catch (error) {
+      return '';
+    }
+  }
+
+  private triggerAutoSave(
+    changeType:
+      | 'form'
+      | 'drag-drop'
+      | 'user-action'
+      | 'api-response' = 'user-action'
+  ): void {
+    if (this.autoSaveTimeout) {
+      clearTimeout(this.autoSaveTimeout);
+    }
+
+    this.autoSaveTimeout = setTimeout(
+      () => {
+        if (this.packages.length > 0) {
+          this.autoSaveService.triggerStep2AutoSave(
+            {
+              packages: this.packages,
+              totalWeight: this.totalWeight,
+              totalMeter: this.totalMeter,
+              remainingVolume: this.remainingVolume,
+              remainingWeight: this.remainingWeight,
+            },
+            changeType
+          );
+        }
+      },
+      changeType === 'drag-drop' ? 1000 : 500
+    );
+  }
+
+  private restoreFromSession(): void {
+    console.log("📖 Pallet Control - Session'dan veri restore ediliyor...");
+
+    try {
+      const restoredPackages = this.sessionService.restoreStep2Data();
+
+      if (restoredPackages && restoredPackages.length > 0) {
+        console.log("✅ Step 2 session'dan veriler bulundu:", restoredPackages);
+
+        this.packages = restoredPackages.map((pkg) => new UiPackage(pkg));
+        this.loadPallets();
+        this.updateAllCalculations();
+
+        this.toastService.info('Pallet konfigürasyonunuz restore edildi');
+      } else {
+        console.log(
+          "ℹ️ Step 2 session'da veri yok, component'i yapılandırıyoruz"
+        );
+        this.configureComponent();
+      }
+    } catch (error) {
+      console.error('❌ Pallet session restore hatası:', error);
       this.configureComponent();
     }
-  } catch (error) {
-    console.error('❌ Pallet session restore hatası:', error);
-    this.configureComponent();
-  }
-}
-
-private saveCurrentStateToSession(): void {
-  try {
-    console.log('💾 Mevcut pallet state session\'a kaydediliyor...');
-    this.sessionService.saveStep2Data(this.packages);
-    console.log('✅ Pallet state session\'a kaydedildi');
-  } catch (error) {
-    console.error('❌ Pallet state session\'a kaydedilemedi:', error);
-  }
-}
-
-private autoSaveTimeout: any;
-
-private autoSaveToSession(): void {
-  if (this.autoSaveTimeout) {
-    clearTimeout(this.autoSaveTimeout);
   }
 
-  this.autoSaveTimeout = setTimeout(() => {
-    this.saveCurrentStateToSession();
-  }, 2000);
-}
+  private saveCurrentStateToSession(): void {
+    try {
+      console.log("💾 Mevcut pallet state session'a kaydediliyor...");
+      this.sessionService.saveStep2Data(this.packages);
+      console.log("✅ Pallet state session'a kaydedildi");
+    } catch (error) {
+      console.error("❌ Pallet state session'a kaydedilemedi:", error);
+    }
+  }
+
+  private autoSaveToSession(): void {
+    if (this.autoSaveTimeout) {
+      clearTimeout(this.autoSaveTimeout);
+    }
+
+    this.autoSaveTimeout = setTimeout(() => {
+      this.saveCurrentStateToSession();
+    }, 2000);
+  }
 
   /* =====================
      COMPONENT SETUP
   ===================== */
   configureComponent(): void {
+    console.log('⚙️ Pallet component yapılandırılıyor...');
+
     this.loadPallets();
     this.repository.calculatePackageDetail().subscribe({
       next: (response) => {
         this.packages = response;
         this.order = this.packages[0].order;
 
-        // Convert all products to UiProduct instances
         this.packages.forEach((pkg, index) => {
           if (pkg.pallet) {
             pkg.pallet.id = pkg.pallet.id + '/' + index;
@@ -177,10 +328,11 @@ private autoSaveToSession(): void {
         this.availableProducts = this.ensureUiProducts(this.availableProducts);
         this.addNewEmptyPackage();
         this.updateAllCalculations();
+
+        // YENİ: Configuration sonrası auto-save
+        this.triggerAutoSave('api-response');
       },
     });
-    console.log('💾 İlk pallet konfigürasyonu session\'a kaydediliyor...');
-    this.saveCurrentStateToSession();
   }
 
   loadPallets(): void {
@@ -199,9 +351,14 @@ private autoSaveToSession(): void {
    * Get calculation hash for cache validation
    */
   private getCalculationHash(): string {
-    return this.packages.map(pkg =>
-      `${pkg.pallet?.id || 'null'}-${pkg.products.length}-${pkg.products.reduce((sum, p) => sum + p.count, 0)}`
-    ).join('|');
+    return this.packages
+      .map(
+        (pkg) =>
+          `${pkg.pallet?.id || 'null'}-${
+            pkg.products.length
+          }-${pkg.products.reduce((sum, p) => sum + p.count, 0)}`
+      )
+      .join('|');
   }
 
   /**
@@ -288,7 +445,8 @@ private autoSaveToSession(): void {
       return total + palletVolume + productsVolume;
     }, 0);
 
-    const trailerVolume = this.trailer.depth * this.trailer.height * this.trailer.width;
+    const trailerVolume =
+      this.trailer.depth * this.trailer.height * this.trailer.width;
     this.remainingVolume = Math.floor((trailerVolume - totalVolume) / 1000);
 
     this._calculationCache.set(cacheKey, this.remainingVolume);
@@ -322,7 +480,7 @@ private autoSaveToSession(): void {
 
     this._calculationCache.set(cacheKey, {
       total: this.totalWeight,
-      remaining: this.remainingWeight
+      remaining: this.remainingWeight,
     });
   }
 
@@ -337,17 +495,21 @@ private autoSaveToSession(): void {
       return;
     }
 
-    this.totalMeter = this.packages.reduce((total, pkg) => {
-      if (pkg.products.length === 0) return total;
+    this.totalMeter =
+      this.packages.reduce((total, pkg) => {
+        if (pkg.products.length === 0) return total;
 
-      const packageMeter = pkg.products.reduce(
-        (pTotal, product) =>
-          pTotal + Math.round(Math.floor(product.count * Math.floor(product.dimension.depth))),
-        0
-      );
+        const packageMeter = pkg.products.reduce(
+          (pTotal, product) =>
+            pTotal +
+            Math.round(
+              Math.floor(product.count * Math.floor(product.dimension.depth))
+            ),
+          0
+        );
 
-      return total + packageMeter;
-    }, 0) / 1000;
+        return total + packageMeter;
+      }, 0) / 1000;
 
     this._calculationCache.set(cacheKey, this.totalMeter);
   }
@@ -356,7 +518,9 @@ private autoSaveToSession(): void {
    * Calculate package total weight with caching
    */
   packageTotalWeight(pkg: UiPackage): number {
-    const cacheKey = `pkg-weight-${pkg.pallet?.id || 'null'}-${pkg.products.length}`;
+    const cacheKey = `pkg-weight-${pkg.pallet?.id || 'null'}-${
+      pkg.products.length
+    }`;
 
     if (this._calculationCache.has(cacheKey)) {
       return this._calculationCache.get(cacheKey);
@@ -364,7 +528,8 @@ private autoSaveToSession(): void {
 
     const palletWeight = Math.floor(pkg.pallet?.weight ?? 0);
     const productsWeight = pkg.products.reduce(
-      (total, product) => total + Math.floor(product.weight_type.std * product.count),
+      (total, product) =>
+        total + Math.floor(product.weight_type.std * product.count),
       0
     );
 
@@ -424,8 +589,12 @@ private autoSaveToSession(): void {
     }
 
     // Check both normal and rotated orientations
-    const normalFit = (safeProductWidth <= safePalletWidth && safeProductDepth <= safePalletDepth);
-    const rotatedFit = (safeProductWidth <= safePalletDepth && safeProductDepth <= safePalletWidth);
+    const normalFit =
+      safeProductWidth <= safePalletWidth &&
+      safeProductDepth <= safePalletDepth;
+    const rotatedFit =
+      safeProductWidth <= safePalletDepth &&
+      safeProductDepth <= safePalletWidth;
 
     return normalFit || rotatedFit;
   }
@@ -439,21 +608,23 @@ private autoSaveToSession(): void {
     existingProducts: UiProduct[]
   ): boolean {
     // Calculate pallet total volume
-    const palletTotalVolume = this.safeNumber(pallet.dimension.width) *
-                              this.safeNumber(pallet.dimension.depth) *
-                              this.safeNumber(pallet.dimension.height);
+    const palletTotalVolume =
+      this.safeNumber(pallet.dimension.width) *
+      this.safeNumber(pallet.dimension.depth) *
+      this.safeNumber(pallet.dimension.height);
 
     // Calculate used volume
     const usedVolume = this.calculateUsedVolume(existingProducts);
 
     // Calculate new product volume
-    const newProductVolume = this.safeNumber(product.dimension.width) *
-                            this.safeNumber(product.dimension.depth) *
-                            this.safeNumber(product.dimension.height) *
-                            this.safeNumber(product.count);
+    const newProductVolume =
+      this.safeNumber(product.dimension.width) *
+      this.safeNumber(product.dimension.depth) *
+      this.safeNumber(product.dimension.height) *
+      this.safeNumber(product.count);
 
     // Check if it fits
-    return newProductVolume <= (palletTotalVolume - usedVolume);
+    return newProductVolume <= palletTotalVolume - usedVolume;
   }
 
   /**
@@ -463,10 +634,11 @@ private autoSaveToSession(): void {
     if (products.length === 0) return 0;
 
     return products.reduce((total, product) => {
-      const volume = this.safeNumber(product.dimension.width) *
-                    this.safeNumber(product.dimension.depth) *
-                    this.safeNumber(product.dimension.height) *
-                    this.safeNumber(product.count);
+      const volume =
+        this.safeNumber(product.dimension.width) *
+        this.safeNumber(product.dimension.depth) *
+        this.safeNumber(product.dimension.height) *
+        this.safeNumber(product.count);
       return total + volume;
     }, 0);
   }
@@ -498,10 +670,14 @@ private autoSaveToSession(): void {
   /**
    * Get remaining pallet volume
    */
-  getRemainingPalletVolume(pallet: UiPallet, existingProducts: UiProduct[]): number {
-    const palletTotalVolume = this.safeNumber(pallet.dimension.width) *
-                              this.safeNumber(pallet.dimension.depth) *
-                              this.safeNumber(pallet.dimension.height);
+  getRemainingPalletVolume(
+    pallet: UiPallet,
+    existingProducts: UiProduct[]
+  ): number {
+    const palletTotalVolume =
+      this.safeNumber(pallet.dimension.width) *
+      this.safeNumber(pallet.dimension.depth) *
+      this.safeNumber(pallet.dimension.height);
     const usedVolume = this.calculateUsedVolume(existingProducts);
     return Math.max(0, palletTotalVolume - usedVolume);
   }
@@ -509,10 +685,14 @@ private autoSaveToSession(): void {
   /**
    * Get pallet fill percentage
    */
-  getPalletFillPercentage(pallet: UiPallet, existingProducts: UiProduct[]): number {
-    const palletTotalVolume = this.safeNumber(pallet.dimension.width) *
-                              this.safeNumber(pallet.dimension.depth) *
-                              this.safeNumber(pallet.dimension.height);
+  getPalletFillPercentage(
+    pallet: UiPallet,
+    existingProducts: UiProduct[]
+  ): number {
+    const palletTotalVolume =
+      this.safeNumber(pallet.dimension.width) *
+      this.safeNumber(pallet.dimension.depth) *
+      this.safeNumber(pallet.dimension.height);
     const usedVolume = this.calculateUsedVolume(existingProducts);
     return Math.round((usedVolume / palletTotalVolume) * 100);
   }
@@ -520,15 +700,23 @@ private autoSaveToSession(): void {
   /**
    * Get maximum product count that fits in pallet
    */
-  getMaxProductCount(product: UiProduct, pallet: UiPallet, existingProducts: UiProduct[]): number {
+  getMaxProductCount(
+    product: UiProduct,
+    pallet: UiPallet,
+    existingProducts: UiProduct[]
+  ): number {
     if (!this.checkDimensionsFit(product, pallet)) {
       return 0;
     }
 
-    const remainingVolume = this.getRemainingPalletVolume(pallet, existingProducts);
-    const singleProductVolume = this.safeNumber(product.dimension.width) *
-                                this.safeNumber(product.dimension.depth) *
-                                this.safeNumber(product.dimension.height);
+    const remainingVolume = this.getRemainingPalletVolume(
+      pallet,
+      existingProducts
+    );
+    const singleProductVolume =
+      this.safeNumber(product.dimension.width) *
+      this.safeNumber(product.dimension.depth) *
+      this.safeNumber(product.dimension.height);
 
     return Math.floor(remainingVolume / singleProductVolume);
   }
@@ -569,7 +757,10 @@ private autoSaveToSession(): void {
   /**
    * Replace product in list
    */
-  private replaceProductInList(oldProduct: UiProduct, newProducts: UiProduct[]): void {
+  private replaceProductInList(
+    oldProduct: UiProduct,
+    newProducts: UiProduct[]
+  ): void {
     const index = this.availableProducts.indexOf(oldProduct);
     if (index !== -1) {
       this.availableProducts.splice(index, 1, ...newProducts);
@@ -592,10 +783,13 @@ private autoSaveToSession(): void {
       if (existing) {
         existing.count += uiProduct.count;
       } else {
-        consolidatedMap.set(mainId, new UiProduct({
-          ...uiProduct,
-          id: mainId,
-        }));
+        consolidatedMap.set(
+          mainId,
+          new UiProduct({
+            ...uiProduct,
+            id: mainId,
+          })
+        );
       }
     }
 
@@ -609,7 +803,8 @@ private autoSaveToSession(): void {
   /**
    * Drop product to pallet - Optimized
    */
-  dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
+dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
+    // Mevcut drop logic'i aynı kalacak...
     const product = event.previousContainer.data[event.previousIndex];
     const targetPalletId = event.container.id;
     const targetPackage = this.packages.find(
@@ -667,12 +862,16 @@ private autoSaveToSession(): void {
     }
 
     this.updateAllCalculations();
+
+    // YENİ: Drop sonrası auto-save
+    this.triggerAutoSave('drag-drop');
   }
 
   /**
    * Drop pallet to package
    */
   dropPalletToPackage(event: CdkDragDrop<any>): void {
+    // Mevcut logic aynı kalacak...
     if (event.previousContainer === event.container) {
       return;
     }
@@ -694,16 +893,21 @@ private autoSaveToSession(): void {
     this.packages[packageIndex].pallet = palletClone;
     this.selectedPallets.push(palletClone);
     this.addNewEmptyPackage();
+
+    // YENİ: Pallet drop sonrası auto-save
+    this.triggerAutoSave('drag-drop');
   }
 
   /**
    * Drag started - Optimized
    */
   dragStarted(event: CdkDragStart): void {
+    this.isDragInProgress = true;
+
     const product = event.source.data as UiProduct;
     this.currentDraggedProduct = product;
 
-    // Batch DOM operations
+    // Mevcut fitting logic...
     const palletElements = new Map<string, HTMLElement>();
 
     this.packages.forEach((pkg, index) => {
@@ -715,7 +919,6 @@ private autoSaveToSession(): void {
       }
     });
 
-    // Process fitting checks and update UI
     this.packages.forEach((pkg, index) => {
       if (pkg.pallet) {
         const canFit = this.canFitProductToPallet(product, pkg.pallet, pkg.products);
@@ -754,10 +957,17 @@ private autoSaveToSession(): void {
    * Drag ended event
    */
   dragEnded(): void {
+    this.isDragInProgress = false;
     this.currentDraggedProduct = null;
+
     document.querySelectorAll('.can-drop, .cannot-drop').forEach((el) => {
       el.classList.remove('can-drop', 'cannot-drop');
     });
+
+    // YENİ: Drag işlemi bitince auto-save trigger et
+    setTimeout(() => {
+      this.triggerAutoSave('drag-drop');
+    }, 500); // 500ms sonra kaydet
   }
 
   /* =====================
@@ -768,22 +978,31 @@ private autoSaveToSession(): void {
    * Optimized split product method
    */
   splitProduct(product: UiProduct, splitCount?: number | null): void {
+    // Mevcut split logic...
     const uiProduct = this.ensureUiProductInstance(product);
     const validatedCount = this.validateSplitCount(uiProduct, splitCount);
 
     if (validatedCount === null) return;
 
     this.performSplit(uiProduct, validatedCount);
+
+    // YENİ: Split sonrası auto-save
+    this.triggerAutoSave('user-action');
   }
 
   /**
    * Validate split count
    */
-  private validateSplitCount(product: UiProduct, splitCount?: number | null): number | null {
+  private validateSplitCount(
+    product: UiProduct,
+    splitCount?: number | null
+  ): number | null {
     if (splitCount !== undefined && splitCount !== null) {
       if (splitCount <= 0 || splitCount >= product.count) {
         this.toastService.warning(
-          `Geçersiz adet girişi. 1 ile ${product.count - 1} arasında bir değer giriniz.`,
+          `Geçersiz adet girişi. 1 ile ${
+            product.count - 1
+          } arasında bir değer giriniz.`,
           'Uyarı'
         );
         return null;
@@ -821,7 +1040,9 @@ private autoSaveToSession(): void {
       this.replaceProductInList(product, [firstPart, secondPart]);
 
       this.toastService.success(
-        `${product.name} ${splitCount} ve ${product.count - splitCount} adet olarak bölündü.`,
+        `${product.name} ${splitCount} ve ${
+          product.count - splitCount
+        } adet olarak bölündü.`,
         'Başarılı'
       );
     } else {
@@ -839,11 +1060,14 @@ private autoSaveToSession(): void {
   /**
    * Remove product from package
    */
-  removeProductFromPackage(pkg: UiPackage, productIndex: number): void {
+   removeProductFromPackage(pkg: UiPackage, productIndex: number): void {
     const removedProduct = pkg.products.splice(productIndex, 1)[0];
     const uiProduct = this.ensureUiProduct(removedProduct);
     this.availableProducts.push(uiProduct);
     this.updateAllCalculations();
+
+    // YENİ: Remove sonrası auto-save
+    this.triggerAutoSave('user-action');
   }
 
   /**
@@ -869,50 +1093,53 @@ private autoSaveToSession(): void {
     this.updateAllCalculations();
 
     this.toastService.success('Tüm paletler temizlendi.', 'Başarılı');
+
+    // YENİ: Remove all sonrası auto-save
+    this.triggerAutoSave('user-action');
   }
   removePackage(packageToRemove: any): void {
-  // Referans ile karşılaştır, eğer ID varsa ID ile de karşılaştır
-  const packageIndex = this.packages.findIndex(pkg =>
-    pkg === packageToRemove || (pkg.id && packageToRemove.id && pkg.id === packageToRemove.id)
-  );
+    // Mevcut logic...
+    const packageIndex = this.packages.findIndex(pkg =>
+      pkg === packageToRemove || (pkg.id && packageToRemove.id && pkg.id === packageToRemove.id)
+    );
 
-  if (packageIndex === -1) {
-    this.toastService.error('Paket bulunamadı.', 'Hata');
-    return;
-  }
-
-  const pkg = this.packages[packageIndex];
-
-  // Package içindeki ürünleri available products'a geri ekle
-  if (pkg.products?.length > 0) {
-    const productsToReturn = this.ensureUiProducts(pkg.products);
-    this.availableProducts.push(...productsToReturn);
-    this.availableProducts = this.consolidateProducts(this.availableProducts);
-  }
-
-  // Eğer package'ın paleti varsa, selected pallets'tan kaldır
-  if (pkg.pallet) {
-    const palletIndex = this.selectedPallets.findIndex(pallet => pallet === pkg.pallet);
-    if (palletIndex !== -1) {
-      this.selectedPallets.splice(palletIndex, 1);
+    if (packageIndex === -1) {
+      this.toastService.error('Paket bulunamadı.', 'Hata');
+      return;
     }
+
+    const pkg = this.packages[packageIndex];
+
+    if (pkg.products?.length > 0) {
+      const productsToReturn = this.ensureUiProducts(pkg.products);
+      this.availableProducts.push(...productsToReturn);
+      this.availableProducts = this.consolidateProducts(this.availableProducts);
+    }
+
+    if (pkg.pallet) {
+      const palletIndex = this.selectedPallets.findIndex(pallet => pallet === pkg.pallet);
+      if (palletIndex !== -1) {
+        this.selectedPallets.splice(palletIndex, 1);
+      }
+    }
+
+    this.packages.splice(packageIndex, 1);
+
+    if (this.packages.length === 0) {
+      this.addNewEmptyPackage();
+    }
+
+    this.updateAllCalculations();
+    this.toastService.success('Paket silindi.', 'Başarılı');
+
+    // YENİ: Remove package sonrası auto-save
+    this.triggerAutoSave('user-action');
   }
-
-  // Package'ı listeden kaldır
-  this.packages.splice(packageIndex, 1);
-
-  // Eğer hiç package kalmadıysa, yeni boş package ekle
-  if (this.packages.length === 0) {
-    this.addNewEmptyPackage();
-  }
-
-  this.updateAllCalculations();
-  this.toastService.success('Paket silindi.', 'Başarılı');
-}
   /**
    * Remove pallet from package
    */
   removePalletFromPackage(packageItem: UiPackage): void {
+    // Mevcut logic...
     if (packageItem.pallet) {
       if (packageItem.products?.length > 0) {
         const uiProducts = this.ensureUiProducts(packageItem.products);
@@ -929,6 +1156,9 @@ private autoSaveToSession(): void {
 
       packageItem.pallet = null;
       this.updateAllCalculations();
+
+      // YENİ: Remove pallet sonrası auto-save
+      this.triggerAutoSave('user-action');
     }
   }
 
@@ -989,13 +1219,13 @@ private autoSaveToSession(): void {
 
     this.repository.bulkCreatePackageDetail(packageData).subscribe({
       next: (response) => {
-      this.toastService.success('Kaydedildi', 'Başarılı');
-      this.stepperService.setStepStatus(2, STATUSES.completed, true);
+        this.toastService.success('Kaydedildi', 'Başarılı');
+        this.stepperService.setStepStatus(2, STATUSES.completed, true);
 
-      // YENİ: Bu satırları ekleyin
-      console.log('💾 Step 2 tamamlandı, session\'a kaydediliyor...');
-      this.saveCurrentStateToSession();
-    },
+        // YENİ: Bu satırları ekleyin
+        console.log("💾 Step 2 tamamlandı, session'a kaydediliyor...");
+        this.saveCurrentStateToSession();
+      },
     });
   }
 }
