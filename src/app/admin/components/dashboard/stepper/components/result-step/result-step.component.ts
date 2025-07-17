@@ -21,8 +21,8 @@ import { CommonModule } from '@angular/common';
 import { ToastService } from '../../../../../../services/toast.service';
 import { switchMap, takeUntil, catchError, finalize } from 'rxjs/operators';
 import { Subject, EMPTY } from 'rxjs';
-import { SessionStorageService } from '../../services/session-storage.service';
 import { AutoSaveService } from '../../services/auto-save.service';
+import { LocalStorageService } from '../../services/local-storage.service';
 
 // Package interface for type safety
 interface PackageData {
@@ -106,7 +106,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
 
   // Services
   private readonly autoSaveService = inject(AutoSaveService);
-  private readonly sessionService = inject(SessionStorageService);
+  private readonly localStorageService = inject(LocalStorageService);
   repositoryService = inject(RepositoryService);
   stepperService = inject(StepperStore);
   sanitizer = inject(DomSanitizer);
@@ -200,8 +200,8 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   }
 
   private checkPrerequisites(): boolean {
-    const step1Completed = this.sessionService.isStepCompleted(1);
-    const step2Completed = this.sessionService.isStepCompleted(2);
+    const step1Completed = this.localStorageService.isStepCompleted(1);
+    const step2Completed = this.localStorageService.isStepCompleted(2);
 
     if (!step1Completed || !step2Completed) {
       let message = 'Önceki adımları tamamlayın: ';
@@ -217,10 +217,10 @@ export class ResultStepComponent implements OnInit, OnDestroy {
 
   private restoreFromSession(): void {
     try {
-      const restoredData = this.sessionService.restoreStep3Data();
+      const restoredData = this.localStorageService.restoreStep3Data();
 
       if (restoredData) {
-        console.log("✅ Step 3 session'dan veriler bulundu");
+        console.log("✅ Step 3 LocalStorage'dan veriler bulundu");
 
         this.hasResults = true;
         this.showVisualization = true;
@@ -246,14 +246,14 @@ export class ResultStepComponent implements OnInit, OnDestroy {
 
   private saveResultsToSession(): void {
     try {
-      console.log("💾 Step 3 sonuçları session'a kaydediliyor...");
-      this.sessionService.saveStep3Data(this.piecesData, this.reportFiles);
-      console.log("✅ Step 3 sonuçları session'a kaydedildi");
+      console.log("💾 Step 3 sonuçları LocalStorage'a  kaydediliyor...");
+      this.localStorageService.saveStep3Data(this.piecesData, this.reportFiles);
+      console.log("✅ Step 3 sonuçları LocalStorage'a  kaydedildi");
 
       // Stepper store'u da güncelle
       this.stepperService.setStepStatus(3, STATUSES.completed, true);
     } catch (error) {
-      console.error("❌ Step 3 sonuçları session'a kaydedilemedi:", error);
+      console.error("❌ Step 3 sonuçları LocalStorage'a kaydedilemedi:", error);
     }
   }
 
@@ -1012,7 +1012,7 @@ completeShipment(): void {
       this.autoSaveService.clearHistory();
 
       // 3. Session'ı temizle
-      this.sessionService.clearSession();
+      this.localStorageService.clearStorage();
 
       // 4. Stepper'ı reset et
       this.stepperService.resetStepper();

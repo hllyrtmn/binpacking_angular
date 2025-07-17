@@ -32,14 +32,13 @@ import { Observable, switchMap, tap, finalize } from 'rxjs';
 
 import { RepositoryService } from '../../services/repository.service';
 import { ToastService } from '../../../../../../services/toast.service';
-import { OrderDetailService } from '../../../../services/order-detail.service';
 import { OrderService } from '../../../../services/order.service';
 import { Order } from '../../../../../../models/order.interface';
 import { OrderDetail } from '../../../../../../models/order-detail.interface';
 import { GenericTableComponent } from '../../../../../../components/generic-table/generic-table.component';
 import { OrderDetailAddDialogComponent } from './order-detail-add-dialog/order-detail-add-dialog.component';
-import { SessionStorageService } from '../../services/session-storage.service';
 import { AutoSaveService } from '../../services/auto-save.service';
+import { LocalStorageService } from '../../services/local-storage.service';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
@@ -93,7 +92,7 @@ export class InvoiceUploadComponent implements OnInit {
   private readonly toastService = inject(ToastService);
   private readonly orderService = inject(OrderService);
   private readonly dialog = inject(MatDialog);
-  private readonly sessionService = inject(SessionStorageService);
+  private readonly localService = inject(LocalStorageService);
   private readonly autoSaveService = inject(AutoSaveService);
   private lastFormState: string = '';
   private readonly userService = inject(UserService);
@@ -160,6 +159,8 @@ export class InvoiceUploadComponent implements OnInit {
   ngOnInit(): void {
     this.setupFormValidation();
 
+    this.checkPrerequisites();
+
     this.restoreFromSession();
     this.loadTargetCompanies();
     this.loadTrucks();
@@ -169,6 +170,11 @@ export class InvoiceUploadComponent implements OnInit {
     }
 
     this.setupAutoSaveListeners();
+  }
+
+  private checkPrerequisites(): boolean {
+
+    return true;
   }
 
   /**
@@ -279,7 +285,7 @@ export class InvoiceUploadComponent implements OnInit {
     console.log("📖 Session'dan veri restore ediliyor...");
 
     try {
-      const restoredData = this.sessionService.restoreStep1Data();
+      const restoredData = this.localService.restoreStep1Data();
 
       if (restoredData) {
         console.log("✅ Session'dan veriler bulundu:", restoredData);
@@ -675,7 +681,7 @@ export class InvoiceUploadComponent implements OnInit {
           this.toastService.success('İşlem başarıyla tamamlandı');
 
           console.log("💾 Step 1 verileri session'a kaydediliyor...");
-          this.sessionService.saveStep1Data(
+          this.localService.saveStep1Data(
             this.order,
             this.orderDetails,
             !!this.tempFile,

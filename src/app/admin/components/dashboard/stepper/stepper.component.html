@@ -1,21 +1,29 @@
+
 <mat-stepper #stepper class="responsive-stepper" [linear]="true" [orientation]="(stepperOrientation | async)!">
   <app-loading></app-loading>
 
-  <mat-step [completed]="stepperService.steps[0].completed()" label="(ISB) İhracat Sipariş Bildirimi Yükleme"
-    [editable]="stepperService.steps[0].editable()">
-    <!-- YENİ: Template reference ekleyin -->
+  <!-- ✅ DÜZELTME: Safe step access with null checks -->
+  <mat-step
+    [completed]="getStepCompleted(0)"
+    label="(ISB) İhracat Sipariş Bildirimi Yükleme"
+    [editable]="getStepEditable(0)">
+
     <app-invoice-upload #invoiceUploadComponent (invoiceUploaded)="invoiceUploaded()"></app-invoice-upload>
   </mat-step>
 
-  <mat-step [completed]="stepperService.steps[1].completed()" label="Palet Kontrolü"
-    [editable]="stepperService.steps[1].editable()">
-    <!-- YENİ: Template reference ekleyin -->
+  <mat-step
+    [completed]="getStepCompleted(1)"
+    label="Palet Kontrolü"
+    [editable]="getStepEditable(1)">
+
     <app-pallet-control #palletControlComponent></app-pallet-control>
   </mat-step>
 
-  <mat-step [completed]="stepperService.steps[2].completed()" label="Sonuc ekrani"
-    [editable]="stepperService.steps[2].editable()">
-    <!-- YENİ: Template reference ekleyin -->
+  <mat-step
+    [completed]="getStepCompleted(2)"
+    label="Sonuc ekrani"
+    [editable]="getStepEditable(2)">
+
     <app-result-step #resultStepComponent (shipmentCompleted)="onShipmentCompleted()"></app-result-step>
   </mat-step>
 </mat-stepper>

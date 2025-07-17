@@ -54,9 +54,9 @@ export class SessionStorageService {
       updatedData.lastSaved = new Date().toISOString();
 
       sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(updatedData));
-      console.log('✅ Session data kaydedildi:', updatedData);
+
     } catch (error) {
-      console.error('❌ Session data kaydedilemedi:', error);
+
     }
   }
 
@@ -71,7 +71,7 @@ export class SessionStorageService {
 
       return hoursDiff > this.SESSION_TIMEOUT_HOURS;
     } catch (error) {
-      console.error('Session expire kontrolü hatası:', error);
+
       return true; // Hata durumunda expired say
     }
   }
@@ -84,11 +84,11 @@ export class SessionStorageService {
       const existingData = this.getSessionData();
 
       if (existingData.lastSaved && this.isSessionExpired(existingData.lastSaved)) {
-        console.log('🧹 Expired session temizleniyor...');
+
         this.clearSession();
       }
     } catch (error) {
-      console.error('Session cleanup hatası:', error);
+
       this.clearSession(); // Hata durumunda temizle
     }
   }
@@ -104,14 +104,14 @@ export class SessionStorageService {
 
         // Expire kontrolü
         if (parsed.lastSaved && this.isSessionExpired(parsed.lastSaved)) {
-          console.log('⏰ Session expired, temizleniyor...');
+
           this.clearSession();
           return this.getDefaultSessionData();
         }
         return parsed;
       }
     } catch (error) {
-      console.error('❌ Session data okunamadı:', error);
+
       this.clearSession(); // Corrupted data'yı temizle
     }
 
@@ -147,9 +147,9 @@ export class SessionStorageService {
       const existingData = this.getSessionData();
       existingData.lastSaved = new Date().toISOString();
       sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(existingData));
-      console.log('🔄 Session refreshed');
+
     } catch (error) {
-      console.error('Session refresh hatası:', error);
+
     }
   }
 
@@ -291,7 +291,7 @@ export class SessionStorageService {
    */
   clearSession(): void {
     sessionStorage.removeItem(this.STORAGE_KEY);
-    console.log('🗑️ Session temizlendi');
+
   }
 
   /**

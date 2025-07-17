@@ -135,7 +135,6 @@ export class StateManager {
    * Step 1: Initial data set (processFile sonrası)
    */
   initializeStep1(order: Order, orderDetails: OrderDetail[], hasFile: boolean = false, fileName?: string): void {
-    console.log('🎯 Step 1 initialize ediliyor:', { order: order.id, detailCount: orderDetails.length });
 
     // Original state'i set et
     this.step1State.update(state => ({
@@ -158,14 +157,12 @@ export class StateManager {
 
     // Session'a kaydet
     this.sessionService.saveStep1Data(order, orderDetails, hasFile, fileName);
-    console.log('✅ Step 1 initialized');
   }
 
   /**
    * Step 1: OrderDetail ekle
    */
   addOrderDetail(orderDetail: OrderDetail): void {
-    console.log('➕ OrderDetail ekleniyor:', orderDetail.id);
 
     this.step1State.update(state => {
       const newCurrent = [...state.current, orderDetail];
@@ -186,12 +183,10 @@ export class StateManager {
    * Step 1: OrderDetail güncelle
    */
   updateOrderDetail(updatedOrderDetail: OrderDetail): void {
-    console.log('✏️ OrderDetail güncelleniyor:', updatedOrderDetail.id);
 
     this.step1State.update(state => {
       const currentIndex = state.current.findIndex(item => item.id === updatedOrderDetail.id);
       if (currentIndex === -1) {
-        console.warn('⚠️ Güncellenecek OrderDetail bulunamadı');
         return state;
       }
 
@@ -225,12 +220,10 @@ export class StateManager {
    * Step 1: OrderDetail sil
    */
   deleteOrderDetail(orderDetailId: string): void {
-    console.log('🗑️ OrderDetail siliniyor:', orderDetailId);
 
     this.step1State.update(state => {
       const currentIndex = state.current.findIndex(item => item.id === orderDetailId);
       if (currentIndex === -1) {
-        console.warn('⚠️ Silinecek OrderDetail bulunamadı');
         return state;
       }
 
@@ -264,21 +257,12 @@ export class StateManager {
    * Step 1: Changes'i kaydet
    */
   saveStep1Changes(): { added: OrderDetail[], modified: OrderDetail[], deleted: OrderDetail[] } {
-    console.log('💾 Step 1 changes kaydediliyor...');
-
     const currentState = this.step1State();
     const changes = {
       added: currentState.added,
       modified: currentState.modified,
       deleted: currentState.deleted
     };
-
-    console.log('📊 Step 1 Changes:', {
-      added: changes.added.length,
-      modified: changes.modified.length,
-      deleted: changes.deleted.length
-    });
-
     return changes;
   }
 
@@ -286,7 +270,7 @@ export class StateManager {
    * Step 1: Save işlemi tamamlandı
    */
   markStep1AsSaved(): void {
-    console.log('✅ Step 1 saved olarak işaretleniyor');
+
 
     this.step1State.update(state => ({
       ...state,
@@ -315,7 +299,7 @@ export class StateManager {
    * Step 2: Initialize
    */
   initializeStep2(packages: any[]): void {
-    console.log('🎯 Step 2 initialize ediliyor:', { packageCount: packages.length });
+
 
     this.step2State.update(state => ({
       ...state,
@@ -329,14 +313,14 @@ export class StateManager {
     }));
 
     this.sessionService.saveStep2Data(packages);
-    console.log('✅ Step 2 initialized');
+
   }
 
   /**
    * Step 2: Package ekle
    */
   addPackage(packageItem: any): void {
-    console.log('➕ Package ekleniyor:', packageItem.id);
+
 
     this.step2State.update(state => {
       const newCurrent = [...state.current, packageItem];
@@ -357,7 +341,7 @@ export class StateManager {
    * Step 2: Package güncelle
    */
   updatePackage(updatedPackage: any): void {
-    console.log('✏️ Package güncelleniyor:', updatedPackage.id);
+
 
     this.step2State.update(state => {
       const currentIndex = state.current.findIndex(item => item.id === updatedPackage.id);
@@ -392,7 +376,7 @@ export class StateManager {
    * Step 2: Package sil
    */
   deletePackage(packageId: string): void {
-    console.log('🗑️ Package siliniyor:', packageId);
+
 
     this.step2State.update(state => {
       const currentIndex = state.current.findIndex(item => item.id === packageId);
@@ -435,7 +419,7 @@ export class StateManager {
    * Step 2: Save işlemi tamamlandı
    */
   markStep2AsSaved(): void {
-    console.log('✅ Step 2 saved olarak işaretleniyor');
+
 
     this.step2State.update(state => ({
       ...state,
@@ -456,7 +440,7 @@ export class StateManager {
    * Step 3: Initialize
    */
   initializeStep3(optimizationResult: any, reportFiles: any[] = []): void {
-    console.log('🎯 Step 3 initialize ediliyor');
+
 
     this.step3State.update(state => ({
       ...state,
@@ -470,7 +454,7 @@ export class StateManager {
     }));
 
     this.sessionService.saveStep3Data(optimizationResult, reportFiles);
-    console.log('✅ Step 3 initialized');
+
   }
 
   // ==================== UTILITY METHODS ====================
@@ -509,7 +493,7 @@ export class StateManager {
    * Session'dan restore
    */
   private restoreFromSession(): void {
-    console.log('📖 StateManager session restore ediliyor...');
+
 
     // Step 1 restore
     const step1Data = this.sessionService.restoreStep1Data();
@@ -534,7 +518,7 @@ export class StateManager {
    * Tüm state'i reset et
    */
   resetAllStates(): void {
-    console.log('🔄 Tüm stateler reset ediliyor...');
+
 
     this.step1State.set({
       original: [],
@@ -569,14 +553,14 @@ export class StateManager {
     });
 
     this.sessionService.clearSession();
-    console.log('✅ Tüm stateler reset edildi');
+
   }
 
   /**
    * Debug bilgileri
    */
   logDebugInfo(): void {
-    console.log('📊 StateManager Debug Info:');
+
     console.log('Step 1:', {
       original: this.step1State().original.length,
       current: this.step1State().current.length,

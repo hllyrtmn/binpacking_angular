@@ -30,7 +30,7 @@ import { UiPackage } from '../ui-models/ui-package.model';
 import { ToastService } from '../../../../../../services/toast.service';
 import { mapPackageToPackageDetail } from '../../../../../../models/mappers/package-detail.mapper';
 import { StepperStore, STATUSES } from '../../services/stepper.store';
-import { SessionStorageService } from '../../services/session-storage.service';
+import { LocalStorageService } from '../../services/local-storage.service';
 import { AutoSaveService } from '../../services/auto-save.service';
 
 @Component({
@@ -57,7 +57,7 @@ export class PalletControlComponent implements OnInit {
   repository: RepositoryService = inject(RepositoryService);
   toastService: ToastService = inject(ToastService);
   stepperService = inject(StepperStore);
-  private readonly sessionService = inject(SessionStorageService);
+  private readonly localStorageService = inject(LocalStorageService);
   private readonly autoSaveService = inject(AutoSaveService);
 
   // YENİ: Form change tracking
@@ -128,15 +128,21 @@ export class PalletControlComponent implements OnInit {
   ngOnInit(): void {
     console.log('🎬 Pallet Control Component başlatılıyor...');
 
-    // Step 1 kontrolü
-    if (!this.sessionService.isStepCompleted(1)) {
-      this.toastService.warning('Önce sipariş bilgilerini tamamlayın');
+    if (!this.checkPrerequisites()) {
       return;
     }
 
     // Session restore
     this.restoreFromSession();
     this.setupAutoSaveListeners();
+  }
+
+  private checkPrerequisites(): boolean {
+    if (!this.localStorageService.isStepCompleted(1)) {
+      this.toastService.warning('Önce sipariş bilgilerini tamamlayın');
+      return false;
+    }
+    return true;
   }
 
   resetComponentState(): void {
@@ -263,10 +269,10 @@ export class PalletControlComponent implements OnInit {
     console.log("📖 Pallet Control - Session'dan veri restore ediliyor...");
 
     try {
-      const restoredPackages = this.sessionService.restoreStep2Data();
+      const restoredPackages = this.localStorageService.restoreStep2Data();
 
       if (restoredPackages && restoredPackages.length > 0) {
-        console.log("✅ Step 2 session'dan veriler bulundu:", restoredPackages);
+        console.log("✅ Step 2 LocalStorage'dan veriler bulundu:", restoredPackages);
 
         this.packages = restoredPackages.map((pkg) => new UiPackage(pkg));
         this.loadPallets();
@@ -287,22 +293,12 @@ export class PalletControlComponent implements OnInit {
 
   private saveCurrentStateToSession(): void {
     try {
-      console.log("💾 Mevcut pallet state session'a kaydediliyor...");
-      this.sessionService.saveStep2Data(this.packages);
+      console.log("💾 Mevcut pallet state LocalStorage'a kaydediliyor...");
+      this.localStorageService.saveStep2Data(this.packages);
       console.log("✅ Pallet state session'a kaydedildi");
     } catch (error) {
       console.error("❌ Pallet state session'a kaydedilemedi:", error);
     }
-  }
-
-  private autoSaveToSession(): void {
-    if (this.autoSaveTimeout) {
-      clearTimeout(this.autoSaveTimeout);
-    }
-
-    this.autoSaveTimeout = setTimeout(() => {
-      this.saveCurrentStateToSession();
-    }, 2000);
   }
 
   /* =====================
@@ -1223,7 +1219,7 @@ dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
         this.stepperService.setStepStatus(2, STATUSES.completed, true);
 
         // YENİ: Bu satırları ekleyin
-        console.log("💾 Step 2 tamamlandı, session'a kaydediliyor...");
+        console.log("💾 Step 2 tamamlandı, LocalStorage'a kaydediliyor...");
         this.saveCurrentStateToSession();
       },
     });

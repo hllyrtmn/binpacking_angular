@@ -1,10 +1,8 @@
-// stepper.store.ts - DÜZELTME
-
-import { Injectable, WritableSignal, inject } from '@angular/core';
+import { Injectable, WritableSignal, inject, computed } from '@angular/core';
 import { signal } from '@angular/core';
-import { SessionStorageService } from './session-storage.service';
+import { LocalStorageService } from './local-storage.service';
 
-interface step {
+interface Step {
   id: number;
   completed: WritableSignal<boolean>;
   editable: WritableSignal<boolean>;
@@ -19,13 +17,14 @@ export enum STATUSES {
 
 @Injectable({ providedIn: 'root' })
 export class StepperStore {
-  private sessionService = inject(SessionStorageService);
+  private localStorageService = inject(LocalStorageService);
 
-  private _steps: step[] = [
+  // ✅ Private steps array
+  private _steps: Step[] = [
     {
       id: 1,
       completed: signal(false),
-      editable: signal(false),
+      editable: signal(true),
       is_dirty: signal(false),
     },
     {
@@ -42,145 +41,258 @@ export class StepperStore {
     },
   ];
 
-  // DÜZELTME: Signal yazma işlemini kaldırdık, sadece okuma yapıyoruz
-  private isStepCompletedWithSession(stepIndex: number): boolean {
-    // Session'dan kontrol et
-    const sessionCompleted = this.sessionService.isStepCompleted(stepIndex + 1);
+  // ✅ DÜZELTME: Computed signal yerine getter kullanıyoruz
+  public get steps() {
+    try {
+      return this._steps.map((step, index) => ({
+        id: step.id,
+        completed: () => this.getStepCompletedStatus(index),
+        editable: step.editable.asReadonly(),
+        is_dirty: step.is_dirty.asReadonly(),
+      }));
+    } catch (error) {
 
-    // Local signal'dan kontrol et
-    const localCompleted = this._steps[stepIndex].completed();
-
-    // İkisinden birisi true ise true döndür
-    return sessionCompleted || localCompleted;
-  }
-
-  public steps = [
-    {
-      id: 1,
-      completed: () => this.isStepCompletedWithSession(0),
-      editable: this._steps[0].editable.asReadonly(),
-      is_dirty: this._steps[0].is_dirty.asReadonly(),
-    },
-    {
-      id: 2,
-      completed: () => this.isStepCompletedWithSession(1),
-      editable: this._steps[1].editable.asReadonly(),
-      is_dirty: this._steps[1].is_dirty.asReadonly(),
-    },
-    {
-      id: 3,
-      completed: () => this.isStepCompletedWithSession(2),
-      editable: this._steps[2].editable.asReadonly(),
-      is_dirty: this._steps[2].is_dirty.asReadonly(),
-    },
-  ];
-
-resetStepper() {
-  console.log('🗑️ Stepper reset başlıyor...');
-
-  // Önce mevcut durumu logla
-  console.log('📊 Reset BEFORE:', {
-    step1: { completed: this._steps[0].completed(), editable: this._steps[0].editable() },
-    step2: { completed: this._steps[1].completed(), editable: this._steps[1].editable() },
-    step3: { completed: this._steps[2].completed(), editable: this._steps[2].editable() }
-  });
-
-  // Step'leri reset et
-  this._steps = [
-    {
-      id: 1,
-      completed: signal(false),
-      editable: signal(true), // Step 1 editable olsun
-      is_dirty: signal(false)
-    },
-    {
-      id: 2,
-      completed: signal(false),
-      editable: signal(false), // Step 2 editable olmasın
-      is_dirty: signal(false)
-    },
-    {
-      id: 3,
-      completed: signal(false),
-      editable: signal(false), // Step 3 editable olmasın
-      is_dirty: signal(false)
-    }
-  ];
-
-  // Public steps array'ini güncelle
-  this.steps = [
-    {
-      id: 1,
-      completed: () => this.isStepCompletedWithSession(0),
-      editable: this._steps[0].editable.asReadonly(),
-      is_dirty: this._steps[0].is_dirty.asReadonly()
-    },
-    {
-      id: 2,
-      completed: () => this.isStepCompletedWithSession(1),
-      editable: this._steps[1].editable.asReadonly(),
-      is_dirty: this._steps[1].is_dirty.asReadonly()
-    },
-    {
-      id: 3,
-      completed: () => this.isStepCompletedWithSession(2),
-      editable: this._steps[2].editable.asReadonly(),
-      is_dirty: this._steps[2].is_dirty.asReadonly()
-    }
-  ];
-
-  // Session'ı temizle
-  console.log('🗑️ Session temizleniyor...');
-  this.sessionService.clearSession();
-
-  // Reset sonrası durumu logla
-  console.log('📊 Reset AFTER:', {
-    step1: { completed: this._steps[0].completed(), editable: this._steps[0].editable() },
-    step2: { completed: this._steps[1].completed(), editable: this._steps[1].editable() },
-    step3: { completed: this._steps[2].completed(), editable: this._steps[2].editable() }
-  });
-
-  console.log('✅ Stepper reset tamamlandı');
-}
-
-  setStepStatus(step: number, status: STATUSES, status_value: boolean) {
-    this._steps[--step][status].set(status_value);
-
-    if (status === STATUSES.completed && status_value) {
-      console.log(`📋 Step ${step + 1} completion status set edildi`);
+      // Fallback: return safe default structure
+      return this._steps.map((step, index) => ({
+        id: step.id,
+        completed: () => false,
+        editable: signal(index === 0).asReadonly(),
+        is_dirty: signal(false).asReadonly(),
+      }));
     }
   }
 
-  // YENİ: Session ile local signal'ları manuel senkronize etmek için
-  syncWithSession(): void {
-    console.log('🔄 Session ile local signals senkronize ediliyor...');
+  // ✅ DÜZELTME: Safe step completion check
+  private getStepCompletedStatus(stepIndex: number): boolean {
+    try {
+      // Validate step index
+      if (stepIndex < 0 || stepIndex >= this._steps.length) {
 
-    for (let i = 0; i < 3; i++) {
-      const sessionCompleted = this.sessionService.isStepCompleted(i + 1);
-      const localCompleted = this._steps[i].completed();
-
-      if (sessionCompleted && !localCompleted) {
-        console.log(`📋 Step ${i + 1} session'dan local'a senkronize ediliyor`);
-        this._steps[i].completed.set(true);
+        return false;
       }
+
+      // Safe signal access
+      const localCompleted = this._steps[stepIndex]?.completed?.() || false;
+
+      // Safe storage access
+      let storageCompleted = false;
+      try {
+        storageCompleted = this.localStorageService?.isStepCompleted?.(stepIndex + 1) || false;
+      } catch (error) {
+
+        storageCompleted = false;
+      }
+
+      return localCompleted || storageCompleted;
+    } catch (error) {
+
+      return false;
     }
   }
 
-  getSessionStatus(): { step1: boolean; step2: boolean; step3: boolean } {
-    return {
-      step1: this.sessionService.isStepCompleted(1),
-      step2: this.sessionService.isStepCompleted(2),
-      step3: this.sessionService.isStepCompleted(3),
-    };
+  constructor() {
+    // ✅ Safe initialization
+    try {
+      this.initializeFromStorage();
+
+    } catch (error) {
+
+      // Graceful degradation
+      this.resetToDefaults();
+    }
   }
 
-  logSessionStatus(): void {
-    const status = this.getSessionStatus();
-    console.log('📊 Stepper Session Status:', status);
-    console.log('📊 Local Signal Status:', {
-      step1: this._steps[0].completed(),
-      step2: this._steps[1].completed(),
-      step3: this._steps[2].completed(),
-    });
+  // ✅ DÜZELTME: Safe storage initialization
+  private initializeFromStorage(): void {
+    try {
+
+
+      if (!this.localStorageService) {
+
+        return;
+      }
+
+      for (let i = 0; i < this._steps.length; i++) {
+        try {
+          const isCompleted = this.localStorageService.isStepCompleted(i + 1);
+
+          if (isCompleted && this._steps[i]) {
+            this._steps[i].completed.set(true);
+            this._steps[i].editable.set(true);
+
+            // Next step'i de editable yap
+            if (i + 1 < this._steps.length && this._steps[i + 1]) {
+              this._steps[i + 1].editable.set(true);
+            }
+          }
+        } catch (error) {
+
+        }
+      }
+
+
+    } catch (error) {
+
+    }
+  }
+
+  // ✅ YENİ: Reset to safe defaults
+  private resetToDefaults(): void {
+    try {
+
+
+      this._steps.forEach((step, index) => {
+        if (step) {
+          step.completed?.set?.(false);
+          step.editable?.set?.(index === 0); // Only first step editable
+          step.is_dirty?.set?.(false);
+        }
+      });
+
+
+    } catch (error) {
+
+    }
+  }
+
+  // ✅ DÜZELTME: Safe step status setter
+  setStepStatus(stepNumber: number, status: STATUSES, statusValue: boolean): void {
+    try {
+      const stepIndex = stepNumber - 1;
+
+      // Validate inputs
+      if (stepIndex < 0 || stepIndex >= this._steps.length) {
+
+        return;
+      }
+
+      if (!this._steps[stepIndex]) {
+
+        return;
+      }
+
+      if (!this._steps[stepIndex][status]) {
+
+        return;
+      }
+
+      // Safe signal update
+      this._steps[stepIndex][status].set(statusValue);
+
+      // Handle step completion logic
+      if (status === STATUSES.completed && statusValue) {
+
+
+        // Enable next step if exists
+        if (stepIndex + 1 < this._steps.length && this._steps[stepIndex + 1]) {
+          this._steps[stepIndex + 1].editable.set(true);
+        }
+      }
+
+    } catch (error) {
+
+    }
+  }
+
+  // ✅ DÜZELTME: Safe reset method
+  resetStepper(): void {
+    try {
+
+
+      // Reset all steps safely
+      this._steps.forEach((step, index) => {
+        if (step) {
+          step.completed?.set?.(false);
+          step.editable?.set?.(index === 0); // Only first step editable
+          step.is_dirty?.set?.(false);
+        }
+      });
+
+      // Clear storage safely
+      try {
+        if (this.localStorageService?.clearStorage) {
+          this.localStorageService.clearStorage();
+        }
+      } catch (error) {
+
+      }
+
+
+
+    } catch (error) {
+
+    }
+  }
+
+  // ✅ DÜZELTME: Safe storage status getter
+  getStorageStatus(): { step1: boolean; step2: boolean; step3: boolean } {
+    try {
+      if (!this.localStorageService?.isStepCompleted) {
+        return { step1: false, step2: false, step3: false };
+      }
+
+      return {
+        step1: this.localStorageService.isStepCompleted(1) || false,
+        step2: this.localStorageService.isStepCompleted(2) || false,
+        step3: this.localStorageService.isStepCompleted(3) || false,
+      };
+    } catch (error) {
+
+      return { step1: false, step2: false, step3: false };
+    }
+  }
+
+  // ✅ DÜZELTME: Safe debug logger
+  logStatus(): void {
+    try {
+      const localSignals = this._steps.map((step, index) => ({
+        [`step${index + 1}`]: {
+          completed: step?.completed?.() || false,
+          editable: step?.editable?.() || false,
+          is_dirty: step?.is_dirty?.() || false,
+        }
+      }));
+
+      console.log('📊 Stepper Status:', {
+        localStorage: this.getStorageStatus(),
+        localSignals: localSignals,
+      });
+    } catch (error) {
+
+    }
+  }
+
+  // ✅ YENİ: Safe step access helper
+  getStep(stepIndex: number): any {
+    try {
+      if (stepIndex < 0 || stepIndex >= this.steps.length) {
+
+        return null;
+      }
+
+      return this.steps[stepIndex];
+    } catch (error) {
+
+      return null;
+    }
+  }
+
+  // ✅ YENİ: Service health check
+  isHealthy(): boolean {
+    try {
+      return (
+        Array.isArray(this._steps) &&
+        this._steps.length === 3 &&
+        this._steps.every(step =>
+          step &&
+          typeof step.completed === 'function' &&
+          typeof step.editable === 'function' &&
+          typeof step.is_dirty === 'function'
+        )
+      );
+    } catch (error) {
+
+      return false;
+    }
   }
 }
