@@ -108,8 +108,6 @@ export class SessionStorageService {
           this.clearSession();
           return this.getDefaultSessionData();
         }
-
-        console.log('📖 Valid session data okundu');
         return parsed;
       }
     } catch (error) {

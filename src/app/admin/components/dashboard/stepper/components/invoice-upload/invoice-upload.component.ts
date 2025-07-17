@@ -1,4 +1,11 @@
-import { Component, EventEmitter, inject, OnInit, Output, ViewChild } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  inject,
+  OnInit,
+  Output,
+  ViewChild,
+} from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -36,6 +43,9 @@ import { AutoSaveService } from '../../services/auto-save.service';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { Truck } from '../../../../../../models/truck.interface';
+import { UserService } from '../../../../../../services/user.service';
+import { v4 as uuidv4 } from 'uuid';
 
 // Sabit değişkenler
 const VALID_FILE_TYPES = [
@@ -65,9 +75,9 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     MatCardModule,
     MatTooltipModule,
     GenericTableComponent,
-    MatSelectModule, // YENİ
-    MatDatepickerModule, // YENİ
-    MatNativeDateModule, // YENİ
+    MatSelectModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
   ],
   templateUrl: './invoice-upload.component.html',
   styleUrl: './invoice-upload.component.scss',
@@ -86,40 +96,24 @@ export class InvoiceUploadComponent implements OnInit {
   private readonly sessionService = inject(SessionStorageService);
   private readonly autoSaveService = inject(AutoSaveService);
   private lastFormState: string = '';
-  //TODO: manual eklerken default order olusacak ve panelde order bilgisi o anda isaretlenip guncellenebilecek bu kismin tek eksigi bu kaldi
-  // Form ve state değişkenleri
-  // save changes methodu eklenecek
-  // bu method base component veya turevi bir yapiya eklenim kalitilabilir.
-  // suanlik dumduz yazilacak.
-  // backend deki orm mantigi uidaki modellere islenirse
-  // save chagnes ozelligi generic olarak parent class a eklenebilir
-  // inherit edilebilir.
+  private readonly userService = inject(UserService);
 
-
-  // kaydet butonu kaldirilmasi
-  // save changes durumuna gore davranis saglanmasi
-  //
-
-  editMode = {
-    orderName: false,
-    orderDate: false,
-    customer: false
-  };
-
-  editableOrder: any = {};
-  originalOrder: any = {};
-  targetCompanies: any[] = [];
-  isUpdatingOrder = false;
-
+  // Ana data properties
   uploadForm: FormGroup;
   file: File | null = null;
   tempFile: File | null = null;
   order!: Order | null;
   orderDetails: OrderDetail[] = [];
   totalWeight: number = 0;
+
+  // UI state
   isLoading = false;
   excelUpload = false;
   dataRefreshInProgress = false;
+
+  // Referans data
+  targetCompanies: any[] = [];
+  trucks: Truck[] = [];
 
   // Tablo yapılandırması
   readonly displayedColumns: string[] = [
@@ -146,7 +140,7 @@ export class InvoiceUploadComponent implements OnInit {
     'product.product_type.code': 'Ürün Kodu',
     'product.dimension.width': 'Genişlik',
     'product.dimension.depth': 'Derinlik',
-    'count': 'Adet',
+    count: 'Adet',
   };
 
   readonly excludeFields: string[] = [
@@ -159,274 +153,100 @@ export class InvoiceUploadComponent implements OnInit {
 
   constructor() {
     this.uploadForm = this._formBuilder.group({
-      fileInput: ['', [Validators.required, this.fileValidator]]
+      fileInput: ['', [Validators.required, this.fileValidator]],
     });
   }
 
   ngOnInit(): void {
-    console.log('🎬 Invoice Upload Component başlatılıyor...');
+    this.setupFormValidation();
+
     this.restoreFromSession();
     this.loadTargetCompanies();
+    this.loadTrucks();
 
     if (this.order?.id) {
       this.calculateTotals();
     }
 
-    // YENİ: Form change listener'ları setup et
     this.setupAutoSaveListeners();
   }
 
-  loadTargetCompanies(): void {
-    // Backend'den target company'leri getir
-    // this.companyService.getTargetCompanies().subscribe({
-    //   next: (companies) => {
-    //     this.targetCompanies = companies;
-    //   },
-    //   error: (error) => {
-    //     console.error('Target companies yüklenirken hata:', error);
-    //     this.toastService.error('Şirket bilgileri yüklenirken hata oluştu');
-    //   }
-    // });
-
-    // Demo data - gerçek implementasyonda yukarıdaki kod kullanılacak
-    this.targetCompanies = [
-      { id: 1, target_company_name: 'ABC Ltd.' },
-      { id: 2, target_company_name: 'XYZ Corporation' },
-      { id: 3, target_company_name: 'Demo Company' }
-    ];
-  }
-
-  toggleEditMode(field: 'orderName' | 'orderDate' | 'customer'): void {
-    if (!this.order) return;
-
-    // Diğer edit mode'ları kapat
-    Object.keys(this.editMode).forEach(key => {
-      if (key !== field) {
-        this.editMode[key as keyof typeof this.editMode] = false;
-      }
-    });
-
-    // İlgili edit mode'u aç
-    this.editMode[field] = true;
-
-    // Editable order'ı hazırla
-    this.prepareEditableOrder();
-  }
-
-  prepareEditableOrder(): void {
-    if (!this.order) return;
-
-    // Original order'ı sakla
-    this.originalOrder = { ...this.order };
-
-    // Editable order'ı hazırla
-    this.editableOrder = {
-      id: this.order.id,
-      name: this.order.name,
-      date: this.order.date ? new Date(this.order.date) : null,
-      company_relation_id: this.order.company_relation?.id,
-      company_relation: this.order.company_relation
-    };
-  }
-
-  cancelEdit(field: 'orderName' | 'orderDate' | 'customer'): void {
-    this.editMode[field] = false;
-    this.editableOrder = {};
-    this.originalOrder = {};
-  }
-
-  saveField(field: 'orderName' | 'orderDate' | 'customer'): void {
-    if (!this.order || !this.editableOrder) return;
-
-    // Validation
-    if (!this.validateField(field)) {
-      return;
-    }
-
-    this.isUpdatingOrder = true;
-
-    // Güncellenecek data'yı hazırla
-    const updateData = this.prepareUpdateData(field);
-
-    // Backend'e gönder
-    this.updateOrder(updateData, field);
-  }
-
-  validateField(field: 'orderName' | 'orderDate' | 'customer'): boolean {
-    switch (field) {
-      case 'orderName':
-        if (!this.editableOrder.name || this.editableOrder.name.trim().length === 0) {
-          this.toastService.error('Sipariş numarası boş olamaz');
-          return false;
-        }
-        break;
-      case 'orderDate':
-        if (!this.editableOrder.date) {
-          this.toastService.error('Tarih seçilmelidir');
-          return false;
-        }
-        break;
-      case 'customer':
-        if (!this.editableOrder.company_relation_id) {
-          this.toastService.error('Müşteri seçilmelidir');
-          return false;
-        }
-        break;
-    }
-    return true;
-  }
-
-  prepareUpdateData(field: 'orderName' | 'orderDate' | 'customer'): any {
-    //const updateData: Order = this.order!
-
-    switch (field) {
-      case 'orderName':
-        this.order!.name = this.editableOrder.name.trim();
-        break;
-      case 'orderDate':
-        this.order!.date = this.editableOrder.date;
-        break;
-      case 'customer':
-        this.order!.company_relation = this.editableOrder.company_relation;
-        break;
-    }
-
-    return this.order!;
-  }
-
-  updateOrder(updateData: any, field: 'orderName' | 'orderDate' | 'customer'): void {
-    // Backend'e update request gönder
-    this.orderService.update(updateData.id,updateData).subscribe({
-      next: (updatedOrder: any) => {
-        // Local order'ı güncelle
-        this.updateLocalOrder(updatedOrder, field);
-
-        // Success feedback
-        this.showSuccessState(field);
-
-        // Edit mode'u kapat
-        this.editMode[field] = false;
-
-        // Auto-save trigger
-        this.triggerAutoSave('user-action');
-
-        this.toastService.success('Sipariş bilgisi güncellendi');
-      },
-      error: (error:any) => {
-        console.error('Order update hatası:', error);
-        this.toastService.error('Güncelleme sırasında hata oluştu');
-      },
-      complete: () => {
-        this.isUpdatingOrder = false;
-      }
-    });
-  }
-
-  updateLocalOrder(updatedOrder: any, field: 'orderName' | 'orderDate' | 'customer'): void {
-    if (!this.order) return;
-
-    switch (field) {
-      case 'orderName':
-        this.order.name = updatedOrder.name;
-        break;
-      case 'orderDate':
-        this.order.date = updatedOrder.date;
-        break;
-      case 'customer':
-        // Target company bilgisini bul
-        const targetCompany = this.targetCompanies.find(c => c.id === updatedOrder.company_relation_id);
-        if (targetCompany) {
-          this.order.company_relation = {
-            ...this.order.company_relation,
-            id: updatedOrder.company_relation_id,
-            target_company_name: targetCompany.target_company_name
-          };
-        }
-        break;
-    }
-  }
-
-   showSuccessState(field: 'orderName' | 'orderDate' | 'customer'): void {
-    // DOM element'ini bul ve success class'ı ekle
-    const dashboardItems = document.querySelectorAll('.dashboard-item');
-    let index = 0;
-
-    switch (field) {
-      case 'orderName':
-        index = 0;
-        break;
-      case 'orderDate':
-        index = 1;
-        break;
-      case 'customer':
-        index = 2;
-        break;
-    }
-
-    if (dashboardItems[index]) {
-      dashboardItems[index].classList.add('success');
-
-      // 3 saniye sonra class'ı kaldır
-      setTimeout(() => {
-        dashboardItems[index].classList.remove('success');
-      }, 3000);
-    }
-  }
-
-  isFieldLoading(field: 'orderName' | 'orderDate' | 'customer'): boolean {
-    return this.isUpdatingOrder && this.editMode[field];
-  }
-
   /**
-   * Keyboard event handler
+   * Target company'leri yükler
    */
-  onKeyPress(event: KeyboardEvent, field: 'orderName' | 'orderDate' | 'customer'): void {
-    if (event.key === 'Enter') {
-      this.saveField(field);
-    } else if (event.key === 'Escape') {
-      this.cancelEdit(field);
-    }
+  loadTargetCompanies(): void {
+    this.userService
+      .getProfile()
+      .pipe(
+        switchMap((response) => {
+          return this.repositoryService.companyRelations(response.company.id);
+        })
+      )
+      .subscribe({
+        next: (res) => {
+          this.targetCompanies = res;
+        },
+        error: (error) => {
+          this.toastService.error(
+            'Profil bilgisi yüklenirken hata oluştu CompanyRelation'
+          );
+        },
+      });
   }
 
-
+  /**
+   * Tır bilgilerini yükler
+   */
+  loadTrucks(): void {
+    this.repositoryService.trucks().subscribe({
+      next: (response) => {
+        this.trucks = response.results;
+        console.log('Tırlar yüklendi:', this.trucks);
+      },
+      error: (error) => {
+        this.toastService.error('Tır bilgisi yüklenirken hata oluştu');
+      },
+    });
+  }
 
   /**
-   * YENİ METHOD: Auto-save listener'ları setup et
+   * Auto-save listener'ları setup et
    */
   private setupAutoSaveListeners(): void {
-    // Form değişikliklerini takip et
     this.uploadForm.valueChanges.subscribe(() => {
       this.triggerAutoSave('form');
     });
 
-    // Order changes'i takip et (manuel değişiklikler için)
     this.watchOrderChanges();
   }
 
   /**
-   * YENİ METHOD: Order değişikliklerini takip et
+   * Order değişikliklerini takip et
    */
   private watchOrderChanges(): void {
-    // Order ve orderDetails'da değişiklik olduğunda auto-save trigger et
     setInterval(() => {
       const currentState = this.getCurrentFormState();
 
-      if (currentState !== this.lastFormState && this.order && this.orderDetails.length > 0) {
+      if (
+        currentState !== this.lastFormState &&
+        this.order &&
+        this.orderDetails.length > 0
+      ) {
         this.triggerAutoSave('user-action');
         this.lastFormState = currentState;
       }
-    }, 1000); // Her saniye kontrol et
+    }, 1000);
   }
 
   /**
-   * YENİ METHOD: Current form state'i al
+   * Current form state'i al
    */
   private getCurrentFormState(): string {
     try {
       return JSON.stringify({
         order: this.order,
         orderDetails: this.orderDetails,
-        hasFile: !!this.tempFile
+        hasFile: !!this.tempFile,
       });
     } catch (error) {
       return '';
@@ -434,56 +254,157 @@ export class InvoiceUploadComponent implements OnInit {
   }
 
   /**
-   * YENİ METHOD: Auto-save trigger et
+   * Auto-save trigger et
    */
-  private triggerAutoSave(changeType: 'form' | 'user-action' | 'api-response' = 'user-action'): void {
+  private triggerAutoSave(
+    changeType: 'form' | 'user-action' | 'api-response' = 'user-action'
+  ): void {
     if (this.order && this.orderDetails.length > 0) {
-      this.autoSaveService.triggerStep1AutoSave({
-        order: this.order,
-        orderDetails: this.orderDetails,
-        hasFile: !!this.tempFile,
-        fileName: this.tempFile?.name
-      }, changeType);
+      this.autoSaveService.triggerStep1AutoSave(
+        {
+          order: this.order,
+          orderDetails: this.orderDetails,
+          hasFile: !!this.tempFile,
+          fileName: this.tempFile?.name,
+        },
+        changeType
+      );
     }
   }
 
+  /**
+   * Session'dan veri restore et
+   */
   private restoreFromSession(): void {
-    console.log('📖 Session\'dan veri restore ediliyor...');
+    console.log("📖 Session'dan veri restore ediliyor...");
 
     try {
       const restoredData = this.sessionService.restoreStep1Data();
 
       if (restoredData) {
-        console.log('✅ Session\'dan veriler bulundu:', restoredData);
+        console.log("✅ Session'dan veriler bulundu:", restoredData);
 
-        // Restore edilen verileri component'e ata
         if (restoredData.order) {
           this.order = restoredData.order;
+
+          // Order restore edildiğinde form validation'ı güncelle
+          this.updateFormValidation();
         }
         this.orderDetails = restoredData.orderDetails;
 
         if (restoredData.hasFile && restoredData.fileName) {
-          console.log(`📄 Dosya bilgisi restore edildi: ${restoredData.fileName}`);
-          // Not: Actual file object'i restore edemeyiz, sadece bilgisini gösterebiliriz
+          console.log(
+            `📄 Dosya bilgisi restore edildi: ${restoredData.fileName}`
+          );
         }
 
-        // Totalleri yeniden hesapla
         this.calculateTotals();
-
-        // Kullanıcıya bilgi ver
         this.toastService.info('Önceki verileriniz restore edildi');
       } else {
-        console.log('ℹ️ Session\'da veri bulunamadı, yeni başlangıç');
+        console.log("ℹ️ Session'da veri bulunamadı, yeni başlangıç");
+        // Yeni order objesi oluştur
+        // this.initializeNewOrder();
       }
     } catch (error) {
       console.error('❌ Session restore hatası:', error);
+      // this.initializeNewOrder();
+    }
+  }
+
+  private initializeNewOrder(): void {
+    this.order = {
+      id: uuidv4(),
+      name: '',
+      date: null,
+      company_relation: null,
+      truck: null,
+      weight_type: '',
+    } as unknown as Order;
+  }
+
+  /**
+   * Form validation'ı güncelle
+   */
+  private updateFormValidation(): void {
+    if (this.order) {
+      this.uploadForm.patchValue({
+        orderName: this.order.name || '',
+        orderDate: this.order.date || '',
+        companyRelation: this.order.company_relation || '',
+        truck: this.order.truck || '',
+        weightType: this.order.weight_type || '',
+      });
     }
   }
 
   /**
-   * Dosya doğrulaması için bir validator fonksiyonu
+   * Order field değişikliklerini handle et
    */
-  private fileValidator = (control: AbstractControl): ValidationErrors | null => {
+  onOrderFieldChange(field: string, value: any): void {
+    if (!this.order) {
+      this.initializeNewOrder();
+    }
+
+    if (this.order) {
+      (this.order as any)[field] = value;
+
+      // Form validation güncelle
+      this.updateFormValidation();
+
+      // Auto save trigger et
+      this.triggerAutoSave('user-action');
+    }
+  }
+
+  /**
+   * Company selection change handler
+   */
+  onCompanyChange(selectedCompany: any): void {
+    if (!this.order) {
+      this.initializeNewOrder();
+    }
+
+    if (this.order) {
+      this.order.company_relation = selectedCompany;
+      this.triggerAutoSave('user-action');
+    }
+  }
+
+  /**
+   * Truck selection change handler
+   */
+  onTruckChange(selectedTruck: any): void {
+    if (!this.order) {
+      this.initializeNewOrder();
+    }
+
+    if (this.order) {
+      this.order.truck = selectedTruck;
+      this.triggerAutoSave('user-action');
+    }
+  }
+
+  /**
+   * Weight type selection change handler
+   */
+  onWeightTypeChange(selectedWeightType: string): void {
+    if (!this.order) {
+      this.initializeNewOrder();
+    }
+
+    if (this.order) {
+      this.order.weight_type = selectedWeightType;
+      this.calculateTotals();
+      this.triggerAutoSave('user-action');
+    }
+  }
+
+  /**
+   * Dosya doğrulaması için validator fonksiyonu
+   */
+  private fileValidator = (
+    control: AbstractControl
+  ): ValidationErrors | null => {
     const file = control.value as File;
     if (!file) return null;
 
@@ -514,13 +435,15 @@ export class InvoiceUploadComponent implements OnInit {
       return 'N/A';
     }
 
-    // Geçersiz tarih kontrolü
     if (isNaN(dateObj.getTime())) {
       return 'N/A';
     }
 
-    // Türkçe tarih formatı: GG.AA.YYYY
-    return `${dateObj.getDate().toString().padStart(2, '0')}.${(dateObj.getMonth() + 1).toString().padStart(2, '0')}.${dateObj.getFullYear()}`;
+    return `${dateObj.getDate().toString().padStart(2, '0')}.${(
+      dateObj.getMonth() + 1
+    )
+      .toString()
+      .padStart(2, '0')}.${dateObj.getFullYear()}`;
   }
 
   /**
@@ -576,29 +499,32 @@ export class InvoiceUploadComponent implements OnInit {
     this.excelUpload = true;
     this.toastService.info('Dosya yükleniyor...');
 
-    this.repositoryService.processFile(this.file).pipe(
-      tap(() => {
-        this.toastService.info('Dosya işleniyor...');
-      }),
-      finalize(() => {
-        this.isLoading = false;
-        this.excelUpload = false;
-      })
-    ).subscribe({
-      next: (response) => {
-        this.orderDetails = response.orderDetail;
-        this.order = response.order;
-        this.calculateTotals();
-        this.toastService.success('Dosya İşlendi');
-        this.resetForm();
+    this.repositoryService
+      .processFile(this.file)
+      .pipe(
+        tap(() => {
+          this.toastService.info('Dosya işleniyor...');
+        }),
+        finalize(() => {
+          this.isLoading = false;
+          this.excelUpload = false;
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          this.orderDetails = response.orderDetail;
+          this.order = response.order;
+          this.calculateTotals();
+          this.toastService.success('Dosya İşlendi');
+          console.log(this.order);
+          this.resetForm();
 
-        // YENİ: File processing sonrası auto-save
-        this.triggerAutoSave('api-response');
-      },
-      error: (error) => {
-        this.toastService.error('Dosya işlenirken bir hata oluştu.', error);
-      }
-    });
+          this.triggerAutoSave('api-response');
+        },
+        error: (error) => {
+          this.toastService.error('Dosya işlenirken bir hata oluştu.', error);
+        },
+      });
   }
 
   /**
@@ -615,11 +541,14 @@ export class InvoiceUploadComponent implements OnInit {
    */
   calculateTotals(): void {
     try {
+      type WeightTypeKey = 'std' | 'pre' | 'eco';
+
+      const selectedWeightType = this.order?.weight_type as WeightTypeKey;
+
       this.totalWeight = this.orderDetails.reduce((sum, detail) => {
-        // Ürün ağırlığını güvenli bir şekilde al
-        const productWeight = detail.product?.weight_type?.std || 0;
+        const productWeight = detail.product?.weight_type?.[selectedWeightType] || 0;
         const count = detail.count || 1;
-        return sum + (productWeight * count);
+        return sum + productWeight * count;
       }, 0);
     } catch (error) {
       console.error('Ağırlık hesaplanırken hata oluştu:', error);
@@ -632,19 +561,24 @@ export class InvoiceUploadComponent implements OnInit {
    */
   createOrderDetail(): void {
     if (!this.order) {
-      this.orderService.createOrder().subscribe({
-        next: (response) => {
-          this.order = response;
-          if(this.order){
-          this.openOrderDetailDialog(this.order);}
-        },
-        error: (error) => {
-          this.toastService.error('Sipariş oluşturulurken bir hata oluştu.');
-        },
-      });
+      this.initializeNewOrder();
     } else {
       this.openOrderDetailDialog(this.order);
     }
+
+    //   this.orderService.createOrder().subscribe({
+    //     next: (response) => {
+    //       this.order = response;
+    //       if (this.order) {
+    //         this.openOrderDetailDialog(this.order);
+    //       }
+    //     },
+    //     error: (error) => {
+    //       this.toastService.error('Sipariş oluşturulurken bir hata oluştu.');
+    //     },
+    //   });
+    // } else {
+    //   this.openOrderDetailDialog(this.order);
   }
 
   /**
@@ -654,7 +588,7 @@ export class InvoiceUploadComponent implements OnInit {
     const dialogRef = this.dialog.open(OrderDetailAddDialogComponent, {
       width: '600px',
       data: order,
-      disableClose: true
+      disableClose: true,
     });
 
     dialogRef.afterClosed().subscribe({
@@ -665,13 +599,12 @@ export class InvoiceUploadComponent implements OnInit {
           this.calculateTotals();
           this.toastService.success('Sipariş detayı başarıyla eklendi.');
 
-          // YENİ: Dialog'dan sonra auto-save
           this.triggerAutoSave('user-action');
         }
       },
       error: (err) => {
         console.error('Dialog kapatılırken hata oluştu:', err);
-      }
+      },
     });
   }
 
@@ -679,81 +612,97 @@ export class InvoiceUploadComponent implements OnInit {
    * Siparişi ve detaylarını kaydeder
    */
   submit(): void {
+    if (!this.isFormValid()) {
+      this.toastService.warning(
+        'Lütfen tüm zorunlu alanları doldurun (Sipariş No, Tarih, Müşteri, Tır, Ağırlık Tipi)'
+      );
+      return;
+    }
+
     if (!this.order || this.orderDetails.length === 0) {
-      this.toastService.warning('Sipariş detayları eksik. Lütfen kontrol ediniz.');
+      this.toastService.warning(
+        'Sipariş detayları eksik. Lütfen kontrol ediniz.'
+      );
       return;
     }
 
     const formattedOrder = {
       id: this.order.id,
-      company_relation_id: this.order.company_relation.id,
+      company_relation_id: this.order.company_relation?.id,
+      truck_id: this.order.truck?.id,
       date: this.order.date,
-      weigth_type: this.order.weigth_type,
-      name: this.order.name
+      weight_type: this.order.weight_type,
+      name: this.order.name,
     };
 
     this.isLoading = true;
     this.toastService.info('İşlem gerçekleştiriliyor...');
 
-    this.orderService.create(formattedOrder).pipe(
-      switchMap((orderResponse) => {
-        this.repositoryService.setOrderId(orderResponse.id);
+    this.orderService
+      .create(formattedOrder)
+      .pipe(
+        switchMap((orderResponse) => {
+          this.repositoryService.setOrderId(orderResponse.id);
 
-        const formattedOrderDetails = this.orderDetails.map(detail => ({
-          order_id: orderResponse.id,
-          product_id: detail.product.id,
-          count: detail.count,
-          unit_price: detail.unit_price
-        }));
+          const formattedOrderDetails = this.orderDetails.map((detail) => ({
+            order_id: orderResponse.id,
+            product_id: detail.product.id,
+            count: detail.count,
+            unit_price: detail.unit_price,
+          }));
 
-        if (this.tempFile) {
-          return this.repositoryService.uploadFile(this.tempFile, orderResponse.id).pipe(
-            switchMap(() => this.repositoryService.bulkOrderDetail(formattedOrderDetails))
+          if (this.tempFile) {
+            return this.repositoryService
+              .uploadFile(this.tempFile, orderResponse.id)
+              .pipe(
+                switchMap(() =>
+                  this.repositoryService.bulkOrderDetail(formattedOrderDetails)
+                )
+              );
+          } else {
+            return this.repositoryService.bulkOrderDetail(
+              formattedOrderDetails
+            );
+          }
+        }),
+        finalize(() => {
+          this.isLoading = false;
+        })
+      )
+      .subscribe({
+        next: (result) => {
+          this.invoiceUploaded.emit();
+          this.toastService.success('İşlem başarıyla tamamlandı');
+
+          console.log("💾 Step 1 verileri session'a kaydediliyor...");
+          this.sessionService.saveStep1Data(
+            this.order,
+            this.orderDetails,
+            !!this.tempFile,
+            this.tempFile?.name
           );
-        } else {
-          return this.repositoryService.bulkOrderDetail(formattedOrderDetails);
-        }
-      }),
-      finalize(() => {
-        this.isLoading = false;
-      })
-    ).subscribe({
-      next: (result) => {
-        // MEVCUT KOD AYNI KALACAK
-        this.invoiceUploaded.emit();
-        this.toastService.success('İşlem başarıyla tamamlandı');
-
-        // YENİ: Session'a kaydet
-        console.log('💾 Step 1 verileri session\'a kaydediliyor...');
-        this.sessionService.saveStep1Data(
-          this.order,
-          this.orderDetails,
-          !!this.tempFile,
-          this.tempFile?.name
-        );
-        console.log('✅ Step 1 session\'a kaydedildi');
-      },
-      error: (error) => {
-        console.error('İşlem sırasında hata oluştu:', error);
-        this.toastService.error('İşlem sırasında hata oluştu');
-      }
-    });
+          console.log("✅ Step 1 session'a kaydedildi");
+        },
+        error: (error) => {
+          console.error('İşlem sırasında hata oluştu:', error);
+          this.toastService.error('İşlem sırasında hata oluştu');
+        },
+      });
   }
 
   /**
    * Sipariş detayını günceller
    */
-  updateOrderDetail(event: { item: OrderDetail, data: any }): void {
+  updateOrderDetail(event: { item: OrderDetail; data: any }): void {
     const { item, data } = event;
     if (!this.orderDetails?.length) return;
 
-    const index = this.orderDetails.findIndex(detay => detay.id === item.id);
+    const index = this.orderDetails.findIndex((detay) => detay.id === item.id);
     if (index !== -1) {
       this.orderDetails[index] = { ...this.orderDetails[index], ...data };
       this.genericTable.dataSource.data = [...this.orderDetails];
       this.calculateTotals();
 
-      // YENİ: Update sonrası auto-save
       this.triggerAutoSave('user-action');
     }
   }
@@ -764,59 +713,112 @@ export class InvoiceUploadComponent implements OnInit {
   deleteOrderDetail(id: string): void {
     const index = this.orderDetails.findIndex((item: any) => item.id === id);
     if (index !== -1) {
-      this.orderDetails = this.orderDetails.filter((item: any) => item.id !== id);
+      this.orderDetails = this.orderDetails.filter(
+        (item: any) => item.id !== id
+      );
       this.genericTable.dataSource.data = [...this.orderDetails];
       this.calculateTotals();
 
-      // YENİ: Delete sonrası auto-save
       this.triggerAutoSave('user-action');
     }
   }
 
+  /**
+   * Step 1 verilerini zorla kaydet
+   */
   forceSaveStep1(): void {
     if (this.order && this.orderDetails.length > 0) {
       this.autoSaveService.forceSave(1, {
         order: this.order,
         orderDetails: this.orderDetails,
         hasFile: !!this.tempFile,
-        fileName: this.tempFile?.name
+        fileName: this.tempFile?.name,
       });
 
       this.toastService.success('Veriler zorla kaydedildi');
     }
   }
 
+  /**
+   * Component state'ini reset et
+   */
   resetComponentState(): void {
     console.log('🔄 Invoice Upload component reset ediliyor...');
 
     try {
-      // 1. Ana data properties'i reset et
       this.order = null;
       this.orderDetails = [];
       this.file = null;
       this.tempFile = null;
       this.totalWeight = 0;
 
-      // 2. UI state'i reset et
       this.isLoading = false;
       this.excelUpload = false;
       this.dataRefreshInProgress = false;
 
-      // 3. Form'u reset et
       this.uploadForm.reset();
 
-      // 4. Generic table'ı reset et (eğer var ise)
       if (this.genericTable?.dataSource) {
         this.genericTable.dataSource.data = [];
       }
 
-      // 5. Auto-save state'ini reset et
       this.lastFormState = '';
 
       console.log('✅ Invoice Upload component reset edildi');
-
     } catch (error) {
       console.error('❌ Invoice Upload reset hatası:', error);
     }
+  }
+
+  /**
+   * Form validation setup
+   */
+  private setupFormValidation(): void {
+    // Ana form validation
+    this.uploadForm = this._formBuilder.group({
+      fileInput: ['', [Validators.required, this.fileValidator]],
+      // Order validation fields
+      orderName: ['', Validators.required],
+      orderDate: ['', Validators.required],
+      companyRelation: ['', Validators.required],
+      truck: ['', Validators.required],
+      weightType: ['', Validators.required],
+    });
+  }
+
+  /**
+   * Object karşılaştırma fonksiyonu (mat-select için) - düzeltilmiş
+   */
+  compareObjects(a: any, b: any): boolean {
+    if (!a || !b) return false;
+    return a.id === b.id;
+  }
+
+  /**
+   * Company karşılaştırma fonksiyonu (company relation için özel)
+   */
+  compareCompanies(a: any, b: any): boolean {
+    if (!a || !b) return false;
+    // Company relation object'lerini karşılaştır
+    return a.id === b.id || a.target_company_name === b.target_company_name;
+  }
+
+  /**
+   * Weight type karşılaştırma fonksiyonu
+   */
+  compareWeightTypes(a: string, b: string): boolean {
+    return a === b;
+  }
+
+  /**
+   * Form validation kontrol fonksiyonu
+   */
+  isFormValid(): boolean {
+    return !!(
+      this.order?.date &&
+      this.order?.company_relation &&
+      this.order?.truck &&
+      this.order?.weight_type
+    );
   }
 }

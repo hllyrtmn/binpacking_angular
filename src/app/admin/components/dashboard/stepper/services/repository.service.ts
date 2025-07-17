@@ -9,6 +9,8 @@ import { UiPallet } from '../components/ui-models/ui-pallet.model';
 import { PackageDetail } from '../../../../../models/package-detail.interface';
 import { OrderDetail } from '../../../../../models/order-detail.interface';
 import { Order } from '../../../../../models/order.interface';
+import { Truck } from '../../../../../models/truck.interface';
+import { CompanyRelation } from '../../../../../models/company-relation.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -35,6 +37,16 @@ export class RepositoryService {
       .pipe(
         map((response) => response.results.map((item: any) => new UiPallet(item)))
       );
+  }
+
+  trucks(): Observable<any>{
+    return this.http.get<Truck>(`${this.api.getApiUrl()}/logistics/trucks/`,{
+      params: new HttpParams().set('limit',30).set('offset',0)
+    });
+  }
+
+  companyRelations(company_id:string):Observable<any>{
+    return this.http.get<CompanyRelation>(`${this.api.getApiUrl()}/logistics/companies/${company_id}/relations/`)
   }
 
   deleteOrderDetail(id: string): Observable<any> {
