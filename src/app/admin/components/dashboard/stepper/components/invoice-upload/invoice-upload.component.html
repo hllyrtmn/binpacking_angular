@@ -64,36 +64,99 @@
   <div *ngIf="order && !isLoading" class="details-section">
     <!-- Order Summary -->
     <div class="dashboard-panel">
-      <div class="dashboard-item">
-        <div class="dashboard-icon">
-          <mat-icon>receipt</mat-icon>
-        </div>
-        <div class="dashboard-info">
-          <span class="dashboard-label">Sipariş No</span>
-          <span class="dashboard-value">{{order.name || 'N/A'}}</span>
-        </div>
-      </div>
-
-      <div class="dashboard-item">
-        <div class="dashboard-icon">
-          <mat-icon>event</mat-icon>
-        </div>
-        <div class="dashboard-info">
-          <span class="dashboard-label">Sipariş Tarihi</span>
-          <span class="dashboard-value">{{getFormattedDate(order.date)}}</span>
-        </div>
-      </div>
-
-      <div class="dashboard-item">
-        <div class="dashboard-icon">
-          <mat-icon>business</mat-icon>
-        </div>
-        <div class="dashboard-info">
-          <span class="dashboard-label">Müşteri</span>
-          <span class="dashboard-value">{{order.company_relation.target_company_name}}</span>
-        </div>
+  <!-- Sipariş No -->
+  <div class="dashboard-item">
+    <div class="dashboard-icon">
+      <mat-icon>receipt</mat-icon>
+    </div>
+    <div class="dashboard-info">
+      <span class="dashboard-label">Sipariş No</span>
+      <div class="dashboard-value-container">
+        <span *ngIf="!editMode.orderName" class="dashboard-value">{{order.name || 'N/A'}}</span>
+        <mat-form-field *ngIf="editMode.orderName" class="edit-field" appearance="outline">
+          <input matInput [(ngModel)]="editableOrder.name" placeholder="Sipariş No">
+        </mat-form-field>
       </div>
     </div>
+    <div class="dashboard-actions">
+      <button *ngIf="!editMode.orderName" mat-icon-button (click)="toggleEditMode('orderName')" matTooltip="Düzenle">
+        <mat-icon>edit</mat-icon>
+      </button>
+      <div *ngIf="editMode.orderName" class="action-buttons">
+        <button mat-icon-button (click)="saveField('orderName')" matTooltip="Kaydet" class="save-btn">
+          <mat-icon>check</mat-icon>
+        </button>
+        <button mat-icon-button (click)="cancelEdit('orderName')" matTooltip="İptal" class="cancel-btn">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sipariş Tarihi -->
+  <div class="dashboard-item">
+    <div class="dashboard-icon">
+      <mat-icon>event</mat-icon>
+    </div>
+    <div class="dashboard-info">
+      <span class="dashboard-label">Sipariş Tarihi</span>
+      <div class="dashboard-value-container">
+        <span *ngIf="!editMode.orderDate" class="dashboard-value">{{getFormattedDate(order.date)}}</span>
+        <mat-form-field *ngIf="editMode.orderDate" class="edit-field" appearance="outline">
+          <input matInput [matDatepicker]="picker" [(ngModel)]="editableOrder.date" placeholder="Tarih seçin">
+          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="dashboard-actions">
+      <button *ngIf="!editMode.orderDate" mat-icon-button (click)="toggleEditMode('orderDate')" matTooltip="Düzenle">
+        <mat-icon>edit</mat-icon>
+      </button>
+      <div *ngIf="editMode.orderDate" class="action-buttons">
+        <button mat-icon-button (click)="saveField('orderDate')" matTooltip="Kaydet" class="save-btn">
+          <mat-icon>check</mat-icon>
+        </button>
+        <button mat-icon-button (click)="cancelEdit('orderDate')" matTooltip="İptal" class="cancel-btn">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Müşteri -->
+  <div class="dashboard-item">
+    <div class="dashboard-icon">
+      <mat-icon>business</mat-icon>
+    </div>
+    <div class="dashboard-info">
+      <span class="dashboard-label">Müşteri</span>
+      <div class="dashboard-value-container">
+        <span *ngIf="!editMode.customer" class="dashboard-value">{{order.company_relation.target_company_name}}</span>
+        <mat-form-field *ngIf="editMode.customer" class="edit-field" appearance="outline">
+          <mat-select [(ngModel)]="editableOrder.company_relation_id" placeholder="Müşteri seçin">
+            <mat-option *ngFor="let company of targetCompanies" [value]="company.id">
+              {{company.target_company_name}}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="dashboard-actions">
+      <button *ngIf="!editMode.customer" mat-icon-button (click)="toggleEditMode('customer')" matTooltip="Düzenle">
+        <mat-icon>edit</mat-icon>
+      </button>
+      <div *ngIf="editMode.customer" class="action-buttons">
+        <button mat-icon-button (click)="saveField('customer')" matTooltip="Kaydet" class="save-btn">
+          <mat-icon>check</mat-icon>
+        </button>
+        <button mat-icon-button (click)="cancelEdit('customer')" matTooltip="İptal" class="cancel-btn">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
     <!-- Order Details Table -->
     <div class="logistics-card">

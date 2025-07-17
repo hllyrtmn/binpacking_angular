@@ -1,3 +1,12 @@
-<app-header (sidenavOpen)="sidenavOpen()" [isToggleButton]="sidenavConfig.isToggleButtonVisible"></app-header>
-<mat-divider></mat-divider>
-<app-sidenav [isOpen]="sidenavConfig.isSidenavOpen" [mode]="sidenavConfig.mode"><router-outlet></router-outlet></app-sidenav>
+<div class="layout-container">
+  <div class="header">
+    <app-header (sidenavOpen)="sidenavOpen()" [isToggleButton]="sidenavConfig.isToggleButtonVisible"></app-header>
+    <mat-divider></mat-divider>
+  </div>
+
+  <div class="content">
+    <app-sidenav [isOpen]="sidenavConfig.isSidenavOpen" [mode]="sidenavConfig.mode">
+      <router-outlet></router-outlet>
+    </app-sidenav>
+  </div>
+</div>

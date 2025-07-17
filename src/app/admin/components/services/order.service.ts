@@ -9,9 +9,11 @@ import { map, tap } from 'rxjs';
 })
 export class OrderService extends GenericCrudService<Order> {
   constructor(http: HttpClient) {
-    super(http, 'orders/orders');
+    super(http, 'orders/order');
   }
   createOrder(){
     return this.http.post<any>(this.apiUrl,{})
   }
+
+
 }

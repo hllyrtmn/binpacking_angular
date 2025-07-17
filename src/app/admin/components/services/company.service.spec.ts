@@ -1,13 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
-import { AutoSaveService } from './auto-save.service';
+import { CompanyService } from './company.service';
 
-describe('AutoSaveService', () => {
-  let service: AutoSaveService;
+describe('CompanyService', () => {
+  let service: CompanyService;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(AutoSaveService);
+    service = TestBed.inject(CompanyService);
   });
 
   it('should be created', () => {

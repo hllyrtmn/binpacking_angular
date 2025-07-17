@@ -33,6 +33,9 @@ import { GenericTableComponent } from '../../../../../../components/generic-tabl
 import { OrderDetailAddDialogComponent } from './order-detail-add-dialog/order-detail-add-dialog.component';
 import { SessionStorageService } from '../../services/session-storage.service';
 import { AutoSaveService } from '../../services/auto-save.service';
+import { MatSelectModule } from '@angular/material/select';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 
 // Sabit değişkenler
 const VALID_FILE_TYPES = [
@@ -62,6 +65,9 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     MatCardModule,
     MatTooltipModule,
     GenericTableComponent,
+    MatSelectModule, // YENİ
+    MatDatepickerModule, // YENİ
+    MatNativeDateModule, // YENİ
   ],
   templateUrl: './invoice-upload.component.html',
   styleUrl: './invoice-upload.component.scss',
@@ -93,6 +99,18 @@ export class InvoiceUploadComponent implements OnInit {
   // kaydet butonu kaldirilmasi
   // save changes durumuna gore davranis saglanmasi
   //
+
+  editMode = {
+    orderName: false,
+    orderDate: false,
+    customer: false
+  };
+
+  editableOrder: any = {};
+  originalOrder: any = {};
+  targetCompanies: any[] = [];
+  isUpdatingOrder = false;
+
   uploadForm: FormGroup;
   file: File | null = null;
   tempFile: File | null = null;
@@ -148,6 +166,7 @@ export class InvoiceUploadComponent implements OnInit {
   ngOnInit(): void {
     console.log('🎬 Invoice Upload Component başlatılıyor...');
     this.restoreFromSession();
+    this.loadTargetCompanies();
 
     if (this.order?.id) {
       this.calculateTotals();
@@ -156,6 +175,220 @@ export class InvoiceUploadComponent implements OnInit {
     // YENİ: Form change listener'ları setup et
     this.setupAutoSaveListeners();
   }
+
+  loadTargetCompanies(): void {
+    // Backend'den target company'leri getir
+    // this.companyService.getTargetCompanies().subscribe({
+    //   next: (companies) => {
+    //     this.targetCompanies = companies;
+    //   },
+    //   error: (error) => {
+    //     console.error('Target companies yüklenirken hata:', error);
+    //     this.toastService.error('Şirket bilgileri yüklenirken hata oluştu');
+    //   }
+    // });
+
+    // Demo data - gerçek implementasyonda yukarıdaki kod kullanılacak
+    this.targetCompanies = [
+      { id: 1, target_company_name: 'ABC Ltd.' },
+      { id: 2, target_company_name: 'XYZ Corporation' },
+      { id: 3, target_company_name: 'Demo Company' }
+    ];
+  }
+
+  toggleEditMode(field: 'orderName' | 'orderDate' | 'customer'): void {
+    if (!this.order) return;
+
+    // Diğer edit mode'ları kapat
+    Object.keys(this.editMode).forEach(key => {
+      if (key !== field) {
+        this.editMode[key as keyof typeof this.editMode] = false;
+      }
+    });
+
+    // İlgili edit mode'u aç
+    this.editMode[field] = true;
+
+    // Editable order'ı hazırla
+    this.prepareEditableOrder();
+  }
+
+  prepareEditableOrder(): void {
+    if (!this.order) return;
+
+    // Original order'ı sakla
+    this.originalOrder = { ...this.order };
+
+    // Editable order'ı hazırla
+    this.editableOrder = {
+      id: this.order.id,
+      name: this.order.name,
+      date: this.order.date ? new Date(this.order.date) : null,
+      company_relation_id: this.order.company_relation?.id,
+      company_relation: this.order.company_relation
+    };
+  }
+
+  cancelEdit(field: 'orderName' | 'orderDate' | 'customer'): void {
+    this.editMode[field] = false;
+    this.editableOrder = {};
+    this.originalOrder = {};
+  }
+
+  saveField(field: 'orderName' | 'orderDate' | 'customer'): void {
+    if (!this.order || !this.editableOrder) return;
+
+    // Validation
+    if (!this.validateField(field)) {
+      return;
+    }
+
+    this.isUpdatingOrder = true;
+
+    // Güncellenecek data'yı hazırla
+    const updateData = this.prepareUpdateData(field);
+
+    // Backend'e gönder
+    this.updateOrder(updateData, field);
+  }
+
+  validateField(field: 'orderName' | 'orderDate' | 'customer'): boolean {
+    switch (field) {
+      case 'orderName':
+        if (!this.editableOrder.name || this.editableOrder.name.trim().length === 0) {
+          this.toastService.error('Sipariş numarası boş olamaz');
+          return false;
+        }
+        break;
+      case 'orderDate':
+        if (!this.editableOrder.date) {
+          this.toastService.error('Tarih seçilmelidir');
+          return false;
+        }
+        break;
+      case 'customer':
+        if (!this.editableOrder.company_relation_id) {
+          this.toastService.error('Müşteri seçilmelidir');
+          return false;
+        }
+        break;
+    }
+    return true;
+  }
+
+  prepareUpdateData(field: 'orderName' | 'orderDate' | 'customer'): any {
+    //const updateData: Order = this.order!
+
+    switch (field) {
+      case 'orderName':
+        this.order!.name = this.editableOrder.name.trim();
+        break;
+      case 'orderDate':
+        this.order!.date = this.editableOrder.date;
+        break;
+      case 'customer':
+        this.order!.company_relation = this.editableOrder.company_relation;
+        break;
+    }
+
+    return this.order!;
+  }
+
+  updateOrder(updateData: any, field: 'orderName' | 'orderDate' | 'customer'): void {
+    // Backend'e update request gönder
+    this.orderService.update(updateData.id,updateData).subscribe({
+      next: (updatedOrder: any) => {
+        // Local order'ı güncelle
+        this.updateLocalOrder(updatedOrder, field);
+
+        // Success feedback
+        this.showSuccessState(field);
+
+        // Edit mode'u kapat
+        this.editMode[field] = false;
+
+        // Auto-save trigger
+        this.triggerAutoSave('user-action');
+
+        this.toastService.success('Sipariş bilgisi güncellendi');
+      },
+      error: (error:any) => {
+        console.error('Order update hatası:', error);
+        this.toastService.error('Güncelleme sırasında hata oluştu');
+      },
+      complete: () => {
+        this.isUpdatingOrder = false;
+      }
+    });
+  }
+
+  updateLocalOrder(updatedOrder: any, field: 'orderName' | 'orderDate' | 'customer'): void {
+    if (!this.order) return;
+
+    switch (field) {
+      case 'orderName':
+        this.order.name = updatedOrder.name;
+        break;
+      case 'orderDate':
+        this.order.date = updatedOrder.date;
+        break;
+      case 'customer':
+        // Target company bilgisini bul
+        const targetCompany = this.targetCompanies.find(c => c.id === updatedOrder.company_relation_id);
+        if (targetCompany) {
+          this.order.company_relation = {
+            ...this.order.company_relation,
+            id: updatedOrder.company_relation_id,
+            target_company_name: targetCompany.target_company_name
+          };
+        }
+        break;
+    }
+  }
+
+   showSuccessState(field: 'orderName' | 'orderDate' | 'customer'): void {
+    // DOM element'ini bul ve success class'ı ekle
+    const dashboardItems = document.querySelectorAll('.dashboard-item');
+    let index = 0;
+
+    switch (field) {
+      case 'orderName':
+        index = 0;
+        break;
+      case 'orderDate':
+        index = 1;
+        break;
+      case 'customer':
+        index = 2;
+        break;
+    }
+
+    if (dashboardItems[index]) {
+      dashboardItems[index].classList.add('success');
+
+      // 3 saniye sonra class'ı kaldır
+      setTimeout(() => {
+        dashboardItems[index].classList.remove('success');
+      }, 3000);
+    }
+  }
+
+  isFieldLoading(field: 'orderName' | 'orderDate' | 'customer'): boolean {
+    return this.isUpdatingOrder && this.editMode[field];
+  }
+
+  /**
+   * Keyboard event handler
+   */
+  onKeyPress(event: KeyboardEvent, field: 'orderName' | 'orderDate' | 'customer'): void {
+    if (event.key === 'Enter') {
+      this.saveField(field);
+    } else if (event.key === 'Escape') {
+      this.cancelEdit(field);
+    }
+  }
+
+
 
   /**
    * YENİ METHOD: Auto-save listener'ları setup et

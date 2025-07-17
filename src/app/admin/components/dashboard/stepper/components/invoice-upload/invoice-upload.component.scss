@@ -549,3 +549,276 @@
     justify-content: space-between;
   }
 }
+
+
+.dashboard-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.dashboard-item {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 200px;
+  border-left: 4px solid #006A6A;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.dashboard-item:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.dashboard-item:nth-child(2) {
+  border-left-color: #D6BB86;
+}
+
+.dashboard-item:nth-child(2) .dashboard-icon {
+  background-color: #D6BB86;
+}
+
+.dashboard-item:nth-child(3) {
+  border-left-color: #004A4A;
+}
+
+.dashboard-item:nth-child(3) .dashboard-icon {
+  background-color: #004A4A;
+}
+
+.dashboard-icon {
+  width: 40px;
+  height: 40px;
+  background-color: #006A6A;
+  color: #ffffff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.dashboard-icon mat-icon {
+  font-size: 22px;
+  height: 22px;
+  width: 22px;
+  color: #ffffff;
+}
+
+.dashboard-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.dashboard-label {
+  font-size: 12px;
+  color: #666666;
+  margin-bottom: 4px;
+}
+
+.dashboard-value-container {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+}
+
+.dashboard-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #006A6A;
+  line-height: 1.2;
+}
+
+/* Edit Mode Styles */
+.dashboard-actions {
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.dashboard-item:hover .dashboard-actions {
+  opacity: 1;
+}
+
+.dashboard-actions button {
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+  min-width: 32px;
+  border-radius: 50%;
+  color: #666666;
+  transition: all 0.3s ease;
+}
+
+.dashboard-actions button:hover {
+  background-color: rgba(0, 106, 106, 0.1);
+  color: #006A6A;
+}
+
+.dashboard-actions button mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.save-btn {
+  color: #4CAF50 !important;
+}
+
+.save-btn:hover {
+  background-color: rgba(76, 175, 80, 0.1) !important;
+}
+
+.cancel-btn {
+  color: #f44336 !important;
+}
+
+.cancel-btn:hover {
+  background-color: rgba(244, 67, 54, 0.1) !important;
+}
+
+/* Form Field Styles */
+.edit-field {
+  width: 100%;
+  min-width: 150px;
+}
+
+.edit-field .mat-mdc-form-field-wrapper {
+  padding-bottom: 0;
+}
+
+.edit-field .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+
+.edit-field .mat-mdc-form-field-infix {
+  padding: 8px 0;
+  min-height: 32px;
+}
+
+.edit-field .mat-mdc-text-field-wrapper {
+  padding: 0 12px;
+}
+
+.edit-field .mat-mdc-form-field-outline-start,
+.edit-field .mat-mdc-form-field-outline-end {
+  border-width: 1px;
+  border-color: #e0e0e0;
+}
+
+.edit-field .mat-mdc-form-field-outline-thick .mat-mdc-form-field-outline-start,
+.edit-field .mat-mdc-form-field-outline-thick .mat-mdc-form-field-outline-end {
+  border-width: 2px;
+  border-color: #006A6A;
+}
+
+.edit-field input,
+.edit-field .mat-mdc-select-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #006A6A;
+}
+
+.edit-field .mat-mdc-select-arrow {
+  color: #006A6A;
+}
+
+/* Loading State */
+.dashboard-item.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.dashboard-item.loading .dashboard-actions {
+  opacity: 0;
+}
+
+/* Error State */
+.dashboard-item.error {
+  border-left-color: #f44336;
+  background-color: rgba(244, 67, 54, 0.05);
+}
+
+.dashboard-item.error .dashboard-icon {
+  background-color: #f44336;
+}
+
+/* Success State */
+.dashboard-item.success {
+  border-left-color: #4CAF50;
+  background-color: rgba(76, 175, 80, 0.05);
+  transition: background-color 0.3s ease;
+}
+
+.dashboard-item.success .dashboard-icon {
+  background-color: #4CAF50;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dashboard-panel {
+    flex-direction: column;
+  }
+
+  .dashboard-item {
+    min-width: 100%;
+  }
+
+  .dashboard-actions {
+    opacity: 1;
+  }
+
+  .edit-field {
+    min-width: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-item {
+    padding: 12px;
+  }
+
+  .dashboard-icon {
+    width: 36px;
+    height: 36px;
+    margin-right: 8px;
+  }
+
+  .dashboard-icon mat-icon {
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
+  }
+
+  .dashboard-value {
+    font-size: 16px;
+  }
+
+  .dashboard-actions button {
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    min-width: 28px;
+  }
+
+  .dashboard-actions button mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+}
