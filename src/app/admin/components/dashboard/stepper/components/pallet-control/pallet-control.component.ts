@@ -126,7 +126,7 @@ export class PalletControlComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    console.log('🎬 Pallet Control Component başlatılıyor...');
+
 
     if (!this.checkPrerequisites()) {
       return;
@@ -146,7 +146,7 @@ export class PalletControlComponent implements OnInit {
   }
 
   resetComponentState(): void {
-    console.log('🔄 Pallet Control component reset ediliyor...');
+
 
     try {
       // 1. Ana data properties'i reset et
@@ -184,10 +184,10 @@ export class PalletControlComponent implements OnInit {
       // 7. Clone count'ı reset et
       this.cloneCount = 1;
 
-      console.log('✅ Pallet Control component reset edildi');
+
 
     } catch (error) {
-      console.error('❌ Pallet Control reset hatası:', error);
+
     }
   }
 
@@ -266,13 +266,13 @@ export class PalletControlComponent implements OnInit {
   }
 
   private restoreFromSession(): void {
-    console.log("📖 Pallet Control - Session'dan veri restore ediliyor...");
+
 
     try {
       const restoredPackages = this.localStorageService.restoreStep2Data();
 
       if (restoredPackages && restoredPackages.length > 0) {
-        console.log("✅ Step 2 LocalStorage'dan veriler bulundu:", restoredPackages);
+
 
         this.packages = restoredPackages.map((pkg) => new UiPackage(pkg));
         this.loadPallets();
@@ -286,18 +286,18 @@ export class PalletControlComponent implements OnInit {
         this.configureComponent();
       }
     } catch (error) {
-      console.error('❌ Pallet session restore hatası:', error);
+
       this.configureComponent();
     }
   }
 
   private saveCurrentStateToSession(): void {
     try {
-      console.log("💾 Mevcut pallet state LocalStorage'a kaydediliyor...");
+
       this.localStorageService.saveStep2Data(this.packages);
-      console.log("✅ Pallet state session'a kaydedildi");
+
     } catch (error) {
-      console.error("❌ Pallet state session'a kaydedilemedi:", error);
+
     }
   }
 
@@ -305,29 +305,57 @@ export class PalletControlComponent implements OnInit {
      COMPONENT SETUP
   ===================== */
   configureComponent(): void {
-    console.log('⚙️ Pallet component yapılandırılıyor...');
+
 
     this.loadPallets();
     this.repository.calculatePackageDetail().subscribe({
       next: (response) => {
+        // **GÜVENLİK: Response kontrolü**
+        if (!response || !Array.isArray(response) || response.length === 0) {
+
+          this.packages = [];
+          this.addNewEmptyPackage();
+          this.updateAllCalculations();
+          return;
+        }
+
         this.packages = response;
-        this.order = this.packages[0].order;
+
+        // **GÜVENLİK: Order kontrolü**
+        if (this.packages.length > 0 && this.packages[0] && this.packages[0].order) {
+          this.order = this.packages[0].order;
+        } else {
+
+          this.order = null;
+        }
 
         this.packages.forEach((pkg, index) => {
-          if (pkg.pallet) {
+          if (pkg && pkg.pallet) {
             pkg.pallet.id = pkg.pallet.id + '/' + index;
           }
-          pkg.name = 'Palet' + index;
-          pkg.products = this.ensureUiProducts(pkg.products);
+          if (pkg) {
+            pkg.name = 'Palet' + index;
+            pkg.products = this.ensureUiProducts(pkg.products || []);
+          }
         });
 
-        this.availableProducts = this.ensureUiProducts(this.availableProducts);
+        this.availableProducts = this.ensureUiProducts(this.availableProducts || []);
         this.addNewEmptyPackage();
         this.updateAllCalculations();
 
         // YENİ: Configuration sonrası auto-save
         this.triggerAutoSave('api-response');
       },
+      error: (error) => {
+
+        this.toastService.error('Paket hesaplaması sırasında hata oluştu');
+
+        // **GÜVENLİK: Hata durumunda fallback**
+        this.packages = [];
+        this.order = null;
+        this.addNewEmptyPackage();
+        this.updateAllCalculations();
+      }
     });
   }
 
@@ -1219,7 +1247,7 @@ dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
         this.stepperService.setStepStatus(2, STATUSES.completed, true);
 
         // YENİ: Bu satırları ekleyin
-        console.log("💾 Step 2 tamamlandı, LocalStorage'a kaydediliyor...");
+
         this.saveCurrentStateToSession();
       },
     });
