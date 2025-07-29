@@ -1,4 +1,6 @@
-// stepper.component.ts - İYİLEŞTİRİLMİŞ VERSİYON
+// ==========================================
+// FIXED: SOLID Stepper Component with Providers
+// ==========================================
 
 import { Component, inject, ViewChild, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -10,542 +12,437 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { AsyncPipe } from '@angular/common';
+import { StepperSelectionEvent } from '@angular/cdk/stepper';
+
+// Components
 import { InvoiceUploadComponent } from './components/invoice-upload/invoice-upload.component';
 import { PalletControlComponent } from './components/pallet-control/pallet-control.component';
 import { LoadingComponent } from "../../../../components/loading/loading.component";
-import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { ResultStepComponent } from './components/result-step/result-step.component';
+
+// SOLID Dependencies
+import {
+  IStepValidator, IStorageManager, IActivityTracker, IErrorHandler,
+  IStepManager, INotificationService, IStepperConfig, IStepChangeEvent,
+  ComponentType, STEPPER_CONFIG, StepStatus,
+  STEP_VALIDATOR_TOKEN, STORAGE_MANAGER_TOKEN, ACTIVITY_TRACKER_TOKEN,
+  ERROR_HANDLER_TOKEN, STEP_MANAGER_TOKEN, NOTIFICATION_SERVICE_TOKEN,
+  isResettableComponent, isConfigurableComponent
+} from './interfaces/stepper.interface';
+
+import {
+  StepValidationHandler, StorageHandler, ActivityTrackingHandler,
+  ErrorHandler, ComponentManager, ServiceHealthChecker
+} from './handlers/stepper.handlers';
+
+// Legacy services (akan modernize edilecek)
 import { StepperStore, STATUSES } from './services/stepper.store';
 import { LocalStorageService } from './services/local-storage.service';
 import { ToastService } from '../../../../services/toast.service';
 
+/**
+ * ✅ SOLID Principles Applied:
+ * - SRP: Component sadece UI koordinasyonu yapar
+ * - OCP: Yeni özellikler handler'lar üzerinden eklenir
+ * - LSP: Interface'ler doğru implement edilir
+ * - ISP: Küçük, spesifik interface'ler kullanılır
+ * - DIP: Abstract interface'lere bağımlıdır, concrete class'lara değil
+ */
 @Component({
   selector: 'app-stepper',
   imports: [
-    MatStepperModule,
-    FormsModule,
-    LoadingComponent,
-    ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    AsyncPipe,
-    InvoiceUploadComponent,
-    PalletControlComponent,
-    LoadingComponent,
+    MatStepperModule, FormsModule, LoadingComponent, ReactiveFormsModule,
+    MatFormFieldModule, MatInputModule, MatButtonModule, AsyncPipe,
+    InvoiceUploadComponent, PalletControlComponent, LoadingComponent,
     ResultStepComponent
+  ],
+  providers: [
+    // ✅ FIXED: Injection Token Providers
+    { provide: STEP_VALIDATOR_TOKEN, useClass: StepValidationHandler },
+    { provide: STORAGE_MANAGER_TOKEN, useClass: StorageHandler },
+    { provide: ACTIVITY_TRACKER_TOKEN, useClass: ActivityTrackingHandler },
+    { provide: ERROR_HANDLER_TOKEN, useClass: ErrorHandler },
+
+    // ✅ Legacy Service Providers (geçici - modernize edilecek)
+    { provide: STEP_MANAGER_TOKEN, useExisting: StepperStore },
+    { provide: NOTIFICATION_SERVICE_TOKEN, useExisting: ToastService },
+    { provide: 'LocalStorageService', useExisting: LocalStorageService },
+
+    // ✅ Configuration Provider
+    {
+      provide: 'StepperConfig',
+      useValue: {
+        enableActivityTracking: true,
+        activityRefreshInterval: STEPPER_CONFIG.DEFAULT_ACTIVITY_INTERVAL,
+        enableAutoSave: true,
+        enableLinearMode: true
+      } as IStepperConfig
+    },
+
+    // ✅ Other Handlers
+    ComponentManager,
+    ServiceHealthChecker
   ],
   templateUrl: './stepper.component.html',
   styleUrl: './stepper.component.scss'
 })
 export class StepperComponent implements OnInit, OnDestroy {
+
+  // ✅ View References (UI katmanı)
   @ViewChild('stepper') stepper!: MatStepper;
   @ViewChild('invoiceUploadComponent') invoiceUploadComponent!: InvoiceUploadComponent;
   @ViewChild('palletControlComponent') palletControlComponent!: PalletControlComponent;
   @ViewChild('resultStepComponent') resultStepComponent!: ResultStepComponent;
 
-  private localStorageService = inject(LocalStorageService);
-  private toastService = inject(ToastService);
-  private destroy$ = new Subject<void>(); // ✅ Memory leak prevention
+  // ✅ FIXED: Dependency Injection with Tokens (DIP uygulanıyor)
+  private readonly stepValidator = inject(STEP_VALIDATOR_TOKEN);
+  private readonly storageManager = inject(STORAGE_MANAGER_TOKEN);
+  private readonly activityTracker = inject(ACTIVITY_TRACKER_TOKEN);
+  private readonly errorHandler = inject(ERROR_HANDLER_TOKEN);
+  private readonly componentManager = inject(ComponentManager);
+  private readonly serviceHealthChecker = inject(ServiceHealthChecker);
 
-  stepperService = inject(StepperStore);
-  selectedIndex: number = 0;
-  order_id: string = '';
+  // Legacy services (geçici - modernize edilecek)
+  private readonly legacyStepperService = inject(StepperStore);
+  private readonly legacyLocalStorage = inject(LocalStorageService);
+  private readonly legacyToastService = inject(ToastService);
 
-  // ✅ Activity tracking variables
-  private activityRefreshInterval?: number;
-  private readonly ACTIVITY_REFRESH_INTERVAL = 5 * 60 * 1000; // 5 dakika
+  // ✅ Component State (SRP - sadece UI state)
+  public selectedIndex: number = 0;
+  public order_id: string = '';
+  public stepperOrientation: Observable<StepperOrientation>;
 
-  stepperOrientation: Observable<StepperOrientation>;
+  // ✅ Lifecycle Management
+  private readonly destroy$ = new Subject<void>();
+
+  // ✅ Configuration (Injection token olarak gelecek)
+  private readonly config: IStepperConfig = {
+    enableActivityTracking: true,
+    activityRefreshInterval: STEPPER_CONFIG.DEFAULT_ACTIVITY_INTERVAL,
+    enableAutoSave: true,
+    enableLinearMode: true
+  };
 
   constructor() {
     const breakpointObserver = inject(BreakpointObserver);
 
+    // ✅ Responsive orientation setup
     this.stepperOrientation = breakpointObserver
       .observe('(min-width: 800px)')
       .pipe(
         map(({ matches }) => matches ? 'horizontal' : 'vertical'),
-        takeUntil(this.destroy$) // ✅ Subscription'ı temizle
+        takeUntil(this.destroy$)
       );
   }
 
-  ngOnInit(): void {
-    console.log('🚀 Stepper component başlatılıyor...');
+  // ==========================================
+  // ✅ LIFECYCLE HOOKS (Clean & SOLID)
+  // ==========================================
 
-    this.checkForExistingData();
-    this.setupActivityTracking();
-    this.checkServiceHealth();
+  async ngOnInit(): Promise<void> {
+    console.log('🚀 SOLID Stepper component initializing...');
 
-    console.log('✅ Stepper component hazır');
+    try {
+      await this.initializeComponent();
+      console.log('✅ SOLID Stepper component ready');
+    } catch (error) {
+      this.errorHandler.handleErrors(error, 'ngOnInit');
+      this.errorHandler.handleInitializationError();
+    }
   }
 
   ngOnDestroy(): void {
-    console.log('🔄 Stepper component temizleniyor...');
+    console.log('🔄 SOLID Stepper component cleaning up...');
 
-    // ✅ Tüm subscription'ları temizle
-    this.destroy$.next();
-    this.destroy$.complete();
-
-    // ✅ Activity tracking'i temizle
-    this.cleanupActivityTracking();
-
-    console.log('✅ Stepper component temizlendi');
-  }
-
-  private checkServiceHealth(): void {
     try {
-      if (!this.stepperService) {
-        console.error('❌ StepperService injection failed');
-        this.handleInitializationError();
-        return;
-      }
-
-      if (!this.localStorageService) {
-        console.error('❌ LocalStorageService injection failed');
-        this.handleInitializationError();
-        return;
-      }
-
-      // StepperService health check
-      if (typeof this.stepperService.isHealthy === 'function' && !this.stepperService.isHealthy()) {
-        console.error('❌ StepperService is not healthy');
-        this.handleInitializationError();
-        return;
-      }
-
-      console.log('✅ All services are healthy');
-
+      this.cleanupComponent();
+      console.log('✅ SOLID Stepper component cleaned up');
     } catch (error) {
-      console.error('❌ Service health check failed:', error);
-      this.handleInitializationError();
+      this.errorHandler.handleErrors(error, 'ngOnDestroy');
     }
   }
 
-  private handleInitializationError(): void {
+  // ==========================================
+  // ✅ INITIALIZATION (DIP + SRP)
+  // ==========================================
+
+  private async initializeComponent(): Promise<void> {
+    // Step 1: Health check all services
+    if (!this.performHealthCheck()) {
+      throw new Error('Service health check failed');
+    }
+
+    // Step 2: Register components (after ViewInit)
+    setTimeout(() => this.registerComponents(), 100);
+
+    // Step 3: Initialize from storage
+    await this.initializeFromStorage();
+
+    // Step 4: Start activity tracking
+    if (this.config.enableActivityTracking) {
+      this.activityTracker.startTracking();
+    }
+  }
+
+  private performHealthCheck(): boolean {
+    const services = [
+      { name: 'StepperStore', service: this.legacyStepperService },
+      { name: 'LocalStorageService', service: this.legacyLocalStorage },
+      { name: 'ToastService', service: this.legacyToastService }
+    ];
+
+    return this.serviceHealthChecker.checkAllServices(services);
+  }
+
+  // ✅ FIXED: Güvenli component registration
+  private registerComponents(): void {
     try {
-      // Fallback initialization
-      console.log('🔄 Attempting fallback initialization...');
+      if (this.invoiceUploadComponent) {
+        this.componentManager.registerComponent(ComponentType.INVOICE_UPLOAD, this.invoiceUploadComponent);
+      }
+      if (this.palletControlComponent) {
+        this.componentManager.registerComponent(ComponentType.PALLET_CONTROL, this.palletControlComponent);
+      }
+      if (this.resultStepComponent) {
+        this.componentManager.registerComponent(ComponentType.RESULT_STEP, this.resultStepComponent);
+      }
+    } catch (error) {
+      this.errorHandler.handleErrors(error, 'registerComponents');
+    }
+  }
 
-      // Reset step service if possible
-      if (this.stepperService?.resetStepper) {
-        this.stepperService.resetStepper();
+  private async initializeFromStorage(): Promise<void> {
+    try {
+      if (!this.storageManager.hasExistingData()) {
+        return;
       }
 
-      // Clear storage if possible
-      if (this.localStorageService?.clearStorage) {
-        this.localStorageService.clearStorage();
+      const storageInfo = this.storageManager.getStorageInfo();
+      console.log('📂 Existing data found:', storageInfo);
+
+      if (storageInfo.isExpiringSoon) {
+        this.showExpirationWarning();
       }
 
-      // Show user notification
-      setTimeout(() => {
-        if (this.toastService?.warning) {
-          this.toastService.warning('Sistem başlatılırken bir sorun oluştu. Sayfa yeniden yüklenecek.');
+      await this.restoreStepStates();
+      this.navigateToCurrentStep();
+
+    } catch (error) {
+      this.errorHandler.handleErrors(error, 'initializeFromStorage');
+    }
+  }
+
+  private async restoreStepStates(): Promise<void> {
+    const currentStep = this.storageManager.getCurrentStep();
+
+    for (let i = 1; i <= Math.min(currentStep + 1, STEPPER_CONFIG.MAX_STEPS); i++) {
+      if (this.storageManager.isStepCompleted(i)) {
+        // Legacy service call - akan modernize edilecek
+        if (this.legacyStepperService?.setStepStatus) {
+          this.legacyStepperService.setStepStatus(i, STATUSES.completed, true);
         }
-
-        // Reload page as last resort
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
-      }, 1000);
-
-    } catch (error) {
-      console.error('❌ Fallback initialization failed:', error);
-      // Force page reload
-      window.location.reload();
+      }
     }
   }
+
+  private navigateToCurrentStep(): void {
+    const currentStep = this.storageManager.getCurrentStep();
+
+    if (this.stepper && currentStep > 1) {
+      setTimeout(() => {
+        try {
+          this.stepper.selectedIndex = currentStep - 1;
+          this.selectedIndex = currentStep - 1;
+        } catch (error) {
+          this.errorHandler.handleErrors(error, 'navigateToCurrentStep');
+        }
+      }, STEPPER_CONFIG.NAVIGATION_DELAY);
+    }
+  }
+
+  // ==========================================
+  // ✅ STEP VALIDATION (Delegated to Handler)
+  // ==========================================
 
   getStepCompleted(stepIndex: number): boolean {
-    try {
-      // Validate service
-      if (!this.stepperService || !this.stepperService.steps) {
-        console.warn('⚠️ StepperService or steps not available');
-        return false;
-      }
-
-      // Validate index
-      if (stepIndex < 0 || stepIndex >= this.stepperService.steps.length) {
-        console.warn(`⚠️ Invalid step index: ${stepIndex}`);
-        return false;
-      }
-
-      // Get step safely
-      const step = this.stepperService.steps[stepIndex];
-      if (!step || typeof step.completed !== 'function') {
-        console.warn(`⚠️ Step ${stepIndex} or completed function not available`);
-        return false;
-      }
-
-      // Execute completed function safely
-      return step.completed() || false;
-
-    } catch (error) {
-      console.error(`❌ Error getting step ${stepIndex} completed status:`, error);
-      return false;
-    }
+    return this.stepValidator.isCompleted(stepIndex);
   }
 
   getStepEditable(stepIndex: number): boolean {
-    try {
-      // Validate service
-      if (!this.stepperService || !this.stepperService.steps) {
-        console.warn('⚠️ StepperService or steps not available');
-        return stepIndex === 0; // Default: only first step editable
-      }
-
-      // Validate index
-      if (stepIndex < 0 || stepIndex >= this.stepperService.steps.length) {
-        console.warn(`⚠️ Invalid step index: ${stepIndex}`);
-        return stepIndex === 0;
-      }
-
-      // Get step safely
-      const step = this.stepperService.steps[stepIndex];
-      if (!step || !step.editable || typeof step.editable !== 'function') {
-        console.warn(`⚠️ Step ${stepIndex} or editable function not available`);
-        return stepIndex === 0;
-      }
-
-      // Execute editable function safely
-      return step.editable() || false;
-
-    } catch (error) {
-      console.error(`❌ Error getting step ${stepIndex} editable status:`, error);
-      return stepIndex === 0; // Safe default
-    }
+    return this.stepValidator.isEditable(stepIndex);
   }
 
   getStepDirty(stepIndex: number): boolean {
-    try {
-      if (!this.stepperService || !this.stepperService.steps) {
-        return false;
-      }
-
-      if (stepIndex < 0 || stepIndex >= this.stepperService.steps.length) {
-        return false;
-      }
-
-      const step = this.stepperService.steps[stepIndex];
-      if (!step || !step.is_dirty || typeof step.is_dirty !== 'function') {
-        return false;
-      }
-
-      return step.is_dirty() || false;
-
-    } catch (error) {
-      console.error(`❌ Error getting step ${stepIndex} dirty status:`, error);
-      return false;
-    }
+    return this.stepValidator.isDirty(stepIndex);
   }
 
-  /**
-   * ✅ Mevcut kaydedilmiş veri kontrolü
-   */
-  private checkForExistingData(): void {
-    try {
-      if (!this.localStorageService || typeof this.localStorageService.getStorageInfo !== 'function') {
-        console.warn('⚠️ LocalStorageService not available for data check');
-        return;
-      }
+  // ==========================================
+  // ✅ EVENT HANDLERS (SRP - UI Events Only)
+  // ==========================================
 
-      const storageInfo = this.localStorageService.getStorageInfo();
+  onStepChange(event: StepperSelectionEvent): void {
+    const stepChangeEvent: IStepChangeEvent = {
+      previousIndex: event.previouslySelectedIndex,
+      selectedIndex: event.selectedIndex,
+      timestamp: new Date()
+    };
 
-      if (storageInfo && storageInfo.hasData) {
-        console.log('📂 Mevcut draft verisi bulundu:', storageInfo);
-
-        if (storageInfo.isExpiringSoon) {
-          console.warn('⚠️ Draft verisi yakında expire olacak');
-
-          // User'a uyarı göster
-          if (this.toastService?.warning) {
-            this.toastService.warning('Kaydedilmiş verileriniz yakında silinecek. Lütfen işleminizi tamamlayın.');
-          }
-        }
-
-        this.initializeStepsFromStorage();
-      }
-    } catch (error) {
-      console.error('❌ Existing data check error:', error);
-    }
+    console.log('📍 Step changed:', stepChangeEvent);
+    this.selectedIndex = event.selectedIndex;
   }
 
-  /**
-   * ✅ Storage'dan step durumlarını başlat
-   */
-  private initializeStepsFromStorage(): void {
-    try {
-      if (!this.localStorageService || typeof this.localStorageService.getCurrentStep !== 'function') {
-        console.warn('⚠️ Cannot initialize from storage - service not available');
-        return;
-      }
-
-      const currentStep = this.localStorageService.getCurrentStep();
-
-      // Validate current step
-      if (typeof currentStep !== 'number' || currentStep < 1 || currentStep > 3) {
-        console.warn(`⚠️ Invalid current step: ${currentStep}`);
-        return;
-      }
-
-      // Set completed steps
-      for (let i = 1; i <= Math.min(currentStep + 1, 3); i++) {
-        try {
-          if (this.localStorageService.isStepCompleted(i)) {
-            if (this.stepperService && typeof this.stepperService.setStepStatus === 'function') {
-              this.stepperService.setStepStatus(i, STATUSES.completed, true);
-            }
-          }
-        } catch (error) {
-          console.error(`❌ Error setting step ${i} status:`, error);
-        }
-      }
-
-      // Navigate to current step
-      if (this.stepper && currentStep > 1) {
-        setTimeout(() => {
-          try {
-            if (this.stepper) {
-              this.stepper.selectedIndex = currentStep - 1;
-            }
-          } catch (error) {
-            console.error('❌ Navigation error:', error);
-          }
-        }, 100);
-      }
-
-    } catch (error) {
-      console.error('❌ Storage initialization error:', error);
-    }
-  }
-
-  /**
-   * ✅ Activity tracking setup (memory safe)
-   */
-  private setupActivityTracking(): void {
-    // Interval setup
-    try {
-      // Safe interval setup
-      this.activityRefreshInterval = window.setInterval(() => {
-        try {
-          if (this.localStorageService &&
-              typeof this.localStorageService.hasExistingData === 'function' &&
-              this.localStorageService.hasExistingData()) {
-            console.log('🔄 Draft data activity refresh');
-          }
-        } catch (error) {
-          console.error('❌ Activity refresh error:', error);
-        }
-      }, this.ACTIVITY_REFRESH_INTERVAL);
-
-      // Safe event listeners
-      const activityHandler = () => {
-        try {
-          if (this.localStorageService &&
-              typeof this.localStorageService.hasExistingData === 'function' &&
-              this.localStorageService.hasExistingData()) {
-            // Activity detected
-          }
-        } catch (error) {
-          console.error('❌ Activity handler error:', error);
-        }
-      };
-
-      const eventOptions = { passive: true };
-      const events = ['click', 'keypress', 'scroll'];
-
-      events.forEach(eventType => {
-        try {
-          document.addEventListener(eventType, activityHandler, eventOptions);
-        } catch (error) {
-          console.error(`❌ Event listener setup error for ${eventType}:`, error);
-        }
-      });
-
-      // Cleanup subscription
-      this.destroy$.subscribe(() => {
-        events.forEach(eventType => {
-          try {
-            document.removeEventListener(eventType, activityHandler);
-          } catch (error) {
-            console.error(`❌ Event listener cleanup error for ${eventType}:`, error);
-          }
-        });
-      });
-
-    } catch (error) {
-      console.error('❌ Activity tracking setup error:', error);
-    }
-  }
-
-  debugStepperState(): void {
-    try {
-      console.log('🐛 === STEPPER DEBUG INFO ===');
-      console.log('StepperService available:', !!this.stepperService);
-      console.log('LocalStorageService available:', !!this.localStorageService);
-
-      if (this.stepperService) {
-        console.log('StepperService healthy:', this.stepperService.isHealthy?.() || 'unknown');
-        console.log('Steps length:', this.stepperService.steps?.length || 'unknown');
-
-        // Log each step status
-        for (let i = 0; i < 3; i++) {
-          console.log(`Step ${i + 1}:`, {
-            completed: this.getStepCompleted(i),
-            editable: this.getStepEditable(i),
-            dirty: this.getStepDirty(i),
-          });
-        }
-      }
-
-      if (this.localStorageService) {
-        console.log('Storage info:', this.localStorageService.getStorageInfo?.() || 'unknown');
-      }
-
-      console.log('=== END DEBUG INFO ===');
-    } catch (error) {
-      console.error('❌ Debug method error:', error);
-    }
-  }
-
-  /**
-   * ✅ Activity tracking cleanup
-   */
-  private cleanupActivityTracking(): void {
-    if (this.activityRefreshInterval) {
-      clearInterval(this.activityRefreshInterval);
-      this.activityRefreshInterval = undefined;
-    }
-  }
-
-  /**
-   * ✅ Shipment completed - tam reset
-   */
-  onShipmentCompleted(): void {
-    console.log('🔄 Shipment completed, full reset başlıyor...');
-
-    try {
-      // Step 1: Reset components
-      this.resetAllComponents();
-
-      // Step 2: Clear storage
-      if (this.localStorageService && typeof this.localStorageService.clearStorage === 'function') {
-        this.localStorageService.clearStorage();
-      }
-
-      // Step 3: Reset stepper
-      if (this.stepperService && typeof this.stepperService.resetStepper === 'function') {
-        this.stepperService.resetStepper();
-      }
-
-      // Step 4: Reset navigation
-      this.resetStepperNavigation();
-
-      console.log('✅ Full reset tamamlandı');
-
-    } catch (error) {
-      console.error('❌ Reset hatası:', error);
-
-      // Fallback: force page reload
-      if (this.toastService?.error) {
-        this.toastService.error('Reset sırasında hata oluştu. Sayfa yeniden yüklenecek.');
-      }
-
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-    }
-  }
-
-  /**
-   * ✅ Stepper navigation reset
-   */
-  private resetStepperNavigation(): void {
-    if (this.stepper) {
-      // Linear mode'u geçici olarak kapat
-      this.stepper.linear = false;
-
-      // Step 1'e git
-      this.stepper.selectedIndex = 0;
-      this.selectedIndex = 0;
-
-      // Kısa bir delay sonra linear mode'u tekrar aç
-      setTimeout(() => {
-        if (this.stepper) {
-          this.stepper.linear = true;
-        }
-      }, 500);
-    }
-  }
-
-  /**
-   * ✅ Component reset
-   */
-  private resetAllComponents(): void {
-    console.log('🔄 Componentler reset ediliyor...');
-
-    try {
-      if (this.invoiceUploadComponent) {
-        this.invoiceUploadComponent.resetComponentState();
-      }
-
-      if (this.palletControlComponent) {
-        this.palletControlComponent.resetComponentState();
-      }
-
-      // Order ID'yi de reset et
-      this.order_id = '';
-
-      console.log('✅ Componentler reset edildi');
-
-    } catch (error) {
-      console.error('❌ Component reset hatası:', error);
-    }
-  }
-
-  /**
-   * ✅ Step event handler'lar
-   */
   orderIdComeOn(id: string): void {
     this.order_id = id;
-    console.log('📋 Order ID alındı:', this.order_id);
+    console.log('📋 Order ID received:', this.order_id);
     this.selectedIndex = 1;
-  }
-
-  configurePalletComponent(): void {
-    if (this.palletControlComponent) {
-      this.palletControlComponent.configureComponent();
-    }
   }
 
   invoiceUploaded(): void {
     this.configurePalletComponent();
-    this.stepperService.setStepStatus(1, STATUSES.completed, true);
+
+    // Legacy service call - akan modernize edilecek
+    if (this.legacyStepperService?.setStepStatus) {
+      this.legacyStepperService.setStepStatus(1, STATUSES.completed, true);
+    }
   }
 
-  onStepChange(event: StepperSelectionEvent): void {
-    console.log('📍 Step değişti:', {
-      previousIndex: event.previouslySelectedIndex,
-      selectedIndex: event.selectedIndex
-    });
+  onShipmentCompleted(): void {
+    console.log('🔄 Shipment completed, starting full reset...');
 
-    this.selectedIndex = event.selectedIndex;
+    try {
+      this.performFullReset();
+      console.log('✅ Full reset completed');
+    } catch (error) {
+      this.errorHandler.handleErrors(error, 'onShipmentCompleted');
+      this.handleResetFailure();
+    }
   }
 
-  /**
-   * ✅ Debug ve utility metodlar
-   */
+  // ==========================================
+  // ✅ COMPONENT OPERATIONS (Delegated)
+  // ==========================================
+
+  private configurePalletComponent(): void {
+    this.componentManager.configureComponent(ComponentType.PALLET_CONTROL);
+  }
+
+  private performFullReset(): void {
+    // Step 1: Reset all components
+    this.componentManager.resetAllComponents();
+
+    // Step 2: Clear storage
+    this.storageManager.clearStorage();
+
+    // Step 3: Reset stepper service
+    if (this.legacyStepperService?.resetStepper) {
+      this.legacyStepperService.resetStepper();
+    }
+
+    // Step 4: Reset navigation
+    this.resetStepperNavigation();
+
+    // Step 5: Reset component state
+    this.order_id = '';
+  }
+
+  private resetStepperNavigation(): void {
+    if (!this.stepper) return;
+
+    // Temporarily disable linear mode
+    this.stepper.linear = false;
+
+    // Navigate to first step
+    this.stepper.selectedIndex = 0;
+    this.selectedIndex = 0;
+
+    // Re-enable linear mode after delay
+    setTimeout(() => {
+      if (this.stepper && this.config.enableLinearMode) {
+        this.stepper.linear = true;
+      }
+    }, STEPPER_CONFIG.RESET_DELAY);
+  }
+
+  private handleResetFailure(): void {
+    if (this.legacyToastService?.error) {
+      this.legacyToastService.error('Reset sırasında hata oluştu. Sayfa yeniden yüklenecek.');
+    }
+
+    setTimeout(() => {
+      window.location.reload();
+    }, STEPPER_CONFIG.RELOAD_DELAY);
+  }
+
+  // ==========================================
+  // ✅ UTILITY METHODS (Clean & Simple)
+  // ==========================================
+
+  private showExpirationWarning(): void {
+    if (this.legacyToastService?.warning) {
+      this.legacyToastService.warning(
+        'Kaydedilmiş verileriniz yakında silinecek. Lütfen işleminizi tamamlayın.'
+      );
+    }
+  }
+
+  private cleanupComponent(): void {
+    // Stop activity tracking
+    this.activityTracker.stopTracking();
+
+    // Complete RxJS subjects
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // ==========================================
+  // ✅ DEBUG METHODS (Development Only)
+  // ==========================================
+
+  debugStepperState(): void {
+    try {
+      console.log('🐛 === SOLID STEPPER DEBUG ===');
+      console.log('Services available:', {
+        stepValidator: !!this.stepValidator,
+        storageManager: !!this.storageManager,
+        activityTracker: !!this.activityTracker,
+        errorHandler: !!this.errorHandler,
+        componentManager: !!this.componentManager
+      });
+
+      console.log('Storage info:', this.storageManager.getStorageInfo());
+
+      for (let i = 0; i < STEPPER_CONFIG.MAX_STEPS; i++) {
+        console.log(`Step ${i + 1}:`, {
+          completed: this.getStepCompleted(i),
+          editable: this.getStepEditable(i),
+          dirty: this.getStepDirty(i)
+        });
+      }
+
+      console.log('=== END SOLID DEBUG ===');
+    } catch (error) {
+      this.errorHandler.handleErrors(error, 'debugStepperState');
+    }
+  }
+
   logStorageInfo(): void {
-    const info = this.localStorageService.getStorageInfo();
+    const info = this.storageManager.getStorageInfo();
     console.log('📊 Storage Info:', info);
-    this.stepperService.logStatus();
+
+    if (this.legacyStepperService?.logStatus) {
+      this.legacyStepperService.logStatus();
+    }
   }
 
-  // Manuel olarak storage'ı temizleme (development için)
   clearDraftData(): void {
     if (confirm('Draft verilerini silmek istediğinizden emin misiniz?')) {
-      this.localStorageService.clearStorage();
-      this.stepperService.resetStepper();
-      console.log('🗑️ Draft veriler temizlendi');
+      this.storageManager.clearStorage();
+
+      if (this.legacyStepperService?.resetStepper) {
+        this.legacyStepperService.resetStepper();
+      }
+
+      console.log('🗑️ Draft data cleared');
     }
   }
 }

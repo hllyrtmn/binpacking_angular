@@ -216,7 +216,7 @@ export class AutoSaveService implements OnDestroy {
 
   private async saveStep2Data(data: any): Promise<void> {
     if (data.packages && Array.isArray(data.packages)) {
-      this.localStorageService.saveStep2Data(data.packages);
+      this.localStorageService.saveStep2Data(data.packages,data.availableProducts);
     } else {
       throw new Error('Invalid Step 2 data structure');
     }

@@ -76,16 +76,11 @@ export class PalletControlComponent implements OnInit {
   currentDraggedProduct: UiProduct | null = null;
 
   // Trailer specifications
-  trailer = {
-    width: 11800,
-    depth: 2350,
-    height: 2400,
-    weighLimit: 25000,
-  };
+  trailer: any;
 
   // Calculated values - cached
   private _calculationCache = new Map<string, any>();
-  remainingVolume: number = 0;
+  remainingArea: number = 0;
   remainingWeight: number = 0;
   totalWeight: number = 0;
   totalMeter: number = 0;
@@ -109,8 +104,8 @@ export class PalletControlComponent implements OnInit {
       packages: this.packages,
       totalWeight: this.totalWeight,
       totalMeter: this.totalMeter,
-      remainingVolume: this.remainingVolume,
-      remainingWeight: this.remainingWeight
+      remainingArea: this.remainingArea,
+      remainingWeight: this.remainingWeight,
     });
 
     this.toastService.success('Pallet verileri zorla kaydedildi');
@@ -126,8 +121,6 @@ export class PalletControlComponent implements OnInit {
   }
 
   ngOnInit(): void {
-
-
     if (!this.checkPrerequisites()) {
       return;
     }
@@ -146,8 +139,6 @@ export class PalletControlComponent implements OnInit {
   }
 
   resetComponentState(): void {
-
-
     try {
       // 1. Ana data properties'i reset et
       this.packages = [];
@@ -155,9 +146,10 @@ export class PalletControlComponent implements OnInit {
       this.availablePallets = [];
       this.selectedPallets = [];
       this.order = null;
+      this.trailer = null;
 
       // 2. Calculation values'ı reset et
-      this.remainingVolume = 0;
+      this.remainingArea = 0;
       this.remainingWeight = 0;
       this.totalWeight = 0;
       this.totalMeter = 0;
@@ -183,12 +175,7 @@ export class PalletControlComponent implements OnInit {
 
       // 7. Clone count'ı reset et
       this.cloneCount = 1;
-
-
-
-    } catch (error) {
-
-    }
+    } catch (error) {}
   }
 
   private setupAutoSaveListeners(): void {
@@ -228,7 +215,7 @@ export class PalletControlComponent implements OnInit {
         packages: packageSummary,
         totalPackages: this.packages.length,
         totalWeight: this.totalWeight,
-        remainingVolume: this.remainingVolume,
+        remainingArea: this.remainingArea,
       });
     } catch (error) {
       return '';
@@ -252,9 +239,10 @@ export class PalletControlComponent implements OnInit {
           this.autoSaveService.triggerStep2AutoSave(
             {
               packages: this.packages,
+              availableProducts: this.availableProducts,
               totalWeight: this.totalWeight,
               totalMeter: this.totalMeter,
-              remainingVolume: this.remainingVolume,
+              remainingArea: this.remainingArea,
               remainingWeight: this.remainingWeight,
             },
             changeType
@@ -266,15 +254,25 @@ export class PalletControlComponent implements OnInit {
   }
 
   private restoreFromSession(): void {
-
-
     try {
       const restoredPackages = this.localStorageService.restoreStep2Data();
 
-      if (restoredPackages && restoredPackages.length > 0) {
-
-
-        this.packages = restoredPackages.map((pkg) => new UiPackage(pkg));
+      if (
+        restoredPackages &&
+        ((restoredPackages.availableProducts &&
+          restoredPackages.availableProducts.length > 0) ||
+          (restoredPackages.packages && restoredPackages.packages.length > 0))
+      ) {
+        this.packages =
+          restoredPackages && restoredPackages.packages
+            ? restoredPackages.packages.map((pkg) => new UiPackage(pkg))
+            : [];
+        this.availableProducts =
+          restoredPackages && restoredPackages.availableProducts
+            ? restoredPackages.availableProducts.map(
+                (prod) => new UiProduct(prod)
+              )
+            : [];
         this.loadPallets();
         this.updateAllCalculations();
 
@@ -286,47 +284,54 @@ export class PalletControlComponent implements OnInit {
         this.configureComponent();
       }
     } catch (error) {
-
       this.configureComponent();
     }
   }
 
   private saveCurrentStateToSession(): void {
     try {
-
-      this.localStorageService.saveStep2Data(this.packages);
-
-    } catch (error) {
-
-    }
+      this.localStorageService.saveStep2Data(
+        this.packages,
+        this.availableProducts
+      );
+    } catch (error) {}
   }
 
   /* =====================
      COMPONENT SETUP
   ===================== */
   configureComponent(): void {
-
-
     this.loadPallets();
     this.repository.calculatePackageDetail().subscribe({
       next: (response) => {
         // **GÜVENLİK: Response kontrolü**
-        if (!response || !Array.isArray(response) || response.length === 0) {
-
+        if (
+          !response ||
+          !response.packages ||
+          !Array.isArray(response.packages) ||
+          response.packages.length === 0
+        ) {
           this.packages = [];
           this.addNewEmptyPackage();
           this.updateAllCalculations();
           return;
         }
 
-        this.packages = response;
+        this.availableProducts = response.remainingProducts;
+
+        this.packages = response.packages;
 
         // **GÜVENLİK: Order kontrolü**
-        if (this.packages.length > 0 && this.packages[0] && this.packages[0].order) {
+        if (
+          this.packages.length > 0 &&
+          this.packages[0] &&
+          this.packages[0].order
+        ) {
           this.order = this.packages[0].order;
+          this.trailer = this.order.truck
         } else {
-
           this.order = null;
+          this.trailer = null;
         }
 
         this.packages.forEach((pkg, index) => {
@@ -339,7 +344,6 @@ export class PalletControlComponent implements OnInit {
           }
         });
 
-        this.availableProducts = this.ensureUiProducts(this.availableProducts || []);
         this.addNewEmptyPackage();
         this.updateAllCalculations();
 
@@ -347,15 +351,15 @@ export class PalletControlComponent implements OnInit {
         this.triggerAutoSave('api-response');
       },
       error: (error) => {
-
         this.toastService.error('Paket hesaplaması sırasında hata oluştu');
 
         // **GÜVENLİK: Hata durumunda fallback**
         this.packages = [];
         this.order = null;
+        this.trailer = null;
         this.addNewEmptyPackage();
         this.updateAllCalculations();
-      }
+      },
     });
   }
 
@@ -452,34 +456,35 @@ export class PalletControlComponent implements OnInit {
   /**
    * Calculate remaining volume with caching
    */
-  calculateVolume(): void {
-    const cacheKey = `volume-${this.getCalculationHash()}`;
+  calculateArea(): void {
+    const cacheKey = `area-${this.getCalculationHash()}`;
 
     if (this._calculationCache.has(cacheKey)) {
-      this.remainingVolume = this._calculationCache.get(cacheKey);
+      this.remainingArea = this._calculationCache.get(cacheKey);
       return;
     }
 
-    const totalVolume = this.packages.reduce((total, pkg) => {
-      const palletVolume = Math.floor(pkg.pallet?.dimension.volume ?? 0);
-      const productsVolume = pkg.products.reduce(
-        (pTotal, product) => pTotal + Math.floor(product.dimension.volume),
-        0
+    const totalArea = this.packages.reduce((total, pkg) => {
+      const palletArea = Math.floor(
+        (pkg.pallet?.dimension.width ?? 0) * (pkg.pallet?.dimension.depth ?? 0)
       );
-      return total + palletVolume + productsVolume;
+      return total + palletArea;
     }, 0);
 
-    const trailerVolume =
-      this.trailer.depth * this.trailer.height * this.trailer.width;
-    this.remainingVolume = Math.floor((trailerVolume - totalVolume) / 1000);
+    const trailerArea = this.trailer.dimension.width * this.trailer.dimension.depth;
 
-    this._calculationCache.set(cacheKey, this.remainingVolume);
+    this.remainingArea = Math.floor((trailerArea - totalArea) / 1000000);
+
+    this._calculationCache.set(cacheKey, this.remainingArea);
   }
 
   /**
    * Calculate total and remaining weight with caching
    */
   calculateWeight(): void {
+    type WeightTypeKey = 'std' | 'pre' | 'eco';
+    const selectedWeightType = this.order?.weight_type as WeightTypeKey;
+
     const cacheKey = `weight-${this.getCalculationHash()}`;
 
     if (this._calculationCache.has(cacheKey)) {
@@ -500,7 +505,7 @@ export class PalletControlComponent implements OnInit {
     }, 0);
 
     this.totalWeight = totalWeight;
-    this.remainingWeight = Math.floor(this.trailer.weighLimit - totalWeight);
+    this.remainingWeight = Math.floor(this.trailer.weight_limit - totalWeight);
 
     this._calculationCache.set(cacheKey, {
       total: this.totalWeight,
@@ -542,10 +547,12 @@ export class PalletControlComponent implements OnInit {
    * Calculate package total weight with caching
    */
   packageTotalWeight(pkg: UiPackage): number {
+    type WeightTypeKey = 'std' | 'pre' | 'eco';
+    const selectedWeightType = this.order?.weight_type as WeightTypeKey;
+
     const cacheKey = `pkg-weight-${pkg.pallet?.id || 'null'}-${
       pkg.products.length
     }`;
-
     if (this._calculationCache.has(cacheKey)) {
       return this._calculationCache.get(cacheKey);
     }
@@ -569,7 +576,7 @@ export class PalletControlComponent implements OnInit {
     this._calculationCache.clear();
     this._lastCalculationHash = '';
 
-    this.calculateVolume();
+    this.calculateArea();
     this.calculateWeight();
     this.calculateTotalMeter();
   }
@@ -827,7 +834,7 @@ export class PalletControlComponent implements OnInit {
   /**
    * Drop product to pallet - Optimized
    */
-dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
+  dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
     // Mevcut drop logic'i aynı kalacak...
     const product = event.previousContainer.data[event.previousIndex];
     const targetPalletId = event.container.id;
@@ -851,9 +858,10 @@ dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
           targetPackage.pallet,
           targetPackage.products
         );
-        const singleVolume = this.safeNumber(product.dimension.width) *
-                            this.safeNumber(product.dimension.depth) *
-                            this.safeNumber(product.dimension.height);
+        const singleVolume =
+          this.safeNumber(product.dimension.width) *
+          this.safeNumber(product.dimension.depth) *
+          this.safeNumber(product.dimension.height);
         const maxCount = Math.floor(remainingVolume / singleVolume);
 
         let errorMessage = `Bu ürün palete sığmıyor. Palet doluluk: %${fillPercentage}`;
@@ -861,7 +869,9 @@ dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
         if (maxCount > 0 && maxCount < this.safeNumber(product.count)) {
           errorMessage += `. Maksimum ${maxCount} adet sığabilir, ürünü bölebilirsiniz.`;
         } else if (maxCount === 0) {
-          errorMessage += `. Kalan hacim: ${remainingVolume.toFixed(2)} - çok küçük.`;
+          errorMessage += `. Kalan hacim: ${remainingVolume.toFixed(
+            2
+          )} - çok küçük.`;
         }
 
         this.toastService.error(errorMessage, 'Ürün Palete Sığmıyor!');
@@ -871,7 +881,11 @@ dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
 
     // Perform drop operation
     if (event.previousContainer === event.container) {
-      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+      moveItemInArray(
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex
+      );
     } else {
       transferArrayItem(
         event.previousContainer.data,
@@ -945,7 +959,11 @@ dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
 
     this.packages.forEach((pkg, index) => {
       if (pkg.pallet) {
-        const canFit = this.canFitProductToPallet(product, pkg.pallet, pkg.products);
+        const canFit = this.canFitProductToPallet(
+          product,
+          pkg.pallet,
+          pkg.products
+        );
         const palletElement = palletElements.get(pkg.pallet.id);
 
         if (palletElement) {
@@ -953,17 +971,28 @@ dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
             palletElement.classList.add('can-drop');
             palletElement.classList.remove('cannot-drop');
 
-            const maxCount = this.getMaxProductCount(product, pkg.pallet, pkg.products);
+            const maxCount = this.getMaxProductCount(
+              product,
+              pkg.pallet,
+              pkg.products
+            );
             palletElement.title = `✅ Bu palete maksimum ${maxCount} adet sığabilir`;
           } else {
             palletElement.classList.add('cannot-drop');
             palletElement.classList.remove('can-drop');
 
-            const fillPercentage = this.getPalletFillPercentage(pkg.pallet, pkg.products);
-            const singleVolume = this.safeNumber(product.dimension.width) *
-                                this.safeNumber(product.dimension.depth) *
-                                this.safeNumber(product.dimension.height);
-            const remainingVolume = this.getRemainingPalletVolume(pkg.pallet, pkg.products);
+            const fillPercentage = this.getPalletFillPercentage(
+              pkg.pallet,
+              pkg.products
+            );
+            const singleVolume =
+              this.safeNumber(product.dimension.width) *
+              this.safeNumber(product.dimension.depth) *
+              this.safeNumber(product.dimension.height);
+            const remainingVolume = this.getRemainingPalletVolume(
+              pkg.pallet,
+              pkg.products
+            );
             const maxCount = Math.floor(remainingVolume / singleVolume);
 
             if (maxCount > 0) {
@@ -1084,7 +1113,7 @@ dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
   /**
    * Remove product from package
    */
-   removeProductFromPackage(pkg: UiPackage, productIndex: number): void {
+  removeProductFromPackage(pkg: UiPackage, productIndex: number): void {
     const removedProduct = pkg.products.splice(productIndex, 1)[0];
     const uiProduct = this.ensureUiProduct(removedProduct);
     this.availableProducts.push(uiProduct);
@@ -1123,8 +1152,10 @@ dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
   }
   removePackage(packageToRemove: any): void {
     // Mevcut logic...
-    const packageIndex = this.packages.findIndex(pkg =>
-      pkg === packageToRemove || (pkg.id && packageToRemove.id && pkg.id === packageToRemove.id)
+    const packageIndex = this.packages.findIndex(
+      (pkg) =>
+        pkg === packageToRemove ||
+        (pkg.id && packageToRemove.id && pkg.id === packageToRemove.id)
     );
 
     if (packageIndex === -1) {
@@ -1141,7 +1172,9 @@ dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
     }
 
     if (pkg.pallet) {
-      const palletIndex = this.selectedPallets.findIndex(pallet => pallet === pkg.pallet);
+      const palletIndex = this.selectedPallets.findIndex(
+        (pallet) => pallet === pkg.pallet
+      );
       if (palletIndex !== -1) {
         this.selectedPallets.splice(palletIndex, 1);
       }
@@ -1245,8 +1278,6 @@ dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
       next: (response) => {
         this.toastService.success('Kaydedildi', 'Başarılı');
         this.stepperService.setStepStatus(2, STATUSES.completed, true);
-
-        // YENİ: Bu satırları ekleyin
 
         this.saveCurrentStateToSession();
       },

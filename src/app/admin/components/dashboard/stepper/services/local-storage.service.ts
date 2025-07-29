@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Order } from '../../../../../models/order.interface';
 import { OrderDetail } from '../../../../../models/order-detail.interface';
 import { UiPackage } from '../components/ui-models/ui-package.model';
+import { UiProduct } from '../components/ui-models/ui-product.model';
 
 interface StepperStorageData {
   // Step 1 verileri
@@ -16,6 +17,7 @@ interface StepperStorageData {
   // Step 2 verileri
   step2: {
     packages: any[];
+    availableProducts: any[];
     isCompleted: boolean;
   };
 
@@ -165,7 +167,7 @@ export class LocalStorageService {
   /**
    * ✅ Step 2 verilerini kaydet
    */
-  saveStep2Data(packages: UiPackage[]): void {
+  saveStep2Data(packages: UiPackage[],availableProducts: UiProduct[]): void {
     const serializedPackages = packages.map(pkg => ({
       id: pkg.id,
       name: pkg.name,
@@ -173,10 +175,21 @@ export class LocalStorageService {
       products: pkg.products,
       order: pkg.order
     }));
+    const serializedProducts = availableProducts.map(prd => ({
+      id: prd.id,
+      name: prd.name,
+      count: prd.count,
+      product_type: prd.product_type,
+      dimension: prd.dimension,
+      weight_type: prd.weight_type,
+      company: prd.company,
+
+    }));
 
     this.saveStepperData({
       step2: {
         packages: serializedPackages,
+        availableProducts: serializedProducts,
         isCompleted: packages.length > 0
       },
       currentStep: 2
@@ -228,9 +241,15 @@ export class LocalStorageService {
     return null;
   }
 
-  restoreStep2Data(): any[] | null {
+  restoreStep2Data(): {packages:UiPackage[],availableProducts:UiProduct[]} | null {
     const data = this.getStepperData();
-    return data.step2?.isCompleted ? data.step2.packages : null;
+    if(data.step2?.isCompleted){
+      return{
+        packages: data.step2.packages,
+        availableProducts: data.step2.availableProducts
+      }
+    }
+    return null;
   }
 
   restoreStep3Data(): { optimizationResult: any, reportFiles: any[] } | null {
@@ -316,6 +335,7 @@ export class LocalStorageService {
       },
       step2: {
         packages: [],
+        availableProducts: [],
         isCompleted: false
       },
       step3: {

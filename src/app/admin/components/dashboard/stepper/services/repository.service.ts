@@ -1,9 +1,9 @@
 import { Injectable, signal } from '@angular/core';
 import { ApiService } from '../../../../../services/api.service';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { map, Observable } from 'rxjs';
+import { map, Observable, tap } from 'rxjs';
 import { FileResponse } from '../interfaces/file-response.interface';
-import { mapToOrderDetailDtoList } from '../../../../../models/mappers/order-detail.mapper';
+import { mapOrderDetailsToUiProductsSafe, mapToOrderDetailDtoList } from '../../../../../models/mappers/order-detail.mapper';
 import { mapPackageDetailToPackage } from '../../../../../models/mappers/package-detail.mapper';
 import { UiPallet } from '../components/ui-models/ui-pallet.model';
 import { PackageDetail } from '../../../../../models/package-detail.interface';
@@ -88,13 +88,16 @@ export class RepositoryService {
     }>(`${this.api.getApiUrl()}/orders/process-file/`, formData);
   }
 
-  calculatePackageDetail(order_id: string = this.orderId()): Observable<any> {
+  calculatePackageDetail(order_id: string = this.orderId()): Observable<{packages: any[], remainingProducts: any[]}> {
     // api/orders/packages/{id}/
     // get package detail by package id.
 
     return this.http
       .get<any>(`${this.api.getApiUrl()}/logistics/calculate-box/${order_id}/`)
-      .pipe(map((response) => mapPackageDetailToPackage(response.data)));
+      .pipe(map((response) =>({
+        packages: mapPackageDetailToPackage(response.data),
+        remainingProducts: mapOrderDetailsToUiProductsSafe(response.remaining_order_details)
+      }) ));
   }
 
   bulkCreatePackageDetail(
