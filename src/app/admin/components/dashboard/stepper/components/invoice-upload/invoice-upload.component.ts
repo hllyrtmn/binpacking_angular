@@ -1,3 +1,5 @@
+// invoice-upload.component.ts (Refactored)
+
 import {
   Component,
   EventEmitter,
@@ -5,62 +7,62 @@ import {
   OnInit,
   Output,
   ViewChild,
+  OnDestroy,
 } from '@angular/core';
-import {
-  FormBuilder,
-  FormGroup,
-  FormsModule,
-  ReactiveFormsModule,
-  Validators,
-  AbstractControl,
-  ValidationErrors,
-} from '@angular/forms';
+import { FormGroup } from '@angular/forms';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTableModule } from '@angular/material/table';
 import { CommonModule } from '@angular/common';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import {
-  Observable,
-  switchMap,
-  tap,
-  finalize,
-  of,
-  catchError,
-} from 'rxjs';
-
-import { RepositoryService } from '../../services/repository.service';
-import { ToastService } from '../../../../../../services/toast.service';
-import { OrderService } from '../../../../services/order.service';
-import { Order } from '../../../../../../models/order.interface';
-import { OrderDetail } from '../../../../../../models/order-detail.interface';
-import { GenericTableComponent } from '../../../../../../components/generic-table/generic-table.component';
-import { OrderDetailAddDialogComponent } from './order-detail-add-dialog/order-detail-add-dialog.component';
-import { AutoSaveService } from '../../services/auto-save.service';
-import { LocalStorageService } from '../../services/local-storage.service';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
-import { Truck } from '../../../../../../models/truck.interface';
-import { UserService } from '../../../../../../services/user.service';
-import { v4 as uuidv4 } from 'uuid';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+  Observable,
+  switchMap,
+  finalize,
+  catchError,
+  Subscription,
+  interval,
+} from 'rxjs';
+
+import { OrderService } from '../../../../services/order.service';
+import { ToastService } from '../../../../../../services/toast.service';
+import { AutoSaveService } from '../../services/auto-save.service';
+import { LocalStorageService } from '../../services/local-storage.service';
 import { StateManager } from '../../services/state-manager.service';
 
-// Sabit değişkenler
-const VALID_FILE_TYPES = [
-  'application/pdf',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-];
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+import { Order } from '../../../../../../models/order.interface';
+import { OrderDetail } from '../../../../../../models/order-detail.interface';
+import { GenericTableComponent } from '../../../../../../components/generic-table/generic-table.component';
+
+// Refactored managers and services
+import { FileUploadManager } from './managers/file-upload.manager';
+import { OrderFormManager } from './managers/order-form.manager';
+import { OrderDetailManager } from './managers/order-detail.manager';
+import { UIStateManager } from './managers/ui-state.manager';
+import { InvoiceDataLoaderService } from './services/invoice-data-loader.service';
+import { InvoiceCalculatorService } from './services/invoice-calculator.service';
+
+// Types and constants
+import {
+  OrderDetailUpdateEvent,
+  UIState,
+  ReferenceData,
+  WeightType,
+  AutoSaveData,
+} from './models/invoice-upload-interfaces';
+import { INVOICE_UPLOAD_CONSTANTS } from './constants/invoice-upload.constants';
 
 @Component({
   selector: 'app-invoice-upload',
@@ -89,196 +91,146 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   templateUrl: './invoice-upload.component.html',
   styleUrl: './invoice-upload.component.scss',
 })
-export class InvoiceUploadComponent implements OnInit {
+export class InvoiceUploadComponent implements OnInit, OnDestroy {
   @Output() invoiceUploaded = new EventEmitter<any>();
   @Output() orderDataRefreshed = new EventEmitter<void>();
   @ViewChild(GenericTableComponent) genericTable!: GenericTableComponent<any>;
 
-  // Inject servisleri
-  private readonly _formBuilder = inject(FormBuilder);
-  private readonly repositoryService = inject(RepositoryService);
-  private readonly toastService = inject(ToastService);
-  private readonly orderService = inject(OrderService);
-  private readonly dialog = inject(MatDialog);
-  private readonly localService = inject(LocalStorageService);
-  private readonly autoSaveService = inject(AutoSaveService);
-  private readonly userService = inject(UserService);
-  private readonly stateManager = inject(StateManager);
-  private lastFormState: string = '';
+  // Inject managers and services
+  private readonly fileUploadManager = inject(FileUploadManager);
+  private readonly orderFormManager = inject(OrderFormManager);
+  private readonly orderDetailManager = inject(OrderDetailManager);
+  private readonly uiStateManager = inject(UIStateManager);
+  private readonly dataLoaderService = inject(InvoiceDataLoaderService);
+  private readonly calculatorService = inject(InvoiceCalculatorService);
 
-  // Ana data properties
-  uploadForm: FormGroup;
-  file: File | null = null;
-  tempFile: File | null = null;
-  order!: Order | null;
-  orderDetails: OrderDetail[] = [];
+  // Original services still needed
+  private readonly orderService = inject(OrderService);
+  private readonly toastService = inject(ToastService);
+  private readonly autoSaveService = inject(AutoSaveService);
+  private readonly localService = inject(LocalStorageService);
+  private readonly stateManager = inject(StateManager);
+
+  // Form and data
+  uploadForm!: FormGroup;
+  referenceData: ReferenceData = { targetCompanies: [], trucks: [] };
   totalWeight: number = 0;
 
-  // UI state
-  isLoading = false;
-  excelUpload = false;
-  dataRefreshInProgress = false;
+  // Subscriptions
+  private subscriptions: Subscription[] = [];
+  private autoSaveSubscription?: Subscription;
+  private lastFormState: string = '';
 
-  // Referans data
-  targetCompanies: any[] = [];
-  trucks: Truck[] = [];
+  // Expose constants for template
+  readonly constants = INVOICE_UPLOAD_CONSTANTS;
 
-  // Tablo yapılandırması
-  readonly displayedColumns: string[] = [
-    'product.name',
-    'product.product_type.type',
-    'product.product_type.code',
-    'product.dimension.width',
-    'product.dimension.depth',
-    'count',
-  ];
+  // Getters for template access
+  get order(): Order | null {
+    return this.orderFormManager.getOrder();
+  }
 
-  readonly filterableColumns: string[] = [
-    'product.name',
-    'product.product_type.type',
-    'product.product_type.code',
-    'product.dimension.width',
-    'product.dimension.depth',
-    'count',
-  ];
+  get orderDetails(): OrderDetail[] {
+    return this.orderDetailManager.getOrderDetails();
+  }
 
-  readonly nestedDisplayColumns: { [key: string]: string } = {
-    'product.name': 'Ürün Adı',
-    'product.product_type.type': 'Ürün Tipi',
-    'product.product_type.code': 'Ürün Kodu',
-    'product.dimension.width': 'Genişlik',
-    'product.dimension.depth': 'Derinlik',
-    count: 'Adet',
-  };
+  get uiState$(): Observable<UIState> {
+    return this.uiStateManager.uiState$;
+  }
 
-  readonly excludeFields: string[] = [
-    'product.name',
-    'product.product_type.type',
-    'product.product_type.code',
-    'product.dimension.width',
-    'product.dimension.depth',
-  ];
+  // UI State getters
+  get isLoading(): boolean {
+    return this.uiStateManager.getLoading();
+  }
 
-  constructor() {
-    this.uploadForm = this._formBuilder.group({
-      fileInput: ['', [Validators.required, this.fileValidator]],
-    });
+  get excelUpload(): boolean {
+    return this.uiStateManager.getExcelUpload();
+  }
+
+  get dataRefreshInProgress(): boolean {
+    return this.uiStateManager.getDataRefreshInProgress();
+  }
+
+  // File getters
+  get file(): File | null {
+    return this.fileUploadManager.getCurrentFile();
+  }
+
+  get tempFile(): File | null {
+    return this.fileUploadManager.getTempFile();
+  }
+
+  // Reference data getters
+  get targetCompanies(): any[] {
+    return this.referenceData.targetCompanies;
+  }
+
+  get trucks(): any[] {
+    return this.referenceData.trucks;
+  }
+
+  // Table configuration getters
+  get displayedColumns(): string[] {
+    return INVOICE_UPLOAD_CONSTANTS.TABLE.DISPLAYED_COLUMNS as string[];
+  }
+
+  get filterableColumns(): string[] {
+    return INVOICE_UPLOAD_CONSTANTS.TABLE.FILTERABLE_COLUMNS as string[];
+  }
+
+  get nestedDisplayColumns(): { [key: string]: string } {
+    return INVOICE_UPLOAD_CONSTANTS.TABLE.NESTED_DISPLAY_COLUMNS;
+  }
+
+  get excludeFields(): string[] {
+    return INVOICE_UPLOAD_CONSTANTS.TABLE.EXCLUDE_FIELDS as string[];
   }
 
   ngOnInit(): void {
-    this.setupFormValidation();
-    this.checkPrerequisites();
+    this.initializeComponent();
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.autoSaveSubscription?.unsubscribe();
+  }
+
+  private initializeComponent(): void {
+    // Initialize form
+    this.uploadForm = this.orderFormManager.initializeForm();
+
+    // Setup UI state subscription
+    this.setupUIStateSubscription();
+
+    // Load reference data
+    this.loadReferenceData();
+
+    // Restore session data
     this.restoreFromSession();
-    this.loadTargetCompanies();
-    this.loadTrucks();
 
-    if (this.order?.id) {
-      this.calculateTotals();
-    }
-
-    setTimeout(() => {
-      if (this.order && this.orderDetails.length > 0) {
-        const currentState = this.stateManager.step1.state();
-        if (
-          currentState.original.length === 0 &&
-          this.orderDetails.length > 0
-        ) {
-          this.stateManager.initializeStep1(
-            this.order,
-            this.orderDetails,
-            false
-          );
-        }
-      }
-    }, 100);
-
+    // Setup auto-save
     this.setupAutoSaveListeners();
+
+    // Initialize state manager if data exists
+    this.initializeStateManager();
   }
 
-  private checkPrerequisites(): boolean {
-    return true;
+  private setupUIStateSubscription(): void {
+    const uiSub = this.uiState$.subscribe(state => {
+      // Handle UI state changes if needed
+    });
+    this.subscriptions.push(uiSub);
   }
 
-  loadTargetCompanies(): void {
-    this.userService
-      .getProfile()
-      .pipe(
-        switchMap((response) => {
-          return this.repositoryService.companyRelations(response.company.id);
-        })
-      )
-      .subscribe({
-        next: (res) => {
-          this.targetCompanies = res;
-        },
-        error: (error) => {
-          this.toastService.error(
-            'Profil bilgisi yüklenirken hata oluştu CompanyRelation'
-          );
-        },
-      });
-  }
-
-  loadTrucks(): void {
-    this.repositoryService.trucks().subscribe({
-      next: (response) => {
-        this.trucks = response.results;
+  private loadReferenceData(): void {
+    const dataSub = this.dataLoaderService.loadAllReferenceData().subscribe({
+      next: (data) => {
+        this.referenceData = data;
       },
       error: (error) => {
-        this.toastService.error('Tır bilgisi yüklenirken hata oluştu');
-      },
-    });
-  }
-
-  private setupAutoSaveListeners(): void {
-    this.uploadForm.valueChanges.subscribe(() => {
-      this.triggerAutoSave('form');
-    });
-
-    this.watchOrderChanges();
-  }
-
-  private watchOrderChanges(): void {
-    setInterval(() => {
-      const currentState = this.getCurrentFormState();
-
-      if (
-        currentState !== this.lastFormState &&
-        this.order &&
-        this.orderDetails.length > 0
-      ) {
-        this.triggerAutoSave('user-action');
-        this.lastFormState = currentState;
+        console.error('Error loading reference data:', error);
       }
-    }, 1000);
-  }
-
-  private getCurrentFormState(): string {
-    try {
-      return JSON.stringify({
-        order: this.order,
-        orderDetails: this.orderDetails,
-        hasFile: !!this.tempFile,
-      });
-    } catch (error) {
-      return '';
-    }
-  }
-
-  private triggerAutoSave(
-    changeType: 'form' | 'user-action' | 'api-response' = 'user-action'
-  ): void {
-    if (this.order && this.orderDetails.length > 0) {
-      this.autoSaveService.triggerStep1AutoSave(
-        {
-          order: this.order,
-          orderDetails: this.orderDetails,
-          hasFile: !!this.tempFile,
-          fileName: this.tempFile?.name,
-        },
-        changeType
-      );
-    }
+    });
+    this.subscriptions.push(dataSub);
   }
 
   private restoreFromSession(): void {
@@ -287,359 +239,257 @@ export class InvoiceUploadComponent implements OnInit {
 
       if (restoredData) {
         if (restoredData.order) {
-          this.order = restoredData.order;
-          this.updateFormValidation();
+          this.orderFormManager.setOrder(restoredData.order);
         }
-        this.orderDetails = restoredData.orderDetails;
 
-        if (this.order)
-          this.stateManager.initializeStep1(
-            this.order,
-            this.orderDetails,
-            restoredData.hasFile,
-            restoredData.fileName
-          );
-
+        this.orderDetailManager.setOrderDetails(restoredData.orderDetails);
         this.calculateTotals();
-        this.toastService.info('Önceki verileriniz restore edildi');
-      } else {
-        if (this.order && this.orderDetails.length > 0) {
-          this.stateManager.initializeStep1(
-            this.order,
-            this.orderDetails,
-            false
-          );
-        }
+
+        this.toastService.info(INVOICE_UPLOAD_CONSTANTS.MESSAGES.SUCCESS.DATA_RESTORED);
       }
     } catch (error) {
-      if (this.order && this.orderDetails.length > 0) {
-        this.stateManager.initializeStep1(this.order, this.orderDetails, false);
-      }
+      console.error('Error restoring session data:', error);
     }
   }
 
-  private initializeNewOrder(): void {
-    this.order = {
-      id: uuidv4(),
-      name: '',
-      date: null,
-      company_relation: null,
-      truck: null,
-      weight_type: '',
-    } as unknown as Order;
+  private setupAutoSaveListeners(): void {
+    // Form changes auto-save
+    const formSub = this.uploadForm.valueChanges.subscribe(() => {
+      this.triggerAutoSave('form');
+    });
+    this.subscriptions.push(formSub);
 
-    this.stateManager.initializeStep1(this.order, this.orderDetails, false);
-  }
-
-  private updateFormValidation(): void {
-    if (this.order) {
-      this.uploadForm.patchValue({
-        orderName: this.order.name || '',
-        orderDate: this.order.date || '',
-        companyRelation: this.order.company_relation || '',
-        truck: this.order.truck || '',
-        weightType: this.order.weight_type || '',
+    // Periodic auto-save for user actions
+    this.autoSaveSubscription = interval(INVOICE_UPLOAD_CONSTANTS.AUTO_SAVE.INTERVAL_MS)
+      .subscribe(() => {
+        this.checkForChangesAndAutoSave();
       });
-    }
   }
 
-  onOrderFieldChange(field: string, value: any): void {
-    if (!this.order) {
-      this.initializeNewOrder();
-    }
+  private checkForChangesAndAutoSave(): void {
+    const currentState = this.getCurrentFormState();
 
-    if (this.order) {
-      (this.order as any)[field] = value;
-      this.updateFormValidation();
+    if (currentState !== this.lastFormState && this.order && this.orderDetails.length > 0) {
       this.triggerAutoSave('user-action');
+      this.lastFormState = currentState;
     }
   }
 
-  onCompanyChange(selectedCompany: any): void {
-    if (!this.order) {
-      this.initializeNewOrder();
-    }
-
-    if (this.order) {
-      this.order.company_relation = selectedCompany;
-      this.triggerAutoSave('user-action');
-    }
-  }
-
-  onTruckChange(selectedTruck: any): void {
-    if (!this.order) {
-      this.initializeNewOrder();
-    }
-
-    if (this.order) {
-      this.order.truck = selectedTruck;
-      this.triggerAutoSave('user-action');
+  private getCurrentFormState(): string {
+    try {
+      return JSON.stringify({
+        order: this.order,
+        orderDetails: this.orderDetails,
+        hasFile: this.fileUploadManager.hasTempFile(),
+      });
+    } catch (error) {
+      return '';
     }
   }
 
-  onWeightTypeChange(selectedWeightType: string): void {
-    if (!this.order) {
-      this.initializeNewOrder();
-    }
+  private triggerAutoSave(changeType: 'form' | 'user-action' | 'api-response' = 'user-action'): void {
+    if (this.order && this.orderDetails.length > 0) {
+      const autoSaveData: AutoSaveData = {
+        order: this.order,
+        orderDetails: this.orderDetails,
+        hasFile: this.fileUploadManager.hasTempFile(),
+        fileName: this.fileUploadManager.getFileName(),
+      };
 
-    if (this.order) {
-      this.order.weight_type = selectedWeightType;
-      this.calculateTotals();
-      this.triggerAutoSave('user-action');
+      this.autoSaveService.triggerStep1AutoSave(autoSaveData, changeType);
     }
   }
 
-  private fileValidator = (
-    control: AbstractControl
-  ): ValidationErrors | null => {
-    const file = control.value as File;
-    if (!file) return null;
-
-    if (!VALID_FILE_TYPES.includes(file.type)) {
-      return { invalidFileType: true };
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      return { fileTooLarge: true };
-    }
-
-    return null;
-  };
-
-  getFormattedDate(date: string | Date | null | undefined): string {
-    if (!date) return 'N/A';
-
-    let dateObj: Date;
-
-    if (typeof date === 'string') {
-      dateObj = new Date(date);
-    } else if (date instanceof Date) {
-      dateObj = date;
-    } else {
-      return 'N/A';
-    }
-
-    if (isNaN(dateObj.getTime())) {
-      return 'N/A';
-    }
-
-    return `${dateObj.getDate().toString().padStart(2, '0')}.${(
-      dateObj.getMonth() + 1
-    )
-      .toString()
-      .padStart(2, '0')}.${dateObj.getFullYear()}`;
+  private initializeStateManager(): void {
+    setTimeout(() => {
+      if (this.order && this.orderDetails.length > 0) {
+        const currentState = this.stateManager.step1.state();
+        if (currentState.original.length === 0 && this.orderDetails.length > 0) {
+          this.stateManager.initializeStep1(
+            this.order,
+            this.orderDetails,
+            this.fileUploadManager.hasTempFile(),
+            this.fileUploadManager.getFileName()
+          );
+        }
+      }
+    }, 100);
   }
 
+  // File operations
   onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      this.file = input.files[0];
-      this.validateFile(this.file);
-    }
-  }
-
-  validateFile(file: File): void {
-    if (!VALID_FILE_TYPES.includes(file.type)) {
-      this.toastService.error(
-        'Geçersiz dosya türü. Lütfen bir PDF veya Excel dosyası yükleyin.'
-      );
-      this.resetFileInput();
-      return;
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      this.toastService.error('Dosya boyutu 10 MB sınırını aşıyor.');
-      this.resetFileInput();
-      return;
-    }
-
-    this.toastService.success('Dosya başarıyla seçildi.');
-  }
-
-  private resetFileInput(): void {
-    this.file = null;
-    this.uploadForm.get('fileInput')?.reset();
+    this.fileUploadManager.selectFile(event);
   }
 
   uploadFile(): void {
-    if (!this.file) {
-      this.toastService.warning('Lütfen bir dosya seçin.');
-      return;
-    }
+    this.uiStateManager.startFileUpload();
 
-    this.isLoading = true;
-    this.excelUpload = true;
-    this.toastService.info('Dosya yükleniyor...');
-
-    this.repositoryService
-      .processFile(this.file)
+    const uploadSub = this.fileUploadManager.uploadFile()
       .pipe(
-        tap(() => {
-          this.toastService.info('Dosya işleniyor...');
-        }),
-        finalize(() => {
-          this.isLoading = false;
-          this.excelUpload = false;
-        })
+        finalize(() => this.uiStateManager.finishFileUpload())
       )
       .subscribe({
         next: (response) => {
-          this.orderDetails = response.orderDetail;
-          this.order = response.order;
+          this.orderDetailManager.setOrderDetails(response.orderDetail);
+          this.orderFormManager.setOrder(response.order);
           this.calculateTotals();
-          this.toastService.success('Dosya İşlendi');
+
+          this.toastService.success(INVOICE_UPLOAD_CONSTANTS.MESSAGES.SUCCESS.FILE_PROCESSED);
           this.resetForm();
 
           this.stateManager.initializeStep1(
-            this.order,
+            this.order!,
             this.orderDetails,
             true,
-            this.file?.name
+            this.fileUploadManager.getCurrentFile()?.name
           );
 
           this.triggerAutoSave('api-response');
         },
         error: (error) => {
-          this.toastService.error('Dosya işlenirken bir hata oluştu.', error);
+          this.toastService.error(INVOICE_UPLOAD_CONSTANTS.MESSAGES.ERROR.FILE_PROCESSING, error);
         },
       });
+
+    this.subscriptions.push(uploadSub);
   }
 
-  private resetForm(): void {
-    this.tempFile = this.file;
-    this.file = null;
-    this.uploadForm.reset();
+  // Order field updates
+  onOrderFieldChange(field: string, value: any): void {
+    this.orderFormManager.updateOrderField(field, value);
+    this.triggerAutoSave('user-action');
   }
 
-  calculateTotals(): void {
-    try {
-      type WeightTypeKey = 'std' | 'pre' | 'eco';
-
-      const selectedWeightType = this.order?.weight_type as WeightTypeKey;
-
-      this.totalWeight = this.orderDetails.reduce((sum, detail) => {
-        const productWeight = detail.product?.weight_type?.[selectedWeightType] || 0;
-        const count = detail.count || 1;
-        return sum + productWeight * count;
-      }, 0);
-    } catch (error) {
-
-      this.totalWeight = 0;
-    }
+  onCompanyChange(selectedCompany: any): void {
+    this.orderFormManager.updateCompanyRelation(selectedCompany);
+    this.triggerAutoSave('user-action');
   }
 
+  onTruckChange(selectedTruck: any): void {
+    this.orderFormManager.updateTruck(selectedTruck);
+    this.triggerAutoSave('user-action');
+  }
+
+  onWeightTypeChange(selectedWeightType: string): void {
+    this.orderFormManager.updateWeightType(selectedWeightType);
+    this.calculateTotals();
+    this.triggerAutoSave('user-action');
+  }
+
+  // OrderDetail operations
   createOrderDetail(): void {
-    if (!this.order) {
-      this.initializeNewOrder();
-    } else {
-      this.openOrderDetailDialog(this.order);
+    let currentOrder = this.order;
+    if (!currentOrder) {
+      currentOrder = this.orderFormManager.initializeNewOrder();
+    }
+
+    const dialogSub = this.orderDetailManager.openOrderDetailDialog(currentOrder!)
+      .subscribe({
+        next: (newOrderDetail) => {
+          if (newOrderDetail) {
+            this.updateTableData();
+            this.calculateTotals();
+            this.triggerAutoSave('user-action');
+          }
+        }
+      });
+
+    this.subscriptions.push(dialogSub);
+  }
+
+  updateOrderDetail(event: OrderDetailUpdateEvent): void {
+    const updatedDetail = this.orderDetailManager.updateOrderDetail(event);
+    if (updatedDetail) {
+      this.updateTableData();
+      this.calculateTotals();
+      this.triggerAutoSave('user-action');
     }
   }
 
-  openOrderDetailDialog(order: Order): void {
-    const dialogRef = this.dialog.open(OrderDetailAddDialogComponent, {
-      width: '600px',
-      data: order,
-      disableClose: true,
-    });
+  deleteOrderDetail(id: string): void {
+    const deleted = this.orderDetailManager.deleteOrderDetail(id);
+    if (deleted) {
+      this.updateTableData();
+      this.calculateTotals();
+      this.triggerAutoSave('user-action');
+    }
+  }
 
-    dialogRef.afterClosed().subscribe({
-      next: (result) => {
-        if (result && result.orderDetail) {
-          this.orderDetails.unshift(result.orderDetail);
-          this.genericTable.dataSource.data.unshift(result.orderDetail);
-          this.genericTable.dataSource._updateChangeSubscription();
-          this.calculateTotals();
+  // Calculations
+  calculateTotals(): void {
+    if (!this.order?.weight_type) {
+      this.totalWeight = 0;
+      return;
+    }
 
-          this.stateManager.addOrderDetail(result.orderDetail);
-          this.toastService.success('Sipariş detayı başarıyla eklendi.');
-          this.triggerAutoSave('user-action');
-        }
-      }
-    });
+    const result = this.calculatorService.calculateTotalWeight(
+      this.orderDetails,
+      this.order.weight_type as WeightType
+    );
+
+    this.totalWeight = result.totalWeight;
+  }
+
+  // Validation and submission
+  isFormValid(): boolean {
+    return this.orderFormManager.isFormValid() && this.orderDetailManager.validateOrderDetails();
   }
 
   submit(): void {
     if (!this.isFormValid()) {
-      this.toastService.warning(
-        'Lütfen tüm zorunlu alanları doldurun (Sipariş No, Tarih, Müşteri, Tır, Ağırlık Tipi)'
-      );
+      this.toastService.warning(INVOICE_UPLOAD_CONSTANTS.MESSAGES.WARNING.FILL_REQUIRED_FIELDS);
       return;
     }
 
     if (!this.order || this.orderDetails.length === 0) {
-      this.toastService.warning(
-        'Sipariş detayları eksik. Lütfen kontrol ediniz.'
-      );
+      this.toastService.warning(INVOICE_UPLOAD_CONSTANTS.MESSAGES.WARNING.MISSING_ORDER_DETAILS);
       return;
     }
-    this.isLoading = true;
-    this.toastService.info('İşlem gerçekleştiriliyor...');
 
-    const orderDetailChanges = this.stateManager.saveStep1Changes();
+    this.uiStateManager.startSubmit();
+    this.toastService.info(INVOICE_UPLOAD_CONSTANTS.MESSAGES.INFO.OPERATION_IN_PROGRESS);
 
-    const totalChanges =
-      orderDetailChanges.added.length +
-      orderDetailChanges.modified.length +
-      orderDetailChanges.deleted.length;
-
-    if (totalChanges === 0 && this.orderDetails.length > 0) {
-      orderDetailChanges.added = [...this.orderDetails];
-      orderDetailChanges.modified = [];
-      orderDetailChanges.deleted = [];
-    }
-
+    const orderDetailChanges = this.orderDetailManager.getOrderDetailChanges();
     const orderOperation = this.getOrderOperation();
 
-    orderOperation
+    const submitSub = orderOperation
       .pipe(
         switchMap((orderResponse) => {
-          if (orderResponse && orderResponse.id && this.order) {
+          if (orderResponse?.id && this.order) {
             this.order.id = orderResponse.id;
-            this.repositoryService.setOrderId(orderResponse.id);
           }
-          if (this.tempFile) {
-            return this.repositoryService
-              .uploadFile(this.tempFile, orderResponse.id)
+
+          if (this.fileUploadManager.hasTempFile()) {
+            return this.fileUploadManager.uploadFileToOrder(orderResponse.id)
               .pipe(
                 switchMap(() =>
-                  this.processOrderDetailChanges(
+                  this.orderDetailManager.processOrderDetailChanges(
                     orderDetailChanges,
                     orderResponse.id
                   )
                 )
               );
           } else {
-            return this.processOrderDetailChanges(
+            return this.orderDetailManager.processOrderDetailChanges(
               orderDetailChanges,
               orderResponse.id
             );
           }
         }),
-        finalize(() => {
-          this.isLoading = false;
-        })
+        finalize(() => this.uiStateManager.finishSubmit())
       )
       .subscribe({
         next: (result) => {
-          this.invoiceUploaded.emit();
-          this.toastService.success('Değişiklikler başarıyla kaydedildi');
-
-          this.stateManager.markStep1AsSaved();
-
-          this.localService.saveStep1Data(
-            this.order,
-            this.orderDetails,
-            !!this.tempFile,
-            this.tempFile?.name
-          );
+          this.handleSubmitSuccess(result);
         },
         error: (error) => {
           this.toastService.error(
-            'İşlem sırasında hata oluştu: ' + (error.message || error)
+            INVOICE_UPLOAD_CONSTANTS.MESSAGES.ERROR.OPERATION_ERROR + (error.message || error)
           );
         },
       });
+
+    this.subscriptions.push(submitSub);
   }
 
   private getOrderOperation(): Observable<any> {
@@ -665,154 +515,98 @@ export class InvoiceUploadComponent implements OnInit {
     );
   }
 
-  private processOrderDetailChanges(
-    changes: any,
-    orderId: string
-  ): Observable<any> {
-    const totalOperations =
-      changes.added.length + changes.modified.length + changes.deleted.length;
+  private handleSubmitSuccess(result: any): void {
+    this.invoiceUploaded.emit();
+    this.toastService.success(INVOICE_UPLOAD_CONSTANTS.MESSAGES.SUCCESS.CHANGES_SAVED);
 
-    if (totalOperations === 0) {
-      return of(null);
+    this.stateManager.markStep1AsSaved();
+
+    if (result?.order_details && Array.isArray(result.order_details)) {
+      this.syncComponentWithBackendData(result.order_details);
     }
 
-    return this.repositoryService.bulkUpdateOrderDetails(changes, orderId).pipe(
-      tap((response) => {
-        // Backend'den gelen güncel OrderDetail listesi ile sync et
-        if (
-          response &&
-          response.order_details &&
-          Array.isArray(response.order_details)
-        ) {
-          this.syncComponentWithBackendData(response.order_details);
-        }
-      })
+    this.localService.saveStep1Data(
+      this.order!,
+      this.orderDetails,
+      this.fileUploadManager.hasTempFile(),
+      this.fileUploadManager.getFileName()
     );
   }
 
-  updateOrderDetail(event: { item: OrderDetail; data: any }): void {
-    const { item, data } = event;
-    if (!this.orderDetails?.length) return;
-
-    const index = this.orderDetails.findIndex((detay) => detay.id === item.id);
-    if (index !== -1) {
-      const updatedDetail = { ...this.orderDetails[index], ...data };
-      this.orderDetails[index] = updatedDetail;
-      this.genericTable.dataSource.data = [...this.orderDetails];
-      this.calculateTotals();
-
-      this.stateManager.updateOrderDetail(updatedDetail);
-
-      this.triggerAutoSave('user-action');
-    }
+  // Utility methods
+  resetForm(): void {
+    this.fileUploadManager.moveFileToTemp();
+    this.orderFormManager.resetForm();
   }
 
-  deleteOrderDetail(id: string): void {
-    const index = this.orderDetails.findIndex((item: any) => item.id === id);
-    if (index !== -1) {
-      this.orderDetails = this.orderDetails.filter(
-        (item: any) => item.id !== id
-      );
-      this.genericTable.dataSource.data = [...this.orderDetails];
-      this.calculateTotals();
+  resetComponentState(): void {
+    try {
+      this.orderFormManager.resetOrder();
+      this.orderDetailManager.clearOrderDetails();
+      this.fileUploadManager.resetAllFiles();
+      this.totalWeight = 0;
 
-      this.stateManager.deleteOrderDetail(id);
-
-      this.triggerAutoSave('user-action');
+      this.uiStateManager.resetAllStates();
+      this.updateTableData();
+      this.lastFormState = '';
+      this.stateManager.resetAllStates();
+    } catch (error) {
+      console.error('Error resetting component state:', error);
     }
   }
 
   forceSaveStep1(): void {
     if (this.order && this.orderDetails.length > 0) {
-      this.autoSaveService.forceSave(1, {
+      const autoSaveData: AutoSaveData = {
         order: this.order,
         orderDetails: this.orderDetails,
-        hasFile: !!this.tempFile,
-        fileName: this.tempFile?.name,
-      });
+        hasFile: this.fileUploadManager.hasTempFile(),
+        fileName: this.fileUploadManager.getFileName(),
+      };
 
-      this.toastService.success('Veriler zorla kaydedildi');
+      this.autoSaveService.forceSave(1, autoSaveData);
+      this.toastService.success(INVOICE_UPLOAD_CONSTANTS.MESSAGES.SUCCESS.FORCE_SAVED);
     }
   }
 
-  resetComponentState(): void {
-    try {
-      this.order = null;
-      this.orderDetails = [];
-      this.file = null;
-      this.tempFile = null;
-      this.totalWeight = 0;
-
-      this.isLoading = false;
-      this.excelUpload = false;
-      this.dataRefreshInProgress = false;
-
-      this.uploadForm.reset();
-
-      if (this.genericTable?.dataSource) {
-        this.genericTable.dataSource.data = [];
-      }
-
-      this.lastFormState = '';
-      this.stateManager.resetAllStates();
-
-    } catch (error) {
-
-    }
-  }
-
-  private setupFormValidation(): void {
-    this.uploadForm = this._formBuilder.group({
-      fileInput: ['', [Validators.required, this.fileValidator]],
-      orderName: ['', Validators.required],
-      orderDate: ['', Validators.required],
-      companyRelation: ['', Validators.required],
-      truck: ['', Validators.required],
-      weightType: ['', Validators.required],
-    });
-  }
-
-  compareObjects(a: any, b: any): boolean {
-    if (!a || !b) return false;
-    return a.id === b.id;
-  }
-
-  compareCompanies(a: any, b: any): boolean {
-    if (!a || !b) return false;
-    return a.id === b.id || a.target_company_name === b.target_company_name;
-  }
-
-  compareWeightTypes(a: string, b: string): boolean {
-    return a === b;
-  }
-
-  isFormValid(): boolean {
-    return !!(
-      this.order?.date &&
-      this.order?.company_relation &&
-      this.order?.truck &&
-      this.order?.weight_type &&
-      this.orderDetails
-    );
-  }
-
-  private syncComponentWithBackendData(
-    backendOrderDetails: OrderDetail[]
-  ): void {
-    this.orderDetails = backendOrderDetails;
-
-    if (this.genericTable && this.genericTable.dataSource) {
+  private updateTableData(): void {
+    if (this.genericTable?.dataSource) {
       this.genericTable.dataSource.data = [...this.orderDetails];
       this.genericTable.dataSource._updateChangeSubscription();
     }
-    if (this.order)
+  }
+
+  private syncComponentWithBackendData(backendOrderDetails: OrderDetail[]): void {
+    this.orderDetailManager.syncWithBackendData(backendOrderDetails);
+    this.updateTableData();
+
+    if (this.order) {
       this.stateManager.initializeStep1(
         this.order,
         this.orderDetails,
-        !!this.tempFile,
-        this.tempFile?.name
+        this.fileUploadManager.hasTempFile(),
+        this.fileUploadManager.getFileName()
       );
+    }
 
     this.calculateTotals();
+  }
+
+  // Template helper methods (delegated to managers)
+  getFormattedDate(date: string | Date | null | undefined): string {
+    return this.orderFormManager.getFormattedDate(date);
+  }
+
+  // Comparison methods for mat-select [compareWith] - must be bound to component context
+  compareObjects = (a: any, b: any): boolean => {
+    return this.orderFormManager.compareObjects(a, b);
+  }
+
+  compareCompanies = (a: any, b: any): boolean => {
+    return this.orderFormManager.compareCompanies(a, b);
+  }
+
+  compareWeightTypes = (a: string, b: string): boolean => {
+    return this.orderFormManager.compareWeightTypes(a, b);
   }
 }
