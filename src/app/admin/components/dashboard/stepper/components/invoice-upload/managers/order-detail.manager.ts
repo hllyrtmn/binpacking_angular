@@ -126,6 +126,15 @@ export class OrderDetailManager {
 
   getOrderDetailChanges(): OrderDetailChanges {
     const changes = this.stateManager.saveStep1Changes();
+    const totalChanges = changes.added.length + changes.deleted.length + changes.modified.length
+
+    if(totalChanges === 0 && this.orderDetails.length > 0){
+      return{
+        added: [...this.orderDetails],
+        modified: changes.modified,
+        deleted: changes.deleted.map((detail: any) => typeof detail === 'string' ? detail : detail.id),
+      }
+    }
     return {
       added: changes.added,
       modified: changes.modified,

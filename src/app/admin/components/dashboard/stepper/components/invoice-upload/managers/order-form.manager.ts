@@ -4,6 +4,7 @@ import { FormData } from '../models/invoice-upload-interfaces';
 import { FileUploadManager } from './file-upload.manager';
 import { v4 as uuidv4 } from 'uuid';
 import { Order } from '../../../../../../../models/order.interface';
+import { RepositoryService } from '../../../services/repository.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,6 +12,7 @@ import { Order } from '../../../../../../../models/order.interface';
 export class OrderFormManager {
   private readonly formBuilder = inject(FormBuilder);
   private readonly fileUploadManager = inject(FileUploadManager);
+  private readonly repositoryService = inject(RepositoryService); // RepositoryService'i inject et
 
   private uploadForm!: FormGroup;
   private order: Order | null = null;
@@ -69,12 +71,22 @@ export class OrderFormManager {
       weight_type: '',
     } as unknown as Order;
 
+    // Yeni order oluşturulduğunda repository service'e set et
+    if (this.order.id) {
+      this.repositoryService.setOrderId(this.order.id);
+    }
+
     return this.order;
   }
 
   setOrder(order: Order): void {
     this.order = order;
     this.updateFormValidation(order);
+
+    // Order set edildiğinde repository service'e ID'sini bildir
+    if (order?.id) {
+      this.repositoryService.setOrderId(order.id);
+    }
   }
 
   getOrder(): Order | null {
@@ -89,6 +101,15 @@ export class OrderFormManager {
     (this.order as any)[field] = value;
     this.updateFormValidation(this.order);
 
+    // Eğer ID field'ı güncellendiyse repository service'e bildir
+    if (field === 'id' && value) {
+      this.repositoryService.setOrderId(value);
+    }
+    // Veya mevcut order'ın ID'si varsa her güncellemede bildir
+    else if (this.order.id) {
+      this.repositoryService.setOrderId(this.order.id);
+    }
+
     return this.order;
   }
 
@@ -98,6 +119,12 @@ export class OrderFormManager {
     }
 
     this.order.company_relation = selectedCompany;
+
+    // Order ID'si varsa repository service'e bildir
+    if (this.order.id) {
+      this.repositoryService.setOrderId(this.order.id);
+    }
+
     return this.order;
   }
 
@@ -107,6 +134,12 @@ export class OrderFormManager {
     }
 
     this.order.truck = selectedTruck;
+
+    // Order ID'si varsa repository service'e bildir
+    if (this.order.id) {
+      this.repositoryService.setOrderId(this.order.id);
+    }
+
     return this.order;
   }
 
@@ -116,6 +149,12 @@ export class OrderFormManager {
     }
 
     this.order.weight_type = selectedWeightType;
+
+    // Order ID'si varsa repository service'e bildir
+    if (this.order.id) {
+      this.repositoryService.setOrderId(this.order.id);
+    }
+
     return this.order;
   }
 
@@ -161,6 +200,8 @@ export class OrderFormManager {
   resetOrder(): void {
     this.order = null;
     this.resetForm();
+    // Order reset edildiğinde repository service'deki ID'yi de temizle
+    this.repositoryService.setOrderId('');
   }
 
   getFormData(): FormData {

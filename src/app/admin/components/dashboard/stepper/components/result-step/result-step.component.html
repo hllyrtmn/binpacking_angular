@@ -178,8 +178,8 @@
     </div>
 
     <!-- 3D Visualization Component -->
-    <app-plotly
-      #plotlyComponent
+    <app-threejs-truck-visualization
+      #threeJSComponent
       *ngIf="showVisualization && hasResults && !isLoading"
       [piecesData]="piecesData"
       [truckDimension]="truckDimension"
@@ -187,7 +187,7 @@
       (packageSelected)="onPackageSelected($event)"
       (viewChanged)="onViewChanged($event)"
     >
-    </app-plotly>
+    </app-threejs-truck-visualization>
 
     <!-- Results Summary (visible after calculation) -->
     <div class="results-summary" *ngIf="hasResults && !isLoading">
@@ -389,7 +389,8 @@
         mat-raised-button
         class="finish-button"
         [disabled]="!hasResults"
-        (click)="completeShipment()">
+        (click)="completeShipment()"
+      >
         <mat-icon>check</mat-icon>
         <span>Sevkiyatı Tamamla</span>
       </button>

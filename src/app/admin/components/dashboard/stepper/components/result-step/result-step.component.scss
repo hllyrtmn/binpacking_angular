@@ -1148,3 +1148,341 @@ body {
   margin: 0;
   padding: 0;
 }
+
+
+
+// result-step.component.scss - ADD THESE STYLES
+
+// ========================================
+// THREE.JS SPECIFIC ENHANCEMENTS
+// ========================================
+
+.visualization-container {
+  // Existing styles remain the same...
+
+  // Add Three.js specific styling
+  app-threejs-truck-visualization {
+    display: block;
+    width: 100%;
+    height: 1000px;
+    border-radius: 8px;
+    overflow: hidden;
+
+    // Ensure canvas takes full space
+    .threejs-visualization-container {
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+    }
+  }
+
+  // Optional: Visualization engine toggle
+  .visualization-toggle {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 15;
+
+    .toggle-btn {
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid #006A6A;
+      border-radius: 20px;
+      color: #006A6A;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+
+      &:hover {
+        background: rgba(0, 106, 106, 0.1);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 106, 106, 0.2);
+      }
+
+      &.active {
+        background: #006A6A;
+        color: white;
+        box-shadow: 0 4px 12px rgba(0, 106, 106, 0.3);
+      }
+    }
+  }
+
+  // Enhanced loading overlay for Three.js
+  .loading-overlay {
+    // Add Three.js specific loading enhancements
+    &.threejs-loading {
+      background: linear-gradient(135deg, rgba(248, 250, 252, 0.95) 0%, rgba(241, 245, 249, 0.95) 100%);
+
+      .loading-spinner {
+        .spinner {
+          background: conic-gradient(from 0deg, #006A6A, #D6BB86, #004A4A, #C0A670, #006A6A);
+          border-radius: 50%;
+          padding: 3px;
+
+          &::before {
+            content: '';
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 50%;
+          }
+        }
+
+        p {
+          background: linear-gradient(45deg, #006A6A, #D6BB86);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          font-weight: 600;
+        }
+      }
+    }
+  }
+}
+
+// ========================================
+// THREE.JS COMPONENT RESPONSIVE OVERRIDES
+// ========================================
+
+// Mobile optimizations for Three.js
+@media (max-width: 768px) {
+  .visualization-container {
+    app-threejs-truck-visualization {
+      height: 400px; // Smaller on mobile
+
+      // Hide some overlays on mobile for better performance
+      .threejs-controls-overlay {
+        opacity: 0.8;
+
+        .control-buttons {
+          .control-btn {
+            padding: 6px 10px;
+            font-size: 0.7rem;
+          }
+        }
+      }
+
+      .stats-overlay {
+        .stats-content {
+          .stat-item {
+            font-size: 0.65rem;
+          }
+        }
+      }
+    }
+
+    .visualization-toggle .toggle-btn {
+      padding: 6px 12px;
+      font-size: 11px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .visualization-container {
+    app-threejs-truck-visualization {
+      height: 350px;
+
+      // Further mobile optimizations
+      .package-info-panel {
+        position: static;
+        margin-top: 10px;
+        border-radius: 8px;
+      }
+
+      .threejs-controls-overlay {
+        position: static;
+        margin-bottom: 10px;
+        border-radius: 8px;
+      }
+    }
+  }
+}
+
+// ========================================
+// THREE.JS HIGH PERFORMANCE MODE
+// ========================================
+
+.performance-mode {
+  app-threejs-truck-visualization {
+    // Reduce visual effects for better performance
+    .threejs-visualization-container {
+      canvas {
+        image-rendering: pixelated; // Faster rendering
+      }
+    }
+
+    // Hide non-essential overlays
+    .stats-overlay,
+    .package-info-panel {
+      display: none;
+    }
+  }
+}
+
+// ========================================
+// THREE.JS FULLSCREEN ENHANCEMENTS
+// ========================================
+
+.visualization-container:fullscreen {
+  app-threejs-truck-visualization {
+    .threejs-visualization-container {
+      border-radius: 0;
+    }
+
+    // Enhanced fullscreen controls
+    .threejs-controls-overlay {
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+
+      h4, .control-btn {
+        color: white;
+      }
+
+      .control-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.3);
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.2);
+        }
+
+        &.active {
+          background: #006A6A;
+          border-color: #006A6A;
+        }
+      }
+    }
+
+    .package-info-panel {
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+
+      .info-content h4 {
+        color: white;
+      }
+
+      .detail-row .label {
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .detail-row .value {
+        color: white;
+      }
+    }
+  }
+}
+
+// ========================================
+// THREE.JS DARK MODE SUPPORT
+// ========================================
+
+@media (prefers-color-scheme: dark) {
+  .visualization-container {
+    background: #1f2937;
+
+    app-threejs-truck-visualization {
+      .threejs-visualization-container {
+        background: #111827;
+      }
+
+      .no-data-message .no-data-content {
+        color: #d1d5db;
+
+        h4 {
+          color: #06b6d4;
+        }
+      }
+
+      .threejs-controls-overlay {
+        background: rgba(31, 41, 55, 0.95);
+        color: #f3f4f6;
+
+        h4 {
+          color: #06b6d4;
+        }
+
+        .control-btn {
+          background: #374151;
+          border-color: #4b5563;
+          color: #f3f4f6;
+
+          &:hover {
+            background: #4b5563;
+            border-color: #06b6d4;
+          }
+
+          &.active {
+            background: #06b6d4;
+            border-color: #06b6d4;
+          }
+        }
+      }
+    }
+  }
+}
+
+// ========================================
+// THREE.JS ACCESSIBILITY IMPROVEMENTS
+// ========================================
+
+// Focus indicators for Three.js controls
+.threejs-controls-overlay {
+  .control-btn:focus,
+  .view-btn:focus {
+    outline: 2px solid #006A6A;
+    outline-offset: 2px;
+  }
+}
+
+// High contrast mode for Three.js
+@media (prefers-contrast: high) {
+  .visualization-container {
+    app-threejs-truck-visualization {
+      .threejs-controls-overlay {
+        background: rgba(255, 255, 255, 1);
+        border: 2px solid #000;
+
+        .control-btn {
+          border: 2px solid #000;
+
+          &.active {
+            background: #000;
+            color: #fff;
+          }
+        }
+      }
+
+      .package-info-panel {
+        background: rgba(255, 255, 255, 1);
+        border: 2px solid #000;
+      }
+    }
+  }
+}
+
+// ========================================
+// THREE.JS PRINT STYLES
+// ========================================
+
+@media print {
+  .visualization-container {
+    app-threejs-truck-visualization {
+      .threejs-controls-overlay,
+      .package-info-panel,
+      .stats-overlay {
+        display: none !important;
+      }
+
+      .threejs-visualization-container {
+        background: white !important;
+        border: 2px solid #000 !important;
+      }
+    }
+  }
+}

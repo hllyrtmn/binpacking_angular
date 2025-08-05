@@ -175,7 +175,14 @@ export class PalletControlComponent implements OnInit {
 
       // 7. Clone count'ı reset et
       this.cloneCount = 1;
-    } catch (error) {}
+    } catch (error) {
+      // Fallback reset
+      this.trailer = null;
+      this.order = null;
+      this.packages = [];
+      this.availableProducts = [];
+      this.availablePallets = [];
+    }
   }
 
   private setupAutoSaveListeners(): void {
@@ -318,7 +325,6 @@ export class PalletControlComponent implements OnInit {
         }
 
         this.availableProducts = response.remainingProducts;
-
         this.packages = response.packages;
 
         // **GÜVENLİK: Order kontrolü**
@@ -328,7 +334,7 @@ export class PalletControlComponent implements OnInit {
           this.packages[0].order
         ) {
           this.order = this.packages[0].order;
-          this.trailer = this.order.truck
+          this.trailer = this.order?.truck || null;
         } else {
           this.order = null;
           this.trailer = null;
@@ -471,7 +477,10 @@ export class PalletControlComponent implements OnInit {
       return total + palletArea;
     }, 0);
 
-    const trailerArea = this.trailer.dimension.width * this.trailer.dimension.depth;
+    // Optional chaining ve nullish coalescing kullanın
+    const trailerArea =
+      (this.trailer?.dimension?.width ?? 0) *
+      (this.trailer?.dimension?.depth ?? 0);
 
     this.remainingArea = Math.floor((trailerArea - totalArea) / 1000000);
 
@@ -505,7 +514,10 @@ export class PalletControlComponent implements OnInit {
     }, 0);
 
     this.totalWeight = totalWeight;
-    this.remainingWeight = Math.floor(this.trailer.weight_limit - totalWeight);
+
+    const trailerWeightLimit = this.trailer?.weight_limit ?? 0;
+
+    this.remainingWeight = Math.floor(trailerWeightLimit - totalWeight);
 
     this._calculationCache.set(cacheKey, {
       total: this.totalWeight,
@@ -528,14 +540,14 @@ export class PalletControlComponent implements OnInit {
       this.packages.reduce((total, pkg) => {
         if (pkg.products.length === 0) return total;
 
-        const packageMeter = pkg.products.reduce(
-          (pTotal, product) =>
+        const packageMeter = pkg.products.reduce((pTotal, product) => {
+          // Product dimension kontrolü
+          const productDepth = product.dimension?.depth ?? 0;
+          return (
             pTotal +
-            Math.round(
-              Math.floor(product.count * Math.floor(product.dimension.depth))
-            ),
-          0
-        );
+            Math.round(Math.floor(product.count * Math.floor(productDepth)))
+          );
+        }, 0);
 
         return total + packageMeter;
       }, 0) / 1000;
@@ -607,6 +619,10 @@ export class PalletControlComponent implements OnInit {
    */
   private checkDimensionsFit(product: UiProduct, pallet: UiPallet): boolean {
     // Safe number conversion
+    if (!product?.dimension || !pallet?.dimension) {
+      return false;
+    }
+
     const safeProductWidth = this.safeNumber(product.dimension.width);
     const safeProductDepth = this.safeNumber(product.dimension.depth);
     const safeProductHeight = this.safeNumber(product.dimension.height);
@@ -638,6 +654,10 @@ export class PalletControlComponent implements OnInit {
     pallet: UiPallet,
     existingProducts: UiProduct[]
   ): boolean {
+    if (!product?.dimension || !pallet?.dimension) {
+      return false;
+    }
+
     // Calculate pallet total volume
     const palletTotalVolume =
       this.safeNumber(pallet.dimension.width) *
@@ -665,6 +685,9 @@ export class PalletControlComponent implements OnInit {
     if (products.length === 0) return 0;
 
     return products.reduce((total, product) => {
+      if (!product?.dimension) {
+        return total;
+      }
       const volume =
         this.safeNumber(product.dimension.width) *
         this.safeNumber(product.dimension.depth) *
@@ -705,6 +728,9 @@ export class PalletControlComponent implements OnInit {
     pallet: UiPallet,
     existingProducts: UiProduct[]
   ): number {
+    if (!pallet?.dimension) {
+      return 0;
+    }
     const palletTotalVolume =
       this.safeNumber(pallet.dimension.width) *
       this.safeNumber(pallet.dimension.depth) *
@@ -720,6 +746,9 @@ export class PalletControlComponent implements OnInit {
     pallet: UiPallet,
     existingProducts: UiProduct[]
   ): number {
+    if (!pallet?.dimension) {
+      return 0;
+    }
     const palletTotalVolume =
       this.safeNumber(pallet.dimension.width) *
       this.safeNumber(pallet.dimension.depth) *
@@ -736,6 +765,10 @@ export class PalletControlComponent implements OnInit {
     pallet: UiPallet,
     existingProducts: UiProduct[]
   ): number {
+    if (!product?.dimension || !pallet?.dimension) {
+      return 0;
+    }
+
     if (!this.checkDimensionsFit(product, pallet)) {
       return 0;
     }
@@ -947,6 +980,11 @@ export class PalletControlComponent implements OnInit {
 
     // Mevcut fitting logic...
     const palletElements = new Map<string, HTMLElement>();
+
+    if (!product?.dimension) {
+      this.toastService.error('Ürün boyut bilgisi eksik');
+      return;
+    }
 
     this.packages.forEach((pkg, index) => {
       if (pkg.pallet) {

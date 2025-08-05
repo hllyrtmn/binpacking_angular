@@ -23,7 +23,7 @@ import { switchMap, takeUntil, catchError, finalize } from 'rxjs/operators';
 import { Subject, EMPTY } from 'rxjs';
 import { AutoSaveService } from '../../services/auto-save.service';
 import { LocalStorageService } from '../../services/local-storage.service';
-
+import { ThreeJSTruckVisualizationComponent } from '../../../../../../components/threejs-truck-visualization/threejs-truck-visualization.component';
 // Package interface for type safety
 interface PackageData {
   id: number;
@@ -56,14 +56,15 @@ interface LoadingStats {
     LoadingComponent,
     MatButton,
     MatStepperPrevious,
-    PlotlyVisualizationComponent,
     MatIconModule,
-  ],
+    ThreeJSTruckVisualizationComponent
+],
   templateUrl: './result-step.component.html',
   styleUrl: './result-step.component.scss',
 })
 export class ResultStepComponent implements OnInit, OnDestroy {
   @ViewChild('plotlyComponent') plotlyComponent!: PlotlyVisualizationComponent;
+  @ViewChild('threeJSComponent') threeJSComponent!: ThreeJSTruckVisualizationComponent;
   @Output() shipmentCompleted = new EventEmitter<void>();
 
   // **ÖNEMLİ: Component lifecycle ve cleanup için**
@@ -73,7 +74,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
 
   // Data properties
   piecesData: any[] = [];
-  truckDimension: number[] = [12000, 2400, 2900];
+  truckDimension: number[] = [13200, 2200, 2900];
 
   // Enhanced loading statistics
   loadingStats: LoadingStats = {
@@ -726,7 +727,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       const dataStr = JSON.stringify(this.piecesData);
       const dimensionsStr = JSON.stringify(this.truckDimension);
 
-      // Create a new window with 3D visualization
+      // Create a new window with Three.js visualization (updated HTML)
       const newWindow = window.open(
         '',
         '_blank',
@@ -734,11 +735,10 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       );
 
       if (newWindow) {
-        newWindow.document.write(this.createPopupHTML(dataStr, dimensionsStr));
+        newWindow.document.write(this.createThreeJSPopupHTML(dataStr, dimensionsStr)); // ← Method adı değişti
         newWindow.document.close();
         this.popupWindow = newWindow;
 
-        // YENİ: Popup açma activity'si için auto-save
         this.triggerAutoSave('user-action');
       }
     } catch (error) {
@@ -747,106 +747,367 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     }
   }
 
-  private createPopupHTML(dataStr: string, dimensionsStr: string): string {
+  private createThreeJSPopupHTML(dataStr: string, dimensionsStr: string): string {
     return `
       <!DOCTYPE html>
       <html>
       <head>
-        <title>3D Tır Yükleme Görselleştirmesi</title>
-        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <title>3D Tır Yükleme Görselleştirmesi - Three.js</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
         <style>
-          body { margin: 0; padding: 20px; font-family: Arial, sans-serif; background: #f8f9fa; }
-          #plotly-container { width: 100%; height: 700px; border: 1px solid #ddd; background: white; border-radius: 8px; }
-          .header { text-align: center; margin-bottom: 20px; color: #006A6A; }
-          .stats { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; }
-          .stat-item { text-align: center; padding: 12px; background: white; border-radius: 8px; border: 1px solid #e0e0e0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-          .stat-value { font-weight: 600; color: #006A6A; font-size: 18px; }
-          .stat-label { font-size: 12px; color: #666; }
+          body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f8f9fa;
+            overflow-x: hidden;
+          }
+          #threejs-container {
+            width: 100%;
+            height: 700px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            position: relative;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #006A6A;
+          }
+          .stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+          }
+          .stat-item {
+            text-align: center;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            min-width: 120px;
+          }
+          .stat-value {
+            font-weight: 600;
+            color: #006A6A;
+            font-size: 18px;
+            display: block;
+            margin-bottom: 4px;
+          }
+          .stat-label {
+            font-size: 12px;
+            color: #666;
+          }
+          .controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 8px;
+            z-index: 100;
+          }
+          .control-btn {
+            display: block;
+            width: 100%;
+            margin-bottom: 5px;
+            padding: 8px 12px;
+            border: 1px solid #006A6A;
+            background: white;
+            color: #006A6A;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+          }
+          .control-btn:hover {
+            background: #006A6A;
+            color: white;
+          }
+          .loading-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #006A6A;
+            font-size: 16px;
+            font-weight: 500;
+          }
         </style>
       </head>
       <body>
         <div class="header">
-          <h1>🚛 Tır Yükleme Optimizasyonu - 3D Görünüm</h1>
+          <h1>🚛 Tır Yükleme Optimizasyonu - Three.js 3D Görünüm</h1>
         </div>
+
         <div class="stats">
           <div class="stat-item">
-            <div class="stat-value">${this.loadingStats.packagesLoaded}</div>
-            <div class="stat-label">Yüklenen Paket</div>
+            <span class="stat-value">${this.loadingStats.packagesLoaded}</span>
+            <span class="stat-label">Yüklenen Paket</span>
           </div>
           <div class="stat-item">
-            <div class="stat-value">${this.loadingStats.utilizationRate}%</div>
-            <div class="stat-label">Doluluk Oranı</div>
+            <span class="stat-value">${this.loadingStats.utilizationRate}%</span>
+            <span class="stat-label">Doluluk Oranı</span>
           </div>
           <div class="stat-item">
-            <div class="stat-value">${this.loadingStats.cogScore}/100</div>
-            <div class="stat-label">COG Skoru</div>
+            <span class="stat-value">${this.loadingStats.cogScore}/100</span>
+            <span class="stat-label">COG Skoru</span>
           </div>
           <div class="stat-item">
-            <div class="stat-value">${this.loadingStats.totalWeight} kg</div>
-            <div class="stat-label">Toplam Ağırlık</div>
+            <span class="stat-value">${this.loadingStats.totalWeight} kg</span>
+            <span class="stat-label">Toplam Ağırlık</span>
           </div>
         </div>
-        <div id="plotly-container"></div>
-        <script>
-          try {
-            const piecesData = JSON.parse('${dataStr}');
-            const truckDimension = JSON.parse('${dimensionsStr}');
 
-            // Create basic 3D visualization
-            const traces = [];
+        <div id="threejs-container">
+          <div class="loading-indicator" id="loading">Three.js yükleniyor...</div>
+
+          <div class="controls" id="controls" style="display: none;">
+            <button class="control-btn" onclick="resetView()">🎯 Görünümü Sıfırla</button>
+            <button class="control-btn" onclick="toggleWireframe()">🔳 Wireframe</button>
+            <button class="control-btn" onclick="setView('front')">⬜ Ön Görünüm</button>
+            <button class="control-btn" onclick="setView('side')">▫️ Yan Görünüm</button>
+            <button class="control-btn" onclick="setView('top')">⬛ Üst Görünüm</button>
+            <button class="control-btn" onclick="setView('iso')">🔲 3D Görünüm</button>
+          </div>
+        </div>
+
+        <script>
+          // Global variables
+          let scene, camera, renderer, truckGroup, packagesGroup;
+          let isWireframe = false;
+          let animationId;
+
+          // Initialize Three.js
+          function initThreeJS() {
+            try {
+              const container = document.getElementById('threejs-container');
+              const loading = document.getElementById('loading');
+              const controls = document.getElementById('controls');
+
+              // Parse data
+              const piecesData = JSON.parse('${dataStr}');
+              const truckDimension = JSON.parse('${dimensionsStr}');
+
+              // Scene setup
+              scene = new THREE.Scene();
+              scene.background = new THREE.Color(0xf8fafc);
+
+              // Camera setup
+              camera = new THREE.PerspectiveCamera(
+                75,
+                container.clientWidth / container.clientHeight,
+                0.1,
+                50000
+              );
+
+              // Renderer setup
+              renderer = new THREE.WebGLRenderer({ antialias: true });
+              renderer.setSize(container.clientWidth, container.clientHeight);
+              renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+              renderer.shadowMap.enabled = true;
+              renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+              container.appendChild(renderer.domElement);
+
+              // Lighting
+              const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+              scene.add(ambientLight);
+
+              const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+              directionalLight.position.set(100, 100, 50);
+              directionalLight.castShadow = true;
+              scene.add(directionalLight);
+
+              // Groups
+              truckGroup = new THREE.Group();
+              packagesGroup = new THREE.Group();
+              scene.add(truckGroup);
+              scene.add(packagesGroup);
+
+              // Create truck wireframe
+              createTruck(truckDimension);
+
+              // Create packages
+              createPackages(piecesData);
+
+              // Set initial camera position
+              setView('iso');
+
+              // Start render loop
+              animate();
+
+              // Hide loading, show controls
+              loading.style.display = 'none';
+              controls.style.display = 'block';
+
+              // Setup mouse controls
+              setupControls();
+
+              console.log('✅ Three.js popup initialized successfully');
+
+            } catch (error) {
+              console.error('❌ Three.js popup error:', error);
+              document.getElementById('loading').innerHTML =
+                '❌ Görselleştirme hatası: ' + error.message;
+            }
+          }
+
+          function createTruck(dimensions) {
+            const geometry = new THREE.BoxGeometry(dimensions[0], dimensions[1], dimensions[2]);
+            const edges = new THREE.EdgesGeometry(geometry);
+            const material = new THREE.LineBasicMaterial({ color: 0x666666, linewidth: 2 });
+
+            const wireframe = new THREE.LineSegments(edges, material);
+            wireframe.position.set(dimensions[0]/2, dimensions[1]/2, dimensions[2]/2);
+
+            truckGroup.add(wireframe);
+          }
+
+          function createPackages(piecesData) {
             const colors = ['#006A6A', '#D6BB86', '#004A4A', '#C0A670', '#8b5cf6'];
 
-            // Truck outline
-            const L = truckDimension[0], W = truckDimension[1], H = truckDimension[2];
-            traces.push({
-              type: 'scatter3d',
-              mode: 'lines',
-              x: [0, L, L, 0, 0, 0, L, L, 0, 0, L, L, L, L, 0, 0],
-              y: [0, 0, W, W, 0, 0, 0, W, W, 0, 0, W, W, 0, 0, W],
-              z: [0, 0, 0, 0, 0, H, H, H, H, H, 0, 0, H, H, H, H],
-              line: { color: '#666', width: 3 },
-              name: 'Tır Konteyneri',
-              showlegend: false
-            });
-
-            // Add packages
             piecesData.forEach((piece, index) => {
-              const [x, y, z, l, w, h, id, weight] = piece;
+              const [x, y, z, length, width, height, id, weight] = piece;
 
-              traces.push({
-                type: 'mesh3d',
-                x: [x, x+l, x+l, x, x, x+l, x+l, x],
-                y: [y, y, y+w, y+w, y, y, y+w, y+w],
-                z: [z, z, z, z, z+h, z+h, z+h, z+h],
-                i: [0, 0, 0, 1, 1, 2, 2, 3, 4, 4, 4, 5, 5, 6, 6, 7],
-                j: [1, 2, 3, 2, 3, 3, 0, 0, 5, 6, 7, 6, 7, 7, 4, 4],
-                k: [2, 3, 0, 3, 0, 0, 1, 1, 6, 7, 4, 7, 4, 4, 5, 5],
+              const geometry = new THREE.BoxGeometry(length, width, height);
+              const material = new THREE.MeshLambertMaterial({
                 color: colors[index % colors.length],
-                opacity: 0.8,
-                name: 'Palet ' + id,
-                showlegend: false
+                transparent: false,
+                opacity: 1.0
               });
+
+              const mesh = new THREE.Mesh(geometry, material);
+              mesh.position.set(x + length/2, y + width/2, z + height/2);
+              mesh.castShadow = true;
+              mesh.receiveShadow = true;
+
+              packagesGroup.add(mesh);
+            });
+          }
+
+          function animate() {
+            if (!renderer) return;
+
+            animationId = requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+          }
+
+          function setupControls() {
+            const canvas = renderer.domElement;
+            let isMouseDown = false;
+            let mouseX = 0, mouseY = 0;
+
+            canvas.addEventListener('mousedown', (event) => {
+              isMouseDown = true;
+              mouseX = event.clientX;
+              mouseY = event.clientY;
             });
 
-            const layout = {
-              scene: {
-                xaxis: { title: 'Uzunluk (mm)', showgrid: true },
-                yaxis: { title: 'Genişlik (mm)', showgrid: true },
-                zaxis: { title: 'Yükseklik (mm)', showgrid: true },
-                camera: { eye: { x: 1.5, y: 1.5, z: 1.2 } },
-                bgcolor: '#f8fafc'
-              },
-              margin: { l: 0, r: 0, b: 0, t: 0 },
-              paper_bgcolor: 'white'
-            };
+            canvas.addEventListener('mousemove', (event) => {
+              if (!isMouseDown) return;
 
-            Plotly.newPlot('plotly-container', traces, layout, {responsive: true, displayModeBar: true});
+              const deltaX = event.clientX - mouseX;
+              const deltaY = event.clientY - mouseY;
 
-          } catch (error) {
-            console.error('Popup visualization error:', error);
-            document.getElementById('plotly-container').innerHTML =
-              '<div style="text-align: center; padding: 50px; color: #F44336;">Görselleştirme hatası: ' + error.message + '</div>';
+              rotateView(deltaX * 0.01, deltaY * 0.01);
+
+              mouseX = event.clientX;
+              mouseY = event.clientY;
+            });
+
+            canvas.addEventListener('mouseup', () => {
+              isMouseDown = false;
+            });
+
+            canvas.addEventListener('wheel', (event) => {
+              event.preventDefault();
+              zoomCamera(event.deltaY * 0.001);
+            });
           }
+
+          function rotateView(deltaX, deltaY) {
+            const spherical = new THREE.Spherical();
+            spherical.setFromVector3(camera.position);
+            spherical.theta -= deltaX;
+            spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi - deltaY));
+
+            camera.position.setFromSpherical(spherical);
+            camera.lookAt(0, 0, 0);
+          }
+
+          function zoomCamera(delta) {
+            const direction = new THREE.Vector3();
+            camera.getWorldDirection(direction);
+            direction.multiplyScalar(delta * 1000);
+            camera.position.add(direction);
+          }
+
+          function setView(viewType) {
+            const truckDim = JSON.parse('${dimensionsStr}');
+            const maxDim = Math.max(...truckDim);
+            const distance = maxDim * 1.5;
+
+            switch (viewType) {
+              case 'front':
+                camera.position.set(distance, 0, truckDim[2] / 2);
+                break;
+              case 'side':
+                camera.position.set(0, distance, truckDim[2] / 2);
+                break;
+              case 'top':
+                camera.position.set(truckDim[0] / 2, truckDim[1] / 2, distance);
+                break;
+              case 'iso':
+              default:
+                camera.position.set(distance * 0.8, distance * 0.8, distance * 0.8);
+                break;
+            }
+
+            camera.lookAt(truckDim[0] / 2, truckDim[1] / 2, truckDim[2] / 2);
+          }
+
+          function resetView() {
+            setView('iso');
+          }
+
+          function toggleWireframe() {
+            isWireframe = !isWireframe;
+
+            packagesGroup.children.forEach(mesh => {
+              mesh.material.wireframe = isWireframe;
+            });
+          }
+
+          // Window resize handler
+          window.addEventListener('resize', () => {
+            if (!camera || !renderer) return;
+
+            const container = document.getElementById('threejs-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+          });
+
+          // Cleanup on unload
+          window.addEventListener('beforeunload', () => {
+            if (animationId) {
+              cancelAnimationFrame(animationId);
+            }
+            if (renderer) {
+              renderer.dispose();
+            }
+          });
+
+          // Initialize when page loads
+          document.addEventListener('DOMContentLoaded', initThreeJS);
+
+          // Fallback initialization
+          setTimeout(initThreeJS, 100);
         </script>
       </body>
       </html>
