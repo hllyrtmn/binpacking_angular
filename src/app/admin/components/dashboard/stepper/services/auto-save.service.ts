@@ -14,7 +14,7 @@ export interface AutoSaveEvent {
   stepNumber: number;
   data: any;
   timestamp: Date;
-  changeType: 'form' | 'drag-drop' | 'user-action' | 'api-response';
+  changeType: 'form' | 'drag-drop' | 'user-action' | 'api-response' | 'emergency';
   dataHash?: string; // ✅ Better change detection
 }
 

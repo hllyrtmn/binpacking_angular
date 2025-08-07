@@ -63,6 +63,7 @@ import {
   AutoSaveData,
 } from './models/invoice-upload-interfaces';
 import { INVOICE_UPLOAD_CONSTANTS } from './constants/invoice-upload.constants';
+import { RepositoryService } from '../../services/repository.service';
 
 @Component({
   selector: 'app-invoice-upload',
@@ -110,6 +111,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   private readonly autoSaveService = inject(AutoSaveService);
   private readonly localService = inject(LocalStorageService);
   private readonly stateManager = inject(StateManager);
+  private readonly repositoryService = inject(RepositoryService)
 
   // Form and data
   uploadForm!: FormGroup;
@@ -457,6 +459,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
         switchMap((orderResponse) => {
           if (orderResponse?.id && this.order) {
             this.order.id = orderResponse.id;
+            this.repositoryService.setOrderId(orderResponse.id)
           }
 
           if (this.fileUploadManager.hasTempFile()) {

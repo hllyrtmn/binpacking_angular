@@ -1149,94 +1149,144 @@ body {
   padding: 0;
 }
 
-
-
-// result-step.component.scss - ADD THESE STYLES
+// parent.component.scss - THEME-ALIGNED STYLES
 
 // ========================================
-// THREE.JS SPECIFIC ENHANCEMENTS
+// THEME COLORS (Matching Result Step Component)
 // ========================================
+$primary-color: #006A6A;
+$secondary-color: #D6BB86;
+$dark-primary: #004A4A;
+$light-secondary: #C0A670;
+$success-green: #10b981;
+$error-red: #ef4444;
+$warning-amber: #f59e0b;
+$info-blue: #06b6d4;
+$neutral-gray: #6b7280;
+$light-bg: #f8fafc;
+$white: #ffffff;
 
-.visualization-container {
-  // Existing styles remain the same...
+// ========================================
+// MAIN RESULT CONTAINER
+// ========================================
+.result-container {
+  width: 100%;
+  max-width: 100%;
+  padding: 1rem;
+  background: $light-bg;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba($primary-color, 0.1);
+  margin: 0;
+  box-sizing: border-box;
 
-  // Add Three.js specific styling
+  // Ensure ThreeJS component takes full width
   app-threejs-truck-visualization {
     display: block;
     width: 100%;
-    height: 1000px;
-    border-radius: 8px;
-    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+}
 
-    // Ensure canvas takes full space
-    .threejs-visualization-container {
-      width: 100%;
-      height: 100%;
-      border-radius: inherit;
-    }
+// ========================================
+// DATA INFO PANEL
+// ========================================
+.data-info-panel {
+  background: $white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 24px rgba($primary-color, 0.15);
+  border: 2px solid rgba($primary-color, 0.1);
+  margin-top: 1.5rem;
+
+  h4 {
+    margin: 0 0 1rem;
+    color: $primary-color;
+    font-size: 1.25rem;
+    font-weight: 700;
+    border-bottom: 2px solid rgba($primary-color, 0.2);
+    padding-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
-  // Optional: Visualization engine toggle
-  .visualization-toggle {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 15;
+  p {
+    margin: 0 0 0.75rem;
+    font-size: 0.95rem;
+    line-height: 1.6;
 
-    .toggle-btn {
-      padding: 8px 16px;
-      background: rgba(255, 255, 255, 0.9);
-      border: 1px solid #006A6A;
-      border-radius: 20px;
-      color: #006A6A;
-      font-size: 12px;
+    strong {
+      color: $dark-primary;
       font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      backdrop-filter: blur(10px);
-
-      &:hover {
-        background: rgba(0, 106, 106, 0.1);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0, 106, 106, 0.2);
-      }
-
-      &.active {
-        background: #006A6A;
-        color: white;
-        box-shadow: 0 4px 12px rgba(0, 106, 106, 0.3);
-      }
     }
   }
 
-  // Enhanced loading overlay for Three.js
-  .loading-overlay {
-    // Add Three.js specific loading enhancements
-    &.threejs-loading {
-      background: linear-gradient(135deg, rgba(248, 250, 252, 0.95) 0%, rgba(241, 245, 249, 0.95) 100%);
+  .export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, $secondary-color 0%, $light-secondary 100%);
+    color: $white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba($secondary-color, 0.3);
+    margin-top: 1rem;
 
-      .loading-spinner {
-        .spinner {
-          background: conic-gradient(from 0deg, #006A6A, #D6BB86, #004A4A, #C0A670, #006A6A);
-          border-radius: 50%;
-          padding: 3px;
+    &:hover {
+      background: linear-gradient(135deg, $light-secondary 0%, darken($light-secondary, 10%) 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba($secondary-color, 0.4);
+    }
 
-          &::before {
-            content: '';
-            display: block;
-            width: 100%;
-            height: 100%;
-            background: white;
-            border-radius: 50%;
-          }
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  // Data Changes Section
+  .data-changes {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba($info-blue, 0.05) 0%, rgba($info-blue, 0.1) 100%);
+    border-radius: 8px;
+    border-left: 4px solid $info-blue;
+
+    h5 {
+      margin: 0 0 0.75rem;
+      color: $info-blue;
+      font-size: 1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+
+      li {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba($info-blue, 0.2);
+        color: $dark-primary;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        &:last-child {
+          border-bottom: none;
         }
 
-        p {
-          background: linear-gradient(45deg, #006A6A, #D6BB86);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          font-weight: 600;
+        &::before {
+          content: '🔄';
+          font-size: 0.8rem;
         }
       }
     }
@@ -1244,183 +1294,464 @@ body {
 }
 
 // ========================================
-// THREE.JS COMPONENT RESPONSIVE OVERRIDES
+// ACTION BUTTONS CONTAINER
 // ========================================
+.action-buttons-container {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
 
-// Mobile optimizations for Three.js
-@media (max-width: 768px) {
-  .visualization-container {
-    app-threejs-truck-visualization {
-      height: 400px; // Smaller on mobile
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 
-      // Hide some overlays on mobile for better performance
-      .threejs-controls-overlay {
-        opacity: 0.8;
+    &.reset-btn {
+      background: $white;
+      color: $neutral-gray;
+      border-color: $neutral-gray;
 
-        .control-buttons {
-          .control-btn {
-            padding: 6px 10px;
-            font-size: 0.7rem;
-          }
-        }
+      &:hover {
+        background: $neutral-gray;
+        color: $white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba($neutral-gray, 0.3);
+      }
+    }
+
+    &.save-btn {
+      background: linear-gradient(135deg, $success-green 0%, darken($success-green, 10%) 100%);
+      color: $white;
+      border-color: $success-green;
+
+      &:hover {
+        background: linear-gradient(135deg, darken($success-green, 10%) 0%, darken($success-green, 20%) 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba($success-green, 0.4);
       }
 
-      .stats-overlay {
-        .stats-content {
-          .stat-item {
-            font-size: 0.65rem;
-          }
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+    }
+
+    &.validate-btn {
+      background: $white;
+      color: $warning-amber;
+      border-color: $warning-amber;
+
+      &:hover {
+        background: $warning-amber;
+        color: $white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba($warning-amber, 0.3);
+      }
+    }
+  }
+}
+
+// ========================================
+// STATISTICS CARDS
+// ========================================
+.statistics-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+
+  .stat-card {
+    background: $white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    &.efficiency-card {
+      border-color: rgba($primary-color, 0.2);
+      .stat-icon { background: $primary-color; }
+    }
+
+    &.packages-card {
+      border-color: rgba($secondary-color, 0.2);
+      .stat-icon { background: $secondary-color; }
+    }
+
+    &.changes-card {
+      border-color: rgba($info-blue, 0.2);
+      .stat-icon { background: $info-blue; }
+    }
+
+    &.validation-card {
+      border-color: rgba($warning-amber, 0.2);
+      .stat-icon { background: $warning-amber; }
+    }
+
+    .stat-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+
+      .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: $white;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+
+      .stat-title {
+        h5 {
+          margin: 0 0 0.25rem;
+          color: $dark-primary;
+          font-size: 0.9rem;
+          font-weight: 600;
+        }
+
+        .stat-value {
+          font-size: 1.8rem;
+          font-weight: 700;
+          color: $primary-color;
+          line-height: 1;
         }
       }
     }
 
-    .visualization-toggle .toggle-btn {
-      padding: 6px 12px;
-      font-size: 11px;
+    .stat-details {
+      font-size: 0.85rem;
+      color: $neutral-gray;
+      line-height: 1.5;
+
+      .detail-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        padding: 0.25rem 0;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        .detail-label {
+          font-weight: 500;
+        }
+
+        .detail-value {
+          font-weight: 600;
+          color: $dark-primary;
+        }
+      }
+    }
+  }
+}
+
+// ========================================
+// VALIDATION RESULTS
+// ========================================
+.validation-results {
+  margin-top: 1.5rem;
+  background: $white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+
+  .validation-header {
+    background: linear-gradient(135deg, $primary-color 0%, $dark-primary 100%);
+    color: $white;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    h4 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .validation-status {
+      margin-left: auto;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+
+      &.valid {
+        background: rgba($success-green, 0.2);
+        color: $success-green;
+        border: 1px solid rgba($success-green, 0.3);
+      }
+
+      &.invalid {
+        background: rgba($error-red, 0.2);
+        color: $error-red;
+        border: 1px solid rgba($error-red, 0.3);
+      }
+    }
+  }
+
+  .validation-content {
+    padding: 1.5rem;
+
+    .validation-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba($primary-color, 0.1);
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .validation-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+
+        .validation-icon {
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1rem;
+
+          &.success {
+            background: rgba($success-green, 0.2);
+            color: $success-green;
+          }
+
+          &.error {
+            background: rgba($error-red, 0.2);
+            color: $error-red;
+          }
+
+          &.warning {
+            background: rgba($warning-amber, 0.2);
+            color: $warning-amber;
+          }
+        }
+
+        .validation-text {
+          h6 {
+            margin: 0 0 0.25rem;
+            color: $dark-primary;
+            font-size: 0.9rem;
+            font-weight: 600;
+          }
+
+          p {
+            margin: 0;
+            color: $neutral-gray;
+            font-size: 0.8rem;
+          }
+        }
+      }
+
+      .validation-value {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: $primary-color;
+      }
+    }
+  }
+}
+
+// ========================================
+// RESPONSIVE DESIGN
+// ========================================
+@media (max-width: 1200px) {
+  .result-container {
+    padding: 0.75rem;
+  }
+
+  .statistics-container {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+
+    .stat-card {
+      padding: 1.25rem;
+
+      .stat-header {
+        .stat-icon {
+          width: 40px;
+          height: 40px;
+          font-size: 1.25rem;
+        }
+
+        .stat-title .stat-value {
+          font-size: 1.6rem;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .result-container {
+    padding: 0.5rem;
+  }
+
+  .data-info-panel {
+    padding: 1rem;
+    margin-top: 1rem;
+
+    h4 {
+      font-size: 1.1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .export-btn {
+      width: 100%;
+      justify-content: center;
+      padding: 0.75rem;
+    }
+  }
+
+  .action-buttons-container {
+    flex-direction: column;
+    gap: 0.75rem;
+
+    .action-btn {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  .statistics-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+
+    .stat-card {
+      padding: 1rem;
+
+      .stat-header {
+        gap: 0.75rem;
+
+        .stat-icon {
+          width: 36px;
+          height: 36px;
+          font-size: 1.1rem;
+        }
+
+        .stat-title .stat-value {
+          font-size: 1.4rem;
+        }
+      }
+
+      .stat-details .detail-item {
+        font-size: 0.8rem;
+      }
+    }
+  }
+
+  .validation-results {
+    .validation-header {
+      padding: 0.75rem 1rem;
+      flex-direction: column;
+      gap: 0.5rem;
+      text-align: center;
+
+      .validation-status {
+        margin: 0;
+      }
+    }
+
+    .validation-content {
+      padding: 1rem;
+
+      .validation-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+
+        .validation-info {
+          width: 100%;
+        }
+
+        .validation-value {
+          align-self: flex-end;
+        }
+      }
     }
   }
 }
 
 @media (max-width: 480px) {
-  .visualization-container {
-    app-threejs-truck-visualization {
-      height: 350px;
+  .result-container {
+    padding: 0.25rem;
+  }
 
-      // Further mobile optimizations
-      .package-info-panel {
-        position: static;
-        margin-top: 10px;
-        border-radius: 8px;
+  .data-info-panel {
+    padding: 0.75rem;
+    border-radius: 8px;
+
+    h4 {
+      font-size: 1rem;
+      flex-direction: column;
+      gap: 0.25rem;
+      text-align: center;
+    }
+
+    p {
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    .export-btn {
+      font-size: 0.8rem;
+      padding: 0.6rem;
+    }
+
+    .data-changes {
+      padding: 0.75rem;
+      margin-top: 1rem;
+
+      h5 {
+        font-size: 0.9rem;
       }
 
-      .threejs-controls-overlay {
-        position: static;
-        margin-bottom: 10px;
-        border-radius: 8px;
+      ul li {
+        font-size: 0.75rem;
+        padding: 0.4rem 0;
       }
     }
   }
-}
 
-// ========================================
-// THREE.JS HIGH PERFORMANCE MODE
-// ========================================
+  .statistics-container {
+    gap: 0.75rem;
 
-.performance-mode {
-  app-threejs-truck-visualization {
-    // Reduce visual effects for better performance
-    .threejs-visualization-container {
-      canvas {
-        image-rendering: pixelated; // Faster rendering
-      }
-    }
+    .stat-card {
+      padding: 0.75rem;
+      border-radius: 8px;
 
-    // Hide non-essential overlays
-    .stats-overlay,
-    .package-info-panel {
-      display: none;
-    }
-  }
-}
-
-// ========================================
-// THREE.JS FULLSCREEN ENHANCEMENTS
-// ========================================
-
-.visualization-container:fullscreen {
-  app-threejs-truck-visualization {
-    .threejs-visualization-container {
-      border-radius: 0;
-    }
-
-    // Enhanced fullscreen controls
-    .threejs-controls-overlay {
-      top: 20px;
-      left: 20px;
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-
-      h4, .control-btn {
-        color: white;
-      }
-
-      .control-btn {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.3);
-
-        &:hover {
-          background: rgba(255, 255, 255, 0.2);
-        }
-
-        &.active {
-          background: #006A6A;
-          border-color: #006A6A;
-        }
-      }
-    }
-
-    .package-info-panel {
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-
-      .info-content h4 {
-        color: white;
-      }
-
-      .detail-row .label {
-        color: rgba(255, 255, 255, 0.8);
-      }
-
-      .detail-row .value {
-        color: white;
-      }
-    }
-  }
-}
-
-// ========================================
-// THREE.JS DARK MODE SUPPORT
-// ========================================
-
-@media (prefers-color-scheme: dark) {
-  .visualization-container {
-    background: #1f2937;
-
-    app-threejs-truck-visualization {
-      .threejs-visualization-container {
-        background: #111827;
-      }
-
-      .no-data-message .no-data-content {
-        color: #d1d5db;
-
-        h4 {
-          color: #06b6d4;
-        }
-      }
-
-      .threejs-controls-overlay {
-        background: rgba(31, 41, 55, 0.95);
-        color: #f3f4f6;
-
-        h4 {
-          color: #06b6d4;
-        }
-
-        .control-btn {
-          background: #374151;
-          border-color: #4b5563;
-          color: #f3f4f6;
-
-          &:hover {
-            background: #4b5563;
-            border-color: #06b6d4;
-          }
-
-          &.active {
-            background: #06b6d4;
-            border-color: #06b6d4;
-          }
+      .stat-header {
+        .stat-title .stat-value {
+          font-size: 1.2rem;
         }
       }
     }
@@ -1428,61 +1759,118 @@ body {
 }
 
 // ========================================
-// THREE.JS ACCESSIBILITY IMPROVEMENTS
+// PRINT STYLES
 // ========================================
-
-// Focus indicators for Three.js controls
-.threejs-controls-overlay {
-  .control-btn:focus,
-  .view-btn:focus {
-    outline: 2px solid #006A6A;
-    outline-offset: 2px;
-  }
-}
-
-// High contrast mode for Three.js
-@media (prefers-contrast: high) {
-  .visualization-container {
-    app-threejs-truck-visualization {
-      .threejs-controls-overlay {
-        background: rgba(255, 255, 255, 1);
-        border: 2px solid #000;
-
-        .control-btn {
-          border: 2px solid #000;
-
-          &.active {
-            background: #000;
-            color: #fff;
-          }
-        }
-      }
-
-      .package-info-panel {
-        background: rgba(255, 255, 255, 1);
-        border: 2px solid #000;
-      }
-    }
-  }
-}
-
-// ========================================
-// THREE.JS PRINT STYLES
-// ========================================
-
 @media print {
-  .visualization-container {
-    app-threejs-truck-visualization {
-      .threejs-controls-overlay,
-      .package-info-panel,
-      .stats-overlay {
-        display: none !important;
-      }
-
-      .threejs-visualization-container {
-        background: white !important;
-        border: 2px solid #000 !important;
-      }
-    }
+  .result-container {
+    box-shadow: none;
+    border: 1px solid #ccc;
   }
+
+  .export-btn,
+  .action-buttons-container {
+    display: none !important;
+  }
+
+  .data-info-panel,
+  .statistics-container,
+  .validation-results {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+}
+
+// ========================================
+// ACCESSIBILITY ENHANCEMENTS
+// ========================================
+.action-btn:focus,
+.export-btn:focus {
+  outline: 3px solid $primary-color !important;
+  outline-offset: 2px !important;
+}
+
+// High contrast mode support
+@media (prefers-contrast: high) {
+  .result-container,
+  .data-info-panel,
+  .stat-card,
+  .validation-results {
+    border: 3px solid #000 !important;
+  }
+
+  .export-btn,
+  .action-btn {
+    border: 3px solid #000 !important;
+  }
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  .result-container {
+    background: #1f2937;
+  }
+
+  .data-info-panel,
+  .stat-card,
+  .validation-results .validation-content {
+    background: #374151;
+    color: #f3f4f6;
+  }
+
+  .validation-results .validation-header {
+    background: linear-gradient(135deg, lighten($primary-color, 10%) 0%, $primary-color 100%);
+  }
+}
+
+// ========================================
+// ANIMATION UTILITIES
+// ========================================
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.result-container {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.data-info-panel {
+  animation: slideInUp 0.6s ease-out;
+}
+
+.stat-card {
+  animation: scaleIn 0.4s ease-out;
+  animation-fill-mode: both;
+
+  &:nth-child(1) { animation-delay: 0.1s; }
+  &:nth-child(2) { animation-delay: 0.2s; }
+  &:nth-child(3) { animation-delay: 0.3s; }
+  &:nth-child(4) { animation-delay: 0.4s; }
+}
+
+.validation-results {
+  animation: slideInUp 0.7s ease-out;
 }

@@ -1,11 +1,15 @@
+<!-- result-step.component.html - ENHANCED FINAL VERSION -->
 <div class="logistics-result-screen">
+  <!-- Enhanced Header -->
   <div class="result-header">
     <div class="header-icon">
-      <mat-icon>view_in_ar</mat-icon>
+      <mat-icon>local_shipping</mat-icon>
     </div>
     <div class="header-title">
-      <h1>TIR Yükleme Optimizasyonu</h1>
-      <p class="header-subtitle">3 boyutlu yükleme planı</p>
+      <h1>🚛 Enhanced Tır Yükleme Sonuçları</h1>
+      <p class="header-subtitle">
+        Gelişmiş 3D Görselleştirme ve Gerçek Zamanlı Veri Takibi - v3.0
+      </p>
     </div>
   </div>
 
@@ -13,124 +17,193 @@
   <div class="status-bar">
     <div class="status-item">
       <div class="status-icon">
-        <mat-icon>inventory_2</mat-icon>
+        <mat-icon>inventory</mat-icon>
       </div>
       <div class="status-info">
-        <span class="status-label">Yüklenecek Ürün</span>
-        <span class="status-value"
-          >{{ loadingStats.packagesLoaded || 0 }} /
-          {{ loadingStats.totalPackages || 0 }} adet</span
-        >
+        <span class="status-label">Toplam Paket</span>
+        <span class="status-value">{{ loadingStats.totalPackages }}</span>
       </div>
     </div>
 
     <div class="status-item">
-      <div class="status-icon truck-icon">
-        <mat-icon>local_shipping</mat-icon>
-      </div>
-      <div class="status-info">
-        <span class="status-label">TIR Boyutları</span>
-        <span class="status-value"
-          >{{ truckDimension[0] || 0 }} x {{ truckDimension[1] || 0 }} x
-          {{ truckDimension[2] || 0 }} mm</span
-        >
-      </div>
-    </div>
-
-    <div class="status-item">
-      <div class="status-icon efficiency-icon">
-        <mat-icon>data_usage</mat-icon>
+      <div class="status-icon">
+        <mat-icon>percent</mat-icon>
       </div>
       <div class="status-info">
         <span class="status-label">Doluluk Oranı</span>
-        <span class="status-value" [class]="getEfficiencyClass()"
-          >{{ loadingStats.utilizationRate || 0 }}%</span
-        >
+        <span class="status-value" [class]="getEfficiencyClass()">
+          {{ loadingStats.utilizationRate }}%
+        </span>
       </div>
     </div>
 
     <div class="status-item">
-      <div class="status-icon cog-icon">
+      <div class="status-icon">
         <mat-icon>balance</mat-icon>
       </div>
       <div class="status-info">
         <span class="status-label">COG Skoru</span>
-        <span class="status-value" [class]="getCogScoreClass()"
-          >{{ loadingStats.cogScore || 0 }}/100</span
-        >
+        <span class="status-value" [class]="getCogScoreClass()">
+          {{ loadingStats.cogScore }}/100
+        </span>
+      </div>
+    </div>
+
+    <div class="status-item">
+      <div class="status-icon">
+        <mat-icon>fitness_center</mat-icon>
+      </div>
+      <div class="status-info">
+        <span class="status-label">Toplam Ağırlık</span>
+        <span class="status-value">{{ loadingStats.totalWeight }} kg</span>
       </div>
     </div>
   </div>
 
-  <!-- Progress Bar (only visible during loading) -->
+  <!-- NEW: Enhanced Data Change Status Bar (Only shown if there are changes) -->
+  <div class="data-change-status-bar" *ngIf="hasUnsavedChanges || dataChangeHistory.length > 0">
+    <div class="change-status-item" [class.unsaved]="hasUnsavedChanges">
+      <div class="change-icon">
+        <mat-icon>{{ hasUnsavedChanges ? 'save_alt' : 'check_circle' }}</mat-icon>
+      </div>
+      <div class="change-info">
+        <span class="change-label">Veri Durumu</span>
+        <span class="change-value" [class]="getChangeStatusClass()">
+          {{ hasUnsavedChanges ? 'Kaydedilmemiş Değişiklikler' : 'Tüm Değişiklikler Kaydedildi' }}
+        </span>
+      </div>
+    </div>
+
+    <div class="change-status-item" *ngIf="dataChangeHistory.length > 0">
+      <div class="change-icon">
+        <mat-icon>history</mat-icon>
+      </div>
+      <div class="change-info">
+        <span class="change-label">Toplam Değişiklik</span>
+        <span class="change-value">{{ dataChangeHistory.length }}</span>
+      </div>
+    </div>
+
+    <div class="change-status-item" *ngIf="loadingStats.movedCount && loadingStats.movedCount > 0">
+      <div class="change-icon">
+        <mat-icon>open_with</mat-icon>
+      </div>
+      <div class="change-info">
+        <span class="change-label">Taşınan Paket</span>
+        <span class="change-value">{{ loadingStats.movedCount }}</span>
+      </div>
+    </div>
+
+    <div class="change-status-item" *ngIf="loadingStats.rotatedCount && loadingStats.rotatedCount > 0">
+      <div class="change-icon">
+        <mat-icon>rotate_right</mat-icon>
+      </div>
+      <div class="change-info">
+        <span class="change-label">Döndürülen</span>
+        <span class="change-value">{{ loadingStats.rotatedCount }}</span>
+      </div>
+    </div>
+
+    <div class="change-status-item" *ngIf="loadingStats.deletedCount && loadingStats.deletedCount > 0">
+      <div class="change-icon">
+        <mat-icon>delete_outline</mat-icon>
+      </div>
+      <div class="change-info">
+        <span class="change-label">Silinen</span>
+        <span class="change-value warning">{{ loadingStats.deletedCount }}</span>
+      </div>
+    </div>
+
+    <!-- NEW: Reset to Original Button -->
+    <div class="change-actions" *ngIf="hasUnsavedChanges && originalPiecesData.length > 0">
+      <button class="reset-btn"
+              (click)="resetToOriginalData()"
+              title="Tüm değişiklikleri geri al">
+        <mat-icon>restore</mat-icon>
+        Orijinal Veriye Dön
+      </button>
+    </div>
+  </div>
+
+  <!-- Enhanced Progress Container -->
   <div class="progress-container" *ngIf="isLoading">
     <div class="progress-header">
-      <span class="progress-label">Optimizasyon İlerliyor...</span>
-      <span class="progress-percentage"
-        >{{ optimizationProgress | number : "1.0-0" }}%</span
-      >
+      <span class="progress-label">Enhanced Optimizasyon İşlemi</span>
+      <span class="progress-percentage">{{ optimizationProgress }}%</span>
     </div>
     <div class="progress-bar">
       <div class="progress-fill" [style.width.%]="optimizationProgress"></div>
     </div>
     <div class="progress-info">
-      <span *ngIf="optimizationProgress < 30"
-        >📊 Algoritma hazırlanıyor...</span
-      >
-      <span *ngIf="optimizationProgress >= 30 && optimizationProgress < 70"
-        >🔄 Paketler yerleştiriliyor...</span
-      >
-      <span *ngIf="optimizationProgress >= 70 && optimizationProgress < 90"
-        >📋 Raporlar oluşturuluyor...</span
-      >
-      <span *ngIf="optimizationProgress >= 90">✅ Tamamlanıyor...</span>
+      Gelişmiş algoritma çalışıyor, lütfen bekleyin...
     </div>
   </div>
 
+  <!-- Enhanced Controls Container -->
   <div class="controls-container">
     <div class="action-buttons">
-      <button
-        mat-raised-button
-        class="calculate-button"
-        [disabled]="isLoading"
-        (click)="calculateBinpacking()"
-      >
-        <mat-icon>{{ isLoading ? "hourglass_empty" : "play_arrow" }}</mat-icon>
-        <span>{{
-          isLoading ? "Hesaplanıyor..." : "Optimizasyonu Başlat"
-        }}</span>
+      <button mat-raised-button
+              class="calculate-button"
+              [disabled]="isLoading || processingLock"
+              (click)="calculateBinpacking()">
+        <mat-icon>play_arrow</mat-icon>
+        {{ isLoading ? 'İşlem Devam Ediyor...' : 'Enhanced Optimizasyonu Çalıştır' }}
       </button>
 
-      <button
-        mat-raised-button
-        class="export-button"
-        [disabled]="!hasResults || isLoading"
-        (click)="openInNewTab()"
-      >
+      <button mat-raised-button
+              class="export-button"
+              [disabled]="!hasResults"
+              (click)="openInNewTab()">
         <div class="new-tab-icon">
           <div class="new-tab-square"></div>
           <div class="new-tab-arrow"></div>
         </div>
-        <span>3D Görünümü Aç</span>
+        3D Popup Aç
+      </button>
+
+      <!-- NEW: Enhanced Save Button -->
+      <button mat-raised-button
+              class="save-button"
+              [disabled]="!hasResults"
+              [class.has-changes]="hasUnsavedChanges"
+              (click)="saveResults()">
+        <mat-icon>{{ hasUnsavedChanges ? 'save_alt' : 'download' }}</mat-icon>
+        {{ hasUnsavedChanges ? 'Değişikliklerle Kaydet' : 'Sonuçları Kaydet' }}
       </button>
     </div>
 
-    <div class="view-controls">
-      <button
-        mat-button
-        class="view-button"
-        [class.active]="showVisualization && hasResults"
-      >
+    <!-- Enhanced View Controls -->
+    <div class="view-controls" *ngIf="hasResults && showVisualization">
+      <button class="view-button"
+              [class.active]="currentViewType === 'front'"
+              [disabled]="isLoading"
+              (click)="threeJSComponent.setView('front')">
+        <mat-icon>view_agenda</mat-icon>
+        <span>Ön</span>
+      </button>
+
+      <button class="view-button"
+              [class.active]="currentViewType === 'side'"
+              [disabled]="isLoading"
+              (click)="threeJSComponent.setView('side')">
+        <mat-icon>view_sidebar</mat-icon>
+        <span>Yan</span>
+      </button>
+
+      <button class="view-button"
+              [class.active]="currentViewType === 'top'"
+              [disabled]="isLoading"
+              (click)="threeJSComponent.setView('top')">
+        <mat-icon>view_comfy</mat-icon>
+        <span>Üst</span>
+      </button>
+
+      <button class="view-button"
+              [class.active]="currentViewType === 'isometric'"
+              [disabled]="isLoading"
+              (click)="threeJSComponent.setView('isometric')">
         <mat-icon>view_in_ar</mat-icon>
         <span>3D</span>
-      </button>
-      <button mat-button class="view-button" [disabled]="!hasResults">
-        <mat-icon>view_list</mat-icon>
-        <span>Liste</span>
-      </button>
-      <button mat-button class="view-button" [disabled]="!hasResults">
-        <mat-icon>grid_on</mat-icon>
-        <span>Tablo</span>
       </button>
     </div>
   </div>
@@ -138,150 +211,161 @@
   <!-- Enhanced Visualization Container -->
   <div class="visualization-container">
     <!-- Loading Overlay -->
-    <div *ngIf="isLoading" class="loading-overlay">
+    <div class="loading-overlay" *ngIf="isLoading">
       <app-loading></app-loading>
-      <p class="loading-text">
-        {{
-          optimizationProgress < 80
-            ? "Optimizasyon hesaplanıyor..."
-            : "Raporlar hazırlanıyor..."
-        }}
-      </p>
+      <div class="loading-text">Enhanced görselleştirme hazırlanıyor...</div>
     </div>
 
-    <!-- Empty State Overlay -->
+    <!-- Visualization Overlay (No Results) -->
     <div class="visualization-overlay" *ngIf="!hasResults && !isLoading">
       <div class="overlay-content">
         <mat-icon class="overlay-icon">local_shipping</mat-icon>
-        <h3>Optimizasyon Bekleniyor</h3>
+        <h3>Enhanced 3D Görselleştirme Hazır</h3>
         <p>
-          Tır yükleme optimizasyonunu başlatmak için yukarıdaki "Optimizasyonu
-          Başlat" butonuna tıklayın.
+          Gelişmiş tır yükleme optimizasyonunu çalıştırdıktan sonra burada
+          etkileşimli 3D görselleştirmeyi görebilirsiniz.
         </p>
-        <div
-          class="quick-stats"
-          *ngIf="truckDimension && truckDimension.length > 0"
-        >
+        <div class="quick-stats">
           <div class="quick-stat">
-            <span class="stat-icon">📐</span>
-            <span
-              >Tır Hacmi:
-              {{
-                (truckDimension[0] * truckDimension[1] * truckDimension[2]) /
-                  1000000 | number : "1.0-1"
-              }}
-              m³</span
-            >
+            <mat-icon class="stat-icon">3d_rotation</mat-icon>
+            <span>Gerçek Zamanlı 3D</span>
+          </div>
+          <div class="quick-stat">
+            <mat-icon class="stat-icon">touch_app</mat-icon>
+            <span>Drag & Drop</span>
+          </div>
+          <div class="quick-stat">
+            <mat-icon class="stat-icon">sync_alt</mat-icon>
+            <span>Canlı Veri Senkronizasyonu</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 3D Visualization Component -->
+    <!-- ENHANCED: ThreeJS Truck Visualization Component with NEW dataChanged event -->
     <app-threejs-truck-visualization
+      *ngIf="hasResults && showVisualization && !hasThreeJSError"
       #threeJSComponent
-      *ngIf="showVisualization && hasResults && !isLoading"
       [piecesData]="piecesData"
       [truckDimension]="truckDimension"
       [showHelp]="true"
       (packageSelected)="onPackageSelected($event)"
       (viewChanged)="onViewChanged($event)"
-    >
+      (dataChanged)="onDataChanged($event)"
+      (error)="onThreeJSError($event)"
+      (ready)="onThreeJSReady()">
     </app-threejs-truck-visualization>
 
-    <!-- Results Summary (visible after calculation) -->
-    <div class="results-summary" *ngIf="hasResults && !isLoading">
-      <div class="summary-cards">
-        <div class="summary-card success">
-          <div class="card-header">
-            <mat-icon>check_circle</mat-icon>
-            <h4>Yükleme Başarılı</h4>
+    <!-- Enhanced Three.js Error Display -->
+    <div class="threejs-error-display" *ngIf="hasThreeJSError">
+      <div class="error-content">
+        <mat-icon class="error-icon">error_outline</mat-icon>
+        <h3>3D Görselleştirme Hatası</h3>
+        <p>3D görselleştirme yüklenirken bir sorun oluştu. Lütfen sayfayı yenileyin veya tarayıcınızın WebGL desteğini kontrol edin.</p>
+        <button mat-raised-button
+                color="primary"
+                (click)="hasThreeJSError = false; showVisualization = true">
+          <mat-icon>refresh</mat-icon>
+          Tekrar Dene
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enhanced Results Summary -->
+  <div class="results-summary" *ngIf="hasResults">
+    <div class="summary-cards">
+      <!-- Enhanced Efficiency Card -->
+      <div class="summary-card excellent">
+        <div class="card-header">
+          <mat-icon>trending_up</mat-icon>
+          <h4>Verimlilik Analizi</h4>
+        </div>
+        <div class="card-content">
+          <div class="big-number" [class]="getEfficiencyClass()">
+            {{ loadingStats.efficiency }}%
           </div>
-          <div class="card-content">
-            <div class="big-number">{{ loadingStats.packagesLoaded }}</div>
-            <div class="card-label">Paket Yüklendi</div>
-            <div class="card-detail">
-              {{ loadingStats.totalPackages }} paketten
-              {{ loadingStats.packagesLoaded }} tanesi yüklendi
+          <div class="card-label">Genel Verimlilik Skoru</div>
+          <div class="card-detail">
+            Doluluk oranı ve COG skorunun ortalaması ile hesaplanan genel verimlilik göstergesi.
+          </div>
+        </div>
+      </div>
+
+      <!-- Enhanced Package Statistics Card -->
+      <div class="summary-card info">
+        <div class="card-header">
+          <mat-icon>inventory_2</mat-icon>
+          <h4>Paket İstatistikleri</h4>
+        </div>
+        <div class="card-content">
+          <div class="performance-stats">
+            <div class="perf-item">
+              <span class="perf-label">Yüklenen Paket</span>
+              <span class="perf-value">{{ loadingStats.packagesLoaded }}</span>
+            </div>
+            <div class="perf-item">
+              <span class="perf-label">Toplam Ağırlık</span>
+              <span class="perf-value">{{ loadingStats.totalWeight }} kg</span>
+            </div>
+            <div class="perf-item" *ngIf="totalPackagesProcessed > 0">
+              <span class="perf-label">İşlenen Toplam</span>
+              <span class="perf-value">{{ totalPackagesProcessed }}</span>
             </div>
           </div>
         </div>
+      </div>
 
-        <div class="summary-card info">
-          <div class="card-header">
-            <mat-icon>donut_large</mat-icon>
-            <h4>Hacim Verimliliği</h4>
-          </div>
-          <div class="card-content">
-            <div class="big-number">%{{ loadingStats.utilizationRate }}</div>
-            <div class="card-label">Doluluk Oranı</div>
-            <div class="card-detail">
-              {{ loadingStats.totalWeight | number : "1.0-0" }} kg toplam
-              ağırlık
+      <!-- NEW: Enhanced Change Tracking Card -->
+      <div class="summary-card warning" *ngIf="dataChangeHistory.length > 0">
+        <div class="card-header">
+          <mat-icon>edit</mat-icon>
+          <h4>Veri Değişiklikleri</h4>
+        </div>
+        <div class="card-content">
+          <div class="big-number">{{ dataChangeHistory.length }}</div>
+          <div class="card-label">Toplam Değişiklik</div>
+          <div class="card-detail">
+            <div class="change-breakdown">
+              <div class="change-item" *ngIf="loadingStats.movedCount && loadingStats.movedCount > 0">
+                <span class="change-type">🎯 Taşınan:</span>
+                <span class="change-count">{{ loadingStats.movedCount }}</span>
+              </div>
+              <div class="change-item" *ngIf="loadingStats.rotatedCount && loadingStats.rotatedCount > 0">
+                <span class="change-type">🔄 Döndürülen:</span>
+                <span class="change-count">{{ loadingStats.rotatedCount }}</span>
+              </div>
+              <div class="change-item" *ngIf="loadingStats.deletedCount && loadingStats.deletedCount > 0">
+                <span class="change-type">🗑️ Silinen:</span>
+                <span class="change-count">{{ loadingStats.deletedCount }}</span>
+              </div>
+            </div>
+            <div class="last-change" *ngIf="lastDataChangeTime">
+              Son değişiklik: {{ lastDataChangeTime | date:'short' }}
             </div>
           </div>
         </div>
+      </div>
 
-        <div class="summary-card" [ngClass]="getCogScoreClass()">
-          <div class="card-header">
-            <mat-icon>balance</mat-icon>
-            <h4>Ağırlık Merkezi</h4>
-          </div>
-          <div class="card-content">
-            <div class="big-number">{{ loadingStats.cogScore }}/100</div>
-            <div class="card-label">COG Skoru</div>
-            <div class="card-detail">
-              <span *ngIf="loadingStats.cogScore >= 80" class="status-excellent"
-                >Mükemmel denge</span
-              >
-              <span
-                *ngIf="
-                  loadingStats.cogScore >= 60 && loadingStats.cogScore < 80
-                "
-                class="status-good"
-                >İyi denge</span
-              >
-              <span
-                *ngIf="
-                  loadingStats.cogScore >= 40 && loadingStats.cogScore < 60
-                "
-                class="status-warning"
-                >Orta denge</span
-              >
-              <span *ngIf="loadingStats.cogScore < 40" class="status-poor"
-                >Dikkat gerekli</span
-              >
-            </div>
-          </div>
+      <!-- Enhanced Performance Card -->
+      <div class="summary-card secondary">
+        <div class="card-header">
+          <mat-icon>speed</mat-icon>
+          <h4>Performans Metrikleri</h4>
         </div>
-
-        <!-- Algorithm Performance Card (if data available) -->
-        <div
-          class="summary-card secondary"
-          *ngIf="algorithmStats.executionTime > 0"
-        >
-          <div class="card-header">
-            <mat-icon>speed</mat-icon>
-            <h4>Algoritma Performansı</h4>
-          </div>
-          <div class="card-content">
-            <div class="performance-stats">
-              <div class="perf-item">
-                <span class="perf-label">Süre:</span>
-                <span class="perf-value"
-                  >{{ algorithmStats.executionTime | number : "1.1-1" }}s</span
-                >
-              </div>
-              <div class="perf-item">
-                <span class="perf-label">Nesil:</span>
-                <span class="perf-value">{{ algorithmStats.generations }}</span>
-              </div>
-              <div class="perf-item">
-                <span class="perf-label">Fitness:</span>
-                <span class="perf-value"
-                  >{{ algorithmStats.bestFitness | number : "1.1-1" }}%</span
-                >
-              </div>
+        <div class="card-content">
+          <div class="performance-stats">
+            <div class="perf-item">
+              <span class="perf-label">İşlem Süresi</span>
+              <span class="perf-value">{{ algorithmStats.executionTime | number:'1.1-1' }}s</span>
+            </div>
+            <div class="perf-item">
+              <span class="perf-label">Nesil Sayısı</span>
+              <span class="perf-value">{{ algorithmStats.generations }}</span>
+            </div>
+            <div class="perf-item" *ngIf="performanceMetrics.dataChangeCount > 0">
+              <span class="perf-label">Veri Değişikliği</span>
+              <span class="perf-value">{{ performanceMetrics.dataChangeCount }}</span>
             </div>
           </div>
         </div>
@@ -289,110 +373,137 @@
     </div>
   </div>
 
-  <!-- Enhanced Reports Section -->
-  <div class="report-files-container" *ngIf="hasResults">
+  <!-- Enhanced Recent Changes Panel -->
+  <div class="recent-changes-panel"
+       *ngIf="dataChangeHistory.length > 0 && hasResults">
+    <div class="changes-header">
+      <mat-icon>history</mat-icon>
+      <span>Son Değişiklikler</span>
+      <div class="changes-count">{{ dataChangeHistory.slice(-10).length }}/{{ dataChangeHistory.length }}</div>
+    </div>
+    <div class="changes-list">
+      <div class="change-entry"
+           *ngFor="let change of dataChangeHistory.slice(-10).reverse(); trackBy: trackByFileId">
+        <div class="change-type-icon">
+          {{ formatChangeType(change.type).split(' ')[0] }}
+        </div>
+        <div class="change-details">
+          <div class="change-description">
+            {{ formatChangeType(change.type) }}
+            <span class="change-metadata" *ngIf="change.metadata">
+              <span *ngIf="change.metadata.movedPackages"> - {{ change.metadata.movedPackages }} paket</span>
+              <span *ngIf="change.metadata.rotatedPackages"> - {{ change.metadata.rotatedPackages }} paket</span>
+              <span *ngIf="change.metadata.deletedCount"> - {{ change.metadata.deletedCount }} paket</span>
+              <span *ngIf="change.metadata.restoredCount"> - {{ change.metadata.restoredCount }} paket</span>
+            </span>
+          </div>
+          <div class="change-timestamp">
+            {{ change.timestamp | date:'short' }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enhanced Report Files Container -->
+  <div class="report-files-container" *ngIf="reportFiles && reportFiles.length > 0">
     <div class="report-files-header">
       <mat-icon>description</mat-icon>
-      <span>Sevkiyat Raporları ve Dosyalar</span>
-      <span class="file-count" *ngIf="reportFiles && reportFiles.length > 0"
-        >({{ reportFiles.length }})</span
-      >
+      <span>Rapor Dosyaları</span>
+      <div class="file-count">{{ reportFiles.length }}</div>
     </div>
     <div class="report-files-list">
-      <div
-        class="report-file-item"
-        *ngFor="let file of reportFiles; trackBy: trackByFileId"
-      >
-        <div class="file-icon">
-          <mat-icon [ngClass]="'file-type-' + getFileIcon(file.type)">{{
-            getFileIcon(file.type)
-          }}</mat-icon>
+      <div class="report-file-item"
+           *ngFor="let file of reportFiles; trackBy: trackByFileId">
+        <div class="file-icon" [class]="'file-type-' + getFileIcon(file.file_type)">
+          <mat-icon>{{ getFileIcon(file.file_type) }}</mat-icon>
         </div>
         <div class="file-info">
-          <a [href]="file.file" target="_blank" class="file-link">
+          <a class="file-link"
+             [href]="file.file"
+             [download]="file.name"
+             target="_blank">
             <span class="file-name">{{ file.name }}</span>
-            <span class="file-size" *ngIf="file.size">{{
-              formatFileSize(file.size)
-            }}</span>
-            <mat-icon class="download-icon">open_in_new</mat-icon>
+            <span class="file-size" *ngIf="file.file_size">
+              {{ formatFileSize(file.file_size) }}
+            </span>
+            <mat-icon class="download-icon">download</mat-icon>
           </a>
         </div>
       </div>
-      <div class="empty-files" *ngIf="!reportFiles || reportFiles.length === 0">
-        <mat-icon>info</mat-icon>
-        <span
-          >Henüz rapor dosyası oluşturulmadı. Optimizasyon tamamlandıktan sonra
-          raporlar burada görünecek.</span
-        >
+
+      <div class="empty-files" *ngIf="reportFiles.length === 0">
+        <mat-icon>folder_open</mat-icon>
+        <span>Henüz rapor dosyası oluşturulmadı</span>
       </div>
     </div>
   </div>
 
-  <!-- Enhanced Legend -->
-  <div class="legend-container" *ngIf="hasResults">
+  <!-- Enhanced Legend Container -->
+  <div class="legend-container" *ngIf="hasResults && showVisualization">
     <div class="legend-title">
-      <mat-icon>info</mat-icon>
-      <span>Görselleştirme Rehberi</span>
+      <mat-icon>palette</mat-icon>
+      <span>Enhanced Görselleştirme Rehberi</span>
     </div>
     <div class="legend-items">
       <div class="legend-item">
         <div class="legend-color package-color"></div>
-        <span class="legend-text">Paletler (Renkli Kutular)</span>
-        <span class="legend-detail">Her renk farklı paketi temsil eder</span>
+        <span class="legend-text">Paketler</span>
+        <span class="legend-detail">Renkli 3D kutular</span>
       </div>
       <div class="legend-item">
         <div class="legend-color truck-color"></div>
-        <span class="legend-text">TIR İç Hacmi</span>
-        <span class="legend-detail">Gri çizgiler tır sınırlarını gösterir</span>
+        <span class="legend-text">Tır Kabini</span>
+        <span class="legend-detail">Gri çerçeve</span>
       </div>
       <div class="legend-item">
         <div class="legend-color empty-color"></div>
         <span class="legend-text">Boş Alan</span>
-        <span class="legend-detail">Kullanılmayan hacim</span>
+        <span class="legend-detail">Şeffaf bölgeler</span>
       </div>
     </div>
+
     <div class="interaction-help">
-      <h4>Etkileşim Kontrolleri:</h4>
+      <h4>🎮 Enhanced Etkileşim Kontrolları</h4>
       <div class="help-items">
-        <span class="help-item"
-          >🖱️ <strong>Sol Tık + Sürükle:</strong> Döndür</span
-        >
-        <span class="help-item"
-          >🔄 <strong>Tekerlek:</strong> Yakınlaştır/Uzaklaştır</span
-        >
-        <span class="help-item"
-          >🖱️ <strong>Sağ Tık + Sürükle:</strong> Kaydır</span
-        >
+        <span class="help-item">🖱️ Sol tık + sürükle: Kamera döndür</span>
+        <span class="help-item">🎯 Drag modu: Paketleri taşı</span>
+        <span class="help-item">⚡ Mouse wheel: Zoom</span>
+        <span class="help-item">🔄 Gerçek zamanlı veri senkronizasyonu</span>
       </div>
     </div>
   </div>
 
-  <!-- Navigation Controls -->
+  <!-- Enhanced Navigation Controls -->
   <div class="navigation-controls">
-    <button mat-raised-button matStepperPrevious class="previous-button">
+    <button mat-button
+            class="previous-button"
+            matStepperPrevious>
       <mat-icon>arrow_back</mat-icon>
-      <span>Sipariş Detaylarına Dön</span>
+      Önceki Adım
     </button>
 
     <div class="finish-actions">
-      <button
-        mat-stroked-button
-        class="save-button"
-        [disabled]="!hasResults"
-        (click)="saveResults()"
-      >
-        <mat-icon>save</mat-icon>
-        <span>Sonuçları Kaydet</span>
+      <!-- NEW: Enhanced Save with Change Indicator -->
+      <button mat-button
+              class="save-button"
+              [disabled]="!hasResults"
+              [class.has-changes]="hasUnsavedChanges"
+              (click)="forceSaveStep3()">
+        <mat-icon>{{ hasUnsavedChanges ? 'save_alt' : 'save' }}</mat-icon>
+        {{ hasUnsavedChanges ? 'Değişiklikleri Kaydet' : 'Kaydet' }}
+        <span class="change-indicator" *ngIf="hasUnsavedChanges">●</span>
       </button>
 
-      <button
-        mat-raised-button
-        class="finish-button"
-        [disabled]="!hasResults"
-        (click)="completeShipment()"
-      >
-        <mat-icon>check</mat-icon>
-        <span>Sevkiyatı Tamamla</span>
+      <button mat-raised-button
+              class="finish-button"
+              [disabled]="!hasResults"
+              (click)="completeShipment()">
+        <mat-icon>check_circle</mat-icon>
+        Enhanced Sevkiyatı Tamamla
+        <span class="completion-meta" *ngIf="dataChangeHistory.length > 0">
+          ({{ dataChangeHistory.length }} değişiklik)
+        </span>
       </button>
     </div>
   </div>

@@ -1,3 +1,4 @@
+// result-step.component.ts - ENHANCED FINAL VERSION
 import {
   Component,
   OnDestroy,
@@ -14,8 +15,6 @@ import { MatStepperPrevious } from '@angular/material/stepper';
 import { RepositoryService } from '../../services/repository.service';
 import { StepperStore, STATUSES } from '../../services/stepper.store';
 import { DomSanitizer } from '@angular/platform-browser';
-import { PlotlyVisualizationComponent } from '../../../../../../components/plotly/plotly.component';
-import { PlotlyService } from '../../../../../../services/plotly.service';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 import { ToastService } from '../../../../../../services/toast.service';
@@ -24,7 +23,8 @@ import { Subject, EMPTY } from 'rxjs';
 import { AutoSaveService } from '../../services/auto-save.service';
 import { LocalStorageService } from '../../services/local-storage.service';
 import { ThreeJSTruckVisualizationComponent } from '../../../../../../components/threejs-truck-visualization/threejs-truck-visualization.component';
-// Package interface for type safety
+
+// Enhanced Package interface for type safety
 interface PackageData {
   id: number;
   x: number;
@@ -38,7 +38,7 @@ interface PackageData {
   dimensions?: string;
 }
 
-// Loading statistics interface
+// Enhanced Loading statistics interface
 interface LoadingStats {
   totalPackages: number;
   packagesLoaded: number;
@@ -46,6 +46,28 @@ interface LoadingStats {
   cogScore: number;
   totalWeight: number;
   efficiency: number;
+  deletedCount?: number;
+  movedCount?: number;
+  rotatedCount?: number;
+}
+
+// Enhanced Algorithm stats interface
+interface AlgorithmStats {
+  executionTime: number;
+  generations: number;
+  bestFitness: number;
+  iterationsCount?: number;
+  convergenceRate?: number;
+}
+
+// NEW: Data change tracking interface
+interface DataChangeEvent {
+  timestamp: Date;
+  type: 'drag' | 'rotate' | 'delete' | 'restore' | 'initial'| 'unknown';
+  packageId?: number;
+  oldValue?: any;
+  newValue?: any;
+  metadata?: any;
 }
 
 @Component({
@@ -58,22 +80,23 @@ interface LoadingStats {
     MatStepperPrevious,
     MatIconModule,
     ThreeJSTruckVisualizationComponent
-],
+  ],
   templateUrl: './result-step.component.html',
   styleUrl: './result-step.component.scss',
 })
 export class ResultStepComponent implements OnInit, OnDestroy {
-  @ViewChild('plotlyComponent') plotlyComponent!: PlotlyVisualizationComponent;
+  @ViewChild('plotlyComponent') plotlyComponent!: any;
   @ViewChild('threeJSComponent') threeJSComponent!: ThreeJSTruckVisualizationComponent;
   @Output() shipmentCompleted = new EventEmitter<void>();
 
-  // **ÖNEMLİ: Component lifecycle ve cleanup için**
+  // **ENHANCED: Component lifecycle ve cleanup için**
   private destroy$ = new Subject<void>();
   private isDestroyed = false;
-  private processingLock = false;
+  public processingLock = false;
 
-  // Data properties
+  // Enhanced Data properties
   piecesData: any[] = [];
+  originalPiecesData: any[] = []; // NEW: Track original data
   truckDimension: number[] = [13200, 2200, 2900];
 
   // Enhanced loading statistics
@@ -84,75 +107,106 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     cogScore: 0,
     totalWeight: 0,
     efficiency: 0,
+    deletedCount: 0,
+    movedCount: 0,
+    rotatedCount: 0
   };
 
-  // UI state
+  // Enhanced UI state
   isLoading: boolean = false;
   hasResults: boolean = false;
   showVisualization: boolean = false;
   optimizationProgress: number = 0;
+  hasThreeJSError: boolean = false;
 
-  // Results data
+  // NEW: Data change tracking
+  hasUnsavedChanges: boolean = false;
+  dataChangeHistory: DataChangeEvent[] = [];
+  lastDataChangeTime: Date = new Date();
+  totalPackagesProcessed: number = 0;
+
+  // Enhanced Results data
   reportFiles: any[] = [];
   processedPackages: PackageData[] = [];
-  algorithmStats = {
+  algorithmStats: AlgorithmStats = {
     executionTime: 0,
     generations: 0,
     bestFitness: 0,
+    iterationsCount: 0,
+    convergenceRate: 0
   };
 
-  // Popup window reference
+  // Enhanced popup and progress management
   private popupWindow: Window | null = null;
   private progressInterval: any = null;
 
-  // Services
+  // Enhanced Services
   private readonly autoSaveService = inject(AutoSaveService);
   private readonly localStorageService = inject(LocalStorageService);
   repositoryService = inject(RepositoryService);
   stepperService = inject(StepperStore);
   sanitizer = inject(DomSanitizer);
   toastService = inject(ToastService);
-  plotlyService = inject(PlotlyService);
   cdr = inject(ChangeDetectorRef);
 
+  // Enhanced Auto-save management
   private lastResultState: string = '';
   private resultAutoSaveTimeout: any;
+  public currentViewType: string = 'isometric';
+
+  // Enhanced performance tracking
+  public performanceMetrics = {
+    startTime: 0,
+    endTime: 0,
+    memoryUsage: 0,
+    renderTime: 0,
+    dataChangeCount: 0,
+    averageResponseTime: 0
+  };
 
   ngOnInit(): void {
-    console.log('🎬 ResultStepComponent initialized');
+    console.log('🎬 Enhanced ResultStepComponent initialized');
 
-    if (!this.checkPrerequisites()) {
+    // Enhanced prerequisites check
+    if (!this.checkEnhancedPrerequisites()) {
       return;
     }
 
-    this.restoreFromSession();
+    // Enhanced session restoration
+    this.restoreFromEnhancedSession();
 
-    // YENİ: Auto-save listener'ları setup et
-    this.setupAutoSaveListeners();
+    // Enhanced auto-save setup
+    this.setupEnhancedAutoSaveListeners();
+
+    // Performance tracking
+    this.performanceMetrics.startTime = performance.now();
   }
 
-  private setupAutoSaveListeners(): void {
-    // Result state changes'i takip et
-    this.watchResultChanges();
+  private setupEnhancedAutoSaveListeners(): void {
+    // Enhanced result state changes tracking
+    this.watchEnhancedResultChanges();
+
+    // Window beforeunload listener for emergency save
+    window.addEventListener('beforeunload', this.handleEmergencyAutoSave.bind(this));
   }
 
-  private watchResultChanges(): void {
+  private watchEnhancedResultChanges(): void {
     setInterval(() => {
       // Loading state'de auto-save'i skip et
-      if (this.isLoading || this.processingLock) {
+      if (this.isLoading || this.processingLock || this.isDestroyed) {
         return;
       }
 
-      const currentState = this.getCurrentResultState();
+      const currentState = this.getCurrentEnhancedResultState();
 
       if (currentState !== this.lastResultState && this.hasResults) {
-        this.triggerAutoSave('user-action');
+        this.triggerEnhancedAutoSave('user-action');
         this.lastResultState = currentState;
       }
-    }, 3000); // 3 saniye interval (result için daha uzun)
+    }, 3000); // 3 saniye interval
   }
 
-  private getCurrentResultState(): string {
+  private getCurrentEnhancedResultState(): string {
     try {
       return JSON.stringify({
         hasResults: this.hasResults,
@@ -161,46 +215,73 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         reportFilesLength: this.reportFiles?.length || 0,
         loadingStats: this.loadingStats,
         algorithmStats: this.algorithmStats,
+        currentViewType: this.currentViewType,
+        hasThreeJSError: this.hasThreeJSError,
+        hasUnsavedChanges: this.hasUnsavedChanges,
+        dataChangeHistoryLength: this.dataChangeHistory.length,
+        timestamp: Date.now()
       });
     } catch (error) {
+      console.error('❌ Error serializing result state:', error);
       return '';
     }
   }
 
-  private triggerAutoSave(
-    changeType: 'user-action' | 'api-response' = 'user-action'
+  private triggerEnhancedAutoSave(
+    changeType: 'user-action' | 'api-response' | 'emergency' | 'data-change' = 'user-action'
   ): void {
     // Clear existing timeout
     if (this.resultAutoSaveTimeout) {
       clearTimeout(this.resultAutoSaveTimeout);
     }
 
-    // Debounce auto-save
+    // Enhanced debounce auto-save
+    const delay = changeType === 'api-response' ? 500 :
+                  changeType === 'emergency' ? 0 :
+                  changeType === 'data-change' ? 1000 : 2000;
+
     this.resultAutoSaveTimeout = setTimeout(
       () => {
         if (
           this.hasResults &&
           (this.piecesData?.length > 0 || this.reportFiles?.length > 0)
         ) {
-          this.autoSaveService.triggerStep3AutoSave(
-            {
-              optimizationResult: this.piecesData,
-              reportFiles: this.reportFiles,
-              loadingStats: this.loadingStats,
-              algorithmStats: this.algorithmStats,
-              truckDimension: this.truckDimension,
-              hasResults: this.hasResults,
-              showVisualization: this.showVisualization,
-            },
-            changeType
-          );
+          const enhancedSaveData = {
+            optimizationResult: this.piecesData,
+            originalOptimizationResult: this.originalPiecesData, // NEW
+            reportFiles: this.reportFiles,
+            loadingStats: this.loadingStats,
+            algorithmStats: this.algorithmStats,
+            truckDimension: this.truckDimension,
+            hasResults: this.hasResults,
+            showVisualization: this.showVisualization,
+            currentViewType: this.currentViewType,
+            hasThreeJSError: this.hasThreeJSError,
+            hasUnsavedChanges: this.hasUnsavedChanges,
+            dataChangeHistory: this.dataChangeHistory,
+            totalPackagesProcessed: this.totalPackagesProcessed,
+            performanceMetrics: this.performanceMetrics,
+            processedPackages: this.processedPackages,
+            timestamp: new Date().toISOString(),
+            changeType: changeType
+          };
+
+          // this.autoSaveService.triggerStep3AutoSave(enhancedSaveData, changeType);
+          console.log(`💾 Enhanced auto-save triggered (${changeType})`);
         }
       },
-      changeType === 'api-response' ? 500 : 2000
-    ); // Calculation için hızlı kaydet
+      delay
+    );
   }
 
-  private checkPrerequisites(): boolean {
+  private handleEmergencyAutoSave(): void {
+    if (this.hasResults && this.hasUnsavedChanges) {
+      this.triggerEnhancedAutoSave('emergency');
+      console.log('🚨 Emergency auto-save triggered');
+    }
+  }
+
+  private checkEnhancedPrerequisites(): boolean {
     const step1Completed = this.localStorageService.isStepCompleted(1);
     const step2Completed = this.localStorageService.isStepCompleted(2);
 
@@ -210,107 +291,188 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       if (!step2Completed) message += 'Step 2 ';
 
       this.toastService.warning(message);
+      console.warn('⚠️ Prerequisites not met:', { step1Completed, step2Completed });
       return false;
     }
 
     return true;
   }
 
-  private restoreFromSession(): void {
+  private restoreFromEnhancedSession(): void {
     try {
       const restoredData = this.localStorageService.restoreStep3Data();
 
       if (restoredData) {
-        console.log("✅ Step 3 LocalStorage'dan veriler bulundu");
+        console.log("✅ Enhanced Step 3 LocalStorage'dan veriler bulundu");
 
         this.hasResults = true;
         this.showVisualization = true;
         this.isLoading = false;
+        this.hasThreeJSError = false;
 
         if (restoredData.optimizationResult) {
           this.piecesData = restoredData.optimizationResult;
-          this.safeProcessOptimizationResult({
+          this.safeProcessEnhancedOptimizationResult({
             data: restoredData.optimizationResult,
           });
         }
+
+        // NEW: Restore original data if available
+        // if (restoredData.originalOptimizationResult) {
+        //   this.originalPiecesData = restoredData.originalOptimizationResult;
+        // } else {
+        //   // Fallback: use current data as original
+        //   this.originalPiecesData = JSON.parse(JSON.stringify(this.piecesData));
+        // }
 
         if (restoredData.reportFiles) {
           this.reportFiles = restoredData.reportFiles;
         }
 
-        this.toastService.info('Optimizasyon sonuçları restore edildi');
+        // Enhanced restoration with additional properties
+        if (restoredData.loadingStats) {
+          this.loadingStats = { ...this.loadingStats, ...restoredData.loadingStats };
+        }
+
+        if (restoredData.algorithmStats) {
+          this.algorithmStats = { ...this.algorithmStats, ...restoredData.algorithmStats };
+        }
+
+        if (restoredData.currentViewType) {
+          this.currentViewType = restoredData.currentViewType;
+        }
+
+        // // NEW: Restore change tracking data
+        // if (restoredData.dataChangeHistory) {
+        //   this.dataChangeHistory = restoredData.dataChangeHistory;
+        // }
+
+        // if (restoredData.hasUnsavedChanges) {
+        //   this.hasUnsavedChanges = restoredData.hasUnsavedChanges;
+        // }
+
+        // if (restoredData.totalPackagesProcessed) {
+        //   this.totalPackagesProcessed = restoredData.totalPackagesProcessed;
+        // }
+
+        this.toastService.info('Enhanced optimizasyon sonuçları restore edildi');
+        console.log(`✅ Restored ${this.piecesData?.length || 0} packages and ${this.reportFiles?.length || 0} reports`);
+
+        if (this.hasUnsavedChanges) {
+          console.log(`📝 Restored ${this.dataChangeHistory.length} unsaved changes`);
+        }
       }
     } catch (error) {
-      console.error('❌ Result step session restore hatası:', error);
+      console.error('❌ Enhanced result step session restore hatası:', error);
+      this.toastService.warning('Önceki sonuçlar yüklenirken hata oluştu');
     }
   }
 
-  private saveResultsToSession(): void {
+  private saveEnhancedResultsToSession(): void {
     try {
-      console.log("💾 Step 3 sonuçları LocalStorage'a  kaydediliyor...");
-      this.localStorageService.saveStep3Data(this.piecesData, this.reportFiles);
-      console.log("✅ Step 3 sonuçları LocalStorage'a  kaydedildi");
+      console.log("💾 Enhanced Step 3 sonuçları LocalStorage'a kaydediliyor...");
 
-      // Stepper store'u da güncelle
+      // Enhanced save with additional metadata
+      const enhancedSaveData = {
+        optimizationResult: this.piecesData,
+        originalOptimizationResult: this.originalPiecesData, // NEW
+        reportFiles: this.reportFiles,
+        loadingStats: this.loadingStats,
+        algorithmStats: this.algorithmStats,
+        truckDimension: this.truckDimension,
+        hasResults: this.hasResults,
+        showVisualization: this.showVisualization,
+        currentViewType: this.currentViewType,
+        hasThreeJSError: this.hasThreeJSError,
+        hasUnsavedChanges: this.hasUnsavedChanges,
+        dataChangeHistory: this.dataChangeHistory,
+        totalPackagesProcessed: this.totalPackagesProcessed,
+        performanceMetrics: this.performanceMetrics,
+        timestamp: new Date().toISOString(),
+        version: '3.0' // Updated version
+      };
+
+      this.localStorageService.saveStep3Data(this.piecesData, this.reportFiles, enhancedSaveData);
+      console.log("✅ Enhanced Step 3 sonuçları LocalStorage'a kaydedildi");
+
+      // Mark changes as saved
+      this.hasUnsavedChanges = false;
+
+      // Enhanced stepper store update
       this.stepperService.setStepStatus(3, STATUSES.completed, true);
     } catch (error) {
-      console.error("❌ Step 3 sonuçları LocalStorage'a kaydedilemedi:", error);
+      console.error("❌ Enhanced Step 3 sonuçları LocalStorage'a kaydedilemedi:", error);
+      this.toastService.error('Sonuçlar kaydedilemedi');
     }
   }
 
   ngOnDestroy(): void {
-    console.log('🗑️ ResultStepComponent destroying...');
+    console.log('🗑️ Enhanced ResultStepComponent destroying...');
 
     this.isDestroyed = true;
     this.processingLock = false;
 
+    // Enhanced cleanup
+    this.performEnhancedCleanup();
+  }
+
+  private performEnhancedCleanup(): void {
     // Signal destruction to all observables
     this.destroy$.next();
     this.destroy$.complete();
 
-    // Clear auto-save timeout
+    // Clear enhanced auto-save timeout
     if (this.resultAutoSaveTimeout) {
       clearTimeout(this.resultAutoSaveTimeout);
       this.resultAutoSaveTimeout = null;
     }
 
-    // Clear progress interval
+    // Clear enhanced progress interval
     if (this.progressInterval) {
       clearInterval(this.progressInterval);
       this.progressInterval = null;
     }
 
-    // Close popup if open
+    // Enhanced popup cleanup
     if (this.popupWindow && !this.popupWindow.closed) {
       try {
         this.popupWindow.close();
       } catch (error) {
-        console.warn('Error closing popup window:', error);
+        console.warn('Enhanced popup close error:', error);
       }
       this.popupWindow = null;
     }
+
+    // Remove enhanced event listeners
+    window.removeEventListener('beforeunload', this.handleEmergencyAutoSave.bind(this));
+
+    // Performance metrics
+    this.performanceMetrics.endTime = performance.now();
+    const totalTime = this.performanceMetrics.endTime - this.performanceMetrics.startTime;
+    console.log(`📊 Component lifetime: ${totalTime.toFixed(2)}ms`);
+    console.log(`📊 Total data changes: ${this.performanceMetrics.dataChangeCount}`);
   }
 
   // ========================================
-  // SAFE BUSINESS LOGIC (Sonsuz döngü koruması)
+  // ENHANCED BUSINESS LOGIC
   // ========================================
 
   calculateBinpacking(): void {
-    // Prevent multiple simultaneous requests
+    // Enhanced processing lock with timeout
     if (this.processingLock || this.isDestroyed) {
       console.log('⚠️ Already processing or component destroyed');
       return;
     }
 
-    console.log('🚀 Bin packing optimizasyonu başlatılıyor...');
+    console.log('🚀 Enhanced bin packing optimizasyonu başlatılıyor...');
 
     this.processingLock = true;
 
-    // Reset state safely
-    this.safeResetState();
+    // Enhanced state reset
+    this.safeResetEnhancedState();
 
-    // Start progress simulation
-    this.startProgressSimulation();
+    // Enhanced progress simulation
+    this.startEnhancedProgressSimulation();
 
     this.repositoryService
       .calculatePacking()
@@ -318,101 +480,472 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$),
         switchMap((response) => {
           if (this.isDestroyed) {
-            throw new Error('Component destroyed');
+            throw new Error('Component destroyed during processing');
           }
 
-          console.log('📦 Paketleme verisi alındı:', response);
+          console.log('📦 Enhanced paketleme verisi alındı:', response);
 
-          // Process the response data safely
-          this.safeProcessOptimizationResult(response);
+          // Enhanced processing
+          this.safeProcessEnhancedOptimizationResult(response);
 
-          // Update progress
+          // NEW: Store original data for comparison
+          this.originalPiecesData = JSON.parse(JSON.stringify(this.piecesData));
+
+          // Enhanced progress update
           this.optimizationProgress = Math.min(80, this.optimizationProgress);
-          this.safeUpdateUI();
+          this.safeUpdateEnhancedUI();
 
-          // YENİ: İlk hesaplama sonrası auto-save
-          this.triggerAutoSave('api-response');
+          // Enhanced auto-save after calculation
+          this.triggerEnhancedAutoSave('api-response');
 
-          // Create report after successful packing
+          // NEW: Track initial data event
+          this.trackDataChange('initial', undefined, {
+            packageCount: this.piecesData.length,
+            timestamp: new Date().toISOString()
+          });
+
+          // Enhanced report creation
           return this.repositoryService.createReport();
         }),
         catchError((error) => {
-          console.error('❌ İşlem sırasında hata oluştu:', error);
-          this.handleError(error);
+          console.error('❌ Enhanced işlem sırasında hata oluştu:', error);
+          this.handleEnhancedError(error);
           return EMPTY;
         }),
         finalize(() => {
           this.processingLock = false;
-          this.stopProgressSimulation();
+          this.stopEnhancedProgressSimulation();
         })
       )
       .subscribe({
         next: (reportResponse) => {
           if (this.isDestroyed) return;
 
-          console.log('📊 Rapor başarıyla oluşturuldu:', reportResponse);
+          console.log('📊 Enhanced rapor başarıyla oluşturuldu:', reportResponse);
 
           this.reportFiles = Array.isArray(reportResponse?.files)
             ? reportResponse.files
             : [];
           this.optimizationProgress = 100;
 
-          // Finalize the process safely
+          // Enhanced finalization
           setTimeout(() => {
             if (!this.isDestroyed) {
-              this.safeFinalize();
-
-              // YENİ: Final completion sonrası auto-save
-              this.triggerAutoSave('api-response');
+              this.safeEnhancedFinalize();
+              this.triggerEnhancedAutoSave('api-response');
             }
           }, 500);
         },
         error: (error) => {
           if (!this.isDestroyed) {
-            this.handleError(error);
+            this.handleEnhancedError(error);
           }
         },
       });
   }
 
+  // ========================================
+  // NEW: ENHANCED DATA CHANGE HANDLING
+  // ========================================
+
+  /**
+   * NEW: ThreeJS component'ten gelen veri değişikliklerini handle et
+   */
+  onDataChanged(updatedData: any[]): void {
+    if (this.isDestroyed || !updatedData) {
+      console.warn('⚠️ Data change ignored - component destroyed or invalid data');
+      return;
+    }
+
+    console.log('📊 Enhanced data change received from ThreeJS:', {
+      oldCount: this.piecesData.length,
+      newCount: updatedData.length,
+      timestamp: new Date().toISOString()
+    });
+
+    try {
+      // Enhanced data validation
+      const validatedData = this.validateUpdatedData(updatedData);
+
+      if (!validatedData || validatedData.length === 0) {
+        console.warn('⚠️ Updated data validation failed');
+        return;
+      }
+
+      // Track changes before updating
+      const changeEvent = this.analyzeDataChanges(this.piecesData, validatedData);
+
+      // Update data
+      this.piecesData = validatedData;
+
+      // Mark as having unsaved changes
+      this.hasUnsavedChanges = true;
+      this.lastDataChangeTime = new Date();
+
+      // Update performance metrics
+      this.performanceMetrics.dataChangeCount++;
+      this.performanceMetrics.averageResponseTime =
+        (this.performanceMetrics.averageResponseTime + (Date.now() - this.performanceMetrics.startTime)) / 2;
+
+      // Reprocess packages with updated data
+      this.safeProcessEnhancedOptimizationResult({
+        data: validatedData
+      });
+
+      // Recalculate statistics
+      this.calculateEnhancedStats();
+
+      // Track the change
+      this.trackDataChange(changeEvent.type, undefined, changeEvent.metadata);
+
+      // Enhanced auto-save trigger for data changes
+      this.triggerEnhancedAutoSave('data-change');
+
+      // Enhanced UI update
+      this.safeUpdateEnhancedUI();
+
+      console.log(`✅ Enhanced data change processed successfully:`, {
+        changeType: changeEvent.type,
+        totalChanges: this.dataChangeHistory.length,
+        unsavedChanges: this.hasUnsavedChanges
+      });
+
+    } catch (error) {
+      console.error('❌ Enhanced error processing data change:', error);
+      this.toastService.error('Veri değişikliği işlenirken hata oluştu');
+    }
+  }
+
+  /**
+   * NEW: Validate updated data from ThreeJS component
+   */
+  private validateUpdatedData(updatedData: any[]): any[] | null {
+    if (!Array.isArray(updatedData)) {
+      console.warn('⚠️ Updated data is not an array');
+      return null;
+    }
+
+    try {
+      return updatedData.filter((piece, index) => {
+        // Enhanced validation for each piece
+        if (!Array.isArray(piece) || piece.length < 6) {
+          console.warn(`⚠️ Invalid piece data at index ${index}:`, piece);
+          return false;
+        }
+
+        // Validate numeric values
+        const [x, y, z, length, width, height] = piece;
+        if ([x, y, z, length, width, height].some(val =>
+          typeof val !== 'number' || isNaN(val) || val < 0)) {
+          console.warn(`⚠️ Invalid numeric values at index ${index}:`, piece);
+          return false;
+        }
+
+        return true;
+      });
+
+    } catch (error) {
+      console.error('❌ Error validating updated data:', error);
+      return null;
+    }
+  }
+
+  /**
+   * NEW: Analyze what type of change occurred
+   */
+  private analyzeDataChanges(oldData: any[], newData: any[]): {
+    type: 'drag' | 'rotate' | 'delete' | 'restore' | 'unknown',
+    metadata: any
+  } {
+    const oldCount = oldData?.length || 0;
+    const newCount = newData?.length || 0;
+
+    if (newCount < oldCount) {
+      return {
+        type: 'delete',
+        metadata: {
+          deletedCount: oldCount - newCount,
+          remainingPackages: newCount,
+          timestamp: new Date().toISOString()
+        }
+      };
+    } else if (newCount > oldCount) {
+      return {
+        type: 'restore',
+        metadata: {
+          restoredCount: newCount - oldCount,
+          totalPackages: newCount,
+          timestamp: new Date().toISOString()
+        }
+      };
+    } else {
+      // Same count - could be drag or rotate
+      const hasPositionChanges = this.detectPositionChanges(oldData, newData);
+      const hasDimensionChanges = this.detectDimensionChanges(oldData, newData);
+
+      if (hasDimensionChanges) {
+        return {
+          type: 'rotate',
+          metadata: {
+            rotatedPackages: hasDimensionChanges,
+            timestamp: new Date().toISOString()
+          }
+        };
+      } else if (hasPositionChanges) {
+        return {
+          type: 'drag',
+          metadata: {
+            movedPackages: hasPositionChanges,
+            timestamp: new Date().toISOString()
+          }
+        };
+      }
+    }
+
+    return {
+      type: 'unknown',
+      metadata: {
+        oldCount,
+        newCount,
+        timestamp: new Date().toISOString()
+      }
+    };
+  }
+
+  /**
+   * NEW: Detect position changes between data sets
+   */
+  private detectPositionChanges(oldData: any[], newData: any[]): number {
+    let changes = 0;
+    const tolerance = 1; // 1mm tolerance
+
+    newData.forEach((newPackage, index) => {
+      const oldPackage = oldData[index];
+      if (oldPackage && Array.isArray(oldPackage) && Array.isArray(newPackage)) {
+        // Compare positions (x, y, z)
+        if (Math.abs(oldPackage[0] - newPackage[0]) > tolerance ||
+            Math.abs(oldPackage[1] - newPackage[1]) > tolerance ||
+            Math.abs(oldPackage[2] - newPackage[2]) > tolerance) {
+          changes++;
+        }
+      }
+    });
+
+    return changes;
+  }
+
+  /**
+   * NEW: Detect dimension changes (rotation)
+   */
+  private detectDimensionChanges(oldData: any[], newData: any[]): number {
+    let changes = 0;
+
+    newData.forEach((newPackage, index) => {
+      const oldPackage = oldData[index];
+      if (oldPackage && Array.isArray(oldPackage) && Array.isArray(newPackage)) {
+        // Compare dimensions (length, width, height)
+        if (oldPackage[3] !== newPackage[3] ||
+            oldPackage[4] !== newPackage[4] ||
+            oldPackage[5] !== newPackage[5]) {
+          changes++;
+        }
+      }
+    });
+
+    return changes;
+  }
+
+  /**
+   * NEW: Track data change event
+   */
+  private trackDataChange(
+    type: 'drag' | 'rotate' | 'delete' | 'restore' | 'initial' | 'unknown',
+    packageId?: number,
+    metadata?: any
+  ): void {
+    const changeEvent: DataChangeEvent = {
+      timestamp: new Date(),
+      type: type,
+      packageId: packageId,
+      metadata: metadata
+    };
+
+    this.dataChangeHistory.push(changeEvent);
+
+    // Keep only last 50 changes to prevent memory issues
+    if (this.dataChangeHistory.length > 50) {
+      this.dataChangeHistory = this.dataChangeHistory.slice(-50);
+    }
+
+    // Update loading stats based on change type
+    this.updateLoadingStatsFromChange(type, metadata);
+
+    console.log(`📝 Data change tracked: ${type}`, changeEvent);
+  }
+
+  /**
+   * NEW: Update loading stats based on data change
+   */
+  private updateLoadingStatsFromChange(
+    type: 'drag' | 'rotate' | 'delete' | 'restore' | 'initial' | 'unknown',
+    metadata?: any
+  ): void {
+    switch (type) {
+      case 'drag':
+        this.loadingStats.movedCount = (this.loadingStats.movedCount || 0) + (metadata?.movedPackages || 1);
+        break;
+      case 'rotate':
+        this.loadingStats.rotatedCount = (this.loadingStats.rotatedCount || 0) + (metadata?.rotatedPackages || 1);
+        break;
+      case 'delete':
+        this.loadingStats.deletedCount = (this.loadingStats.deletedCount || 0) + (metadata?.deletedCount || 1);
+        break;
+      case 'restore':
+        // Reduce deleted count when restoring
+        this.loadingStats.deletedCount = Math.max(0,
+          (this.loadingStats.deletedCount || 0) - (metadata?.restoredCount || 1));
+        break;
+    }
+  }
+
+  /**
+   * NEW: Get data change summary for display
+   */
+  getDataChangeSummary(): {
+    totalChanges: number;
+    hasUnsavedChanges: boolean;
+    lastChangeTime: Date;
+    recentChanges: DataChangeEvent[];
+  } {
+    const recentChanges = this.dataChangeHistory.slice(-10).reverse();
+
+    return {
+      totalChanges: this.dataChangeHistory.length,
+      hasUnsavedChanges: this.hasUnsavedChanges,
+      lastChangeTime: this.lastDataChangeTime,
+      recentChanges: recentChanges
+    };
+  }
+
+  /**
+   * NEW: Reset to original data (undo all changes)
+   */
+  resetToOriginalData(): void {
+    if (!this.originalPiecesData || this.originalPiecesData.length === 0) {
+      this.toastService.warning('Sıfırlamak için orijinal veri bulunamadı');
+      return;
+    }
+
+    const confirmed = confirm(
+      '🔄 Tüm değişiklikleri geri al ve orijinal veriye dön?\n\n' +
+      `Mevcut: ${this.piecesData.length} paket\n` +
+      `Orijinal: ${this.originalPiecesData.length} paket\n` +
+      `Toplam değişiklik: ${this.dataChangeHistory.length}\n\n` +
+      '⚠️ Bu işlem geri alınamaz!'
+    );
+
+    if (!confirmed) return;
+
+    try {
+      // Reset data
+      this.piecesData = JSON.parse(JSON.stringify(this.originalPiecesData));
+
+      // Clear change history
+      this.dataChangeHistory = [];
+      this.hasUnsavedChanges = false;
+
+      // Reprocess data
+      this.safeProcessEnhancedOptimizationResult({
+        data: this.piecesData
+      });
+
+      // Recalculate stats
+      this.calculateEnhancedStats();
+
+      // Reset loading stats counters
+      this.loadingStats.deletedCount = 0;
+      this.loadingStats.movedCount = 0;
+      this.loadingStats.rotatedCount = 0;
+
+      // Trigger auto-save
+      this.triggerEnhancedAutoSave('data-change');
+
+      // Update UI
+      this.safeUpdateEnhancedUI();
+
+      this.toastService.success('Veriler orijinal haline sıfırlandı');
+      console.log('✅ Data reset to original state');
+
+    } catch (error) {
+      console.error('❌ Error resetting to original data:', error);
+      this.toastService.error('Veri sıfırlama hatası');
+    }
+  }
+
+  // ========================================
+  // ENHANCED EXISTING METHODS (Updated)
+  // ========================================
+
   forceSaveStep3(): void {
     if (this.hasResults) {
-      this.autoSaveService.forceSave(3, {
+      const enhancedSaveData = {
         optimizationResult: this.piecesData,
+        originalOptimizationResult: this.originalPiecesData, // NEW
         reportFiles: this.reportFiles,
         loadingStats: this.loadingStats,
         algorithmStats: this.algorithmStats,
         truckDimension: this.truckDimension,
         hasResults: this.hasResults,
         showVisualization: this.showVisualization,
-      });
+        currentViewType: this.currentViewType,
+        hasThreeJSError: this.hasThreeJSError,
+        hasUnsavedChanges: this.hasUnsavedChanges,
+        dataChangeHistory: this.dataChangeHistory,
+        totalPackagesProcessed: this.totalPackagesProcessed,
+        performanceMetrics: this.performanceMetrics,
+        timestamp: new Date().toISOString()
+      };
 
-      this.toastService.success('Result verileri zorla kaydedildi');
+      this.autoSaveService.forceSave(3, enhancedSaveData);
+
+      // Mark as saved
+      this.hasUnsavedChanges = false;
+
+      this.toastService.success('Enhanced result verileri zorla kaydedildi');
+      console.log('💾 Force save completed with data changes');
     } else {
       this.toastService.warning('Kaydetmek için önce optimizasyonu çalıştırın');
     }
   }
 
-  private safeResetState(): void {
+  private safeResetEnhancedState(): void {
     if (this.isDestroyed) return;
 
     this.isLoading = true;
     this.hasResults = false;
     this.showVisualization = false;
+    this.hasThreeJSError = false;
     this.optimizationProgress = 0;
     this.piecesData = [];
+    this.originalPiecesData = []; // NEW
     this.processedPackages = [];
     this.reportFiles = [];
-    this.resetStats();
 
-    this.safeUpdateUI();
+    // NEW: Reset change tracking
+    this.hasUnsavedChanges = false;
+    this.dataChangeHistory = [];
+    this.lastDataChangeTime = new Date();
+    this.totalPackagesProcessed = 0;
+
+    this.resetEnhancedStats();
+    this.safeUpdateEnhancedUI();
   }
 
-  private safeProcessOptimizationResult(response: any): void {
+  private safeProcessEnhancedOptimizationResult(response: any): void {
     if (this.isDestroyed) return;
 
     try {
-      // Handle different response formats
+      // Enhanced response handling with validation
       let packingData = null;
 
       if (response?.data) {
@@ -420,10 +953,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
           try {
             packingData = JSON.parse(response.data);
           } catch (parseError) {
-            console.warn(
-              '⚠️ Failed to parse response data string:',
-              parseError
-            );
+            console.warn('⚠️ Enhanced failed to parse response data string:', parseError);
             packingData = null;
           }
         } else if (response.data.data) {
@@ -434,34 +964,60 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       }
 
       if (packingData && Array.isArray(packingData) && packingData.length > 0) {
-        // **ÖNEMLİ: Yeni array oluştur, referansı değiştir**
-        this.piecesData = [...packingData];
-        this.safeProcessPackageData();
-        this.calculateStats();
+        // Enhanced array creation with validation
+        this.piecesData = this.validateAndCleanPackingData(packingData);
+        this.safeProcessEnhancedPackageData();
+        this.calculateEnhancedStats();
 
-        console.log(`✅ ${this.piecesData.length} paket başarıyla işlendi`);
+        // NEW: Update total processed count
+        this.totalPackagesProcessed = this.piecesData.length;
+
+        console.log(`✅ Enhanced processed ${this.piecesData.length} packages`);
       } else {
-        console.warn('⚠️ Geçersiz paketleme verisi formatı');
+        console.warn('⚠️ Enhanced geçersiz paketleme verisi formatı');
         this.piecesData = [];
         this.processedPackages = [];
+        this.totalPackagesProcessed = 0;
       }
 
-      // Extract algorithm stats if available
+      // Enhanced algorithm stats extraction
       if (response?.stats) {
         this.algorithmStats = {
           executionTime: response.stats.execution_time || 0,
           generations: response.stats.generations || 0,
           bestFitness: response.stats.best_fitness || 0,
+          iterationsCount: response.stats.iterations || 0,
+          convergenceRate: response.stats.convergence_rate || 0
         };
       }
     } catch (error) {
-      console.error('❌ Veri işleme hatası:', error);
+      console.error('❌ Enhanced veri işleme hatası:', error);
       this.piecesData = [];
       this.processedPackages = [];
+      this.totalPackagesProcessed = 0;
     }
   }
 
-  private safeProcessPackageData(): void {
+  private validateAndCleanPackingData(rawData: any[]): any[] {
+    return rawData.filter((piece, index) => {
+      // Enhanced validation for each piece
+      if (!Array.isArray(piece) || piece.length < 6) {
+        console.warn(`⚠️ Invalid piece data at index ${index}:`, piece);
+        return false;
+      }
+
+      // Validate numeric values
+      const [x, y, z, length, width, height] = piece;
+      if ([x, y, z, length, width, height].some(val => typeof val !== 'number' || isNaN(val) || val < 0)) {
+        console.warn(`⚠️ Invalid numeric values at index ${index}:`, piece);
+        return false;
+      }
+
+      return true;
+    });
+  }
+
+  private safeProcessEnhancedPackageData(): void {
     if (this.isDestroyed || !Array.isArray(this.piecesData)) return;
 
     try {
@@ -475,21 +1031,21 @@ export class ResultStepComponent implements OnInit, OnDestroy {
           width: piece[4] || 0,
           height: piece[5] || 0,
           weight: piece[7] || 0,
-          color: this.getPackageColor(index),
+          color: this.getEnhancedPackageColor(index),
           dimensions: `${piece[3] || 0}×${piece[4] || 0}×${piece[5] || 0}mm`,
         })
       );
 
-      console.log(`📊 ${this.processedPackages.length} packages processed`);
+      console.log(`📊 Enhanced processed ${this.processedPackages.length} packages`);
     } catch (error) {
-      console.error('❌ Package processing error:', error);
+      console.error('❌ Enhanced package processing error:', error);
       this.processedPackages = [];
     }
   }
 
-  private calculateStats(): void {
+  private calculateEnhancedStats(): void {
     if (this.isDestroyed || this.processedPackages.length === 0) {
-      this.resetStats();
+      this.resetEnhancedStats();
       return;
     }
 
@@ -498,6 +1054,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         this.truckDimension[0] *
         this.truckDimension[1] *
         this.truckDimension[2];
+
       const usedVolume = this.processedPackages.reduce(
         (sum, pkg) => sum + pkg.length * pkg.width * pkg.height,
         0
@@ -507,24 +1064,29 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         (sum, pkg) => sum + pkg.weight,
         0
       );
-      const cogScore = this.calculateCOGScore();
+
+      const cogScore = this.calculateEnhancedCOGScore();
       const utilizationRate = Math.round((usedVolume / totalVolume) * 100);
+      const efficiency = Math.round((utilizationRate + cogScore) / 2);
 
       this.loadingStats = {
+        ...this.loadingStats, // Preserve existing counts (deletedCount, movedCount, rotatedCount)
         totalPackages: this.processedPackages.length,
         packagesLoaded: this.processedPackages.length,
         utilizationRate: utilizationRate,
         cogScore: cogScore,
         totalWeight: Math.round(totalWeight),
-        efficiency: Math.round((utilizationRate + cogScore) / 2),
+        efficiency: efficiency,
       };
+
+      console.log('📊 Enhanced stats calculated:', this.loadingStats);
     } catch (error) {
-      console.error('❌ Stats calculation error:', error);
-      this.resetStats();
+      console.error('❌ Enhanced stats calculation error:', error);
+      this.resetEnhancedStats();
     }
   }
 
-  private calculateCOGScore(): number {
+  private calculateEnhancedCOGScore(): number {
     if (this.isDestroyed || this.processedPackages.length === 0) return 0;
 
     try {
@@ -550,90 +1112,103 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       const cogY = weightedY / totalWeight;
       const cogZ = weightedZ / totalWeight;
 
-      // Ideal COG (center and lower part of truck)
+      // Enhanced ideal COG calculation
       const idealX = this.truckDimension[0] / 2;
       const idealY = this.truckDimension[1] / 2;
-      const idealZ = this.truckDimension[2] * 0.4; // 40% height
+      const idealZ = this.truckDimension[2] * 0.4;
 
       const distance = Math.sqrt(
         Math.pow(cogX - idealX, 2) +
-          Math.pow(cogY - idealY, 2) +
-          Math.pow(cogZ - idealZ, 2)
+        Math.pow(cogY - idealY, 2) +
+        Math.pow(cogZ - idealZ, 2)
       );
 
       const maxDistance = Math.sqrt(
         Math.pow(this.truckDimension[0] / 2, 2) +
-          Math.pow(this.truckDimension[1] / 2, 2) +
-          Math.pow(this.truckDimension[2] * 0.6, 2)
+        Math.pow(this.truckDimension[1] / 2, 2) +
+        Math.pow(this.truckDimension[2] * 0.6, 2)
       );
 
-      return Math.round(Math.max(0, 100 - (distance / maxDistance) * 100));
+      const score = Math.round(Math.max(0, 100 - (distance / maxDistance) * 100));
+      console.log(`📍 Enhanced COG Score: ${score} (distance: ${distance.toFixed(2)}, max: ${maxDistance.toFixed(2)})`);
+
+      return score;
     } catch (error) {
-      console.error('❌ COG calculation error:', error);
+      console.error('❌ Enhanced COG calculation error:', error);
       return 0;
     }
   }
 
-  private safeFinalize(): void {
+  private safeEnhancedFinalize(): void {
     if (this.isDestroyed) return;
 
     this.isLoading = false;
     this.hasResults = true;
     this.showVisualization = true;
+    this.hasThreeJSError = false;
 
-    this.safeUpdateUI();
-    this.toastService.success('Paketleme ve rapor başarıyla oluşturuldu.');
+    this.safeUpdateEnhancedUI();
+    this.toastService.success('Enhanced paketleme ve rapor başarıyla oluşturuldu.');
 
-    // YENİ: Finalize sonrası auto-save
-    this.saveResultsToSession();
+    // Enhanced finalization with session save
+    this.saveEnhancedResultsToSession();
+
+    // Performance tracking
+    this.performanceMetrics.endTime = performance.now();
+    const processingTime = this.performanceMetrics.endTime - this.performanceMetrics.startTime;
+    console.log(`🚀 Enhanced processing completed in ${processingTime.toFixed(2)}ms`);
   }
 
-  private handleError(error: any): void {
+  private handleEnhancedError(error: any): void {
     if (this.isDestroyed) return;
 
     this.isLoading = false;
     this.hasResults = false;
     this.optimizationProgress = 0;
 
-    this.safeUpdateUI();
+    this.safeUpdateEnhancedUI();
 
-    const errorMessage = this.getErrorMessage(error);
+    const errorMessage = this.getEnhancedErrorMessage(error);
     this.toastService.error(errorMessage);
+
+    console.error('❌ Enhanced error details:', error);
   }
 
-  private safeUpdateUI(): void {
+  private safeUpdateEnhancedUI(): void {
     if (this.isDestroyed) return;
 
     try {
       this.cdr.detectChanges();
     } catch (error) {
-      console.warn('UI update error:', error);
+      console.warn('Enhanced UI update error:', error);
     }
   }
 
   // ========================================
-  // SAFE PROGRESS SIMULATION
+  // ENHANCED PROGRESS SIMULATION
   // ========================================
 
-  private startProgressSimulation(): void {
+  private startEnhancedProgressSimulation(): void {
     if (this.progressInterval) {
       clearInterval(this.progressInterval);
     }
 
     this.progressInterval = setInterval(() => {
       if (this.isDestroyed || !this.isLoading) {
-        this.stopProgressSimulation();
+        this.stopEnhancedProgressSimulation();
         return;
       }
 
       if (this.optimizationProgress < 70) {
-        this.optimizationProgress += Math.random() * 8; // Slower progress
-        this.safeUpdateUI();
+        // Enhanced progress with variable speed
+        const increment = Math.random() * 8 + 2; // 2-10 increment
+        this.optimizationProgress = Math.min(70, this.optimizationProgress + increment);
+        this.safeUpdateEnhancedUI();
       }
-    }, 500); // Less frequent updates
+    }, 500);
   }
 
-  private stopProgressSimulation(): void {
+  private stopEnhancedProgressSimulation(): void {
     if (this.progressInterval) {
       clearInterval(this.progressInterval);
       this.progressInterval = null;
@@ -641,7 +1216,122 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   }
 
   // ========================================
-  // UI Helper Methods
+  // ENHANCED EVENT HANDLERS
+  // ========================================
+
+  onPackageSelected(packageData: any): void {
+    if (this.isDestroyed) return;
+
+    console.log('📦 Enhanced package selected:', packageData);
+
+    try {
+      // Enhanced package selection validation
+      if (!packageData || !packageData.id) {
+        console.warn('⚠️ Invalid package data received');
+        return;
+      }
+
+      // Enhanced package state management
+      this.updateEnhancedPackageInternalState(packageData);
+
+      // Enhanced auto-save trigger
+      this.triggerEnhancedAutoSave('user-action');
+
+      // Enhanced statistics update
+      this.updatePackageInteractionStats('selected');
+
+    } catch (error) {
+      console.error('❌ Enhanced error handling package selection:', error);
+      this.toastService.error('Paket seçiminde hata oluştu');
+    }
+  }
+
+  onViewChanged(viewType: string): void {
+    if (this.isDestroyed) return;
+
+    console.log('👁️ Enhanced view changed:', viewType);
+
+    try {
+      // Enhanced view state management
+      this.currentViewType = viewType;
+
+      // Enhanced auto-save trigger
+      this.triggerEnhancedAutoSave('user-action');
+
+      // Enhanced UI update
+      this.cdr.detectChanges();
+
+      console.log(`📱 View changed to: ${viewType}`);
+
+    } catch (error) {
+      console.error('❌ Enhanced error handling view change:', error);
+    }
+  }
+
+  // Enhanced three.js component error handling
+  onThreeJSError(error: any): void {
+    console.error('❌ Enhanced Three.js component error:', error);
+    this.hasThreeJSError = true;
+    this.showVisualization = false;
+    this.toastService.error('3D görselleştirmede hata oluştu');
+    this.cdr.detectChanges();
+  }
+
+  // Enhanced three.js component ready handler
+  onThreeJSReady(): void {
+    console.log('✅ Enhanced Three.js component ready');
+    this.hasThreeJSError = false;
+    this.cdr.detectChanges();
+  }
+
+  // ========================================
+  // ENHANCED HELPER METHODS
+  // ========================================
+
+  private updateEnhancedPackageInternalState(packageData: any): void {
+    try {
+      // Enhanced package finding and updating
+      const packageIndex = this.processedPackages.findIndex(pkg => pkg.id === packageData.id);
+
+      if (packageIndex > -1) {
+        // Enhanced package update with validation
+        const updatedPackage = {
+          ...this.processedPackages[packageIndex],
+          ...packageData,
+          lastModified: new Date().toISOString()
+        };
+
+        this.processedPackages[packageIndex] = updatedPackage;
+        console.log(`✅ Enhanced updated package ${packageData.id} in internal state`);
+      }
+
+    } catch (error) {
+      console.error('❌ Enhanced error updating package internal state:', error);
+    }
+  }
+
+  private updatePackageInteractionStats(action: 'selected' | 'moved' | 'rotated' | 'deleted'): void {
+    try {
+      switch (action) {
+        case 'moved':
+          this.loadingStats.movedCount = (this.loadingStats.movedCount || 0) + 1;
+          break;
+        case 'rotated':
+          this.loadingStats.rotatedCount = (this.loadingStats.rotatedCount || 0) + 1;
+          break;
+        case 'deleted':
+          this.loadingStats.deletedCount = (this.loadingStats.deletedCount || 0) + 1;
+          break;
+      }
+
+      console.log(`📊 Updated interaction stats for ${action}:`, this.loadingStats);
+    } catch (error) {
+      console.error('❌ Error updating interaction stats:', error);
+    }
+  }
+
+  // ========================================
+  // ENHANCED UI HELPER METHODS
   // ========================================
 
   getUtilizationRate(): number {
@@ -666,6 +1356,27 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     if (efficiency >= 70) return 'good';
     if (efficiency >= 50) return 'warning';
     return 'poor';
+  }
+
+  // NEW: Get change status class for UI styling
+  getChangeStatusClass(): string {
+    if (!this.hasUnsavedChanges) return 'saved';
+    if (this.dataChangeHistory.length > 10) return 'many-changes';
+    if (this.dataChangeHistory.length > 0) return 'has-changes';
+    return 'no-changes';
+  }
+
+  // NEW: Format change type for display
+  formatChangeType(changeType: string): string {
+    const typeMap: { [key: string]: string } = {
+      'drag': '🎯 Taşındı',
+      'rotate': '🔄 Döndürüldü',
+      'delete': '🗑️ Silindi',
+      'restore': '➕ Geri Eklendi',
+      'initial': '🚀 Başlangıç',
+      'unknown': '❓ Bilinmeyen'
+    };
+    return typeMap[changeType] || changeType;
   }
 
   getFileIcon(fileType: string | null): string {
@@ -709,7 +1420,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   }
 
   // ========================================
-  // SAFE Visualization Methods
+  // ENHANCED VISUALIZATION METHODS
   // ========================================
 
   openInNewTab(): void {
@@ -727,7 +1438,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       const dataStr = JSON.stringify(this.piecesData);
       const dimensionsStr = JSON.stringify(this.truckDimension);
 
-      // Create a new window with Three.js visualization (updated HTML)
+      // Enhanced popup creation
       const newWindow = window.open(
         '',
         '_blank',
@@ -735,416 +1446,620 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       );
 
       if (newWindow) {
-        newWindow.document.write(this.createThreeJSPopupHTML(dataStr, dimensionsStr)); // ← Method adı değişti
+        newWindow.document.write(this.createEnhancedThreeJSPopupHTML(dataStr, dimensionsStr));
         newWindow.document.close();
         this.popupWindow = newWindow;
 
-        this.triggerAutoSave('user-action');
+        // Enhanced auto-save trigger
+        this.triggerEnhancedAutoSave('user-action');
+
+        console.log('✅ Enhanced 3D popup opened successfully');
       }
     } catch (error) {
-      console.error('❌ Yeni sekme açılırken hata oluştu:', error);
+      console.error('❌ Enhanced yeni sekme açılırken hata oluştu:', error);
       this.toastService.error('3D görünüm açılamadı.');
     }
   }
 
-  private createThreeJSPopupHTML(dataStr: string, dimensionsStr: string): string {
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>3D Tır Yükleme Görselleştirmesi - Three.js</title>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-        <style>
-          body {
-            margin: 0;
-            padding: 20px;
-            font-family: Arial, sans-serif;
-            background: #f8f9fa;
-            overflow-x: hidden;
-          }
-          #threejs-container {
-            width: 100%;
-            height: 700px;
-            border: 1px solid #ddd;
-            background: white;
-            border-radius: 8px;
-            position: relative;
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #006A6A;
-          }
-          .stats {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-          }
-          .stat-item {
-            text-align: center;
-            padding: 12px 16px;
-            background: white;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            min-width: 120px;
-          }
-          .stat-value {
-            font-weight: 600;
-            color: #006A6A;
-            font-size: 18px;
-            display: block;
-            margin-bottom: 4px;
-          }
-          .stat-label {
-            font-size: 12px;
-            color: #666;
-          }
-          .controls {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px;
-            border-radius: 8px;
-            z-index: 100;
-          }
-          .control-btn {
-            display: block;
-            width: 100%;
-            margin-bottom: 5px;
-            padding: 8px 12px;
-            border: 1px solid #006A6A;
-            background: white;
-            color: #006A6A;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.2s;
-          }
-          .control-btn:hover {
-            background: #006A6A;
-            color: white;
-          }
-          .loading-indicator {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #006A6A;
-            font-size: 16px;
-            font-weight: 500;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>🚛 Tır Yükleme Optimizasyonu - Three.js 3D Görünüm</h1>
-        </div>
+  private createEnhancedThreeJSPopupHTML(dataStr: string, dimensionsStr: string): string {
+    try {
+      // Enhanced validation
+      if (!dataStr || !dimensionsStr) {
+        throw new Error('Invalid data for enhanced popup generation');
+      }
 
-        <div class="stats">
-          <div class="stat-item">
-            <span class="stat-value">${this.loadingStats.packagesLoaded}</span>
-            <span class="stat-label">Yüklenen Paket</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-value">${this.loadingStats.utilizationRate}%</span>
-            <span class="stat-label">Doluluk Oranı</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-value">${this.loadingStats.cogScore}/100</span>
-            <span class="stat-label">COG Skoru</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-value">${this.loadingStats.totalWeight} kg</span>
-            <span class="stat-label">Toplam Ağırlık</span>
-          </div>
-        </div>
-
-        <div id="threejs-container">
-          <div class="loading-indicator" id="loading">Three.js yükleniyor...</div>
-
-          <div class="controls" id="controls" style="display: none;">
-            <button class="control-btn" onclick="resetView()">🎯 Görünümü Sıfırla</button>
-            <button class="control-btn" onclick="toggleWireframe()">🔳 Wireframe</button>
-            <button class="control-btn" onclick="setView('front')">⬜ Ön Görünüm</button>
-            <button class="control-btn" onclick="setView('side')">▫️ Yan Görünüm</button>
-            <button class="control-btn" onclick="setView('top')">⬛ Üst Görünüm</button>
-            <button class="control-btn" onclick="setView('iso')">🔲 3D Görünüm</button>
-          </div>
-        </div>
-
-        <script>
-          // Global variables
-          let scene, camera, renderer, truckGroup, packagesGroup;
-          let isWireframe = false;
-          let animationId;
-
-          // Initialize Three.js
-          function initThreeJS() {
-            try {
-              const container = document.getElementById('threejs-container');
-              const loading = document.getElementById('loading');
-              const controls = document.getElementById('controls');
-
-              // Parse data
-              const piecesData = JSON.parse('${dataStr}');
-              const truckDimension = JSON.parse('${dimensionsStr}');
-
-              // Scene setup
-              scene = new THREE.Scene();
-              scene.background = new THREE.Color(0xf8fafc);
-
-              // Camera setup
-              camera = new THREE.PerspectiveCamera(
-                75,
-                container.clientWidth / container.clientHeight,
-                0.1,
-                50000
-              );
-
-              // Renderer setup
-              renderer = new THREE.WebGLRenderer({ antialias: true });
-              renderer.setSize(container.clientWidth, container.clientHeight);
-              renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-              renderer.shadowMap.enabled = true;
-              renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-              container.appendChild(renderer.domElement);
-
-              // Lighting
-              const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-              scene.add(ambientLight);
-
-              const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-              directionalLight.position.set(100, 100, 50);
-              directionalLight.castShadow = true;
-              scene.add(directionalLight);
-
-              // Groups
-              truckGroup = new THREE.Group();
-              packagesGroup = new THREE.Group();
-              scene.add(truckGroup);
-              scene.add(packagesGroup);
-
-              // Create truck wireframe
-              createTruck(truckDimension);
-
-              // Create packages
-              createPackages(piecesData);
-
-              // Set initial camera position
-              setView('iso');
-
-              // Start render loop
-              animate();
-
-              // Hide loading, show controls
-              loading.style.display = 'none';
-              controls.style.display = 'block';
-
-              // Setup mouse controls
-              setupControls();
-
-              console.log('✅ Three.js popup initialized successfully');
-
-            } catch (error) {
-              console.error('❌ Three.js popup error:', error);
-              document.getElementById('loading').innerHTML =
-                '❌ Görselleştirme hatası: ' + error.message;
+      return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Enhanced 3D Tır Yükleme Görselleştirmesi</title>
+          <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+          <style>
+            body {
+              margin: 0;
+              padding: 20px;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+              overflow-x: hidden;
             }
-          }
 
-          function createTruck(dimensions) {
-            const geometry = new THREE.BoxGeometry(dimensions[0], dimensions[1], dimensions[2]);
-            const edges = new THREE.EdgesGeometry(geometry);
-            const material = new THREE.LineBasicMaterial({ color: 0x666666, linewidth: 2 });
+            #threejs-container {
+              width: 100%;
+              height: 700px;
+              border: 2px solid #006A6A;
+              background: white;
+              border-radius: 12px;
+              position: relative;
+              box-shadow: 0 8px 24px rgba(0, 106, 106, 0.2);
+            }
 
-            const wireframe = new THREE.LineSegments(edges, material);
-            wireframe.position.set(dimensions[0]/2, dimensions[1]/2, dimensions[2]/2);
+            .header {
+              text-align: center;
+              margin-bottom: 20px;
+              color: #006A6A;
+            }
 
-            truckGroup.add(wireframe);
-          }
+            .header h1 {
+              font-size: 2rem;
+              margin: 0 0 0.5rem;
+              background: linear-gradient(135deg, #006A6A 0%, #004A4A 100%);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+              background-clip: text;
+            }
 
-          function createPackages(piecesData) {
-            const colors = ['#006A6A', '#D6BB86', '#004A4A', '#C0A670', '#8b5cf6'];
+            .enhanced-stats {
+              display: flex;
+              justify-content: center;
+              gap: 20px;
+              margin-bottom: 20px;
+              flex-wrap: wrap;
+            }
 
-            piecesData.forEach((piece, index) => {
-              const [x, y, z, length, width, height, id, weight] = piece;
+            .enhanced-stat-item {
+              text-align: center;
+              padding: 16px 20px;
+              background: white;
+              border-radius: 12px;
+              border: 2px solid #e0f2f1;
+              box-shadow: 0 4px 8px rgba(0, 106, 106, 0.1);
+              min-width: 140px;
+              transition: all 0.3s ease;
+            }
 
-              const geometry = new THREE.BoxGeometry(length, width, height);
-              const material = new THREE.MeshLambertMaterial({
-                color: colors[index % colors.length],
-                transparent: false,
-                opacity: 1.0
+            .enhanced-stat-item:hover {
+              transform: translateY(-4px);
+              box-shadow: 0 8px 16px rgba(0, 106, 106, 0.2);
+              border-color: #006A6A;
+            }
+
+            .enhanced-stat-value {
+              font-weight: 700;
+              color: #006A6A;
+              font-size: 1.5rem;
+              display: block;
+              margin-bottom: 4px;
+            }
+
+            .enhanced-stat-label {
+              font-size: 0.875rem;
+              color: #666;
+              font-weight: 500;
+            }
+
+            .enhanced-controls {
+              position: absolute;
+              top: 15px;
+              left: 15px;
+              background: rgba(255, 255, 255, 0.95);
+              backdrop-filter: blur(10px);
+              padding: 15px;
+              border-radius: 12px;
+              z-index: 100;
+              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+              border: 1px solid rgba(0, 106, 106, 0.2);
+            }
+
+            .enhanced-controls h3 {
+              margin: 0 0 12px;
+              color: #006A6A;
+              font-size: 1rem;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+            }
+
+            .enhanced-control-btn {
+              display: block;
+              width: 100%;
+              margin-bottom: 8px;
+              padding: 10px 15px;
+              border: 2px solid #006A6A;
+              background: white;
+              color: #006A6A;
+              border-radius: 8px;
+              cursor: pointer;
+              font-size: 0.875rem;
+              font-weight: 600;
+              transition: all 0.2s ease;
+            }
+
+            .enhanced-control-btn:hover {
+              background: #006A6A;
+              color: white;
+              transform: translateY(-1px);
+              box-shadow: 0 4px 8px rgba(0, 106, 106, 0.3);
+            }
+
+            .enhanced-view-buttons {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 8px;
+              margin-top: 12px;
+            }
+
+            .enhanced-view-btn {
+              padding: 8px 12px;
+              border: 1px solid #006A6A;
+              background: white;
+              color: #006A6A;
+              border-radius: 6px;
+              cursor: pointer;
+              font-size: 0.8rem;
+              font-weight: 500;
+              transition: all 0.2s ease;
+            }
+
+            .enhanced-view-btn:hover, .enhanced-view-btn.active {
+              background: #006A6A;
+              color: white;
+            }
+
+            .enhanced-loading-indicator {
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              color: #006A6A;
+              font-size: 1.125rem;
+              font-weight: 600;
+              display: flex;
+              align-items: center;
+              gap: 12px;
+            }
+
+            .enhanced-loading-spinner {
+              width: 24px;
+              height: 24px;
+              border: 3px solid #e0f2f1;
+              border-top-color: #006A6A;
+              border-radius: 50%;
+              animation: spin 1s linear infinite;
+            }
+
+            @keyframes spin {
+              to { transform: rotate(360deg); }
+            }
+
+            .enhanced-error-message {
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              color: #ef4444;
+              font-size: 1.125rem;
+              font-weight: 600;
+              text-align: center;
+              padding: 20px;
+              background: rgba(255, 255, 255, 0.9);
+              border-radius: 8px;
+              border: 2px solid #ef4444;
+            }
+
+            @media (max-width: 768px) {
+              body { padding: 10px; }
+              #threejs-container { height: 500px; }
+              .enhanced-controls { position: static; margin-bottom: 15px; }
+              .enhanced-stats { flex-direction: column; align-items: center; }
+              .enhanced-stat-item { min-width: 120px; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>🚛 Enhanced Tır Yükleme Optimizasyonu</h1>
+            <p>Three.js 3D Görselleştirme - Gelişmiş Sürüm v3.0</p>
+          </div>
+
+          <div class="enhanced-stats">
+            <div class="enhanced-stat-item">
+              <span class="enhanced-stat-value">${this.loadingStats.packagesLoaded}</span>
+              <span class="enhanced-stat-label">Yüklenen Paket</span>
+            </div>
+            <div class="enhanced-stat-item">
+              <span class="enhanced-stat-value">${this.loadingStats.utilizationRate}%</span>
+              <span class="enhanced-stat-label">Doluluk Oranı</span>
+            </div>
+            <div class="enhanced-stat-item">
+              <span class="enhanced-stat-value">${this.loadingStats.cogScore}/100</span>
+              <span class="enhanced-stat-label">COG Skoru</span>
+            </div>
+            <div class="enhanced-stat-item">
+              <span class="enhanced-stat-value">${this.loadingStats.totalWeight} kg</span>
+              <span class="enhanced-stat-label">Toplam Ağırlık</span>
+            </div>
+            <div class="enhanced-stat-item">
+              <span class="enhanced-stat-value">${this.algorithmStats.executionTime.toFixed(1)}s</span>
+              <span class="enhanced-stat-label">İşlem Süresi</span>
+            </div>
+            <div class="enhanced-stat-item">
+              <span class="enhanced-stat-value">${this.dataChangeHistory.length}</span>
+              <span class="enhanced-stat-label">Değişiklik Sayısı</span>
+            </div>
+          </div>
+
+          <div id="threejs-container">
+            <div class="enhanced-loading-indicator" id="loading">
+              <div class="enhanced-loading-spinner"></div>
+              <span>Enhanced Three.js yükleniyor...</span>
+            </div>
+
+            <div class="enhanced-controls" id="controls" style="display: none;">
+              <h3>🎮 Gelişmiş Kontroller v3.0</h3>
+              <button class="enhanced-control-btn" onclick="resetView()">🎯 Görünümü Sıfırla</button>
+              <button class="enhanced-control-btn" onclick="toggleWireframe()">🔳 Wireframe</button>
+              <button class="enhanced-control-btn" onclick="autoRotate()">🔄 Otomatik Döndür</button>
+              <button class="enhanced-control-btn" onclick="enhancedFullscreen()">⛶ Tam Ekran</button>
+
+              <div class="enhanced-view-buttons">
+                <button class="enhanced-view-btn" onclick="setView('front')">⬜ Ön</button>
+                <button class="enhanced-view-btn" onclick="setView('side')">▫️ Yan</button>
+                <button class="enhanced-view-btn" onclick="setView('top')">⬛ Üst</button>
+                <button class="enhanced-view-btn" onclick="setView('iso')">🔲 3D</button>
+              </div>
+            </div>
+          </div>
+
+          <script>
+            // Enhanced Three.js implementation
+            let scene, camera, renderer, truckGroup, packagesGroup;
+            let isWireframe = false;
+            let autoRotateEnabled = false;
+            let animationId;
+
+            // Enhanced initialization
+            function initThreeJS() {
+              try {
+                const container = document.getElementById('threejs-container');
+                const loading = document.getElementById('loading');
+                const controls = document.getElementById('controls');
+
+                // Enhanced data parsing with validation
+                const piecesData = JSON.parse('${dataStr}');
+                const truckDimension = JSON.parse('${dimensionsStr}');
+
+                if (!piecesData || !truckDimension) {
+                  throw new Error('Enhanced: Invalid data provided');
+                }
+
+                console.log('🚀 Enhanced Three.js initializing with', piecesData.length, 'packages');
+
+                // Enhanced scene setup
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0xf8fafc);
+                scene.fog = new THREE.Fog(0xf8fafc, 1000, 50000);
+
+                // Enhanced camera
+                camera = new THREE.PerspectiveCamera(
+                  75,
+                  container.clientWidth / container.clientHeight,
+                  0.1,
+                  100000
+                );
+
+                // Enhanced renderer
+                renderer = new THREE.WebGLRenderer({
+                  antialias: true,
+                  alpha: true,
+                  powerPreference: 'high-performance'
+                });
+                renderer.setSize(container.clientWidth, container.clientHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+                container.appendChild(renderer.domElement);
+
+                // Enhanced lighting
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+                scene.add(ambientLight);
+
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
+                directionalLight.position.set(200, 200, 100);
+                directionalLight.castShadow = true;
+                directionalLight.shadow.mapSize.width = 2048;
+                directionalLight.shadow.mapSize.height = 2048;
+                scene.add(directionalLight);
+
+                // Enhanced groups
+                truckGroup = new THREE.Group();
+                packagesGroup = new THREE.Group();
+                scene.add(truckGroup);
+                scene.add(packagesGroup);
+
+                // Create enhanced truck and packages
+                createEnhancedTruck(truckDimension);
+                createEnhancedPackages(piecesData);
+
+                // Set initial view
+                setView('iso');
+
+                // Start enhanced render loop
+                animate();
+
+                // Enhanced mouse controls
+                setupEnhancedControls();
+
+                // Show controls
+                loading.style.display = 'none';
+                controls.style.display = 'block';
+
+                console.log('✅ Enhanced Three.js popup initialized successfully');
+
+              } catch (error) {
+                console.error('❌ Enhanced Three.js popup error:', error);
+                document.getElementById('loading').innerHTML =
+                  '<div class="enhanced-error-message">❌ Enhanced Görselleştirme hatası:<br>' + error.message + '</div>';
+              }
+            }
+
+            // Enhanced truck creation
+            function createEnhancedTruck(dimensions) {
+              const geometry = new THREE.BoxGeometry(dimensions[0], dimensions[1], dimensions[2]);
+              const edges = new THREE.EdgesGeometry(geometry);
+              const material = new THREE.LineBasicMaterial({
+                color: 0x006A6A,
+                linewidth: 3,
+                transparent: true,
+                opacity: 0.8
               });
 
-              const mesh = new THREE.Mesh(geometry, material);
-              mesh.position.set(x + length/2, y + width/2, z + height/2);
-              mesh.castShadow = true;
-              mesh.receiveShadow = true;
+              const wireframe = new THREE.LineSegments(edges, material);
+              wireframe.position.set(dimensions[0]/2, dimensions[1]/2, dimensions[2]/2);
 
-              packagesGroup.add(mesh);
-            });
-          }
+              truckGroup.add(wireframe);
 
-          function animate() {
-            if (!renderer) return;
+              // Enhanced floor
+              const floorGeometry = new THREE.PlaneGeometry(dimensions[0], dimensions[2]);
+              const floorMaterial = new THREE.MeshLambertMaterial({
+                color: 0xeeeeee,
+                transparent: true,
+                opacity: 0.3
+              });
+              const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+              floor.rotation.x = -Math.PI / 2;
+              floor.position.set(dimensions[0]/2, 0, dimensions[2]/2);
+              floor.receiveShadow = true;
 
-            animationId = requestAnimationFrame(animate);
-            renderer.render(scene, camera);
-          }
-
-          function setupControls() {
-            const canvas = renderer.domElement;
-            let isMouseDown = false;
-            let mouseX = 0, mouseY = 0;
-
-            canvas.addEventListener('mousedown', (event) => {
-              isMouseDown = true;
-              mouseX = event.clientX;
-              mouseY = event.clientY;
-            });
-
-            canvas.addEventListener('mousemove', (event) => {
-              if (!isMouseDown) return;
-
-              const deltaX = event.clientX - mouseX;
-              const deltaY = event.clientY - mouseY;
-
-              rotateView(deltaX * 0.01, deltaY * 0.01);
-
-              mouseX = event.clientX;
-              mouseY = event.clientY;
-            });
-
-            canvas.addEventListener('mouseup', () => {
-              isMouseDown = false;
-            });
-
-            canvas.addEventListener('wheel', (event) => {
-              event.preventDefault();
-              zoomCamera(event.deltaY * 0.001);
-            });
-          }
-
-          function rotateView(deltaX, deltaY) {
-            const spherical = new THREE.Spherical();
-            spherical.setFromVector3(camera.position);
-            spherical.theta -= deltaX;
-            spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi - deltaY));
-
-            camera.position.setFromSpherical(spherical);
-            camera.lookAt(0, 0, 0);
-          }
-
-          function zoomCamera(delta) {
-            const direction = new THREE.Vector3();
-            camera.getWorldDirection(direction);
-            direction.multiplyScalar(delta * 1000);
-            camera.position.add(direction);
-          }
-
-          function setView(viewType) {
-            const truckDim = JSON.parse('${dimensionsStr}');
-            const maxDim = Math.max(...truckDim);
-            const distance = maxDim * 1.5;
-
-            switch (viewType) {
-              case 'front':
-                camera.position.set(distance, 0, truckDim[2] / 2);
-                break;
-              case 'side':
-                camera.position.set(0, distance, truckDim[2] / 2);
-                break;
-              case 'top':
-                camera.position.set(truckDim[0] / 2, truckDim[1] / 2, distance);
-                break;
-              case 'iso':
-              default:
-                camera.position.set(distance * 0.8, distance * 0.8, distance * 0.8);
-                break;
+              truckGroup.add(floor);
             }
 
-            camera.lookAt(truckDim[0] / 2, truckDim[1] / 2, truckDim[2] / 2);
-          }
+            // Enhanced packages creation
+            function createEnhancedPackages(piecesData) {
+              const colors = ['#006A6A', '#D6BB86', '#004A4A', '#C0A670', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'];
 
-          function resetView() {
-            setView('iso');
-          }
+              piecesData.forEach((piece, index) => {
+                const [x, y, z, length, width, height, id, weight] = piece;
 
-          function toggleWireframe() {
-            isWireframe = !isWireframe;
+                const geometry = new THREE.BoxGeometry(length, width, height);
 
-            packagesGroup.children.forEach(mesh => {
-              mesh.material.wireframe = isWireframe;
+                const material = new THREE.MeshLambertMaterial({
+                  color: colors[index % colors.length],
+                  transparent: false,
+                  opacity: 1.0
+                });
+
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.set(x + length/2, y + width/2, z + height/2);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+
+                // Enhanced edge highlight
+                const edgesGeometry = new THREE.EdgesGeometry(geometry);
+                const edgesMaterial = new THREE.LineBasicMaterial({
+                  color: 0xffffff,
+                  transparent: true,
+                  opacity: 0.2
+                });
+                const edgeLines = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+                mesh.add(edgeLines);
+
+                packagesGroup.add(mesh);
+              });
+            }
+
+            // Enhanced controls setup
+            function setupEnhancedControls() {
+              const canvas = renderer.domElement;
+              let isMouseDown = false;
+              let mouseX = 0, mouseY = 0;
+
+              canvas.addEventListener('mousedown', (event) => {
+                isMouseDown = true;
+                mouseX = event.clientX;
+                mouseY = event.clientY;
+                canvas.style.cursor = 'grabbing';
+              });
+
+              canvas.addEventListener('mousemove', (event) => {
+                if (!isMouseDown) return;
+
+                const deltaX = event.clientX - mouseX;
+                const deltaY = event.clientY - mouseY;
+
+                rotateView(deltaX * 0.01, deltaY * 0.01);
+
+                mouseX = event.clientX;
+                mouseY = event.clientY;
+              });
+
+              canvas.addEventListener('mouseup', () => {
+                isMouseDown = false;
+                canvas.style.cursor = 'grab';
+              });
+
+              // Enhanced zoom
+              canvas.addEventListener('wheel', (event) => {
+                event.preventDefault();
+                const zoomSpeed = 0.1;
+                const direction = new THREE.Vector3();
+                camera.getWorldDirection(direction);
+                direction.multiplyScalar(event.deltaY * zoomSpeed * 100);
+                camera.position.add(direction);
+              });
+
+              canvas.style.cursor = 'grab';
+            }
+
+            // Enhanced animation loop
+            function animate() {
+              if (!renderer) return;
+
+              animationId = requestAnimationFrame(animate);
+
+              // Enhanced auto rotation
+              if (autoRotateEnabled) {
+                packagesGroup.rotation.y += 0.005;
+                truckGroup.rotation.y += 0.005;
+              }
+
+              renderer.render(scene, camera);
+            }
+
+            // Enhanced control functions
+            function rotateView(deltaX, deltaY) {
+              const spherical = new THREE.Spherical();
+              const target = new THREE.Vector3(${this.truckDimension[0]/2}, ${this.truckDimension[1]/2}, ${this.truckDimension[2]/2});
+
+              spherical.setFromVector3(camera.position.clone().sub(target));
+              spherical.theta -= deltaX;
+              spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi - deltaY));
+
+              camera.position.copy(new THREE.Vector3().setFromSpherical(spherical).add(target));
+              camera.lookAt(target);
+            }
+
+            function setView(viewType) {
+              const truckDim = [${this.truckDimension.join(', ')}];
+              const maxDim = Math.max(...truckDim);
+              const distance = maxDim * 1.5;
+              const target = new THREE.Vector3(truckDim[0]/2, truckDim[1]/2, truckDim[2]/2);
+
+              document.querySelectorAll('.enhanced-view-btn').forEach(btn => btn.classList.remove('active'));
+
+              switch (viewType) {
+                case 'front':
+                  camera.position.set(distance, truckDim[1]/2, truckDim[2]/2);
+                  break;
+                case 'side':
+                  camera.position.set(truckDim[0]/2, truckDim[1]/2, distance);
+                  break;
+                case 'top':
+                  camera.position.set(truckDim[0]/2, distance, truckDim[2]/2);
+                  break;
+                case 'iso':
+                default:
+                  camera.position.set(distance * 0.8, distance * 0.8, distance * 0.8);
+                  break;
+              }
+
+              camera.lookAt(target);
+
+              const button = document.querySelector(\`[onclick="setView('\${viewType}')"]\`);
+              if (button) button.classList.add('active');
+            }
+
+            function resetView() {
+              autoRotateEnabled = false;
+              packagesGroup.rotation.set(0, 0, 0);
+              truckGroup.rotation.set(0, 0, 0);
+              setView('iso');
+            }
+
+            function toggleWireframe() {
+              isWireframe = !isWireframe;
+              packagesGroup.children.forEach(mesh => {
+                if (mesh.material) {
+                  mesh.material.wireframe = isWireframe;
+                }
+              });
+            }
+
+            function autoRotate() {
+              autoRotateEnabled = !autoRotateEnabled;
+            }
+
+            function enhancedFullscreen() {
+              if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+              } else {
+                document.exitFullscreen();
+              }
+            }
+
+            // Enhanced resize handler
+            window.addEventListener('resize', () => {
+              if (!camera || !renderer) return;
+
+              const container = document.getElementById('threejs-container');
+              camera.aspect = container.clientWidth / container.clientHeight;
+              camera.updateProjectionMatrix();
+              renderer.setSize(container.clientWidth, container.clientHeight);
             });
-          }
 
-          // Window resize handler
-          window.addEventListener('resize', () => {
-            if (!camera || !renderer) return;
+            // Enhanced cleanup
+            window.addEventListener('beforeunload', () => {
+              if (animationId) {
+                cancelAnimationFrame(animationId);
+              }
+              if (renderer) {
+                renderer.dispose();
+              }
+              console.log('🧹 Enhanced Three.js popup cleaned up');
+            });
 
-            const container = document.getElementById('threejs-container');
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
-          });
+            // Initialize when page loads
+            document.addEventListener('DOMContentLoaded', initThreeJS);
+            setTimeout(initThreeJS, 100);
+          </script>
+        </body>
+        </html>
+      `;
 
-          // Cleanup on unload
-          window.addEventListener('beforeunload', () => {
-            if (animationId) {
-              cancelAnimationFrame(animationId);
-            }
-            if (renderer) {
-              renderer.dispose();
-            }
-          });
-
-          // Initialize when page loads
-          document.addEventListener('DOMContentLoaded', initThreeJS);
-
-          // Fallback initialization
-          setTimeout(initThreeJS, 100);
-        </script>
-      </body>
-      </html>
-    `;
+    } catch (error) {
+      console.error('❌ Enhanced error creating popup HTML:', error);
+      return `
+        <!DOCTYPE html>
+        <html>
+        <head><title>Enhanced Hata</title></head>
+        <body>
+          <div style="padding: 40px; text-align: center; color: #ef4444;">
+            <h2>❌ Enhanced Görselleştirme Hatası</h2>
+            <p>3D görünüm oluşturulurken hata oluştu.</p>
+            <p>Lütfen sayfayı yenileyin ve tekrar deneyin.</p>
+            <p><small>Error:</small></p>
+          </div>
+        </body>
+        </html>
+      `;
+    }
   }
 
   // ========================================
-  // Event Handlers
+  // ENHANCED UTILITY METHODS
   // ========================================
 
-  onPackageSelected(packageData: any): void {
-    if (this.isDestroyed) return;
-
-    console.log('📦 Paket seçildi:', packageData);
-
-    // Package selection info'yu state'e ekleyebiliriz
-    // Bu durumda auto-save trigger edebiliriz
-    this.triggerAutoSave('user-action');
-  }
-
-  /**
-   * View change'de auto-save (kullanıcı view mode değiştirirse)
-   */
-  onViewChanged(viewType: string): void {
-    if (this.isDestroyed) return;
-
-    console.log('👁️ Görünüm değiştirildi:', viewType);
-
-    // View preference'ını kaydedebiliriz
-    this.triggerAutoSave('user-action');
-  }
-
-  // ========================================
-  // Utility Methods
-  // ========================================
-
-  private resetStats(): void {
+  private resetEnhancedStats(): void {
     this.loadingStats = {
       totalPackages: 0,
       packagesLoaded: 0,
@@ -1152,26 +2067,23 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       cogScore: 0,
       totalWeight: 0,
       efficiency: 0,
+      deletedCount: 0,
+      movedCount: 0,
+      rotatedCount: 0
     };
   }
 
-  private getPackageColor(index: number): string {
+  private getEnhancedPackageColor(index: number): string {
     const colors = [
-      '#006A6A',
-      '#D6BB86',
-      '#004A4A',
-      '#C0A670',
-      '#8b5cf6',
-      '#06b6d4',
-      '#84cc16',
-      '#f97316',
-      '#ec4899',
-      '#6366f1',
+      '#006A6A', '#D6BB86', '#004A4A', '#C0A670', '#8b5cf6',
+      '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1',
+      '#14b8a6', '#fbbf24', '#8b5cf6', '#f87171', '#34d399',
+      '#60a5fa', '#a78bfa', '#fb7185', '#fde047', '#67e8f9'
     ];
     return colors[index % colors.length];
   }
 
-  private getErrorMessage(error: any): string {
+  private getEnhancedErrorMessage(error: any): string {
     if (error?.status === 0) {
       return 'Sunucuya bağlanılamıyor. İnternet bağlantınızı kontrol edin.';
     } else if (error?.status >= 400 && error?.status < 500) {
@@ -1184,7 +2096,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   }
 
   // ========================================
-  // Additional Helper Methods (for template)
+  // ENHANCED ACTION METHODS
   // ========================================
 
   saveResults(): void {
@@ -1196,22 +2108,40 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     }
 
     try {
-      const results = {
+      const changeSummary = this.getDataChangeSummary();
+
+      const enhancedResults = {
         timestamp: new Date().toISOString(),
+        version: '3.0',
         truckDimensions: this.truckDimension,
         packagesData: this.piecesData,
+        originalPackagesData: this.originalPiecesData, // NEW
+        processedPackages: this.processedPackages,
         statistics: this.loadingStats,
         algorithmStats: this.algorithmStats,
         reportFiles: this.reportFiles,
+        performanceMetrics: this.performanceMetrics,
+        currentViewType: this.currentViewType,
+        dataChangeSummary: changeSummary, // NEW
+        metadata: {
+          totalProcessingTime: this.performanceMetrics.endTime - this.performanceMetrics.startTime,
+          packageCount: this.processedPackages.length,
+          originalPackageCount: this.originalPiecesData.length,
+          reportCount: this.reportFiles.length,
+          utilizationRate: this.loadingStats.utilizationRate,
+          cogScore: this.loadingStats.cogScore,
+          totalDataChanges: changeSummary.totalChanges,
+          hasUnsavedChanges: changeSummary.hasUnsavedChanges
+        }
       };
 
-      const dataStr = JSON.stringify(results, null, 2);
+      const dataStr = JSON.stringify(enhancedResults, null, 2);
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
       const url = URL.createObjectURL(dataBlob);
 
       const link = document.createElement('a');
       link.href = url;
-      link.download = `truck-loading-results-${
+      link.download = `enhanced-truck-loading-results-${
         new Date().toISOString().split('T')[0]
       }.json`;
       document.body.appendChild(link);
@@ -1219,13 +2149,16 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      this.toastService.success('Sonuçlar başarıyla kaydedildi.');
+      // Mark as saved after export
+      this.hasUnsavedChanges = false;
 
-      // YENİ: Manual save sonrası auto-save trigger
-      this.triggerAutoSave('user-action');
+      this.toastService.success('Enhanced sonuçlar başarıyla kaydedildi.');
+
+      // Enhanced auto-save trigger
+      this.triggerEnhancedAutoSave('user-action');
     } catch (error) {
-      console.error('❌ Sonuçları kaydetme hatası:', error);
-      this.toastService.error('Sonuçlar kaydedilemedi.');
+      console.error('❌ Enhanced sonuçları kaydetme hatası:', error);
+      this.toastService.error('Enhanced sonuçlar kaydedilemedi.');
     }
   }
 
@@ -1244,92 +2177,115 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Sevkiyatı tamamla ve yeni workflow'a hazırla
+   * Enhanced sevkiyatı tamamla ve yeni workflow'a hazırla
    */
-completeShipment(): void {
+  completeShipment(): void {
     if (!this.hasResults) {
       this.toastService.warning('Önce optimizasyonu tamamlayın');
       return;
     }
 
-    const confirmed = confirm(
-      'Sevkiyatı tamamlamak istediğinizden emin misiniz?\n\n' +
-      '✅ Tüm veriler kaydedilecek\n' +
+    const changeSummary = this.getDataChangeSummary();
+    const confirmMessage =
+      'Enhanced Sevkiyatı tamamlamak istediğinizden emin misiniz?\n\n' +
+      '✅ Tüm veriler gelişmiş formatta kaydedilecek\n' +
+      `📦 ${this.processedPackages.length} paket işlendi\n` +
+      `🔄 ${changeSummary.totalChanges} değişiklik yapıldı\n` +
+      (changeSummary.hasUnsavedChanges ? '⚠️ Kaydedilmemiş değişiklikler var\n' : '') +
       '🗑️ Geçici veriler temizlenecek\n' +
-      '🆕 Yeni sipariş için hazırlanacak'
-    );
+      '🆕 Yeni sipariş için hazırlanacak\n' +
+      '📊 Performans metrikleri saklanacak';
+
+    const confirmed = confirm(confirmMessage);
 
     if (!confirmed) {
       return;
     }
 
-    console.log('🏁 Sevkiyat tamamlanıyor...');
+    console.log('🏁 Enhanced sevkiyat tamamlanıyor...');
 
     try {
-      // 1. Final save to session (backup)
-      this.saveResultsToSession();
+      // 1. Enhanced final save to session (with all changes)
+      this.saveEnhancedResultsToSession();
 
-      // 2. Auto-save history'yi temizle
+      // 2. Enhanced auto-save history clean
       this.autoSaveService.clearHistory();
 
-      // 3. Session'ı temizle
+      // 3. Enhanced session clean
       this.localStorageService.clearStorage();
 
-      // 4. Stepper'ı reset et
+      // 4. Enhanced stepper reset
       this.stepperService.resetStepper();
 
-      // 5. Component state'ini temizle
-      this.resetComponentState();
+      // 5. Enhanced component state clean
+      this.resetEnhancedComponentState();
 
-      // 6. Success notification
+      // 6. Enhanced success notification
       this.toastService.success(
-        'Sevkiyat başarıyla tamamlandı! Yeni sipariş işlemeye başlayabilirsiniz.',
+        `Enhanced sevkiyat başarıyla tamamlandı! ${changeSummary.totalChanges} değişiklik kaydedildi. Yeni sipariş işlemeye başlayabilirsiniz.`,
         'Tamamlandı!'
       );
 
-      // 7. YENİ: Parent'a completion signal gönder
+      // 7. Enhanced completion signal
       setTimeout(() => {
         this.shipmentCompleted.emit();
-        console.log('📤 Shipment completion event emitted');
-      }, 1500); // 1.5 saniye sonra navigate et (toast görünsün)
+        console.log('📤 Enhanced shipment completion event emitted');
+      }, 1500);
 
-      console.log('✅ Sevkiyat tamamlandı ve sistem yeni işlem için hazırlandı');
+      // 8. Enhanced logging
+      console.log('✅ Enhanced sevkiyat tamamlandı ve sistem yeni işlem için hazırlandı');
+      console.log('📊 Final performance metrics:', this.performanceMetrics);
+      console.log('📝 Final change summary:', changeSummary);
 
     } catch (error) {
-      console.error('❌ Sevkiyat tamamlama hatası:', error);
-      this.toastService.error('Sevkiyat tamamlanırken hata oluştu');
+      console.error('❌ Enhanced sevkiyat tamamlama hatası:', error);
+      this.toastService.error('Enhanced sevkiyat tamamlanırken hata oluştu');
     }
   }
 
   /**
-   * Component state'ini temizle
+   * Enhanced component state temizle
    */
-  private resetComponentState(): void {
+  private resetEnhancedComponentState(): void {
     this.hasResults = false;
     this.showVisualization = false;
     this.isLoading = false;
+    this.hasThreeJSError = false;
     this.piecesData = [];
+    this.originalPiecesData = []; // NEW
     this.reportFiles = [];
     this.optimizationProgress = 0;
     this.processedPackages = [];
+    this.currentViewType = 'isometric';
 
-    // Reset loading stats
-    this.loadingStats = {
-      totalPackages: 0,
-      packagesLoaded: 0,
-      utilizationRate: 0,
-      cogScore: 0,
-      totalWeight: 0,
-      efficiency: 0,
-    };
+    // NEW: Reset change tracking
+    this.hasUnsavedChanges = false;
+    this.dataChangeHistory = [];
+    this.lastDataChangeTime = new Date();
+    this.totalPackagesProcessed = 0;
 
-    // Reset algorithm stats
+    // Enhanced reset loading stats
+    this.resetEnhancedStats();
+
+    // Enhanced reset algorithm stats
     this.algorithmStats = {
       executionTime: 0,
       generations: 0,
       bestFitness: 0,
+      iterationsCount: 0,
+      convergenceRate: 0
     };
 
-    console.log('🔄 Component state reset edildi');
+    // Enhanced reset performance metrics
+    this.performanceMetrics = {
+      startTime: 0,
+      endTime: 0,
+      memoryUsage: 0,
+      renderTime: 0,
+      dataChangeCount: 0,
+      averageResponseTime: 0
+    };
+
+    console.log('🔄 Enhanced component state reset edildi');
   }
 }

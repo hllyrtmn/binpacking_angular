@@ -61,8 +61,6 @@ export class RepositoryService {
   }
 
   setOrderId(orderId: string) {
-    console.log(orderId)
-    console.log(this.orderId())
     this.orderId.set(orderId);
   }
 

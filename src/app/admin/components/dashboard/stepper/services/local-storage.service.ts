@@ -4,7 +4,67 @@ import { OrderDetail } from '../../../../../models/order-detail.interface';
 import { UiPackage } from '../components/ui-models/ui-package.model';
 import { UiProduct } from '../components/ui-models/ui-product.model';
 
-interface StepperStorageData {
+// Enhanced interfaces for better type safety
+interface EnhancedLoadingStats {
+  totalPackages: number;
+  packagesLoaded: number;
+  utilizationRate: number;
+  cogScore: number;
+  totalWeight: number;
+  efficiency: number;
+  deletedCount?: number;
+  movedCount?: number;
+  rotatedCount?: number;
+  stackingLayers?: number;
+  averagePackageSize?: number;
+  weightDistribution?: {
+    light: number;
+    medium: number;
+    heavy: number;
+  };
+}
+
+interface EnhancedAlgorithmStats {
+  executionTime: number;
+  generations: number;
+  bestFitness: number;
+  iterationsCount?: number;
+  convergenceRate?: number;
+  memoryUsage?: number;
+  cpuUsage?: number;
+  optimizationMethod?: string;
+  constraintsSatisfied?: number;
+  totalConstraints?: number;
+}
+
+interface EnhancedPerformanceMetrics {
+  startTime: number;
+  endTime: number;
+  memoryUsage: number;
+  renderTime: number;
+  frameRate?: number;
+  triangleCount?: number;
+  drawCalls?: number;
+  gpuMemoryUsage?: number;
+}
+
+interface EnhancedStep3Data {
+  optimizationResult: any;
+  reportFiles: any[];
+  loadingStats?: EnhancedLoadingStats;
+  algorithmStats?: EnhancedAlgorithmStats;
+  truckDimension?: number[];
+  hasResults?: boolean;
+  showVisualization?: boolean;
+  currentViewType?: string;
+  hasThreeJSError?: boolean;
+  performanceMetrics?: EnhancedPerformanceMetrics;
+  processedPackages?: any[];
+  timestamp?: string;
+  isCompleted: boolean;
+}
+
+interface EnhancedStepperStorageData {
   // Step 1 verileri
   step1: {
     order: Order | null;
@@ -21,17 +81,24 @@ interface StepperStorageData {
     isCompleted: boolean;
   };
 
-  // Step 3 verileri
-  step3: {
-    optimizationResult: any;
-    reportFiles: any[];
-    isCompleted: boolean;
-  };
+  // Enhanced Step 3 verileri
+  step3: EnhancedStep3Data;
 
-  // Meta bilgiler
+  // Enhanced Meta bilgiler
   currentStep: number;
   lastSaved: string;
-  version: string; // Breaking change'ler için
+  version: string;
+  sessionId?: string;
+  deviceInfo?: {
+    userAgent: string;
+    screenResolution: string;
+    platform: string;
+  };
+  autoSaveHistory?: Array<{
+    timestamp: string;
+    changeType: 'user-action' | 'api-response' | 'emergency';
+    dataSize: number;
+  }>;
 }
 
 @Injectable({
@@ -39,63 +106,102 @@ interface StepperStorageData {
 })
 export class LocalStorageService {
 
-  private readonly STORAGE_KEY = 'stepper_draft_data';
-  private readonly STORAGE_VERSION = '1.0.0';
-  private readonly EXPIRY_DAYS = 30; // 30 gün sonra expire et
+  private readonly STORAGE_KEY = 'enhanced_stepper_draft_data';
+  private readonly STORAGE_VERSION = '2.0.0'; // Enhanced version
+  private readonly EXPIRY_DAYS = 30;
+  private readonly MAX_AUTO_SAVE_HISTORY = 50;
+  private sessionId: string;
 
   constructor() {
+    this.sessionId = this.generateSessionId();
     this.cleanupExpiredData();
+    this.initializeDeviceInfo();
   }
 
   /**
-   * ✅ Data'yı localStorage'a kaydet
+   * ✅ Enhanced Data'yı localStorage'a kaydet
    */
-  saveStepperData(data: Partial<StepperStorageData>): void {
+  saveStepperData(data: Partial<EnhancedStepperStorageData>): void {
     try {
       const existingData = this.getStepperData();
-      const updatedData: StepperStorageData = {
+      const updatedData: EnhancedStepperStorageData = {
         ...existingData,
         ...data,
         lastSaved: new Date().toISOString(),
-        version: this.STORAGE_VERSION
+        version: this.STORAGE_VERSION,
+        sessionId: this.sessionId
       };
 
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(updatedData));
+      // Enhanced storage with compression check
+      const serializedData = JSON.stringify(updatedData);
+      const dataSize = new Blob([serializedData]).size;
+
+      // Check storage quota (warn if > 4MB)
+      if (dataSize > 4 * 1024 * 1024) {
+        console.warn('⚠️ Enhanced storage data size is large:', this.formatFileSize(dataSize));
+        this.cleanupLargeData(updatedData);
+      }
+
+      localStorage.setItem(this.STORAGE_KEY, serializedData);
+
+      // Enhanced logging
+      console.log(`💾 Enhanced data saved (${this.formatFileSize(dataSize)}):`, {
+        step1: updatedData.step1?.isCompleted || false,
+        step2: updatedData.step2?.isCompleted || false,
+        step3: updatedData.step3?.isCompleted || false,
+        currentStep: updatedData.currentStep
+      });
 
     } catch (error) {
-
-      this.handleStorageError();
+      console.error('❌ Enhanced storage save error:', error);
+      this.handleEnhancedStorageError(error);
     }
   }
 
   /**
-   * ✅ Data'yı localStorage'dan oku
+   * ✅ Enhanced Data'yı localStorage'dan oku
    */
-  getStepperData(): StepperStorageData {
+  getStepperData(): EnhancedStepperStorageData {
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY);
 
       if (stored) {
         const parsed = JSON.parse(stored);
 
-        // Version check
+        // Enhanced version check with migration
         if (parsed.version !== this.STORAGE_VERSION) {
+          console.log(`🔄 Migrating data from ${parsed.version} to ${this.STORAGE_VERSION}`);
+          const migratedData = this.migrateData(parsed);
 
-          this.clearStorage();
-          return this.getDefaultData();
+          if (migratedData) {
+            this.saveStepperData(migratedData);
+            return migratedData;
+          } else {
+            console.warn('⚠️ Migration failed, clearing storage');
+            this.clearStorage();
+            return this.getDefaultData();
+          }
         }
 
-        // Expiry check
+        // Enhanced expiry check
         if (this.isDataExpired(parsed.lastSaved)) {
-
+          console.log('🗑️ Enhanced data expired, clearing storage');
           this.clearStorage();
           return this.getDefaultData();
         }
 
+        // Enhanced data validation
+        if (!this.validateStorageData(parsed)) {
+          console.warn('⚠️ Enhanced data validation failed, clearing storage');
+          this.clearStorage();
+          return this.getDefaultData();
+        }
+
+        // console.log('📥 Enhanced data loaded successfully');
         return parsed;
       }
     } catch (error) {
-
+      console.error('❌ Enhanced storage load error:', error);
       this.clearStorage();
     }
 
@@ -103,53 +209,146 @@ export class LocalStorageService {
   }
 
   /**
-   * ✅ Expiry kontrolü
+   * ✅ Enhanced data migration
    */
-  private isDataExpired(lastSaved: string): boolean {
+  private migrateData(oldData: any): EnhancedStepperStorageData | null {
     try {
-      const lastSavedDate = new Date(lastSaved);
-      const now = new Date();
-      const daysDiff = (now.getTime() - lastSavedDate.getTime()) / (1000 * 3600 * 24);
+      // Migration from v1.0.0 to v2.0.0
+      if (oldData.version === '1.0.0') {
+        const migratedData: EnhancedStepperStorageData = {
+          step1: oldData.step1 ?? {
+            order: null,
+            orderDetails: [],
+            hasFile: false,
+            isCompleted: false
+          },
+          step2: oldData.step2 ?? {
+            packages: [],
+            availableProducts: [],
+            isCompleted: false
+          },
+          step3: {
+            ...oldData.step3,
+            loadingStats: oldData.step3?.loadingStats ?? this.createDefaultLoadingStats(),
+            algorithmStats: oldData.step3?.algorithmStats ?? this.createDefaultAlgorithmStats(),
+            performanceMetrics: oldData.step3?.performanceMetrics ?? this.createDefaultPerformanceMetrics(),
+            currentViewType: oldData.step3?.currentViewType ?? 'isometric',
+            hasThreeJSError: oldData.step3?.hasThreeJSError ?? false,
+            hasResults: oldData.step3?.isCompleted ?? false,
+            showVisualization: oldData.step3?.isCompleted ?? false,
+            timestamp: new Date().toISOString(),
+            isCompleted: oldData.step3?.isCompleted ?? false,
+            optimizationResult: oldData.step3?.optimizationResult ?? null,
+            reportFiles: oldData.step3?.reportFiles ?? [],
+            truckDimension: oldData.step3?.truckDimension ?? [13200, 2200, 2900],
+            processedPackages: oldData.step3?.processedPackages ?? []
+          },
+          currentStep: oldData.currentStep ?? 1,
+          lastSaved: new Date().toISOString(),
+          version: this.STORAGE_VERSION,
+          sessionId: this.sessionId,
+          deviceInfo: this.getDeviceInfo(),
+          autoSaveHistory: []
+        };
 
-      return daysDiff > this.EXPIRY_DAYS;
+        console.log('✅ Successfully migrated data from v1.0.0 to v2.0.0');
+        return migratedData;
+      }
+
+      return null;
     } catch (error) {
-      return true; // Hata durumunda expired say
+      console.error('❌ Migration error:', error);
+      return null;
     }
   }
 
   /**
-   * ✅ Expired data cleanup
+   * ✅ Enhanced data validation
    */
-  private cleanupExpiredData(): void {
+  private validateStorageData(data: any): boolean {
     try {
-      const data = this.getStepperData();
-      // getStepperData zaten expiry check yapıyor
-    } catch (error) {
+      // Basic structure validation
+      if (!data || typeof data !== 'object') return false;
+      if (!data.step1 || !data.step2 || !data.step3) return false;
+      if (typeof data.currentStep !== 'number') return false;
+      if (!data.lastSaved) return false;
 
-      this.clearStorage();
+      // Enhanced step3 validation
+      if (data.step3.isCompleted) {
+        if (!data.step3.optimizationResult && !data.step3.reportFiles) {
+          return false;
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('❌ Data validation error:', error);
+      return false;
     }
   }
 
   /**
-   * ✅ Storage error handling
+   * ✅ Enhanced storage error handling
    */
-  private handleStorageError(): void {
-    // Storage quota exceeded veya başka hata durumları
+  private handleEnhancedStorageError(error: any): void {
     try {
-      // Eski verileri temizle
+      // Check if quota exceeded
+      if (error.name === 'QuotaExceededError') {
+        console.warn('⚠️ Storage quota exceeded, cleaning up old data');
+        this.cleanupOldData();
+        return;
+      }
+
+      // Generic storage error cleanup
       const keys = Object.keys(localStorage);
+      let cleanedCount = 0;
+
       keys.forEach(key => {
         if (key.startsWith('stepper_') && key !== this.STORAGE_KEY) {
-          localStorage.removeItem(key);
+          try {
+            localStorage.removeItem(key);
+            cleanedCount++;
+          } catch (cleanupError) {
+            console.warn('Cleanup error for key:', key);
+          }
         }
       });
-    } catch (error) {
 
+      console.log(`🧹 Cleaned up ${cleanedCount} old storage entries`);
+    } catch (cleanupError) {
+      console.error('❌ Storage cleanup error:', cleanupError);
     }
   }
 
   /**
-   * ✅ Step 1 verilerini kaydet
+   * ✅ Enhanced large data cleanup
+   */
+  private cleanupLargeData(data: EnhancedStepperStorageData): void {
+    try {
+      // Remove old auto-save history
+      if (data.autoSaveHistory && data.autoSaveHistory.length > this.MAX_AUTO_SAVE_HISTORY) {
+        data.autoSaveHistory = data.autoSaveHistory.slice(-this.MAX_AUTO_SAVE_HISTORY);
+      }
+
+      // Compress performance metrics (keep only recent data)
+      if (data.step3?.performanceMetrics) {
+        // Keep essential metrics only
+        data.step3.performanceMetrics = {
+          startTime: data.step3.performanceMetrics.startTime,
+          endTime: data.step3.performanceMetrics.endTime,
+          memoryUsage: data.step3.performanceMetrics.memoryUsage,
+          renderTime: data.step3.performanceMetrics.renderTime
+        };
+      }
+
+      console.log('🗜️ Large data cleanup completed');
+    } catch (error) {
+      console.error('❌ Large data cleanup error:', error);
+    }
+  }
+
+  /**
+   * ✅ Enhanced Step 1 verilerini kaydet
    */
   saveStep1Data(order: Order | null, orderDetails: OrderDetail[], hasFile: boolean = false, fileName?: string): void {
     this.saveStepperData({
@@ -165,9 +364,9 @@ export class LocalStorageService {
   }
 
   /**
-   * ✅ Step 2 verilerini kaydet
+   * ✅ Enhanced Step 2 verilerini kaydet
    */
-  saveStep2Data(packages: UiPackage[],availableProducts: UiProduct[]): void {
+  saveStep2Data(packages: UiPackage[], availableProducts: UiProduct[]): void {
     const serializedPackages = packages.map(pkg => ({
       id: pkg.id,
       name: pkg.name,
@@ -175,6 +374,7 @@ export class LocalStorageService {
       products: pkg.products,
       order: pkg.order
     }));
+
     const serializedProducts = availableProducts.map(prd => ({
       id: prd.id,
       name: prd.name,
@@ -183,7 +383,6 @@ export class LocalStorageService {
       dimension: prd.dimension,
       weight_type: prd.weight_type,
       company: prd.company,
-
     }));
 
     this.saveStepperData({
@@ -197,21 +396,70 @@ export class LocalStorageService {
   }
 
   /**
-   * ✅ Step 3 verilerini kaydet
+   * ✅ Enhanced Step 3 verilerini kaydet
    */
-  saveStep3Data(optimizationResult: any, reportFiles: any[] = []): void {
+  saveStep3Data(
+    optimizationResult: any,
+    reportFiles: any[] = [],
+    enhancedData?: Partial<EnhancedStep3Data>
+  ): void {
+    const step3Data: EnhancedStep3Data = {
+      optimizationResult,
+      reportFiles,
+      isCompleted: true,
+      timestamp: new Date().toISOString(),
+      // Enhanced defaults
+      loadingStats: this.createDefaultLoadingStats(),
+      algorithmStats: this.createDefaultAlgorithmStats(),
+      performanceMetrics: this.createDefaultPerformanceMetrics(),
+      currentViewType: 'isometric',
+      hasThreeJSError: false,
+      hasResults: true,
+      showVisualization: true,
+      // Merge with provided enhanced data
+      ...enhancedData
+    };
+
     this.saveStepperData({
-      step3: {
-        optimizationResult,
-        reportFiles,
-        isCompleted: true
-      },
+      step3: step3Data,
       currentStep: 3
     });
+
+    // Enhanced auto-save history tracking
+    this.addToAutoSaveHistory('api-response', JSON.stringify(step3Data).length);
   }
 
   /**
-   * ✅ Step completion status
+   * ✅ Enhanced auto-save history management
+   */
+  addToAutoSaveHistory(changeType: 'user-action' | 'api-response' | 'emergency', dataSize: number): void {
+    try {
+      const data = this.getStepperData();
+
+      if (!data.autoSaveHistory) {
+        data.autoSaveHistory = [];
+      }
+
+      data.autoSaveHistory.push({
+        timestamp: new Date().toISOString(),
+        changeType,
+        dataSize
+      });
+
+      // Keep only recent history
+      if (data.autoSaveHistory.length > this.MAX_AUTO_SAVE_HISTORY) {
+        data.autoSaveHistory = data.autoSaveHistory.slice(-this.MAX_AUTO_SAVE_HISTORY);
+      }
+
+      // Save updated history
+      this.saveStepperData({ autoSaveHistory: data.autoSaveHistory });
+    } catch (error) {
+      console.error('❌ Auto-save history error:', error);
+    }
+  }
+
+  /**
+   * ✅ Enhanced Step completion status
    */
   isStepCompleted(stepNumber: number): boolean {
     const data = this.getStepperData();
@@ -225,7 +473,7 @@ export class LocalStorageService {
   }
 
   /**
-   * ✅ Data restore metodları
+   * ✅ Enhanced Data restore metodları
    */
   restoreStep1Data(): { order: Order | null, orderDetails: OrderDetail[], hasFile: boolean, fileName?: string } | null {
     const data = this.getStepperData();
@@ -241,31 +489,43 @@ export class LocalStorageService {
     return null;
   }
 
-  restoreStep2Data(): {packages:UiPackage[],availableProducts:UiProduct[]} | null {
+  restoreStep2Data(): { packages: UiPackage[], availableProducts: UiProduct[] } | null {
     const data = this.getStepperData();
-    if(data.step2?.isCompleted){
-      return{
+    if (data.step2?.isCompleted) {
+      return {
         packages: data.step2.packages,
         availableProducts: data.step2.availableProducts
-      }
+      };
     }
     return null;
   }
 
-  restoreStep3Data(): { optimizationResult: any, reportFiles: any[] } | null {
+  restoreStep3Data(): EnhancedStep3Data | null {
     const data = this.getStepperData();
 
     if (data.step3?.isCompleted) {
+      // Enhanced restore with fallback values
       return {
         optimizationResult: data.step3.optimizationResult,
-        reportFiles: data.step3.reportFiles
+        reportFiles: data.step3.reportFiles,
+        loadingStats: data.step3.loadingStats || this.createDefaultLoadingStats(),
+        algorithmStats: data.step3.algorithmStats || this.createDefaultAlgorithmStats(),
+        performanceMetrics: data.step3.performanceMetrics || this.createDefaultPerformanceMetrics(),
+        truckDimension: data.step3.truckDimension || [13200, 2200, 2900],
+        hasResults: data.step3.hasResults ?? true,
+        showVisualization: data.step3.showVisualization ?? true,
+        currentViewType: data.step3.currentViewType || 'isometric',
+        hasThreeJSError: data.step3.hasThreeJSError || false,
+        processedPackages: data.step3.processedPackages || [],
+        timestamp: data.step3.timestamp || new Date().toISOString(),
+        isCompleted: data.step3.isCompleted
       };
     }
     return null;
   }
 
   /**
-   * ✅ Utility metodlar
+   * ✅ Enhanced Utility metodlar
    */
   getCurrentStep(): number {
     const data = this.getStepperData();
@@ -284,48 +544,125 @@ export class LocalStorageService {
   clearStorage(): void {
     try {
       localStorage.removeItem(this.STORAGE_KEY);
-
+      console.log('🧹 Enhanced storage cleared');
     } catch (error) {
-
+      console.error('❌ Storage clear error:', error);
     }
   }
 
   /**
-   * ✅ Storage bilgileri
+   * ✅ Enhanced Storage bilgileri
    */
   getStorageInfo(): {
     hasData: boolean;
     lastSaved: Date | null;
     daysOld: number;
     isExpiringSoon: boolean;
+    dataSize: string;
+    version: string;
+    sessionId?: string;
+    autoSaveCount?: number;
+    deviceInfo?: any;
   } {
     try {
       const data = this.getStepperData();
 
       if (!data.lastSaved) {
-        return { hasData: false, lastSaved: null, daysOld: 0, isExpiringSoon: false };
+        return {
+          hasData: false,
+          lastSaved: null,
+          daysOld: 0,
+          isExpiringSoon: false,
+          dataSize: '0 B',
+          version: this.STORAGE_VERSION
+        };
       }
+
+      // Calculate data size
+      const serializedData = JSON.stringify(data);
+      const dataSize = new Blob([serializedData]).size;
 
       const lastSaved = new Date(data.lastSaved);
       const now = new Date();
       const daysOld = (now.getTime() - lastSaved.getTime()) / (1000 * 3600 * 24);
-      const isExpiringSoon = daysOld > (this.EXPIRY_DAYS - 7); // Son 7 gün
+      const isExpiringSoon = daysOld > (this.EXPIRY_DAYS - 7);
 
       return {
         hasData: true,
         lastSaved,
         daysOld: Math.round(daysOld * 10) / 10,
-        isExpiringSoon
+        isExpiringSoon,
+        dataSize: this.formatFileSize(dataSize),
+        version: data.version || 'Unknown',
+        sessionId: data.sessionId,
+        autoSaveCount: data.autoSaveHistory?.length || 0,
+        deviceInfo: data.deviceInfo
       };
     } catch {
-      return { hasData: false, lastSaved: null, daysOld: 0, isExpiringSoon: false };
+      return {
+        hasData: false,
+        lastSaved: null,
+        daysOld: 0,
+        isExpiringSoon: false,
+        dataSize: '0 B',
+        version: this.STORAGE_VERSION
+      };
     }
   }
 
   /**
-   * ✅ Default data structure
+   * ✅ Enhanced default data structures
    */
-  private getDefaultData(): StepperStorageData {
+  private createDefaultLoadingStats(): EnhancedLoadingStats {
+    return {
+      totalPackages: 0,
+      packagesLoaded: 0,
+      utilizationRate: 0,
+      cogScore: 0,
+      totalWeight: 0,
+      efficiency: 0,
+      deletedCount: 0,
+      movedCount: 0,
+      rotatedCount: 0,
+      stackingLayers: 1,
+      averagePackageSize: 0,
+      weightDistribution: {
+        light: 0,
+        medium: 0,
+        heavy: 0
+      }
+    };
+  }
+
+  private createDefaultAlgorithmStats(): EnhancedAlgorithmStats {
+    return {
+      executionTime: 0,
+      generations: 0,
+      bestFitness: 0,
+      iterationsCount: 0,
+      convergenceRate: 0,
+      memoryUsage: 0,
+      cpuUsage: 0,
+      optimizationMethod: 'genetic',
+      constraintsSatisfied: 0,
+      totalConstraints: 0
+    };
+  }
+
+  private createDefaultPerformanceMetrics(): EnhancedPerformanceMetrics {
+    return {
+      startTime: 0,
+      endTime: 0,
+      memoryUsage: 0,
+      renderTime: 0,
+      frameRate: 60,
+      triangleCount: 0,
+      drawCalls: 0,
+      gpuMemoryUsage: 0
+    };
+  }
+
+  private getDefaultData(): EnhancedStepperStorageData {
     return {
       step1: {
         order: null,
@@ -341,11 +678,195 @@ export class LocalStorageService {
       step3: {
         optimizationResult: null,
         reportFiles: [],
+        loadingStats: this.createDefaultLoadingStats(),
+        algorithmStats: this.createDefaultAlgorithmStats(),
+        performanceMetrics: this.createDefaultPerformanceMetrics(),
+        truckDimension: [13200, 2200, 2900],
+        hasResults: false,
+        showVisualization: false,
+        currentViewType: 'isometric',
+        hasThreeJSError: false,
+        processedPackages: [],
+        timestamp: new Date().toISOString(),
         isCompleted: false
       },
       currentStep: 1,
       lastSaved: new Date().toISOString(),
-      version: this.STORAGE_VERSION
+      version: this.STORAGE_VERSION,
+      sessionId: this.sessionId,
+      deviceInfo: this.getDeviceInfo(),
+      autoSaveHistory: []
     };
+  }
+
+  /**
+   * ✅ Enhanced helper methods
+   */
+  private generateSessionId(): string {
+    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private initializeDeviceInfo(): void {
+    try {
+      // Device info is already captured in getDeviceInfo()
+      console.log('📱 Device info initialized');
+    } catch (error) {
+      console.warn('⚠️ Device info initialization failed:', error);
+    }
+  }
+
+  private getDeviceInfo(): any {
+    try {
+      return {
+        userAgent: navigator.userAgent,
+        screenResolution: `${screen.width}x${screen.height}`,
+        platform: navigator.platform,
+        language: navigator.language,
+        cookieEnabled: navigator.cookieEnabled,
+        onLine: navigator.onLine
+      };
+    } catch (error) {
+      return {
+        userAgent: 'Unknown',
+        screenResolution: 'Unknown',
+        platform: 'Unknown'
+      };
+    }
+  }
+
+  private formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 B';
+
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+
+  private isDataExpired(lastSaved: string): boolean {
+    try {
+      const lastSavedDate = new Date(lastSaved);
+      const now = new Date();
+      const daysDiff = (now.getTime() - lastSavedDate.getTime()) / (1000 * 3600 * 24);
+
+      return daysDiff > this.EXPIRY_DAYS;
+    } catch (error) {
+      return true;
+    }
+  }
+
+  private cleanupExpiredData(): void {
+    try {
+      const data = this.getStepperData();
+      // getStepperData already handles expiry check
+    } catch (error) {
+      console.error('❌ Cleanup expired data error:', error);
+      this.clearStorage();
+    }
+  }
+
+  private cleanupOldData(): void {
+    try {
+      // Remove old localStorage entries
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.includes('stepper') && key !== this.STORAGE_KEY) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      // Clean up current data
+      const data = this.getStepperData();
+      if (data.autoSaveHistory && data.autoSaveHistory.length > 10) {
+        data.autoSaveHistory = data.autoSaveHistory.slice(-10);
+        this.saveStepperData({ autoSaveHistory: data.autoSaveHistory });
+      }
+
+      console.log('🧹 Old data cleanup completed');
+    } catch (error) {
+      console.error('❌ Old data cleanup error:', error);
+    }
+  }
+
+  /**
+   * ✅ Enhanced debug and maintenance methods
+   */
+  getAutoSaveHistory(): Array<any> {
+    const data = this.getStepperData();
+    return data.autoSaveHistory || [];
+  }
+
+  clearAutoSaveHistory(): void {
+    this.saveStepperData({ autoSaveHistory: [] });
+  }
+
+  exportStorageData(): string {
+    try {
+      const data = this.getStepperData();
+      return JSON.stringify(data, null, 2);
+    } catch (error) {
+      console.error('❌ Export error:', error);
+      return '';
+    }
+  }
+
+  importStorageData(jsonData: string): boolean {
+    try {
+      const importedData = JSON.parse(jsonData);
+
+      if (this.validateStorageData(importedData)) {
+        this.saveStepperData(importedData);
+        console.log('✅ Data imported successfully');
+        return true;
+      } else {
+        console.error('❌ Invalid data format for import');
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Import error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * ✅ Enhanced storage diagnostics
+   */
+  getDiagnostics(): {
+    storageAvailable: boolean;
+    totalStorageUsed: number;
+    availableSpace: number;
+    isQuotaExceeded: boolean;
+    lastError?: string;
+  } {
+    try {
+      // Test storage availability
+      const testKey = 'storage_test';
+      localStorage.setItem(testKey, 'test');
+      localStorage.removeItem(testKey);
+
+      // Calculate storage usage
+      let totalUsed = 0;
+      for (let key in localStorage) {
+        if (localStorage.hasOwnProperty(key)) {
+          totalUsed += localStorage[key].length;
+        }
+      }
+
+      return {
+        storageAvailable: true,
+        totalStorageUsed: totalUsed,
+        availableSpace: 5242880 - totalUsed, // 5MB typical limit
+        isQuotaExceeded: false
+      };
+    } catch (error) {
+      return {
+        storageAvailable: false,
+        totalStorageUsed: 0,
+        availableSpace: 0,
+        isQuotaExceeded: typeof error === 'object' && error !== null && 'name' in error && (error as any).name === 'QuotaExceededError',
+        lastError: typeof error === 'object' && error !== null && 'message' in error ? (error as any).message : String(error)
+      };
+    }
   }
 }
