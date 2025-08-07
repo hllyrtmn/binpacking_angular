@@ -1,4 +1,4 @@
-// threejs-truck-visualization.component.scss - ENHANCED & THEME-ALIGNED VERSION
+// threejs-truck-visualization.component.scss - FIXED & ENHANCED VERSION
 
 // ========================================
 // THEME COLORS (Aligned with Result Step)
@@ -21,12 +21,18 @@ $white: #ffffff;
 .threejs-visualization-container {
   position: relative;
   width: 100%;
-  height: 1000px;
+  height: 800px;
   background: $light-bg;
   border-radius: 12px;
   overflow: hidden;
   border: 2px solid rgba($primary-color, 0.1);
   box-shadow: 0 8px 32px rgba($primary-color, 0.15);
+
+  &.loading {
+    .threejs-canvas-container {
+      pointer-events: none;
+    }
+  }
 }
 
 .threejs-canvas-container {
@@ -44,14 +50,15 @@ $white: #ffffff;
     -moz-user-select: none;
     -ms-user-select: none;
     border-radius: inherit;
+    transition: cursor 0.2s ease;
   }
 
   &.drag-mode canvas {
     cursor: grab;
-  }
 
-  &.drag-mode canvas:active {
-    cursor: grabbing;
+    &:active {
+      cursor: grabbing;
+    }
   }
 }
 
@@ -70,6 +77,12 @@ $white: #ffffff;
   border: 2px solid rgba($primary-color, 0.1);
   z-index: 5;
   max-width: 280px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba($primary-color, 0.25);
+  }
 
   h4 {
     margin: 0 0 1rem;
@@ -85,6 +98,10 @@ $white: #ffffff;
 
   .control-section {
     margin-bottom: 1.25rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
 
     h5 {
       margin: 0 0 0.75rem;
@@ -106,6 +123,7 @@ $white: #ffffff;
         border: 2px solid rgba($primary-color, 0.2);
         border-radius: 8px;
         background: $white;
+        color: $dark-primary;
         cursor: pointer;
         font-size: 0.75rem;
         font-weight: 600;
@@ -125,6 +143,21 @@ $white: #ffffff;
           border-color: $primary-color;
           box-shadow: 0 4px 12px rgba($primary-color, 0.4);
           transform: translateY(-2px);
+
+          &:hover {
+            background: linear-gradient(135deg, lighten($primary-color, 5%) 0%, lighten($dark-primary, 5%) 100%);
+          }
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          transform: none;
+
+          &:hover {
+            transform: none;
+            box-shadow: 0 2px 8px rgba($primary-color, 0.1);
+          }
         }
       }
     }
@@ -142,6 +175,7 @@ $white: #ffffff;
       border: 2px solid rgba($secondary-color, 0.3);
       border-radius: 6px;
       background: $white;
+      color: $dark-primary;
       cursor: pointer;
       font-size: 0.7rem;
       font-weight: 600;
@@ -152,6 +186,7 @@ $white: #ffffff;
         border-color: $secondary-color;
         color: $secondary-color;
         transform: scale(1.02);
+        box-shadow: 0 2px 8px rgba($secondary-color, 0.2);
       }
 
       &.active {
@@ -159,6 +194,10 @@ $white: #ffffff;
         color: $white;
         border-color: $secondary-color;
         box-shadow: 0 2px 8px rgba($secondary-color, 0.3);
+
+        &:hover {
+          background: linear-gradient(135deg, lighten($secondary-color, 5%) 0%, lighten($light-secondary, 5%) 100%);
+        }
       }
     }
   }
@@ -209,6 +248,12 @@ $white: #ffffff;
   z-index: 5;
   min-width: 260px;
   max-width: 320px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba($primary-color, 0.25);
+  }
 
   .info-content {
     position: relative;
@@ -268,33 +313,49 @@ $white: #ffffff;
         transition: all 0.3s ease;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          transform: none;
+
+          &:hover {
+            transform: none;
+          }
+        }
+
         &.rotate-btn {
           color: $primary-color;
           border-color: $primary-color;
-          &:hover {
+
+          &:hover:not(:disabled) {
             background: $primary-color;
             color: $white;
             transform: rotate(90deg) scale(1.05);
+            box-shadow: 0 4px 12px rgba($primary-color, 0.3);
           }
         }
 
         &.delete-btn {
           color: $error-red;
           border-color: $error-red;
-          &:hover {
+
+          &:hover:not(:disabled) {
             background: $error-red;
             color: $white;
             transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba($error-red, 0.3);
           }
         }
 
         &.move-btn {
           color: $accent-purple;
           border-color: $accent-purple;
-          &:hover {
+
+          &:hover:not(:disabled) {
             background: $accent-purple;
             color: $white;
             transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba($accent-purple, 0.3);
           }
         }
       }
@@ -341,6 +402,12 @@ $white: #ffffff;
   min-width: 280px;
   max-width: 350px;
   max-height: 400px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba($error-red, 0.25);
+  }
 
   &.below-selection {
     top: auto;
@@ -389,6 +456,10 @@ $white: #ffffff;
       &::-webkit-scrollbar-thumb {
         background: linear-gradient(135deg, $error-red 0%, darken($error-red, 10%) 100%);
         border-radius: 3px;
+
+        &:hover {
+          background: linear-gradient(135deg, darken($error-red, 10%) 0%, darken($error-red, 20%) 100%);
+        }
       }
 
       .deleted-item {
@@ -402,10 +473,15 @@ $white: #ffffff;
         border: 2px solid rgba($error-red, 0.15);
         transition: all 0.3s ease;
 
+        &:last-child {
+          margin-bottom: 0;
+        }
+
         &:hover {
           background: linear-gradient(135deg, rgba($error-red, 0.1) 0%, rgba($error-red, 0.15) 100%);
           transform: translateX(-4px);
           box-shadow: 4px 4px 16px rgba($error-red, 0.2);
+          border-color: rgba($error-red, 0.3);
         }
 
         .deleted-info {
@@ -522,6 +598,12 @@ $white: #ffffff;
   box-shadow: 0 8px 24px rgba($primary-color, 0.2);
   border: 2px solid rgba($primary-color, 0.1);
   z-index: 5;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateX(-50%) translateY(-2px);
+    box-shadow: 0 12px 32px rgba($primary-color, 0.25);
+  }
 
   .zoom-btn {
     width: 42px;
@@ -608,6 +690,12 @@ $white: #ffffff;
   z-index: 5;
   border: 2px solid rgba($primary-color, 0.3);
   backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba($primary-color, 0.3);
+  }
 
   .stats-content {
     display: grid;
@@ -791,7 +879,7 @@ $white: #ffffff;
   .threejs-visualization-container {
     height: 600px;
 
-    // Mobile: Stack all panels
+    // Mobile: Stack panels vertically
     .threejs-controls-overlay {
       position: static;
       max-width: none;
@@ -959,7 +1047,10 @@ $white: #ffffff;
   .threejs-visualization-container {
     background: #1f2937;
 
-    .threejs-controls-overlay {
+    .threejs-controls-overlay,
+    .package-info-panel,
+    .deleted-packages-panel,
+    .zoom-controls {
       background: rgba(31, 41, 55, 0.95);
       color: #f3f4f6;
       border-color: rgba($primary-color, 0.4);
@@ -968,7 +1059,7 @@ $white: #ffffff;
         color: lighten($primary-color, 20%);
       }
 
-      .control-btn {
+      .control-btn, .view-btn, .action-btn, .zoom-btn {
         background: #374151;
         border-color: #4b5563;
         color: #f3f4f6;
@@ -981,49 +1072,6 @@ $white: #ffffff;
         &.active {
           background: lighten($primary-color, 10%);
           border-color: lighten($primary-color, 10%);
-        }
-      }
-    }
-
-    .package-info-panel {
-      background: rgba(31, 41, 55, 0.95);
-      color: #f3f4f6;
-
-      h4 {
-        color: lighten($primary-color, 20%);
-        border-color: rgba(lighten($primary-color, 20%), 0.3);
-      }
-
-      .detail-row {
-        .label { color: #d1d5db; }
-        .value {
-          color: #f3f4f6;
-          background: rgba(lighten($primary-color, 20%), 0.2);
-        }
-      }
-    }
-
-    .deleted-packages-panel {
-      background: rgba(31, 41, 55, 0.95);
-      color: #f3f4f6;
-
-      .deleted-item {
-        background: rgba(55, 65, 81, 0.8);
-        border-color: #4b5563;
-      }
-    }
-
-    .zoom-controls {
-      background: rgba(31, 41, 55, 0.95);
-      border-color: rgba(lighten($primary-color, 20%), 0.4);
-
-      .zoom-btn {
-        border-color: lighten($primary-color, 20%);
-        color: lighten($primary-color, 20%);
-
-        &:hover {
-          background: lighten($primary-color, 20%);
-          color: #f3f4f6;
         }
       }
     }
