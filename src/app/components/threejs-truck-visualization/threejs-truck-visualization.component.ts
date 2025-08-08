@@ -798,14 +798,6 @@ export class ThreeJSTruckVisualizationComponent implements OnInit, OnChanges, On
     });
   }
 
-  toggleFullscreen(): void {
-    if (!document.fullscreenElement) {
-      this.threeContainer.nativeElement.requestFullscreen();
-    } else {
-      document.exitFullscreen();
-    }
-  }
-
   rotateSelectedPackage(): void {
     if (!this.selectedPackage?.mesh) return;
 

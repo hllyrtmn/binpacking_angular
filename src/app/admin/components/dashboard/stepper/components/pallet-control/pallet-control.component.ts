@@ -345,7 +345,6 @@ export class PalletControlComponent implements OnInit {
             pkg.pallet.id = pkg.pallet.id + '/' + index;
           }
           if (pkg) {
-            pkg.name = 'Palet' + index;
             pkg.products = this.ensureUiProducts(pkg.products || []);
           }
         });
@@ -1269,6 +1268,7 @@ export class PalletControlComponent implements OnInit {
         pallet: null,
         products: [],
         order: this.order,
+        name: (this.packages.length + 1).toString()
       });
 
       this.packages.push(newPackage);

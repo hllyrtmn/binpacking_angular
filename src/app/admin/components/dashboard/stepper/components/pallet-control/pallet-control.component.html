@@ -158,11 +158,11 @@
       </div>
 
       <div class="packages-grid">
-        <div class="package-card" *ngFor="let package of packages; let i = index">
+        <div class="package-card" *ngFor="let package of packages">
           <div class="package-header">
             <div class="package-title">
               <mat-icon>inbox</mat-icon>
-              <span>Palet {{ i + 1 }}</span>
+              <span>Palet {{package.name}}</span>
             </div>
             <div class="package-actions">
               <button mat-icon-button class="small-action" matTooltip="Paketi çıkar" (click)="removePackage(package)">

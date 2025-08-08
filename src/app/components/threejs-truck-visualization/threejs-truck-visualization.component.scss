@@ -296,7 +296,7 @@ $white: #ffffff;
 
     .package-actions {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 0.75rem;
       margin-top: 1rem;
       padding-top: 1rem;
@@ -344,18 +344,6 @@ $white: #ffffff;
             color: $white;
             transform: scale(1.05);
             box-shadow: 0 4px 12px rgba($error-red, 0.3);
-          }
-        }
-
-        &.move-btn {
-          color: $accent-purple;
-          border-color: $accent-purple;
-
-          &:hover:not(:disabled) {
-            background: $accent-purple;
-            color: $white;
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba($accent-purple, 0.3);
           }
         }
       }
@@ -677,73 +665,6 @@ $white: #ffffff;
 }
 
 // ========================================
-// ENHANCED STATS OVERLAY
-// ========================================
-.stats-overlay {
-  position: absolute;
-  bottom: 1rem;
-  left: 1rem;
-  background: rgba($dark-primary, 0.9);
-  color: $white;
-  border-radius: 12px;
-  padding: 1rem;
-  z-index: 5;
-  border: 2px solid rgba($primary-color, 0.3);
-  backdrop-filter: blur(12px);
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba($primary-color, 0.3);
-  }
-
-  .stats-content {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-
-    .stat-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      font-size: 0.75rem;
-
-      .stat-label {
-        opacity: 0.8;
-        margin-bottom: 0.5rem;
-        font-weight: 600;
-        text-align: center;
-      }
-
-      .stat-value {
-        font-weight: 700;
-        font-family: 'Courier New', monospace;
-        padding: 0.3rem 0.6rem;
-        border-radius: 6px;
-        background: rgba($white, 0.15);
-        font-size: 0.8rem;
-
-        &.good {
-          color: $success-green;
-          background: rgba($success-green, 0.2);
-          box-shadow: 0 2px 8px rgba($success-green, 0.2);
-        }
-        &.medium {
-          color: $warning-amber;
-          background: rgba($warning-amber, 0.2);
-          box-shadow: 0 2px 8px rgba($warning-amber, 0.2);
-        }
-        &.poor {
-          color: $error-red;
-          background: rgba($error-red, 0.2);
-          box-shadow: 0 2px 8px rgba($error-red, 0.2);
-        }
-      }
-    }
-  }
-}
-
-// ========================================
 // LOADING OVERLAY
 // ========================================
 .loading-overlay {
@@ -915,26 +836,6 @@ $white: #ffffff;
       border-radius: 20px;
       padding: 0.5rem 1rem;
     }
-
-    .stats-overlay {
-      position: static;
-      background: rgba($white, 0.9);
-      color: $dark-primary;
-      margin-top: 1rem;
-      border: 2px solid rgba($primary-color, 0.2);
-
-      .stats-content {
-        grid-template-columns: repeat(4, 1fr);
-
-        .stat-item {
-          .stat-value {
-            background: rgba($primary-color, 0.1);
-            color: $primary-color;
-          }
-        }
-      }
-    }
-
     .collision-warning {
       position: fixed;
       top: 20%;

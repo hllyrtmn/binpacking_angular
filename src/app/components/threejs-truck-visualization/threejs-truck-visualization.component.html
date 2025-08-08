@@ -46,10 +46,7 @@
             🔳 Wireframe
           </button>
           <button class="control-btn" (click)="resetView()">
-            🎯 Reset View
-          </button>
-          <button class="control-btn" (click)="toggleFullscreen()">
-            ⛶ Fullscreen
+            🎯 Kamera Açısını Sıfırla
           </button>
         </div>
       </div>
@@ -67,6 +64,8 @@
         <div class="instruction-text">
           🎯 <strong>Sürükleme Modu Aktif</strong><br>
           <small>⚡ Paketleri tıklayıp sürükleyerek hareket ettirin</small><br>
+          <small>⚡ Mouse Sağ tık + CTRL, kamera açısını hareket ettir.</small><br>
+          <small>⚡ Mouse Sağ tık kamera açısını döndür.</small><br>
           <small>🔄 Seçili paketi döndürmek için "Döndür" butonunu kullanın</small><br>
           <small>🗑️ Paketleri silmek için seçip "Sil" butonunu kullanın</small>
         </div>
@@ -105,12 +104,6 @@
         <button class="action-btn delete-btn" (click)="deleteSelectedPackage()" title="Paketi Sil">
           🗑️ Sil
         </button>
-        <button class="action-btn move-btn"
-                [disabled]="!dragModeEnabled"
-                (click)="dragModeEnabled ? null : toggleDragMode()"
-                title="Sürükleme Modunu Aktifleştir">
-          🎯 Taşı
-        </button>
       </div>
 
       <button class="close-btn" (click)="clearSelection()" title="Kapat">✖</button>
@@ -123,7 +116,7 @@
        [class.below-selection]="selectedPackage">
     <div class="deleted-content">
       <h4>
-        🗑️ Silinen Paketler
+        🗑️ Yerleşmeyen Paketler
         <span class="delete-count">{{ deletedPackages.length }}</span>
       </h4>
       <div class="deleted-list">
@@ -147,28 +140,6 @@
         <button class="bulk-btn clear-all-btn" (click)="clearAllDeleted()">
           🗑️ Hepsini Temizle
         </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Enhanced Stats Overlay -->
-  <div class="stats-overlay" *ngIf="showStats && !isLoading && piecesData && piecesData.length > 0">
-    <div class="stats-content">
-      <div class="stat-item">
-        <span class="stat-label">📦 Paketler</span>
-        <span class="stat-value">{{ processedPackages.length }}/{{ originalPackageCount }}</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">⚡ FPS</span>
-        <span class="stat-value" [class]="getFPSClass()">{{ currentFPS }}</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">🔍 Zoom</span>
-        <span class="stat-value">{{ zoomLevel }}%</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-label">🗑️ Silinen</span>
-        <span class="stat-value">{{ deletedPackages.length }}</span>
       </div>
     </div>
   </div>
