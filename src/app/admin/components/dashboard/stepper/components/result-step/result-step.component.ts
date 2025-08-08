@@ -19,10 +19,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 import { ToastService } from '../../../../../../services/toast.service';
 import { switchMap, takeUntil, catchError, finalize } from 'rxjs/operators';
-import { Subject, EMPTY } from 'rxjs';
+import { Subject, EMPTY, of } from 'rxjs';
 import { AutoSaveService } from '../../services/auto-save.service';
 import { LocalStorageService } from '../../services/local-storage.service';
 import { ThreeJSTruckVisualizationComponent } from '../../../../../../components/threejs-truck-visualization/threejs-truck-visualization.component';
+import { OrderResultService } from '../../../../services/order-result.service';
 
 // Enhanced Package interface for type safety
 interface PackageData {
@@ -98,7 +99,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   piecesData: any[] = [];
   originalPiecesData: any[] = []; // NEW: Track original data
   truckDimension: number[] = [13200, 2200, 2900];
-
+  orderResultId: string = '';
   // Enhanced loading statistics
   loadingStats: LoadingStats = {
     totalPackages: 0,
@@ -148,6 +149,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   sanitizer = inject(DomSanitizer);
   toastService = inject(ToastService);
   cdr = inject(ChangeDetectorRef);
+  orderResultService = inject(OrderResultService)
 
   // Enhanced Auto-save management
   private lastResultState: string = '';
@@ -165,7 +167,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   };
 
   ngOnInit(): void {
-    console.log('🎬 Enhanced ResultStepComponent initialized');
 
     // Enhanced prerequisites check
     if (!this.checkEnhancedPrerequisites()) {
@@ -267,7 +268,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
           };
 
           // this.autoSaveService.triggerStep3AutoSave(enhancedSaveData, changeType);
-          console.log(`💾 Enhanced auto-save triggered (${changeType})`);
         }
       },
       delay
@@ -303,7 +303,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       const restoredData = this.localStorageService.restoreStep3Data();
 
       if (restoredData) {
-        console.log("✅ Enhanced Step 3 LocalStorage'dan veriler bulundu");
 
         this.hasResults = true;
         this.showVisualization = true;
@@ -355,23 +354,15 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         //   this.totalPackagesProcessed = restoredData.totalPackagesProcessed;
         // }
 
-        this.toastService.info('Enhanced optimizasyon sonuçları restore edildi');
-        console.log(`✅ Restored ${this.piecesData?.length || 0} packages and ${this.reportFiles?.length || 0} reports`);
-
-        if (this.hasUnsavedChanges) {
-          console.log(`📝 Restored ${this.dataChangeHistory.length} unsaved changes`);
-        }
+        this.toastService.info('Optimizasyon sonuçları restore edildi');
       }
     } catch (error) {
-      console.error('❌ Enhanced result step session restore hatası:', error);
       this.toastService.warning('Önceki sonuçlar yüklenirken hata oluştu');
     }
   }
 
   private saveEnhancedResultsToSession(): void {
     try {
-      console.log("💾 Enhanced Step 3 sonuçları LocalStorage'a kaydediliyor...");
-
       // Enhanced save with additional metadata
       const enhancedSaveData = {
         optimizationResult: this.piecesData,
@@ -393,7 +384,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       };
 
       this.localStorageService.saveStep3Data(this.piecesData, this.reportFiles, enhancedSaveData);
-      console.log("✅ Enhanced Step 3 sonuçları LocalStorage'a kaydedildi");
 
       // Mark changes as saved
       this.hasUnsavedChanges = false;
@@ -401,13 +391,11 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       // Enhanced stepper store update
       this.stepperService.setStepStatus(3, STATUSES.completed, true);
     } catch (error) {
-      console.error("❌ Enhanced Step 3 sonuçları LocalStorage'a kaydedilemedi:", error);
       this.toastService.error('Sonuçlar kaydedilemedi');
     }
   }
 
   ngOnDestroy(): void {
-    console.log('🗑️ Enhanced ResultStepComponent destroying...');
 
     this.isDestroyed = true;
     this.processingLock = false;
@@ -438,7 +426,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       try {
         this.popupWindow.close();
       } catch (error) {
-        console.warn('Enhanced popup close error:', error);
       }
       this.popupWindow = null;
     }
@@ -482,8 +469,8 @@ export class ResultStepComponent implements OnInit, OnDestroy {
           if (this.isDestroyed) {
             throw new Error('Component destroyed during processing');
           }
-
-          console.log('📦 Enhanced paketleme verisi alındı:', response);
+          this.orderResultId = response.data.order_result_id
+          console.log('📦 Enhanced paketleme verisi alındı:', response,this.orderResultId);
 
           // Enhanced processing
           this.safeProcessEnhancedOptimizationResult(response);
@@ -958,6 +945,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
           }
         } else if (response.data.data) {
           packingData = response.data.data;
+
         } else {
           packingData = response.data;
         }
@@ -2101,64 +2089,54 @@ export class ResultStepComponent implements OnInit, OnDestroy {
 
   saveResults(): void {
     if (!this.hasResults || this.isDestroyed) {
-      this.toastService.warning(
-        'Kaydetmek için önce optimizasyonu çalıştırın.'
-      );
+      this.toastService.warning('Kaydetmek için önce optimizasyonu çalıştırın.');
       return;
     }
 
     try {
       const changeSummary = this.getDataChangeSummary();
 
-      const enhancedResults = {
-        timestamp: new Date().toISOString(),
-        version: '3.0',
-        truckDimensions: this.truckDimension,
-        packagesData: this.piecesData,
-        originalPackagesData: this.originalPiecesData, // NEW
-        processedPackages: this.processedPackages,
-        statistics: this.loadingStats,
-        algorithmStats: this.algorithmStats,
-        reportFiles: this.reportFiles,
-        performanceMetrics: this.performanceMetrics,
-        currentViewType: this.currentViewType,
-        dataChangeSummary: changeSummary, // NEW
-        metadata: {
-          totalProcessingTime: this.performanceMetrics.endTime - this.performanceMetrics.startTime,
-          packageCount: this.processedPackages.length,
-          originalPackageCount: this.originalPiecesData.length,
-          reportCount: this.reportFiles.length,
-          utilizationRate: this.loadingStats.utilizationRate,
-          cogScore: this.loadingStats.cogScore,
-          totalDataChanges: changeSummary.totalChanges,
-          hasUnsavedChanges: changeSummary.hasUnsavedChanges
-        }
-      };
+      if(changeSummary.hasUnsavedChanges){
+        this.repositoryService.partialUpdateOrderResult(this.piecesData, this.orderResultId)
+        .pipe(
+          switchMap(response => {
+            // İlk işlem tamamlandıktan sonra ikinci işlem başlar
+            return this.repositoryService.createTruckPlacementReport();
+          }),
+          catchError(error => {
+            this.toastService.error('İşlem sırasında hata oluştu:', error);
+            return of(null);
+          })
+        )
+        .subscribe({
+          next: (response) => {
+            // 'Tır_Yerleşimi' ile başlayan dosyayı reportFiles'tan kaldır
+            this.reportFiles = this.reportFiles.filter(file =>
+              !file.name.startsWith('Tır_Yerleşimi')
+            );
 
-      const dataStr = JSON.stringify(enhancedResults, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
+            // Yeni dosyayı reportFiles'a ekle
+            if (response && response.file) {
+              this.reportFiles.push(response.file);
+            }
 
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `enhanced-truck-loading-results-${
-        new Date().toISOString().split('T')[0]
-      }.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      // Mark as saved after export
-      this.hasUnsavedChanges = false;
-
-      this.toastService.success('Enhanced sonuçlar başarıyla kaydedildi.');
-
-      // Enhanced auto-save trigger
-      this.triggerEnhancedAutoSave('user-action');
+            // Diğer işlemleriniz
+            this.reportFiles.forEach(file => file.name);
+          },
+          error: (error) => {
+            // Subscribe seviyesinde hata yakalama (catchError'dan kaçan hatalar için)
+            this.toastService.error('Hata:', error);
+          },
+          complete: () => {
+            // İşlem tamamlandığında çalışacak kod (opsiyonel)
+            this.hasUnsavedChanges = false;
+            this.toastService.success('Sonuçlar başarıyla kaydedildi.');
+            this.triggerEnhancedAutoSave('user-action');
+          }
+        });
+      }
     } catch (error) {
-      console.error('❌ Enhanced sonuçları kaydetme hatası:', error);
-      this.toastService.error('Enhanced sonuçlar kaydedilemedi.');
+      this.toastService.error('Sonuçlar kaydedilemedi.');
     }
   }
 
@@ -2187,7 +2165,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
 
     const changeSummary = this.getDataChangeSummary();
     const confirmMessage =
-      'Enhanced Sevkiyatı tamamlamak istediğinizden emin misiniz?\n\n' +
+      'Sevkiyatı tamamlamak istediğinizden emin misiniz?\n\n' +
       '✅ Tüm veriler gelişmiş formatta kaydedilecek\n' +
       `📦 ${this.processedPackages.length} paket işlendi\n` +
       `🔄 ${changeSummary.totalChanges} değişiklik yapıldı\n` +
@@ -2202,7 +2180,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       return;
     }
 
-    console.log('🏁 Enhanced sevkiyat tamamlanıyor...');
+    console.log('🏁Sevkiyat tamamlanıyor...');
 
     try {
       // 1. Enhanced final save to session (with all changes)
@@ -2222,24 +2200,19 @@ export class ResultStepComponent implements OnInit, OnDestroy {
 
       // 6. Enhanced success notification
       this.toastService.success(
-        `Enhanced sevkiyat başarıyla tamamlandı! ${changeSummary.totalChanges} değişiklik kaydedildi. Yeni sipariş işlemeye başlayabilirsiniz.`,
+        `Sevkiyat başarıyla tamamlandı! ${changeSummary.totalChanges} değişiklik kaydedildi. Yeni sipariş işlemeye başlayabilirsiniz.`,
         'Tamamlandı!'
       );
 
       // 7. Enhanced completion signal
       setTimeout(() => {
         this.shipmentCompleted.emit();
-        console.log('📤 Enhanced shipment completion event emitted');
       }, 1500);
 
       // 8. Enhanced logging
-      console.log('✅ Enhanced sevkiyat tamamlandı ve sistem yeni işlem için hazırlandı');
-      console.log('📊 Final performance metrics:', this.performanceMetrics);
-      console.log('📝 Final change summary:', changeSummary);
 
     } catch (error) {
-      console.error('❌ Enhanced sevkiyat tamamlama hatası:', error);
-      this.toastService.error('Enhanced sevkiyat tamamlanırken hata oluştu');
+      this.toastService.error('Sevkiyat tamamlanırken hata oluştu');
     }
   }
 
@@ -2285,7 +2258,5 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       dataChangeCount: 0,
       averageResponseTime: 0
     };
-
-    console.log('🔄 Enhanced component state reset edildi');
   }
 }

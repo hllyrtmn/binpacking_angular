@@ -65,7 +65,7 @@ export class ThreeJSTruckVisualizationComponent implements OnInit, OnChanges, On
   showCollisionWarning = false;
 
   // Zoom System
-  minZoom = 25;
+  minZoom = 200;
   maxZoom = 300;
   zoomLevel = 100;
 

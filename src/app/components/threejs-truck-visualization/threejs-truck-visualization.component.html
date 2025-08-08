@@ -175,7 +175,7 @@
 
   <!-- Enhanced Zoom Controls -->
   <div class="zoom-controls" *ngIf="!isLoading && piecesData && piecesData.length > 0">
-    <button class="zoom-btn" (click)="zoomIn()" title="Yakınlaştır">🔍+</button>
+    <button class="zoom-btn" (click)="zoomOut()" title="Uzaklaştır">🔍-</button>
     <div class="zoom-slider-container">
       <input type="range"
              class="zoom-slider"
@@ -185,7 +185,7 @@
              (input)="setZoomLevelFromInput($event)"
              title="Zoom: {{ zoomLevel }}%">
     </div>
-    <button class="zoom-btn" (click)="zoomOut()" title="Uzaklaştır">🔍-</button>
+    <button class="zoom-btn" (click)="zoomIn()" title="Yakınlaştır">🔍+</button>
   </div>
 
   <!-- Enhanced Collision Warning -->

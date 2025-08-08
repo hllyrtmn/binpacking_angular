@@ -162,4 +162,18 @@ export class RepositoryService {
       `${this.api.getApiUrl()}/logistics/calculate-packing/${order_id}/`
     );
   }
+
+  createTruckPlacementReport(order_id:string = this.orderId()){
+    return this.http.get<any>(
+      `${this.api.getApiUrl()}/logistics/create-truck-placement-report/${order_id}/`
+    )
+  }
+
+  partialUpdateOrderResult(piecesData:any,order_result_id: string = this.orderId()){
+    const resultString = JSON.stringify(piecesData);
+    const updateData = {
+        result: resultString
+    };
+    return this.http.patch<any>(`${this.api.getApiUrl()}/orders/order-results/${order_result_id}/`,updateData)
+  }
 }

@@ -6,7 +6,7 @@
       <mat-icon>local_shipping</mat-icon>
     </div>
     <div class="header-title">
-      <h1>🚛 Enhanced Tır Yükleme Sonuçları</h1>
+      <h1>🚛Tır Yükleme Sonuçları</h1>
       <p class="header-subtitle">
         Gelişmiş 3D Görselleştirme ve Gerçek Zamanlı Veri Takibi - v3.0
       </p>
@@ -128,7 +128,7 @@
   <!-- Enhanced Progress Container -->
   <div class="progress-container" *ngIf="isLoading">
     <div class="progress-header">
-      <span class="progress-label">Enhanced Optimizasyon İşlemi</span>
+      <span class="progress-label">Tır Yerleştirme İşlemini Başlat</span>
       <span class="progress-percentage">{{ optimizationProgress }}%</span>
     </div>
     <div class="progress-bar">
@@ -147,7 +147,7 @@
               [disabled]="isLoading || processingLock"
               (click)="calculateBinpacking()">
         <mat-icon>play_arrow</mat-icon>
-        {{ isLoading ? 'İşlem Devam Ediyor...' : 'Enhanced Optimizasyonu Çalıştır' }}
+        {{ isLoading ? 'İşlem Devam Ediyor...' : 'Optimizasyonu Çalıştır' }}
       </button>
 
       <button mat-raised-button
@@ -213,14 +213,14 @@
     <!-- Loading Overlay -->
     <div class="loading-overlay" *ngIf="isLoading">
       <app-loading></app-loading>
-      <div class="loading-text">Enhanced görselleştirme hazırlanıyor...</div>
+      <div class="loading-text">Görselleştirme hazırlanıyor...</div>
     </div>
 
     <!-- Visualization Overlay (No Results) -->
     <div class="visualization-overlay" *ngIf="!hasResults && !isLoading">
       <div class="overlay-content">
         <mat-icon class="overlay-icon">local_shipping</mat-icon>
-        <h3>Enhanced 3D Görselleştirme Hazır</h3>
+        <h3>Görselleştirme Hazır</h3>
         <p>
           Gelişmiş tır yükleme optimizasyonunu çalıştırdıktan sonra burada
           etkileşimli 3D görselleştirmeyi görebilirsiniz.
@@ -443,7 +443,7 @@
   <div class="legend-container" *ngIf="hasResults && showVisualization">
     <div class="legend-title">
       <mat-icon>palette</mat-icon>
-      <span>Enhanced Görselleştirme Rehberi</span>
+      <span>Görselleştirme Rehberi</span>
     </div>
     <div class="legend-items">
       <div class="legend-item">
@@ -464,7 +464,7 @@
     </div>
 
     <div class="interaction-help">
-      <h4>🎮 Enhanced Etkileşim Kontrolları</h4>
+      <h4>🎮 Etkileşim Kontrolleri</h4>
       <div class="help-items">
         <span class="help-item">🖱️ Sol tık + sürükle: Kamera döndür</span>
         <span class="help-item">🎯 Drag modu: Paketleri taşı</span>
@@ -497,10 +497,10 @@
 
       <button mat-raised-button
               class="finish-button"
-              [disabled]="!hasResults"
+              [disabled]="!hasResults && hasUnsavedChanges"
               (click)="completeShipment()">
         <mat-icon>check_circle</mat-icon>
-        Enhanced Sevkiyatı Tamamla
+        Sevkiyatı Tamamla
         <span class="completion-meta" *ngIf="dataChangeHistory.length > 0">
           ({{ dataChangeHistory.length }} değişiklik)
         </span>
