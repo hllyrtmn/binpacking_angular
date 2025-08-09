@@ -1,4 +1,5 @@
-// threejs-truck-visualization.component.scss - FIXED & ENHANCED VERSION
+// threejs-truck-visualization.component.scss - ANGULAR 19 COMPATIBLE VERSION
+@use "sass:color";
 
 // ========================================
 // THEME COLORS (Aligned with Result Step)
@@ -145,7 +146,7 @@ $white: #ffffff;
           transform: translateY(-2px);
 
           &:hover {
-            background: linear-gradient(135deg, lighten($primary-color, 5%) 0%, lighten($dark-primary, 5%) 100%);
+            background: linear-gradient(135deg, color.adjust($primary-color, $lightness: 5%) 0%, color.adjust($dark-primary, $lightness: 5%) 100%);
           }
         }
 
@@ -196,7 +197,7 @@ $white: #ffffff;
         box-shadow: 0 2px 8px rgba($secondary-color, 0.3);
 
         &:hover {
-          background: linear-gradient(135deg, lighten($secondary-color, 5%) 0%, lighten($light-secondary, 5%) 100%);
+          background: linear-gradient(135deg, color.adjust($secondary-color, $lightness: 5%) 0%, color.adjust($light-secondary, $lightness: 5%) 100%);
         }
       }
     }
@@ -353,7 +354,7 @@ $white: #ffffff;
       position: absolute;
       top: -0.75rem;
       right: -0.75rem;
-      background: linear-gradient(135deg, $error-red 0%, darken($error-red, 10%) 100%);
+      background: linear-gradient(135deg, $error-red 0%, color.adjust($error-red, $lightness: -10%) 100%);
       color: $white;
       border: none;
       border-radius: 50%;
@@ -416,7 +417,7 @@ $white: #ffffff;
       justify-content: space-between;
 
       .delete-count {
-        background: linear-gradient(135deg, $error-red 0%, darken($error-red, 10%) 100%);
+        background: linear-gradient(135deg, $error-red 0%, color.adjust($error-red, $lightness: -10%) 100%);
         color: $white;
         padding: 0.3rem 0.8rem;
         border-radius: 12px;
@@ -442,11 +443,11 @@ $white: #ffffff;
       }
 
       &::-webkit-scrollbar-thumb {
-        background: linear-gradient(135deg, $error-red 0%, darken($error-red, 10%) 100%);
+        background: linear-gradient(135deg, $error-red 0%, color.adjust($error-red, $lightness: -10%) 100%);
         border-radius: 3px;
 
         &:hover {
-          background: linear-gradient(135deg, darken($error-red, 10%) 0%, darken($error-red, 20%) 100%);
+          background: linear-gradient(135deg, color.adjust($error-red, $lightness: -10%) 0%, color.adjust($error-red, $lightness: -20%) 100%);
         }
       }
 
@@ -504,7 +505,7 @@ $white: #ffffff;
 
         .restore-btn {
           padding: 0.5rem 0.75rem;
-          background: linear-gradient(135deg, $success-green 0%, darken($success-green, 10%) 100%);
+          background: linear-gradient(135deg, $success-green 0%, color.adjust($success-green, $lightness: -10%) 100%);
           color: $white;
           border: none;
           border-radius: 8px;
@@ -515,7 +516,7 @@ $white: #ffffff;
           box-shadow: 0 2px 8px rgba($success-green, 0.3);
 
           &:hover {
-            background: linear-gradient(135deg, darken($success-green, 10%) 0%, darken($success-green, 20%) 100%);
+            background: linear-gradient(135deg, color.adjust($success-green, $lightness: -10%) 0%, color.adjust($success-green, $lightness: -20%) 100%);
             transform: scale(1.05) translateY(-2px);
             box-shadow: 0 4px 12px rgba($success-green, 0.4);
           }
@@ -541,24 +542,24 @@ $white: #ffffff;
         transition: all 0.3s ease;
 
         &.restore-all-btn {
-          background: linear-gradient(135deg, $success-green 0%, darken($success-green, 10%) 100%);
+          background: linear-gradient(135deg, $success-green 0%, color.adjust($success-green, $lightness: -10%) 100%);
           color: $white;
           box-shadow: 0 2px 8px rgba($success-green, 0.3);
 
           &:hover {
-            background: linear-gradient(135deg, darken($success-green, 10%) 0%, darken($success-green, 20%) 100%);
+            background: linear-gradient(135deg, color.adjust($success-green, $lightness: -10%) 0%, color.adjust($success-green, $lightness: -20%) 100%);
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba($success-green, 0.4);
           }
         }
 
         &.clear-all-btn {
-          background: linear-gradient(135deg, $error-red 0%, darken($error-red, 10%) 100%);
+          background: linear-gradient(135deg, $error-red 0%, color.adjust($error-red, $lightness: -10%) 100%);
           color: $white;
           box-shadow: 0 2px 8px rgba($error-red, 0.3);
 
           &:hover {
-            background: linear-gradient(135deg, darken($error-red, 10%) 0%, darken($error-red, 20%) 100%);
+            background: linear-gradient(135deg, color.adjust($error-red, $lightness: -10%) 0%, color.adjust($error-red, $lightness: -20%) 100%);
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba($error-red, 0.4);
           }
@@ -589,7 +590,6 @@ $white: #ffffff;
   transition: all 0.3s ease;
 
   &:hover {
-
     box-shadow: 0 12px 32px rgba($primary-color, 0.25);
   }
 
@@ -755,7 +755,7 @@ $white: #ffffff;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: linear-gradient(135deg, rgba($error-red, 0.95) 0%, rgba(darken($error-red, 15%), 0.95) 100%);
+  background: linear-gradient(135deg, rgba($error-red, 0.95) 0%, rgba(color.adjust($error-red, $lightness: -15%), 0.95) 100%);
   color: $white;
   padding: 1.5rem 2rem;
   border-radius: 16px;
@@ -957,7 +957,7 @@ $white: #ffffff;
       border-color: rgba($primary-color, 0.4);
 
       h4, h5 {
-        color: lighten($primary-color, 20%);
+        color: color.adjust($primary-color, $lightness: 20%);
       }
 
       .control-btn, .view-btn, .action-btn, .zoom-btn {
@@ -967,12 +967,12 @@ $white: #ffffff;
 
         &:hover {
           background: #4b5563;
-          border-color: lighten($primary-color, 20%);
+          border-color: color.adjust($primary-color, $lightness: 20%);
         }
 
         &.active {
-          background: lighten($primary-color, 10%);
-          border-color: lighten($primary-color, 10%);
+          background: color.adjust($primary-color, $lightness: 10%);
+          border-color: color.adjust($primary-color, $lightness: 10%);
         }
       }
     }
@@ -1082,6 +1082,6 @@ $white: #ffffff;
   border-radius: 4px;
 
   &:hover {
-    background: linear-gradient(135deg, $dark-primary 0%, darken($dark-primary, 10%) 100%);
+    background: linear-gradient(135deg, $dark-primary 0%, color.adjust($dark-primary, $lightness: -10%) 100%);
   }
 }

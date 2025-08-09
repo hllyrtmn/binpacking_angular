@@ -1,6 +1,7 @@
 // ========================================
 // Result Step Component - Palet Control Teması
 // ========================================
+@use "sass:color";
 
 .logistics-result-screen {
   padding: 20px;
@@ -1238,7 +1239,7 @@ $white: #ffffff;
     margin-top: 1rem;
 
     &:hover {
-      background: linear-gradient(135deg, $light-secondary 0%, darken($light-secondary, 10%) 100%);
+      background: linear-gradient(135deg, $light-secondary 0%, color.adjust($light-secondary, $lightness: -10%) 100%);
       transform: translateY(-2px);
       box-shadow: 0 6px 16px rgba($secondary-color, 0.4);
     }
@@ -1329,12 +1330,12 @@ $white: #ffffff;
     }
 
     &.save-btn {
-      background: linear-gradient(135deg, $success-green 0%, darken($success-green, 10%) 100%);
+      background: linear-gradient(135deg, $success-green 0%, color.adjust($success-green, $lightness: -10%) 100%);
       color: $white;
       border-color: $success-green;
 
       &:hover {
-        background: linear-gradient(135deg, darken($success-green, 10%) 0%, darken($success-green, 20%) 100%);
+        background: linear-gradient(135deg, color.adjust($success-green, $lightness: -10%) 0%, color.adjust($success-green, $lightness: -20%) 100%);
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba($success-green, 0.4);
       }
@@ -1819,7 +1820,7 @@ $white: #ffffff;
   }
 
   .validation-results .validation-header {
-    background: linear-gradient(135deg, lighten($primary-color, 10%) 0%, $primary-color 100%);
+    background: linear-gradient(135deg, color.adjust($primary-color, $lightness: 10%) 0%, $primary-color 100%);
   }
 }
 
@@ -2086,7 +2087,7 @@ $white: #ffffff;
       border-radius: 3px;
 
       &:hover {
-        background: linear-gradient(135deg, #004A4A 0%, darken(#004A4A, 10%) 100%);
+        background: linear-gradient(135deg, #004A4A 0%, color.adjust(#004A4A, $lightness: -10%) 100%);
       }
     }
 
@@ -2534,14 +2535,14 @@ $white: #ffffff;
 
 @media (prefers-color-scheme: dark) {
   .data-change-status-bar {
-    background: linear-gradient(135deg, rgba(lighten(#006A6A, 20%), 0.1) 0%, rgba(lighten(#D6BB86, 20%), 0.1) 100%);
+    background: linear-gradient(135deg, rgba(color.adjust(#006A6A, $lightness: 20%), 0.1) 0%, rgba(color.adjust(#D6BB86, $lightness: 20%), 0.1) 100%);
 
     .change-status-item {
       background: #374151;
       color: #f3f4f6;
 
       .change-icon {
-        background-color: lighten(#006A6A, 15%);
+        background-color: color.adjust(#006A6A, $lightness: 15%);
       }
 
       .change-info {
@@ -2550,13 +2551,13 @@ $white: #ffffff;
         }
 
         .change-value {
-          color: lighten(#006A6A, 20%);
+          color: color.adjust(#006A6A, $lightness: 20%);
         }
       }
     }
 
     .change-actions .reset-btn {
-      background: linear-gradient(135deg, lighten(#DC2626, 10%) 0%, #DC2626 100%);
+      background: linear-gradient(135deg, color.adjust(#DC2626, $lightness: 10%) 0%, #DC2626 100%);
     }
   }
 
@@ -2566,30 +2567,30 @@ $white: #ffffff;
 
     .changes-header {
       mat-icon {
-        background: linear-gradient(135deg, rgba(lighten(#006A6A, 20%), 0.2) 0%, rgba(lighten(#D6BB86, 20%), 0.2) 100%);
-        color: lighten(#006A6A, 20%);
+        background: linear-gradient(135deg, rgba(color.adjust(#006A6A, $lightness: 20%), 0.2) 0%, rgba(color.adjust(#D6BB86, $lightness: 20%), 0.2) 100%);
+        color: color.adjust(#006A6A, $lightness: 20%);
       }
 
       span {
-        color: lighten(#006A6A, 20%);
+        color: color.adjust(#006A6A, $lightness: 20%);
       }
 
       .changes-count {
-        background: linear-gradient(135deg, lighten(#006A6A, 15%) 0%, lighten(#004A4A, 15%) 100%);
+        background: linear-gradient(135deg, color.adjust(#006A6A, $lightness: 15%) 0%, color.adjust(#004A4A, $lightness: 15%) 100%);
       }
     }
 
     .changes-list {
       .change-entry {
         background: linear-gradient(135deg, rgba(55, 65, 81, 0.5) 0%, rgba(75, 85, 99, 0.5) 100%);
-        border-color: rgba(lighten(#006A6A, 20%), 0.3);
+        border-color: rgba(color.adjust(#006A6A, $lightness: 20%), 0.3);
 
         &:hover {
           background: linear-gradient(135deg, rgba(55, 65, 81, 0.8) 0%, rgba(75, 85, 99, 0.8) 100%);
         }
 
         .change-type-icon {
-          background: linear-gradient(135deg, lighten(#006A6A, 15%) 0%, lighten(#004A4A, 15%) 100%);
+          background: linear-gradient(135deg, color.adjust(#006A6A, $lightness: 15%) 0%, color.adjust(#004A4A, $lightness: 15%) 100%);
         }
 
         .change-details {
@@ -2597,16 +2598,16 @@ $white: #ffffff;
             color: #f3f4f6;
 
             .change-metadata span {
-              background: linear-gradient(135deg, rgba(lighten(#D6BB86, 20%), 0.3) 0%, rgba(lighten(#C0A670, 20%), 0.3) 100%);
-              border-color: rgba(lighten(#D6BB86, 20%), 0.4);
-              color: lighten(#D6BB86, 20%);
+              background: linear-gradient(135deg, rgba(color.adjust(#D6BB86, $lightness: 20%), 0.3) 0%, rgba(color.adjust(#C0A670, $lightness: 20%), 0.3) 100%);
+              border-color: rgba(color.adjust(#D6BB86, $lightness: 20%), 0.4);
+              color: color.adjust(#D6BB86, $lightness: 20%);
             }
           }
 
           .change-timestamp {
             background: rgba(31, 41, 55, 0.8);
             color: #d1d5db;
-            border-color: rgba(lighten(#006A6A, 20%), 0.3);
+            border-color: rgba(color.adjust(#006A6A, $lightness: 20%), 0.3);
           }
         }
       }
