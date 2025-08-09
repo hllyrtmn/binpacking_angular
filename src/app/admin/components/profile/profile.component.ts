@@ -160,7 +160,7 @@ export class ProfileComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      console.log('Forgot password dialog was closed');
+
     });
   }
 
@@ -232,7 +232,7 @@ export class ProfileComponent implements OnInit {
         },
         error: (error) => {
           this.isLoading = false;
-          console.error('Full error object:', error);
+
 
           let errorMessage = 'Error updating profile';
 
@@ -284,7 +284,7 @@ export class ProfileComponent implements OnInit {
     this.isLoading = true;
     const passwords = this.passwordForm.value;
 
-    console.log('Sending password data:', passwords);
+
 
     this.userService.changePassword(passwords).subscribe({
       next: () => {
@@ -294,9 +294,9 @@ export class ProfileComponent implements OnInit {
       },
       error: (error) => {
         this.isLoading = false;
-        console.error('Full error response:', error);
-        console.error('Error status:', error.status);
-        console.error('Error body:', error.error);
+
+
+
 
         let errorMessage = 'Error changing password';
 

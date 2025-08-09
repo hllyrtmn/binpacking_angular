@@ -285,9 +285,6 @@ export class PalletControlComponent implements OnInit {
 
         this.toastService.info('Pallet konfigürasyonunuz restore edildi');
       } else {
-        console.log(
-          "ℹ️ Step 2 session'da veri yok, component'i yapılandırıyoruz"
-        );
         this.configureComponent();
       }
     } catch (error) {

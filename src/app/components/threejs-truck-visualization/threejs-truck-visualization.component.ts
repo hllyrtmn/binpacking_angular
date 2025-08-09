@@ -132,7 +132,7 @@ export class ThreeJSTruckVisualizationComponent implements OnInit, OnChanges, On
   ) {}
 
   ngOnInit(): void {
-    console.log('🎬 Smooth ThreeJS Component initialized');
+
     this.setupThreeJS();
     this.startRenderLoop();
 
@@ -147,13 +147,13 @@ export class ThreeJSTruckVisualizationComponent implements OnInit, OnChanges, On
     if (this.isDestroyed) return;
 
     if (changes['piecesData'] || changes['truckDimension']) {
-      console.log('📊 Data changed, reprocessing...');
+
       this.safeProcessData();
     }
   }
 
   ngOnDestroy(): void {
-    console.log('🗑️ Component destroying...');
+
     this.isDestroyed = true;
     this.cleanup();
   }
@@ -208,7 +208,7 @@ export class ThreeJSTruckVisualizationComponent implements OnInit, OnChanges, On
     );
 
     this.setView('isometric');
-    console.log('✅ Smooth Three.js setup complete');
+
   }
 
   private setupLighting(): void {
@@ -240,7 +240,7 @@ export class ThreeJSTruckVisualizationComponent implements OnInit, OnChanges, On
       e.stopPropagation();
       return false;
     }, { passive: false });
-    console.log('✅ Smooth mouse events setup complete');
+
   }
 
   private handleMouseDown(event: MouseEvent): void {
@@ -314,7 +314,7 @@ export class ThreeJSTruckVisualizationComponent implements OnInit, OnChanges, On
     this.lastPanMouseY = event.clientY;
     this.renderer.domElement.style.cursor = 'move';
 
-    console.log('🤚 Started camera panning (CTRL + Right click)');
+
   }
 
   private updateCameraPanning(event: MouseEvent): void {
@@ -353,7 +353,7 @@ export class ThreeJSTruckVisualizationComponent implements OnInit, OnChanges, On
     this.isPanningCamera = false;
     this.renderer.domElement.style.cursor = this.dragModeEnabled ? 'grab' : 'default';
 
-    console.log('🤚 Stopped camera panning');
+
   }
 
   private handleMouseClick(event: MouseEvent): void {
@@ -390,7 +390,7 @@ export class ThreeJSTruckVisualizationComponent implements OnInit, OnChanges, On
   // ========================================
 
   private initiateDragging(packageData: PackageData): void {
-    console.log('🎯 Initiating smooth drag for package:', packageData.id);
+
 
     this.isDragging = true;
     this.draggedPackage = packageData;
@@ -418,7 +418,7 @@ export class ThreeJSTruckVisualizationComponent implements OnInit, OnChanges, On
         // FIXED: Hide UI panels during drag to prevent flickering
         this.temporarilyHideUIElements();
 
-        console.log('✅ Smooth drag initiated successfully');
+
       } else {
         this.cancelDragging();
       }
@@ -488,7 +488,7 @@ export class ThreeJSTruckVisualizationComponent implements OnInit, OnChanges, On
   private completeDragging(): void {
   if (!this.isDragging || !this.draggedPackage) return;
 
-  console.log('🎯 Completing smooth drag for package:', this.draggedPackage.id);
+
 
   // FIXED: Clear drag visual effects
   if (this.draggedPackage.mesh) {
@@ -609,7 +609,7 @@ export class ThreeJSTruckVisualizationComponent implements OnInit, OnChanges, On
     this.lastMouseY = event.clientY;
     this.renderer.domElement.style.cursor = 'grabbing';
 
-    console.log('🔄 Started camera rotation (Right click)');
+
   }
 
   private updateCameraRotationSmooth(event: MouseEvent): void {
@@ -628,7 +628,7 @@ export class ThreeJSTruckVisualizationComponent implements OnInit, OnChanges, On
     this.isRotatingCamera = false;
     this.renderer.domElement.style.cursor = this.dragModeEnabled ? 'grab' : 'default';
 
-    console.log('🔄 Stopped camera rotation');
+
   }
 
   private rotateViewSmooth(deltaX: number, deltaY: number): void {
@@ -784,7 +784,7 @@ export class ThreeJSTruckVisualizationComponent implements OnInit, OnChanges, On
       this.cancelDragging();
     }
 
-    console.log('🖱️ Drag mode:', this.dragModeEnabled ? 'ON' : 'OFF');
+
   }
 
   toggleWireframe(): void {
@@ -936,7 +936,7 @@ export class ThreeJSTruckVisualizationComponent implements OnInit, OnChanges, On
       this.createTruckVisualization();
       this.createPackageVisualization();
     } catch (error) {
-      console.error('❌ Error processing data:', error);
+
     } finally {
       this.isLoading = false;
     }
@@ -1187,6 +1187,6 @@ export class ThreeJSTruckVisualizationComponent implements OnInit, OnChanges, On
       }
     });
 
-    console.log('✅ Smooth cleanup complete');
+
   }
 }

@@ -242,26 +242,6 @@ export class StepperStore {
     }
   }
 
-  // ✅ DÜZELTME: Safe debug logger
-  logStatus(): void {
-    try {
-      const localSignals = this._steps.map((step, index) => ({
-        [`step${index + 1}`]: {
-          completed: step?.completed?.() || false,
-          editable: step?.editable?.() || false,
-          is_dirty: step?.is_dirty?.() || false,
-        }
-      }));
-
-      console.log('📊 Stepper Status:', {
-        localStorage: this.getStorageStatus(),
-        localSignals: localSignals,
-      });
-    } catch (error) {
-
-    }
-  }
-
   // ✅ YENİ: Safe step access helper
   getStep(stepIndex: number): any {
     try {

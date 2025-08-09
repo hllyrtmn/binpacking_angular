@@ -223,7 +223,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         timestamp: Date.now()
       });
     } catch (error) {
-      console.error('❌ Error serializing result state:', error);
+
       return '';
     }
   }
@@ -277,7 +277,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   private handleEmergencyAutoSave(): void {
     if (this.hasResults && this.hasUnsavedChanges) {
       this.triggerEnhancedAutoSave('emergency');
-      console.log('🚨 Emergency auto-save triggered');
+
     }
   }
 
@@ -291,7 +291,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       if (!step2Completed) message += 'Step 2 ';
 
       this.toastService.warning(message);
-      console.warn('⚠️ Prerequisites not met:', { step1Completed, step2Completed });
+
       return false;
     }
 
@@ -436,8 +436,8 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     // Performance metrics
     this.performanceMetrics.endTime = performance.now();
     const totalTime = this.performanceMetrics.endTime - this.performanceMetrics.startTime;
-    console.log(`📊 Component lifetime: ${totalTime.toFixed(2)}ms`);
-    console.log(`📊 Total data changes: ${this.performanceMetrics.dataChangeCount}`);
+
+
   }
 
   // ========================================
@@ -447,11 +447,11 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   calculateBinpacking(): void {
     // Enhanced processing lock with timeout
     if (this.processingLock || this.isDestroyed) {
-      console.log('⚠️ Already processing or component destroyed');
+
       return;
     }
 
-    console.log('🚀 Enhanced bin packing optimizasyonu başlatılıyor...');
+
 
     this.processingLock = true;
 
@@ -470,7 +470,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
             throw new Error('Component destroyed during processing');
           }
           this.orderResultId = response.data.order_result_id
-          console.log('📦 Enhanced paketleme verisi alındı:', response,this.orderResultId);
+
 
           // Enhanced processing
           this.safeProcessEnhancedOptimizationResult(response);
@@ -495,7 +495,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
           return this.repositoryService.createReport();
         }),
         catchError((error) => {
-          console.error('❌ Enhanced işlem sırasında hata oluştu:', error);
+
           this.handleEnhancedError(error);
           return EMPTY;
         }),
@@ -508,7 +508,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         next: (reportResponse) => {
           if (this.isDestroyed) return;
 
-          console.log('📊 Enhanced rapor başarıyla oluşturuldu:', reportResponse);
+
 
           this.reportFiles = Array.isArray(reportResponse?.files)
             ? reportResponse.files
@@ -540,22 +540,16 @@ export class ResultStepComponent implements OnInit, OnDestroy {
    */
   onDataChanged(updatedData: any[]): void {
     if (this.isDestroyed || !updatedData) {
-      console.warn('⚠️ Data change ignored - component destroyed or invalid data');
+
       return;
     }
-
-    console.log('📊 Enhanced data change received from ThreeJS:', {
-      oldCount: this.piecesData.length,
-      newCount: updatedData.length,
-      timestamp: new Date().toISOString()
-    });
 
     try {
       // Enhanced data validation
       const validatedData = this.validateUpdatedData(updatedData);
 
       if (!validatedData || validatedData.length === 0) {
-        console.warn('⚠️ Updated data validation failed');
+
         return;
       }
 
@@ -591,14 +585,8 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       // Enhanced UI update
       this.safeUpdateEnhancedUI();
 
-      console.log(`✅ Enhanced data change processed successfully:`, {
-        changeType: changeEvent.type,
-        totalChanges: this.dataChangeHistory.length,
-        unsavedChanges: this.hasUnsavedChanges
-      });
-
     } catch (error) {
-      console.error('❌ Enhanced error processing data change:', error);
+
       this.toastService.error('Veri değişikliği işlenirken hata oluştu');
     }
   }
@@ -608,7 +596,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
    */
   private validateUpdatedData(updatedData: any[]): any[] | null {
     if (!Array.isArray(updatedData)) {
-      console.warn('⚠️ Updated data is not an array');
+
       return null;
     }
 
@@ -616,7 +604,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       return updatedData.filter((piece, index) => {
         // Enhanced validation for each piece
         if (!Array.isArray(piece) || piece.length < 6) {
-          console.warn(`⚠️ Invalid piece data at index ${index}:`, piece);
+
           return false;
         }
 
@@ -624,7 +612,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         const [x, y, z, length, width, height] = piece;
         if ([x, y, z, length, width, height].some(val =>
           typeof val !== 'number' || isNaN(val) || val < 0)) {
-          console.warn(`⚠️ Invalid numeric values at index ${index}:`, piece);
+
           return false;
         }
 
@@ -632,7 +620,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       });
 
     } catch (error) {
-      console.error('❌ Error validating updated data:', error);
+
       return null;
     }
   }
@@ -767,7 +755,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     // Update loading stats based on change type
     this.updateLoadingStatsFromChange(type, metadata);
 
-    console.log(`📝 Data change tracked: ${type}`, changeEvent);
+
   }
 
   /**
@@ -861,10 +849,10 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       this.safeUpdateEnhancedUI();
 
       this.toastService.success('Veriler orijinal haline sıfırlandı');
-      console.log('✅ Data reset to original state');
+
 
     } catch (error) {
-      console.error('❌ Error resetting to original data:', error);
+
       this.toastService.error('Veri sıfırlama hatası');
     }
   }
@@ -899,7 +887,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       this.hasUnsavedChanges = false;
 
       this.toastService.success('Enhanced result verileri zorla kaydedildi');
-      console.log('💾 Force save completed with data changes');
+
     } else {
       this.toastService.warning('Kaydetmek için önce optimizasyonu çalıştırın');
     }
@@ -940,7 +928,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
           try {
             packingData = JSON.parse(response.data);
           } catch (parseError) {
-            console.warn('⚠️ Enhanced failed to parse response data string:', parseError);
+
             packingData = null;
           }
         } else if (response.data.data) {
@@ -960,9 +948,9 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         // NEW: Update total processed count
         this.totalPackagesProcessed = this.piecesData.length;
 
-        console.log(`✅ Enhanced processed ${this.piecesData.length} packages`);
+
       } else {
-        console.warn('⚠️ Enhanced geçersiz paketleme verisi formatı');
+
         this.piecesData = [];
         this.processedPackages = [];
         this.totalPackagesProcessed = 0;
@@ -979,7 +967,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         };
       }
     } catch (error) {
-      console.error('❌ Enhanced veri işleme hatası:', error);
+
       this.piecesData = [];
       this.processedPackages = [];
       this.totalPackagesProcessed = 0;
@@ -990,14 +978,14 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     return rawData.filter((piece, index) => {
       // Enhanced validation for each piece
       if (!Array.isArray(piece) || piece.length < 6) {
-        console.warn(`⚠️ Invalid piece data at index ${index}:`, piece);
+
         return false;
       }
 
       // Validate numeric values
       const [x, y, z, length, width, height] = piece;
       if ([x, y, z, length, width, height].some(val => typeof val !== 'number' || isNaN(val) || val < 0)) {
-        console.warn(`⚠️ Invalid numeric values at index ${index}:`, piece);
+
         return false;
       }
 
@@ -1024,9 +1012,9 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         })
       );
 
-      console.log(`📊 Enhanced processed ${this.processedPackages.length} packages`);
+
     } catch (error) {
-      console.error('❌ Enhanced package processing error:', error);
+
       this.processedPackages = [];
     }
   }
@@ -1067,9 +1055,9 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         efficiency: efficiency,
       };
 
-      console.log('📊 Enhanced stats calculated:', this.loadingStats);
+
     } catch (error) {
-      console.error('❌ Enhanced stats calculation error:', error);
+
       this.resetEnhancedStats();
     }
   }
@@ -1118,11 +1106,11 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       );
 
       const score = Math.round(Math.max(0, 100 - (distance / maxDistance) * 100));
-      console.log(`📍 Enhanced COG Score: ${score} (distance: ${distance.toFixed(2)}, max: ${maxDistance.toFixed(2)})`);
+
 
       return score;
     } catch (error) {
-      console.error('❌ Enhanced COG calculation error:', error);
+
       return 0;
     }
   }
@@ -1144,7 +1132,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     // Performance tracking
     this.performanceMetrics.endTime = performance.now();
     const processingTime = this.performanceMetrics.endTime - this.performanceMetrics.startTime;
-    console.log(`🚀 Enhanced processing completed in ${processingTime.toFixed(2)}ms`);
+
   }
 
   private handleEnhancedError(error: any): void {
@@ -1159,7 +1147,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     const errorMessage = this.getEnhancedErrorMessage(error);
     this.toastService.error(errorMessage);
 
-    console.error('❌ Enhanced error details:', error);
+
   }
 
   private safeUpdateEnhancedUI(): void {
@@ -1168,7 +1156,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     try {
       this.cdr.detectChanges();
     } catch (error) {
-      console.warn('Enhanced UI update error:', error);
+
     }
   }
 
@@ -1210,12 +1198,12 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   onPackageSelected(packageData: any): void {
     if (this.isDestroyed) return;
 
-    console.log('📦 Enhanced package selected:', packageData);
+
 
     try {
       // Enhanced package selection validation
       if (!packageData || !packageData.id) {
-        console.warn('⚠️ Invalid package data received');
+
         return;
       }
 
@@ -1229,7 +1217,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       this.updatePackageInteractionStats('selected');
 
     } catch (error) {
-      console.error('❌ Enhanced error handling package selection:', error);
+
       this.toastService.error('Paket seçiminde hata oluştu');
     }
   }
@@ -1237,7 +1225,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   onViewChanged(viewType: string): void {
     if (this.isDestroyed) return;
 
-    console.log('👁️ Enhanced view changed:', viewType);
+
 
     try {
       // Enhanced view state management
@@ -1249,16 +1237,16 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       // Enhanced UI update
       this.cdr.detectChanges();
 
-      console.log(`📱 View changed to: ${viewType}`);
+
 
     } catch (error) {
-      console.error('❌ Enhanced error handling view change:', error);
+
     }
   }
 
   // Enhanced three.js component error handling
   onThreeJSError(error: any): void {
-    console.error('❌ Enhanced Three.js component error:', error);
+
     this.hasThreeJSError = true;
     this.showVisualization = false;
     this.toastService.error('3D görselleştirmede hata oluştu');
@@ -1267,7 +1255,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
 
   // Enhanced three.js component ready handler
   onThreeJSReady(): void {
-    console.log('✅ Enhanced Three.js component ready');
+
     this.hasThreeJSError = false;
     this.cdr.detectChanges();
   }
@@ -1290,11 +1278,11 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         };
 
         this.processedPackages[packageIndex] = updatedPackage;
-        console.log(`✅ Enhanced updated package ${packageData.id} in internal state`);
+
       }
 
     } catch (error) {
-      console.error('❌ Enhanced error updating package internal state:', error);
+
     }
   }
 
@@ -1312,9 +1300,9 @@ export class ResultStepComponent implements OnInit, OnDestroy {
           break;
       }
 
-      console.log(`📊 Updated interaction stats for ${action}:`, this.loadingStats);
+
     } catch (error) {
-      console.error('❌ Error updating interaction stats:', error);
+
     }
   }
 
@@ -1441,10 +1429,10 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         // Enhanced auto-save trigger
         this.triggerEnhancedAutoSave('user-action');
 
-        console.log('✅ Enhanced 3D popup opened successfully');
+
       }
     } catch (error) {
-      console.error('❌ Enhanced yeni sekme açılırken hata oluştu:', error);
+
       this.toastService.error('3D görünüm açılamadı.');
     }
   }
@@ -1730,7 +1718,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
                   throw new Error('Enhanced: Invalid data provided');
                 }
 
-                console.log('🚀 Enhanced Three.js initializing with', piecesData.length, 'packages');
+
 
                 // Enhanced scene setup
                 scene = new THREE.Scene();
@@ -1792,10 +1780,10 @@ export class ResultStepComponent implements OnInit, OnDestroy {
                 loading.style.display = 'none';
                 controls.style.display = 'block';
 
-                console.log('✅ Enhanced Three.js popup initialized successfully');
+
 
               } catch (error) {
-                console.error('❌ Enhanced Three.js popup error:', error);
+
                 document.getElementById('loading').innerHTML =
                   '<div class="enhanced-error-message">❌ Enhanced Görselleştirme hatası:<br>' + error.message + '</div>';
               }
@@ -2013,7 +2001,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               if (renderer) {
                 renderer.dispose();
               }
-              console.log('🧹 Enhanced Three.js popup cleaned up');
+
             });
 
             // Initialize when page loads
@@ -2025,7 +2013,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       `;
 
     } catch (error) {
-      console.error('❌ Enhanced error creating popup HTML:', error);
+
       return `
         <!DOCTYPE html>
         <html>
@@ -2180,7 +2168,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       return;
     }
 
-    console.log('🏁Sevkiyat tamamlanıyor...');
+
 
     try {
       // 1. Enhanced final save to session (with all changes)

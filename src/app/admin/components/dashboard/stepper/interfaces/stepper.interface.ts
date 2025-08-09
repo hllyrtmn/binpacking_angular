@@ -113,12 +113,10 @@ export abstract class BaseStepperHandler {
   protected abstract handleError(error: any, method: string): void;
 
   protected logAction(action: string, data?: any): void {
-    console.log(`🔄 ${this.serviceName}.${action}`, data || '');
   }
 
   protected validateService<T>(service: T, serviceName: string): boolean {
     if (!service) {
-      console.error(`❌ ${serviceName} is not available`);
       return false;
     }
     return true;

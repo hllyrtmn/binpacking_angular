@@ -35,7 +35,7 @@ export class StepValidationHandler extends BaseStepperHandler implements IStepVa
       // Delegate to step manager with safe access
       const steps = (this.stepManager as any).steps;
       if (!steps || !steps[stepIndex]) {
-        console.warn(`⚠️ Step ${stepIndex} not found`);
+
         return false;
       }
 
@@ -94,7 +94,7 @@ export class StepValidationHandler extends BaseStepperHandler implements IStepVa
 
   private validateStepIndex(stepIndex: number): boolean {
     if (typeof stepIndex !== 'number' || stepIndex < 0 || stepIndex >= STEPPER_CONFIG.MAX_STEPS) {
-      console.warn(`⚠️ Invalid step index: ${stepIndex}`);
+
       return false;
     }
     return true;
@@ -143,7 +143,7 @@ export class StorageHandler extends BaseStepperHandler implements IStorageManage
 
       // Validate step number
       if (typeof step !== 'number' || step < 1 || step > STEPPER_CONFIG.MAX_STEPS) {
-        console.warn(`⚠️ Invalid current step: ${step}`);
+
         return 1;
       }
 
@@ -231,7 +231,7 @@ export class ActivityTrackingHandler extends BaseStepperHandler implements IActi
   startTracking(): void {
     try {
       if (this.isTracking) {
-        console.warn('⚠️ Activity tracking already started');
+
         return;
       }
 
@@ -290,7 +290,7 @@ export class ActivityTrackingHandler extends BaseStepperHandler implements IActi
         document.addEventListener(eventType, activityHandler, options);
         this.eventListeners.push({ event: eventType, handler: activityHandler });
       } catch (error) {
-        console.error(`❌ Event listener setup error for ${eventType}:`, error);
+
       }
     });
   }
@@ -307,7 +307,7 @@ export class ActivityTrackingHandler extends BaseStepperHandler implements IActi
       try {
         document.removeEventListener(event, handler);
       } catch (error) {
-        console.error(`❌ Event listener cleanup error for ${event}:`, error);
+
       }
     });
     this.eventListeners = [];
@@ -336,16 +336,6 @@ export class ErrorHandler extends BaseStepperHandler implements IErrorHandler {
 
   handleErrors(error: any, context: string): void {
     const errorId = this.generateErrorId();
-
-    console.error(`❌ [${errorId}] Error in ${context}:`, error);
-
-    // Log additional context
-    console.error(`Context details:`, {
-      timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      url: window.location.href
-    });
-
     // Don't show every error to user, only critical ones
     if (this.isCriticalError(error, context)) {
       this.notificationService.error(`Sistem hatası oluştu. Hata ID: ${errorId}`);
@@ -383,7 +373,7 @@ export class ErrorHandler extends BaseStepperHandler implements IErrorHandler {
         this.stepManager.resetStepper();
       }
     } catch (error) {
-      console.error('❌ StepManager reset failed:', error);
+
     }
 
     try {
@@ -391,7 +381,7 @@ export class ErrorHandler extends BaseStepperHandler implements IErrorHandler {
         this.storageManager.clearStorage();
       }
     } catch (error) {
-      console.error('❌ StorageManager clear failed:', error);
+
     }
   }
 
@@ -436,7 +426,7 @@ export class ComponentManager extends BaseComponentManager {
             component.resetComponentState();
             this.logAction('resetComponent', `${type} reset successful`);
           } else {
-            console.warn(`⚠️ Component ${type} is not resettable`);
+
           }
         } catch (error) {
           this.handleError(error, `resetComponent_${type}`);
@@ -454,17 +444,10 @@ export class ComponentManager extends BaseComponentManager {
       const type = componentName as ComponentType;
       const component = this.componentRefs.get(type);
 
-      if (!component) {
-        console.warn(`⚠️ Component ${componentName} not found`);
-        return;
-      }
-
       // ✅ FIXED: Güvenli configure - sadece method varsa çağır
       if (isConfigurableComponent(component)) {
         component.configureComponent();
         this.logAction('configureComponent', `${componentName} configured`);
-      } else {
-        console.warn(`⚠️ Component ${componentName} is not configurable`);
       }
     } catch (error) {
       this.handleError(error, 'configureComponent');
@@ -512,7 +495,6 @@ export class ServiceHealthChecker extends BaseStepperHandler {
 
   private checkSingleService(name: string, service: any): boolean {
     if (!service) {
-      console.error(`❌ ${name} injection failed`);
       return false;
     }
 
@@ -520,12 +502,11 @@ export class ServiceHealthChecker extends BaseStepperHandler {
     if (typeof service.isHealthy === 'function') {
       const isHealthy = service.isHealthy();
       if (!isHealthy) {
-        console.error(`❌ ${name} is not healthy`);
         return false;
       }
     }
 
-    console.log(`✅ ${name} is healthy`);
+
     return true;
   }
 }

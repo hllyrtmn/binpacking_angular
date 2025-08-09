@@ -72,7 +72,6 @@ export class AddOrUpdateDialogComponent implements OnInit {
   ngOnInit(): void {
     // Data kontrolü - data objesi ve columns array'i kontrol edilir
     if (!this.data || !this.data.columns || this.data.columns.length === 0) {
-      console.error('Dialog data eksik veya geçersiz. Sütun tanımları gerekli!', this.data);
       // En az bir varsayılan alan ekle ki form boş kalmasın
       this.data = this.data || {};
       this.data.columns = this.data.columns || [
@@ -86,8 +85,6 @@ export class AddOrUpdateDialogComponent implements OnInit {
 
     // Fields kontrolü
     if (this.fields.length === 0) {
-      console.warn('Görüntülenecek alan bulunamadı. Varsayılan alan kullanılıyor.');
-      // En az bir varsayılan alan ekle
       this.addDefaultField();
     }
 
@@ -137,9 +134,6 @@ export class AddOrUpdateDialogComponent implements OnInit {
                        this.isFieldVisible(col.key))
         .map(col => this.prepareField(col));
     }
-
-    // Debug için alanları konsola yazdır
-    console.log('Oluşturulan alanlar:', this.fields);
   }
 
   /**

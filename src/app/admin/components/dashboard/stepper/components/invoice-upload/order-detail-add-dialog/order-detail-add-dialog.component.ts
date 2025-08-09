@@ -81,7 +81,7 @@ export class OrderDetailAddDialogComponent implements OnInit {
               catchError(error => {
                 this.hasError = true;
                 this.errorMessage = 'Ürün arama sırasında bir hata oluştu.';
-                console.error('Ürün arama hatası:', error);
+
                 return of([]);
               }),
               finalize(() => {
@@ -98,7 +98,7 @@ export class OrderDetailAddDialogComponent implements OnInit {
         }
       });
 
-    console.log('Current order:', this.data);
+
   }
 
   // Search using dimension filter form
@@ -123,7 +123,7 @@ export class OrderDetailAddDialogComponent implements OnInit {
         catchError(error => {
           this.hasError = true;
           this.errorMessage = 'Boyutlara göre arama sırasında bir hata oluştu.';
-          console.error('Arama hatası:', error);
+
           return of([]);
         }),
         finalize(() => {
@@ -145,8 +145,8 @@ export class OrderDetailAddDialogComponent implements OnInit {
       product: product,
       unit_price: 1.00 // Default value or value from product
     });
-    console.log('Selected product:', product.name);
-    console.log('Updated form:', this.orderDetailForm.value);
+
+
   }
 
   onTabChange(event: any): void {

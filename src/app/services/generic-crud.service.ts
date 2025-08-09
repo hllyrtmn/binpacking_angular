@@ -27,7 +27,7 @@ export class GenericCrudService<T> {
     // Ensure the endpoint ends with a trailing slash to properly form the URL
     const formattedEndpoint = endpoint.endsWith('/') ? endpoint : `${endpoint}/`;
     this.apiUrl = `${this.api.getApiUrl()}/${formattedEndpoint}`;
-    console.log(`GenericCrudService initialized with endpoint: ${this.apiUrl}`);
+
   }
 
   /**
@@ -36,8 +36,8 @@ export class GenericCrudService<T> {
    * @returns Sayfalandırılmış sonuç listesi
    */
   getAll(params?: any): Observable<Page<T>> {
-    console.log(`GenericCrudService.getAll - API URL: ${this.apiUrl}`);
-    console.log('GenericCrudService.getAll - Params:', params);
+
+
 
     let httpParams = new HttpParams();
 
@@ -53,17 +53,17 @@ export class GenericCrudService<T> {
       // Veriyi formatla
       map(response => this.formatNumberValues(response)),
       tap(response => {
-        console.log('GenericCrudService.getAll - Response:', response);
+
         if (response && response.results) {
-          console.log(`GenericCrudService.getAll - Sonuç sayısı: ${response.results.length}`);
+
           if (response.results.length > 0) {
-            console.log('GenericCrudService.getAll - İlk kayıt örneği:', response.results[0]);
+
           }
         }
 
         // Sıralama parametresi varsa kontrol et
         if (params && params.ordering) {
-          console.log(`GenericCrudService.getAll - Sıralama: ${params.ordering}`);
+
         }
       })
     );
@@ -75,12 +75,12 @@ export class GenericCrudService<T> {
    * @returns Kaydın detayları
    */
   getById(id: number | string): Observable<T> {
-    console.log(`GenericCrudService.getById - ID: ${id}`);
+
     return this.http.get<T>(`${this.apiUrl}${id}/`).pipe(
       // Veriyi formatla
       map(response => this.formatSingleItem(response)),
       tap(response => {
-        console.log('GenericCrudService.getById - Response:', response);
+
       })
     );
   }
@@ -91,12 +91,12 @@ export class GenericCrudService<T> {
    * @returns Oluşturulan kayıt
    */
   create(item: Partial<T>): Observable<T> {
-    console.log('GenericCrudService.create - Item:', item);
+
     return this.http.post<T>(this.apiUrl, item).pipe(
       // Veriyi formatla
       map(response => this.formatSingleItem(response)),
       tap(response => {
-        console.log('GenericCrudService.create - Response:', response);
+
       })
     );
   }
@@ -108,12 +108,12 @@ export class GenericCrudService<T> {
    * @returns Güncellenmiş kayıt
    */
   update(id: number | string, item: Partial<T>): Observable<T> {
-    console.log(`GenericCrudService.update - ID: ${id}, Item:`, item);
+
     return this.http.put<T>(`${this.apiUrl}${id}/`, item).pipe(
       // Veriyi formatla
       map(response => this.formatSingleItem(response)),
       tap(response => {
-        console.log('GenericCrudService.update - Response:', response);
+
       })
     );
   }
@@ -125,12 +125,12 @@ export class GenericCrudService<T> {
    * @returns Güncellenmiş kayıt
    */
   partialUpdate(id: number | string, item: Partial<T>): Observable<T> {
-    console.log(`GenericCrudService.partialUpdate - ID: ${id}, Item:`, item);
+
     return this.http.patch<T>(`${this.apiUrl}${id}/`, item).pipe(
       // Veriyi formatla
       map(response => this.formatSingleItem(response)),
       tap(response => {
-        console.log('GenericCrudService.partialUpdate - Response:', response);
+
       })
     );
   }
@@ -141,10 +141,10 @@ export class GenericCrudService<T> {
    * @returns Silme işlemi sonucu
    */
   delete(id: number | string): Observable<any> {
-    console.log(`GenericCrudService.delete - ID: ${id}`);
+
     return this.http.delete(`${this.apiUrl}${id}/`).pipe(
       tap(response => {
-        console.log('GenericCrudService.delete - Response:', response);
+
       })
     );
   }

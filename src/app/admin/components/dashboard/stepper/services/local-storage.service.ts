@@ -138,22 +138,14 @@ export class LocalStorageService {
 
       // Check storage quota (warn if > 4MB)
       if (dataSize > 4 * 1024 * 1024) {
-        console.warn('⚠️ Enhanced storage data size is large:', this.formatFileSize(dataSize));
+
         this.cleanupLargeData(updatedData);
       }
 
       localStorage.setItem(this.STORAGE_KEY, serializedData);
 
-      // Enhanced logging
-      console.log(`💾 Enhanced data saved (${this.formatFileSize(dataSize)}):`, {
-        step1: updatedData.step1?.isCompleted || false,
-        step2: updatedData.step2?.isCompleted || false,
-        step3: updatedData.step3?.isCompleted || false,
-        currentStep: updatedData.currentStep
-      });
-
     } catch (error) {
-      console.error('❌ Enhanced storage save error:', error);
+
       this.handleEnhancedStorageError(error);
     }
   }
@@ -170,14 +162,14 @@ export class LocalStorageService {
 
         // Enhanced version check with migration
         if (parsed.version !== this.STORAGE_VERSION) {
-          console.log(`🔄 Migrating data from ${parsed.version} to ${this.STORAGE_VERSION}`);
+
           const migratedData = this.migrateData(parsed);
 
           if (migratedData) {
             this.saveStepperData(migratedData);
             return migratedData;
           } else {
-            console.warn('⚠️ Migration failed, clearing storage');
+
             this.clearStorage();
             return this.getDefaultData();
           }
@@ -185,23 +177,23 @@ export class LocalStorageService {
 
         // Enhanced expiry check
         if (this.isDataExpired(parsed.lastSaved)) {
-          console.log('🗑️ Enhanced data expired, clearing storage');
+
           this.clearStorage();
           return this.getDefaultData();
         }
 
         // Enhanced data validation
         if (!this.validateStorageData(parsed)) {
-          console.warn('⚠️ Enhanced data validation failed, clearing storage');
+
           this.clearStorage();
           return this.getDefaultData();
         }
 
-        // console.log('📥 Enhanced data loaded successfully');
+        //
         return parsed;
       }
     } catch (error) {
-      console.error('❌ Enhanced storage load error:', error);
+
       this.clearStorage();
     }
 
@@ -251,13 +243,13 @@ export class LocalStorageService {
           autoSaveHistory: []
         };
 
-        console.log('✅ Successfully migrated data from v1.0.0 to v2.0.0');
+
         return migratedData;
       }
 
       return null;
     } catch (error) {
-      console.error('❌ Migration error:', error);
+
       return null;
     }
   }
@@ -282,7 +274,7 @@ export class LocalStorageService {
 
       return true;
     } catch (error) {
-      console.error('❌ Data validation error:', error);
+
       return false;
     }
   }
@@ -294,7 +286,7 @@ export class LocalStorageService {
     try {
       // Check if quota exceeded
       if (error.name === 'QuotaExceededError') {
-        console.warn('⚠️ Storage quota exceeded, cleaning up old data');
+
         this.cleanupOldData();
         return;
       }
@@ -309,14 +301,14 @@ export class LocalStorageService {
             localStorage.removeItem(key);
             cleanedCount++;
           } catch (cleanupError) {
-            console.warn('Cleanup error for key:', key);
+
           }
         }
       });
 
-      console.log(`🧹 Cleaned up ${cleanedCount} old storage entries`);
+
     } catch (cleanupError) {
-      console.error('❌ Storage cleanup error:', cleanupError);
+
     }
   }
 
@@ -341,9 +333,9 @@ export class LocalStorageService {
         };
       }
 
-      console.log('🗜️ Large data cleanup completed');
+
     } catch (error) {
-      console.error('❌ Large data cleanup error:', error);
+
     }
   }
 
@@ -454,7 +446,7 @@ export class LocalStorageService {
       // Save updated history
       this.saveStepperData({ autoSaveHistory: data.autoSaveHistory });
     } catch (error) {
-      console.error('❌ Auto-save history error:', error);
+
     }
   }
 
@@ -544,9 +536,9 @@ export class LocalStorageService {
   clearStorage(): void {
     try {
       localStorage.removeItem(this.STORAGE_KEY);
-      console.log('🧹 Enhanced storage cleared');
+
     } catch (error) {
-      console.error('❌ Storage clear error:', error);
+
     }
   }
 
@@ -709,9 +701,9 @@ export class LocalStorageService {
   private initializeDeviceInfo(): void {
     try {
       // Device info is already captured in getDeviceInfo()
-      console.log('📱 Device info initialized');
+
     } catch (error) {
-      console.warn('⚠️ Device info initialization failed:', error);
+
     }
   }
 
@@ -761,7 +753,7 @@ export class LocalStorageService {
       const data = this.getStepperData();
       // getStepperData already handles expiry check
     } catch (error) {
-      console.error('❌ Cleanup expired data error:', error);
+
       this.clearStorage();
     }
   }
@@ -783,9 +775,9 @@ export class LocalStorageService {
         this.saveStepperData({ autoSaveHistory: data.autoSaveHistory });
       }
 
-      console.log('🧹 Old data cleanup completed');
+
     } catch (error) {
-      console.error('❌ Old data cleanup error:', error);
+
     }
   }
 
@@ -806,7 +798,7 @@ export class LocalStorageService {
       const data = this.getStepperData();
       return JSON.stringify(data, null, 2);
     } catch (error) {
-      console.error('❌ Export error:', error);
+
       return '';
     }
   }
@@ -817,14 +809,14 @@ export class LocalStorageService {
 
       if (this.validateStorageData(importedData)) {
         this.saveStepperData(importedData);
-        console.log('✅ Data imported successfully');
+
         return true;
       } else {
-        console.error('❌ Invalid data format for import');
+
         return false;
       }
     } catch (error) {
-      console.error('❌ Import error:', error);
+
       return false;
     }
   }

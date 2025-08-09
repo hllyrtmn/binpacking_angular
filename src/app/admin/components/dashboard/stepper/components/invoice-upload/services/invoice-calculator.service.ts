@@ -23,7 +23,7 @@ export class InvoiceCalculatorService {
 
       return { totalWeight };
     } catch (error) {
-      console.error('Weight calculation error:', error);
+
       return { totalWeight: 0 };
     }
   }
@@ -35,7 +35,7 @@ export class InvoiceCalculatorService {
       const count = detail.count ?? 0;
       return productWeight * count;
     } catch (error) {
-      console.error('Detail weight calculation error:', error);
+
       return 0;
     }
   }
