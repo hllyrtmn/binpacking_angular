@@ -22,7 +22,7 @@ export class HeaderComponent implements OnInit {
 
   userService  = inject(UserService)
   profilePhoto = 'https://cdn-icons-png.flaticon.com/512/219/219986.png';
-  logoPath: string = 'assets/icons/bedisa.png';
+  companyLogo: string = 'assets/icons/bedisa.png';
   // E:\Dersler\angular\binpacking-angular\binpacking_angular\src\assets\icons\bedisa.png
   constructor(private router: Router) {
   }
@@ -34,6 +34,7 @@ export class HeaderComponent implements OnInit {
   getProfilePhoto(){
     this.userService.getProfile().subscribe({next:(user)=>{
       this.profilePhoto = user.profile_picture
+      this.companyLogo = user.company.logo
     }})
   }
 
