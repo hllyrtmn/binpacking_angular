@@ -500,12 +500,22 @@ export class PalletControlComponent implements OnInit {
     }
 
     const totalWeight = this.packages.reduce((total, pkg) => {
-      const palletWeight = Math.floor(pkg.pallet?.weight ?? 0);
-      const productsWeight = pkg.products.reduce(
-        (pTotal, product) =>
-          pTotal + Math.floor(product.weight_type.std * product.count),
-        0
+    const palletWeight = Math.floor(pkg.pallet?.weight ?? 0);
+
+    const productsWeight = pkg.products.reduce(
+      (pTotal, product) => {
+        let weight = 0;
+        if (this.order.weight_type === 'eco') {
+          weight = product.weight_type.eco;
+        } else if (this.order.weight_type === 'std') {
+          weight = product.weight_type.std;
+        } else if (this.order.weight_type === 'pre') {
+          weight = product.weight_type.pre;
+        }
+          return pTotal + Math.floor(weight * product.count);
+        },0
       );
+
       return total + palletWeight + productsWeight;
     }, 0);
 
