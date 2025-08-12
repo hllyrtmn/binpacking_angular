@@ -3,7 +3,6 @@ import AUTH_ROUTES from './auth/auth.routes';
 import ADMIN_ROUTES from './admin/admin.routes';
 import { LayoutComponent } from './admin/components/layout/layout.component';
 import { ErrorComponent } from './components/error/error.component';
-import { TestComponent } from './components/test/test.component';
 
 
 export const routes: Routes = [
@@ -21,11 +20,6 @@ export const routes: Routes = [
         component: LayoutComponent,
         children: ADMIN_ROUTES
     },
-    {
-        path: 'test',
-        component: TestComponent
-    },
-
     {
         path: 'error',
         component: ErrorComponent,

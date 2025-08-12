@@ -140,11 +140,11 @@ export class StepperComponent implements OnInit, OnDestroy {
   // ==========================================
 
   async ngOnInit(): Promise<void> {
-    console.log('🚀 SOLID Stepper component initializing...');
+
 
     try {
       await this.initializeComponent();
-      console.log('✅ SOLID Stepper component ready');
+
     } catch (error) {
       this.errorHandler.handleErrors(error, 'ngOnInit');
       this.errorHandler.handleInitializationError();
@@ -152,11 +152,11 @@ export class StepperComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    console.log('🔄 SOLID Stepper component cleaning up...');
+
 
     try {
       this.cleanupComponent();
-      console.log('✅ SOLID Stepper component cleaned up');
+
     } catch (error) {
       this.errorHandler.handleErrors(error, 'ngOnDestroy');
     }
@@ -218,7 +218,7 @@ export class StepperComponent implements OnInit, OnDestroy {
       }
 
       const storageInfo = this.storageManager.getStorageInfo();
-      console.log('📂 Existing data found:', storageInfo);
+
 
       if (storageInfo.isExpiringSoon) {
         this.showExpirationWarning();
@@ -287,13 +287,13 @@ export class StepperComponent implements OnInit, OnDestroy {
       timestamp: new Date()
     };
 
-    console.log('📍 Step changed:', stepChangeEvent);
+
     this.selectedIndex = event.selectedIndex;
   }
 
   orderIdComeOn(id: string): void {
     this.order_id = id;
-    console.log('📋 Order ID received:', this.order_id);
+
     this.selectedIndex = 1;
   }
 
@@ -307,11 +307,11 @@ export class StepperComponent implements OnInit, OnDestroy {
   }
 
   onShipmentCompleted(): void {
-    console.log('🔄 Shipment completed, starting full reset...');
+
 
     try {
       this.performFullReset();
-      console.log('✅ Full reset completed');
+
     } catch (error) {
       this.errorHandler.handleErrors(error, 'onShipmentCompleted');
       this.handleResetFailure();
@@ -394,46 +394,6 @@ export class StepperComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // ==========================================
-  // ✅ DEBUG METHODS (Development Only)
-  // ==========================================
-
-  debugStepperState(): void {
-    try {
-      console.log('🐛 === SOLID STEPPER DEBUG ===');
-      console.log('Services available:', {
-        stepValidator: !!this.stepValidator,
-        storageManager: !!this.storageManager,
-        activityTracker: !!this.activityTracker,
-        errorHandler: !!this.errorHandler,
-        componentManager: !!this.componentManager
-      });
-
-      console.log('Storage info:', this.storageManager.getStorageInfo());
-
-      for (let i = 0; i < STEPPER_CONFIG.MAX_STEPS; i++) {
-        console.log(`Step ${i + 1}:`, {
-          completed: this.getStepCompleted(i),
-          editable: this.getStepEditable(i),
-          dirty: this.getStepDirty(i)
-        });
-      }
-
-      console.log('=== END SOLID DEBUG ===');
-    } catch (error) {
-      this.errorHandler.handleErrors(error, 'debugStepperState');
-    }
-  }
-
-  logStorageInfo(): void {
-    const info = this.storageManager.getStorageInfo();
-    console.log('📊 Storage Info:', info);
-
-    if (this.legacyStepperService?.logStatus) {
-      this.legacyStepperService.logStatus();
-    }
-  }
-
   clearDraftData(): void {
     if (confirm('Draft verilerini silmek istediğinizden emin misiniz?')) {
       this.storageManager.clearStorage();
@@ -442,7 +402,7 @@ export class StepperComponent implements OnInit, OnDestroy {
         this.legacyStepperService.resetStepper();
       }
 
-      console.log('🗑️ Draft data cleared');
+
     }
   }
 }

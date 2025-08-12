@@ -556,28 +556,4 @@ export class StateManager {
 
   }
 
-  /**
-   * Debug bilgileri
-   */
-  logDebugInfo(): void {
-
-    console.log('Step 1:', {
-      original: this.step1State().original.length,
-      current: this.step1State().current.length,
-      added: this.step1State().added.length,
-      modified: this.step1State().modified.length,
-      deleted: this.step1State().deleted.length,
-      isDirty: this.step1State().isDirty
-    });
-    console.log('Step 2:', {
-      original: this.step2State().original.length,
-      current: this.step2State().current.length,
-      isDirty: this.step2State().isDirty
-    });
-    console.log('Step 3:', {
-      original: this.step3State().original.length,
-      current: this.step3State().current.length,
-      isDirty: this.step3State().isDirty
-    });
-  }
 }

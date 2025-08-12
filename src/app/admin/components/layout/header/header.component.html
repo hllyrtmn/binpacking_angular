@@ -3,25 +3,15 @@
     <button *ngIf="isToggleButton" mat-icon-button (click)="sidenavOpen.emit(null);">
       <mat-icon>menu</mat-icon>
     </button>
-    <span>BIN PACKING</span>
 
-    <button mat-flat-button>Basic</button>
+    <!-- Logo kısmı -->
+    <div class="logo-container">
+      <img routerLink="/admin" [src]="companyLogo" alt="Bin Packing Logo" class="logo">
+    </div>
+
     <mat-divider></mat-divider>
     <span class="spacer"></span>
 
-    <button mat-icon-button [mat-menu-trigger-for]="themeMenu">
-      <mat-icon>{{ themeService.selectedTheme()?.icon }}</mat-icon>
-    </button>
-    <mat-menu #themeMenu="matMenu">
-      @for (theme of themeService.getThemes(); track theme.name) {
-      <button [class.selected-theme]="
-            themeService.selectedTheme()?.name === theme.name
-          " mat-menu-item (click)="themeService.setTheme(theme.name)">
-        <mat-icon>{{ theme.icon }}</mat-icon>
-        <span>{{ theme.name | titlecase }}</span>
-      </button>
-      }
-    </mat-menu>
     <div mat-button [matMenuTriggerFor]="profileMenu" class="profile-menu">
       <img [src]="this.profilePhoto" class="profile-photo" alt="">
     </div>
@@ -30,6 +20,6 @@
 </mat-toolbar>
 
 <mat-menu #profileMenu="matMenu">
-  <button mat-menu-item [routerLink]="['/admin/profile']">Profile</button>
-  <button mat-menu-item (click)="logout()">Logout</button>
+  <button mat-menu-item [routerLink]="['/admin/profile']">Profil</button>
+  <button mat-menu-item (click)="logout()">Çıkış Yap</button>
 </mat-menu>

@@ -430,7 +430,7 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
     }
      else {
       // No valid data source
-      console.error('No data source provided (neither service nor externalDataFetcher)');
+
       this.toastService.error('Veri kaynağı bulunamadı', 'Hata');
       this.isLoading = false;
       this.dataSource.data = [];
@@ -453,17 +453,12 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
     // Tabloda gösterilen sütunlara göre dinamik olarak görünür alanları belirle
 
     if (this.displayedColumns.length === 0) {
-      console.error(
-        'Hata: displayedColumns boş! Lütfen tablo sütunlarını tanımlayın.'
-      );
+
       return;
     }
 
     // Sütun tanımlarımız yoksa bir hata mesajı göster
     if (!this.columnDefinitions || this.columnDefinitions.length === 0) {
-      console.error(
-        'Hata: columnDefinitions boş! Diyalog için sütun tanımları gerekli.'
-      );
 
       //Basit sütun tanımları oluştur
       this.columnDefinitions = this.displayedColumns
@@ -477,7 +472,7 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
     }
 
     // Debug için bilgileri konsola yaz
-    console.log('Dialog açılıyor. Sütun tanımları:', this.columnDefinitions);
+
 
     const dialogRef = this.dialog.open(AddOrUpdateDialogComponent, {
       width: '500px',
@@ -515,7 +510,7 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
                 this.isLoading = false;
               },
               error: (error) => {
-                console.error('Güncelleme hatası:', error);
+
                 this.toastService.error('Hata oluştu', 'Güncellenemedi');
                 this.isLoading = false;
               },
@@ -546,8 +541,8 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
                 this.isLoading = false;
               },
               error: (error) => {
-                console.log('ekleme verisi', result);
-                console.error('Ekleme hatası:', error);
+
+
                 this.toastService.error('Hata oluştu', 'Eklenemedi');
                 this.isLoading = false;
               },

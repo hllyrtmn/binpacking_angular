@@ -37,8 +37,6 @@ export class ProductService extends GenericCrudService<Product> {
       return this.http.get<any>(`${this.apiUrl}`, { params })
         .pipe(
           map(response => {
-            console.log('API yanıtı:', response);
-
             // API'den bir sayfalama yanıtı gelirse (paginated response) "results" alanını kullan
             if (response && response.results) {
               return response.results;
@@ -47,7 +45,6 @@ export class ProductService extends GenericCrudService<Product> {
             return Array.isArray(response) ? response : [];
           }),
           catchError(error => {
-            console.error('Ürün arama hatası:', error);
             throw error;
           })
         );

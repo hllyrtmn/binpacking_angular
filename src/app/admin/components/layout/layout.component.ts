@@ -72,8 +72,8 @@ export class LayoutComponent implements OnDestroy {
       ])
       .pipe(takeUntil(this.destroyed))
       .subscribe(result => {
-        // console.log(result);  gozlemledigin breakpointler  breakpoint: boolean formatinda liste halinde result icerisinde donuyor
-        // console.log(Breakpoints);
+        // gozlemledigin breakpointler  breakpoint: boolean formatinda liste halinde result icerisinde donuyor
+        //
         for (const query of Object.keys(result.breakpoints)) { // listeyi donerek true olan kirilmayi buluyorsun
           if (result.breakpoints[Breakpoints.XSmall]) {
             this.sidenavConfig.isSidenavOpen = false;

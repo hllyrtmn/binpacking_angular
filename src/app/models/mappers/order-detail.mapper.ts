@@ -80,7 +80,6 @@ export function mapOrderDetailsToUiProductsSafe(orderDetails: OrderDetail[]): Ui
       try {
         return mapOrderDetailToUiProduct(orderDetail);
       } catch (error) {
-        console.warn('OrderDetail mapping hatası:', error, orderDetail);
         return null;
       }
     })

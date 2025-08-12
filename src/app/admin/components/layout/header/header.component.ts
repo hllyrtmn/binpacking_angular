@@ -5,7 +5,6 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { ThemeService } from '../../../../services/theme.service';
 import {MatDividerModule} from '@angular/material/divider';
 import { UserService } from '../../../../services/user.service';
 
@@ -23,8 +22,9 @@ export class HeaderComponent implements OnInit {
 
   userService  = inject(UserService)
   profilePhoto = 'https://cdn-icons-png.flaticon.com/512/219/219986.png';
-
-  constructor(private router: Router,public themeService: ThemeService) {
+  companyLogo: string = 'assets/icons/bedisa.png';
+  // E:\Dersler\angular\binpacking-angular\binpacking_angular\src\assets\icons\bedisa.png
+  constructor(private router: Router) {
   }
 
   ngOnInit(): void {
@@ -34,13 +34,13 @@ export class HeaderComponent implements OnInit {
   getProfilePhoto(){
     this.userService.getProfile().subscribe({next:(user)=>{
       this.profilePhoto = user.profile_picture
+      this.companyLogo = user.company.logo
     }})
   }
 
   logout() {
     localStorage.removeItem('access_token');
     this.router.navigate(['auth/login']);
-
   }
 
 }

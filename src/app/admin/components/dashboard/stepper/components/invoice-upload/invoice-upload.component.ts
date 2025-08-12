@@ -229,7 +229,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
         this.referenceData = data;
       },
       error: (error) => {
-        console.error('Error loading reference data:', error);
+
       }
     });
     this.subscriptions.push(dataSub);
@@ -250,7 +250,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
         this.toastService.info(INVOICE_UPLOAD_CONSTANTS.MESSAGES.SUCCESS.DATA_RESTORED);
       }
     } catch (error) {
-      console.error('Error restoring session data:', error);
+
     }
   }
 
@@ -554,7 +554,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       this.lastFormState = '';
       this.stateManager.resetAllStates();
     } catch (error) {
-      console.error('Error resetting component state:', error);
+
     }
   }
 

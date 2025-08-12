@@ -1,8 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ErrorHandler, Injectable, NgZone } from '@angular/core';
+import { ErrorHandler, inject, Injectable, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
-import { ToastService } from './toast.service';
-
 @Injectable()
 export class GlobalErrorHandler implements ErrorHandler {
 
@@ -12,7 +10,6 @@ export class GlobalErrorHandler implements ErrorHandler {
     if (error instanceof HttpErrorResponse) {
       this.handleHttpError(error);
     } else {
-      console.error('An unexpected error occurred:', error.message || error);
       this.zone.run(() => {
         this.router.navigate(['error'], { queryParams: { error: error.message | error } });
       })
@@ -21,7 +18,6 @@ export class GlobalErrorHandler implements ErrorHandler {
 
   handleHttpError(error: HttpErrorResponse): void {
     console.error(`status: ${error.status}, message: ${error.message}`);
-    // this.toastService.error(`status: ${error.status}, message: ${error.message}`);
   }
 
 }

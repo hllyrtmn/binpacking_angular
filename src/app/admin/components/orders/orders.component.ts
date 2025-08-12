@@ -96,10 +96,10 @@ export class OrdersComponent implements OnInit {
       next: (response) => {
         this.orderResults = response.results;
         this.filteredOrderResults = this.orderResults.slice(0, 10);
-        console.log('Order results loaded:', this.orderResults);
+
       },
       error: (error) => {
-        console.error('Error fetching order results:', error);
+
       }
     });
   }
@@ -113,7 +113,7 @@ export class OrdersComponent implements OnInit {
         // Doğrudan response.results'ı atıyoruz
         this.orderDetails = response.results;
         this.loadingDetails = false;
-        console.log('Order details loaded:', this.orderDetails);
+
 
         // Detaylar yüklendikten sonra paket bilgilerini yükle
         this.loadPackageDetails(orderId);
@@ -122,7 +122,7 @@ export class OrdersComponent implements OnInit {
       error: (error) => {
         this.detailsError = 'Sipariş detayları yüklenirken bir hata oluştu.';
         this.loadingDetails = false;
-        console.error('Error fetching order details:', error);
+
       }
     });
   }
@@ -143,12 +143,12 @@ export class OrdersComponent implements OnInit {
         // Paket detaylarını aynı paketlere göre grupla
         this.groupPackageDetails();
 
-        console.log('Package details loaded:', this.packageDetails);
-        console.log('Grouped packages:', this.groupedPackages);
+
+
       },
       error: (error) => {
         this.loadingDetails = false;
-        console.error('Error fetching package details:', error);
+
       }
     });
   }
@@ -165,11 +165,11 @@ export class OrdersComponent implements OnInit {
       next: (response) => {
         this.files = response.results;
         this.loadingDetails = false;
-        console.log('File loaded:', this.files);
+
       },
       error: (error) => {
         this.loadingDetails = false;
-        console.error('Error fetching package details:', error);
+
       }
     });
   }
@@ -206,7 +206,6 @@ export class OrdersComponent implements OnInit {
       this.groupedPackages = [];
       return;
     }
-    console.log("package.detail",this.packageDetails.length)
     // Paketleri ID'ye göre grupla
     const packageMap = new Map();
 
@@ -234,7 +233,7 @@ export class OrdersComponent implements OnInit {
 
   // This method will be called when an option is selected
   onOrderResultSelected() {
-    console.log('Seçilen sipariş sonucu:', this.selectedOrderResult);
+
 
     // Reset previous details and errors
     this.orderDetails = null;

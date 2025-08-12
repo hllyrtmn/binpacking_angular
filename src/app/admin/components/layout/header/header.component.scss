@@ -14,24 +14,73 @@
     height: 2em;
     width: 2em;
 }
+
 .profile-picture {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 6px solid #D6BB86;
-  background-color: #ffffff;
-  transition: opacity 0.3s ease;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 6px solid #D6BB86;
+    background-color: #ffffff;
+    transition: opacity 0.3s ease;
+}
+
+/* Logo Styles */
+.logo-container {
+    display: flex;
+    align-items: center;
+    margin-left: 1rem;
+}
+
+.logo {
+    height: 2.5rem;
+    width: auto;
+    max-width: 150px;
+    object-fit: contain;
+    transition: all 0.3s ease;
+
+    /* Logo rengini beyaza çevir */
+    filter: brightness(0) saturate(100%) invert(100%);
+}
+
+.logo:hover {
+    transform: scale(1.05);
+    /* Hover'da hafif altın rengi ton */
+    filter: brightness(0) saturate(100%) invert(85%) sepia(15%) saturate(300%) hue-rotate(10deg);
+}
+
+/* Alternatif: Tema rengine uygun logo */
+.logo-theme-color {
+    height: 2.5rem;
+    width: auto;
+    max-width: 150px;
+    object-fit: contain;
+    transition: all 0.3s ease;
+
+    /* Altın rengine çevir (#D6BB86) */
+    filter: brightness(0) saturate(100%) invert(85%) sepia(15%) saturate(300%) hue-rotate(10deg) brightness(1.1);
+}
+
+.logo-theme-color:hover {
+    transform: scale(1.05);
+    filter: brightness(0) saturate(100%) invert(100%);
+}
+
+/* Dark mode için */
+.dark-theme .logo {
+    filter: brightness(0) saturate(100%) invert(100%);
+}
+
+.dark-theme .logo:hover {
+    filter: brightness(0) saturate(100%) invert(85%) sepia(15%) saturate(300%) hue-rotate(10deg);
 }
 
 @keyframes profile {
     0% {}
-
     50% {
         height: 3em;
         width: 3em;
     }
-
     100% {
         height: 2.4em;
         width: 2.4em;
