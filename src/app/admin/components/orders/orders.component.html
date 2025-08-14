@@ -74,9 +74,15 @@
                 <p class="card-subtitle">{{ selectedOrderResult.order.company_relation.target_company_name }} - {{ selectedOrderResult.order.date | date }}</p>
               </div>
             </div>
-            <div class="status-badge">
-              <span class="status-dot active"></span>
-              Aktif
+            <div class="card-actions">
+              <div class="status-badge">
+                <span class="status-dot active"></span>
+                Aktif
+              </div>
+              <button mat-raised-button color="primary" class="edit-button" (click)="editOrder()">
+                <mat-icon>edit</mat-icon>
+                Düzenle
+              </button>
             </div>
           </div>
 

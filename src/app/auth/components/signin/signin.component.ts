@@ -24,8 +24,8 @@ export class SigninComponent {
     public authService: AuthService
   ) {
     this.signinForm = this.fb.group({
-      username: ['muhammed'],
-      password: ['1911Ahmet.']
+      username: [''],
+      password: ['']
     });
   }
 

@@ -39,6 +39,12 @@ import {
 import { StepperStore, STATUSES } from './services/stepper.store';
 import { LocalStorageService } from './services/local-storage.service';
 import { ToastService } from '../../../../services/toast.service';
+import { ActivatedRoute } from '@angular/router';
+import { UIStateManager } from './components/invoice-upload/managers/ui-state.manager';
+import { RepositoryService } from './services/repository.service';
+import { StateManager } from './services/state-manager.service';
+import { OrderService } from '../../services/order.service';
+import { OrderDetailManager } from './components/invoice-upload/managers/order-detail.manager';
 
 /**
  * ✅ SOLID Principles Applied:
@@ -107,6 +113,14 @@ export class StepperComponent implements OnInit, OnDestroy {
   private readonly legacyLocalStorage = inject(LocalStorageService);
   private readonly legacyToastService = inject(ToastService);
 
+  //Active Route injected
+  private readonly route = inject(ActivatedRoute);
+  private readonly uiStateManager = inject(UIStateManager)
+  private readonly stateManager = inject(StateManager)
+  private readonly repositoryService = inject(RepositoryService)
+  private readonly orderService = inject(OrderService)
+  private readonly orderDetailManager = inject(OrderDetailManager)
+
   // ✅ Component State (SRP - sadece UI state)
   public selectedIndex: number = 0;
   public order_id: string = '';
@@ -114,6 +128,9 @@ export class StepperComponent implements OnInit, OnDestroy {
 
   // ✅ Lifecycle Management
   private readonly destroy$ = new Subject<void>();
+
+  editMode = false;
+  editOrderId: string | null = null;
 
   // ✅ Configuration (Injection token olarak gelecek)
   private readonly config: IStepperConfig = {
@@ -140,10 +157,20 @@ export class StepperComponent implements OnInit, OnDestroy {
   // ==========================================
 
   async ngOnInit(): Promise<void> {
-
-
     try {
-      await this.initializeComponent();
+    // Query params'ları kontrol et
+    this.route.queryParams.subscribe(async (params) => {
+      const editOrderId = params['orderId'];
+      const editMode = params['mode'] === 'edit';
+
+      if (editMode && editOrderId) {
+        console.log('Edit mode aktif, Order ID:', editOrderId);
+        await this.loadOrderForEdit(editOrderId);
+      } else {
+        // Normal mode - mevcut initialize
+        await this.initializeComponent();
+      }
+    });
 
     } catch (error) {
       this.errorHandler.handleErrors(error, 'ngOnInit');
@@ -151,9 +178,58 @@ export class StepperComponent implements OnInit, OnDestroy {
     }
   }
 
+  private async loadOrderForEdit(orderId: string): Promise<void> {
+    console.log('🔄 Edit mode: Order verileri yükleniyor...', orderId);
+
+    try {
+      // Loading durumunu göster
+      this.uiStateManager.setLoading(true);
+
+      // RepositoryService'i kullanarak order verilerini çek
+      this.repositoryService.setOrderId(orderId);
+
+      // Order details'i çek
+      const orderDetailsResponse = await this.repositoryService.orderDetailsOriginal(orderId).toPromise();
+      this.orderDetailManager.setOrderDetails(orderDetailsResponse)
+      console.log('📄 Order Details yüklendi:', orderDetailsResponse);
+
+      if (orderDetailsResponse && orderDetailsResponse.length > 0) {
+        // İlk order detail'den order bilgisini al
+        const order = await this.orderService.getById(orderId).toPromise()
+        debugger
+        if (order) {
+          console.log('📋 Order bilgisi:', order);
+
+          // Order ve OrderDetails'i InvoiceUpload component'e aktar
+          this.loadDataToInvoiceUploadComponent(order, orderDetailsResponse);
+
+          // Step 1'i completed olarak işaretle
+          this.legacyStepperService?.setStepStatus(1, STATUSES.completed, true);
+
+          // Stepper'ı Step 2'ye yönlendir (edit mode'da kullanıcı istediği step'e gidebilsin)
+          setTimeout(() => {
+            this.selectedIndex = 1;
+          }, 500);
+        }
+      }
+
+    } catch (error) {
+      console.error('❌ Edit mode order yükleme hatası:', error);
+      this.legacyToastService?.error('Order verileri yüklenirken hata oluştu');
+    } finally {
+      this.uiStateManager.setLoading(false);
+    }
+  }
+
+// Bu helper metodu ekleyin:
+  private loadDataToInvoiceUploadComponent(order: any, orderDetails: any[]): void {
+    // StateManager'a verileri yükle
+    this.stateManager.initializeStep1(order, orderDetails, false, 'Mevcut Order');
+
+    console.log('✅ Step 1 verileri yüklendi');
+  }
+
   ngOnDestroy(): void {
-
-
     try {
       this.cleanupComponent();
 

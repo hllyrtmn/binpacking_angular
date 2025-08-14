@@ -78,13 +78,13 @@
 
       <form class="login-form" [formGroup]="signinForm" (ngSubmit)="loginUser()">
         <mat-form-field appearance="outline">
-          <mat-label>Kullanıcı ID</mat-label>
+          <mat-label>Kullanıcı Adı</mat-label>
           <input matInput formControlName="username" placeholder="Lojistik kimlik numaranız">
           <mat-icon matSuffix>person</mat-icon>
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Güvenlik Kodu</mat-label>
+          <mat-label>Parola</mat-label>
           <input matInput formControlName="password" [type]="hide ? 'password' : 'text'" placeholder="Şifrenizi girin">
           <button mat-icon-button matSuffix (click)="hide = !hide" [attr.aria-label]="'Hide password'" [attr.aria-pressed]="hide">
             <mat-icon>{{hide ? 'visibility_off' : 'visibility'}}</mat-icon>

@@ -28,6 +28,13 @@ export class RepositoryService {
       .pipe(map((response) => mapToOrderDetailDtoList(response.results)));
   }
 
+  orderDetailsOriginal(id: string): Observable<any> {
+    // api/orders/order-details/{id}/
+    // get order detail by order id.
+    return this.http
+      .get<any>(`${this.api.getApiUrl()}/orders/order-details/?order_id=${id}`).pipe(map((response)=>response.results));
+  }
+
   pallets(): Observable<any> {
     return this.http
       .get<any>(`${this.api.getApiUrl()}/logistics/pallets/`, {

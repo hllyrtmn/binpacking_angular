@@ -15,12 +15,12 @@ import { MatIconModule } from '@angular/material/icon';
 
 const NAV_LIST_ITEM: INavListItem[] = [
   {
-    routerLink: ['/admin'],
+    routerLink: [''],
     title: 'Yerlestirme Hesaplama',
     icon: 'home'
   },
   {
-    routerLink: ['/admin/employees'],
+    routerLink: ['/employees'],
     title: 'Employees',
     icon: 'group'
   },
@@ -29,22 +29,22 @@ const NAV_LIST_ITEM: INavListItem[] = [
     icon: 'home',
     children: [
       {
-        routerLink: ['/admin/orders'],
+        routerLink: ['/orders'],
         title: 'Sipariş Yönetimi',
         icon: 'assignment'
       },
       {
-        routerLink: ['/admin/products'],
+        routerLink: ['/products'],
         title: 'Ürün Yönetimi',
         icon: 'inventory'
       },
       {
-        routerLink: ['/admin/employees'],
+        routerLink: ['/employees'],
         title: 'Warehouses',
         icon: 'home'
       },
       {
-        routerLink: ['/admin/logistics'],
+        routerLink: ['/logistics'],
         title: 'Shelf',
         icon: 'home'
       },

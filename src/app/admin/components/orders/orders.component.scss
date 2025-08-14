@@ -72,6 +72,20 @@
   margin-bottom: 16px;
 }
 
+.card-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.edit-button {
+  min-width: 100px;
+
+  .mat-icon {
+    margin-right: 8px;
+  }
+}
+
 /* Responsive layout */
 @media (max-width: 1200px) {
   .main-grid-container {

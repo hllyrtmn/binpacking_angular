@@ -22,6 +22,7 @@ export class OrderDetailManager {
   private orderDetails: OrderDetail[] = [];
 
   setOrderDetails(orderDetails: OrderDetail[]): void {
+    debugger
     this.orderDetails = [...orderDetails];
   }
 

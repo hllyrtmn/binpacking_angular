@@ -9,14 +9,14 @@ export const routes: Routes = [
     {
         pathMatch: 'full',
         path: '',
-        redirectTo: 'admin'
+        redirectTo: ''
     },
     {
         path: 'auth',
         children: AUTH_ROUTES
     },
     {
-        path: 'admin',
+        path: '',
         component: LayoutComponent,
         children: ADMIN_ROUTES
     },

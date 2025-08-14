@@ -4,6 +4,7 @@ import { User } from '../models/user.model';
 import { catchError, map, Observable, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
+import { ToastService } from '../../services/toast.service';
 
 @Injectable({
   providedIn: 'root'
@@ -17,7 +18,7 @@ export class AuthService {
   private headers = new HttpHeaders({ 'Content-Type': 'application/json' });
   currentUser: User | null = null;
   private apiService = inject(ApiService);
-
+  private toastService = inject(ToastService)
   constructor(private http: HttpClient, private router: Router) { }
 
   // Sign-up
@@ -35,14 +36,18 @@ export class AuthService {
         localStorage.setItem('access_token', res.access);
         localStorage.setItem('refresh_token', res.refresh);
         const redirectUrlAfterLogin = localStorage.getItem('redirectUrlAfterLogin');
+        this.toastService.success("Giriş Başarılı","Başarılı")
         if (redirectUrlAfterLogin) {
           localStorage.removeItem('redirectUrlAfterLogin');
           this.router.navigate([redirectUrlAfterLogin]);
         } else {
-          this.router.navigate(['/admin']);
+          this.router.navigate(['/']);
         }
       },
-      error: this.handleError,
+      error: (err) => {
+        this.handleError
+        this.toastService.error("Kullanıcı adı veya parola yanlış","Hata")
+      }
     });
   }
 

@@ -6,7 +6,7 @@
 
     <!-- Logo kısmı -->
     <div class="logo-container">
-      <img routerLink="/admin" [src]="companyLogo" alt="Bin Packing Logo" class="logo">
+      <img routerLink="/" [src]="companyLogo" alt="Bin Packing Logo" class="logo">
     </div>
 
     <mat-divider></mat-divider>
@@ -20,6 +20,6 @@
 </mat-toolbar>
 
 <mat-menu #profileMenu="matMenu">
-  <button mat-menu-item [routerLink]="['/admin/profile']">Profil</button>
+  <button mat-menu-item [routerLink]="['/profile']">Profil</button>
   <button mat-menu-item (click)="logout()">Çıkış Yap</button>
 </mat-menu>

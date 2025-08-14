@@ -236,23 +236,47 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   private restoreFromSession(): void {
-    try {
-      const restoredData = this.localService.restoreStep1Data();
+  try {
+    // StateManager'dan verileri al (hem session'dan hem de edit mode'dan gelebilir)
+    const step1State = this.stateManager.step1.state();
+    debugger;
+    if (step1State.current.length > 0) {
+      // StateManager'dan gelen veriler (edit mode için)
+      const order = this.stateManager.step1.order();
+      const orderDetails = step1State.current;
 
-      if (restoredData) {
-        if (restoredData.order) {
-          this.orderFormManager.setOrder(restoredData.order);
-        }
+      console.log('🔄 StateManager\'dan veriler yükleniyor:', { order, orderDetails });
 
-        this.orderDetailManager.setOrderDetails(restoredData.orderDetails);
-        this.calculateTotals();
-
-        this.toastService.info(INVOICE_UPLOAD_CONSTANTS.MESSAGES.SUCCESS.DATA_RESTORED);
+      if (order) {
+        this.orderFormManager.setOrder(order);
       }
-    } catch (error) {
 
+      this.orderDetailManager.setOrderDetails(orderDetails);
+      this.calculateTotals();
+
+      console.log('✅ Edit mode: Form ve tablo güncellendi');
+
+      this.toastService.info('Mevcut sipariş verileri yüklendi');
+      return;
     }
+
+    // Fallback: LocalStorage'dan restore et
+    const restoredData = this.localService.restoreStep1Data();
+
+    if (restoredData) {
+      if (restoredData.order) {
+        this.orderFormManager.setOrder(restoredData.order);
+      }
+
+      this.orderDetailManager.setOrderDetails(restoredData.orderDetails);
+      this.calculateTotals();
+
+      this.toastService.info('Önceki session verileri restore edildi');
+    }
+  } catch (error) {
+    console.error('❌ Restore hatası:', error);
   }
+}
 
   private setupAutoSaveListeners(): void {
     // Form changes auto-save

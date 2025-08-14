@@ -14,6 +14,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CdkAccordionModule } from '@angular/cdk/accordion';
 import { MatIconModule } from '@angular/material/icon';
 import { FileService } from '../services/file.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-orders',
@@ -62,6 +63,11 @@ export class OrdersComponent implements OnInit {
   // Search params
   searchTerm = '';
 
+  constructor(
+  // ... mevcut inject'ler
+  private router: Router
+) {}
+
   ngOnInit() {
     this.loadOrderResults();
   }
@@ -88,6 +94,22 @@ export class OrdersComponent implements OnInit {
 
   togglePackage(packageGroup: any) {
     packageGroup.expanded = !packageGroup.expanded;
+  }
+
+  editOrder(): void {
+    if (!this.selectedOrderResult) {
+      return;
+    }
+
+    const orderId = this.selectedOrderResult.order.id;
+
+    // Ana sayfaya orderId ile yönlendir
+    this.router.navigate(['/'], {
+      queryParams: {
+        orderId: orderId,
+        mode: 'edit'
+      }
+    });
   }
 
   // Load all order results

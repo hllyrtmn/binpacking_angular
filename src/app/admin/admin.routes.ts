@@ -1,16 +1,16 @@
 import { Routes } from '@angular/router';
-import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { AuthGuard } from '../auth/auth.guard';
 import { EmployeesComponent } from './components/employees/employees.component';
 import { LogisticsComponent } from './components/logistics/logistics.component';
 import { OrdersComponent } from './components/orders/orders.component';
 import { ProductsComponent } from './components/products/products.component';
 import { ProfileComponent } from './components/profile/profile.component';
+import { StepperComponent } from './components/dashboard/stepper/stepper.component';
 
 const ADMIN_ROUTES: Routes = [
   {
     path: '',
-    component: DashboardComponent,
+    component: StepperComponent,
     canActivate: [AuthGuard],
   },
   {
