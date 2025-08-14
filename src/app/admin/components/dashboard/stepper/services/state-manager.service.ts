@@ -135,7 +135,6 @@ export class StateManager {
    * Step 1: Initial data set (processFile sonrası)
    */
   initializeStep1(order: Order, orderDetails: OrderDetail[], hasFile: boolean = false, fileName?: string): void {
-    debugger
     // Original state'i set et
     this.step1State.update(state => ({
       ...state,
@@ -147,7 +146,6 @@ export class StateManager {
       isDirty: false,
       lastSaved: new Date()
     }));
-    debugger
     // Metadata'yı set et
     this.step1Metadata.set({
       order,

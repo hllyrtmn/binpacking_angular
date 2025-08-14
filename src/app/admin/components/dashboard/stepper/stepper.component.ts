@@ -7,7 +7,7 @@ import { FormBuilder, Validators, FormsModule, ReactiveFormsModule } from '@angu
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { StepperOrientation, MatStepperModule, MatStepper } from '@angular/material/stepper';
 import { Observable, Subject } from 'rxjs';
-import { map, takeUntil } from 'rxjs/operators';
+import { map, take, takeUntil } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -164,7 +164,6 @@ export class StepperComponent implements OnInit, OnDestroy {
       const editMode = params['mode'] === 'edit';
 
       if (editMode && editOrderId) {
-        console.log('Edit mode aktif, Order ID:', editOrderId);
         await this.loadOrderForEdit(editOrderId);
       } else {
         // Normal mode - mevcut initialize
@@ -191,14 +190,11 @@ export class StepperComponent implements OnInit, OnDestroy {
       // Order details'i çek
       const orderDetailsResponse = await this.repositoryService.orderDetailsOriginal(orderId).toPromise();
       this.orderDetailManager.setOrderDetails(orderDetailsResponse)
-      console.log('📄 Order Details yüklendi:', orderDetailsResponse);
 
       if (orderDetailsResponse && orderDetailsResponse.length > 0) {
         // İlk order detail'den order bilgisini al
         const order = await this.orderService.getById(orderId).toPromise()
-        debugger
         if (order) {
-          console.log('📋 Order bilgisi:', order);
 
           // Order ve OrderDetails'i InvoiceUpload component'e aktar
           this.loadDataToInvoiceUploadComponent(order, orderDetailsResponse);
@@ -214,7 +210,6 @@ export class StepperComponent implements OnInit, OnDestroy {
       }
 
     } catch (error) {
-      console.error('❌ Edit mode order yükleme hatası:', error);
       this.legacyToastService?.error('Order verileri yüklenirken hata oluştu');
     } finally {
       this.uiStateManager.setLoading(false);
@@ -225,8 +220,6 @@ export class StepperComponent implements OnInit, OnDestroy {
   private loadDataToInvoiceUploadComponent(order: any, orderDetails: any[]): void {
     // StateManager'a verileri yükle
     this.stateManager.initializeStep1(order, orderDetails, false, 'Mevcut Order');
-
-    console.log('✅ Step 1 verileri yüklendi');
   }
 
   ngOnDestroy(): void {
@@ -357,20 +350,57 @@ export class StepperComponent implements OnInit, OnDestroy {
   // ==========================================
 
   onStepChange(event: StepperSelectionEvent): void {
-    const stepChangeEvent: IStepChangeEvent = {
-      previousIndex: event.previouslySelectedIndex,
-      selectedIndex: event.selectedIndex,
-      timestamp: new Date()
-    };
-
+    console.log('🔄 Step değişti:', event.previouslySelectedIndex, '→', event.selectedIndex);
 
     this.selectedIndex = event.selectedIndex;
+
+    // Edit mode'da step değiştiğinde verileri yükle
+    this.handleStepChangeInEditMode(event.selectedIndex);
   }
 
-  orderIdComeOn(id: string): void {
-    this.order_id = id;
+  private handleStepChangeInEditMode(stepIndex: number): void {
+    this.route.queryParams.pipe(take(1)).subscribe(async (params) => {
+      const editMode = params['mode'] === 'edit';
+      const orderId = params['orderId'];
 
-    this.selectedIndex = 1;
+      if (editMode && orderId) {
+        switch (stepIndex) {
+          case 2: // Step 3 (Result)
+            await this.loadResultDataForStep3();
+            break;
+          // Diğer step'ler için de gerekirse eklenebilir
+        }
+      }
+    });
+  }
+
+  private async loadPackageDataForStep2(): Promise<void> {
+    // Query params'ı tekrar kontrol et
+    this.route.queryParams.pipe(take(1)).subscribe(async (params) => {
+      const editMode = params['mode'] === 'edit';
+      const orderId = params['orderId'];
+
+      if (editMode && orderId) {
+        console.log('🔄 Step 2 için paket verileri yükleniyor...');
+
+        try {
+          // Package detail verilerini çek
+          const packageResponse = await this.repositoryService.calculatePackageDetail(orderId).toPromise();
+
+          if (packageResponse?.packages) {
+            console.log('📦 Paket verileri yüklendi:', packageResponse);
+
+            // StateManager'a Step 2 verilerini yükle
+            this.stateManager.initializeStep2(packageResponse.packages);
+
+            console.log('✅ Step 2 StateManager güncellendi');
+          }
+
+        } catch (error) {
+          console.error('❌ Step 2 paket yükleme hatası:', error);
+        }
+      }
+    });
   }
 
   invoiceUploaded(): void {
@@ -382,9 +412,50 @@ export class StepperComponent implements OnInit, OnDestroy {
     }
   }
 
+  configureEditModeInPalletComponent(): void{
+    this.loadPackageDataForStep2();
+  }
+
+  onPalletControlCompleted(): void {
+    // Step 2 tamamlandığında Step 3 için verileri yükle
+    this.loadResultDataForStep3();
+
+    // Step 2'yi completed olarak işaretle
+    if (this.legacyStepperService?.setStepStatus) {
+      this.legacyStepperService.setStepStatus(2, STATUSES.completed, true);
+    }
+  }
+
+  private async loadResultDataForStep3(): Promise<void> {
+    this.route.queryParams.pipe(take(1)).subscribe(async (params) => {
+      const editMode = params['mode'] === 'edit';
+      const orderId = params['orderId'];
+
+      if (editMode && orderId) {
+        console.log('🔄 Step 3 için sonuç verileri yükleniyor...');
+
+        try {
+          // Order result verilerini çek
+          const orderResultResponse = await this.repositoryService.calculatePacking(orderId).toPromise();
+
+          if (orderResultResponse?.data) {
+            console.log('📊 Optimizasyon sonuçları yüklendi:', orderResultResponse);
+
+            // StateManager'a Step 3 verilerini yükle
+            this.stateManager.initializeStep3(orderResultResponse.data, []);
+
+            console.log('✅ Step 3 StateManager güncellendi');
+          }
+
+        } catch (error) {
+          console.error('❌ Step 3 sonuç yükleme hatası:', error);
+        }
+      }
+    });
+  }
+
+
   onShipmentCompleted(): void {
-
-
     try {
       this.performFullReset();
 

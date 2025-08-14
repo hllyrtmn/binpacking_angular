@@ -1,5 +1,5 @@
 
-<mat-stepper #stepper class="responsive-stepper" [linear]="true" [orientation]="(stepperOrientation | async)!">
+<mat-stepper #stepper class="responsive-stepper" [linear]="true" [orientation]="(stepperOrientation | async)!" (selectionChange)="onStepChange($event)">
   <app-loading></app-loading>
 
   <!-- ✅ DÜZELTME: Safe step access with null checks -->
@@ -8,7 +8,7 @@
     label="(ISB) İhracat Sipariş Bildirimi Yükleme"
     [editable]="getStepEditable(0)">
 
-    <app-invoice-upload #invoiceUploadComponent (invoiceUploaded)="invoiceUploaded()"></app-invoice-upload>
+    <app-invoice-upload #invoiceUploadComponent (invoiceUploaded)="invoiceUploaded()" (configurePallet)="configureEditModeInPalletComponent()"></app-invoice-upload>
   </mat-step>
 
   <mat-step

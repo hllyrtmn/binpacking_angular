@@ -94,6 +94,7 @@ import { RepositoryService } from '../../services/repository.service';
 })
 export class InvoiceUploadComponent implements OnInit, OnDestroy {
   @Output() invoiceUploaded = new EventEmitter<any>();
+  @Output() configurePallet = new EventEmitter<any>();
   @Output() orderDataRefreshed = new EventEmitter<void>();
   @ViewChild(GenericTableComponent) genericTable!: GenericTableComponent<any>;
 
@@ -239,22 +240,19 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   try {
     // StateManager'dan verileri al (hem session'dan hem de edit mode'dan gelebilir)
     const step1State = this.stateManager.step1.state();
-    debugger;
+
     if (step1State.current.length > 0) {
       // StateManager'dan gelen veriler (edit mode için)
       const order = this.stateManager.step1.order();
       const orderDetails = step1State.current;
-
-      console.log('🔄 StateManager\'dan veriler yükleniyor:', { order, orderDetails });
 
       if (order) {
         this.orderFormManager.setOrder(order);
       }
 
       this.orderDetailManager.setOrderDetails(orderDetails);
+      this.configurePallet.emit();
       this.calculateTotals();
-
-      console.log('✅ Edit mode: Form ve tablo güncellendi');
 
       this.toastService.info('Mevcut sipariş verileri yüklendi');
       return;
@@ -274,7 +272,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       this.toastService.info('Önceki session verileri restore edildi');
     }
   } catch (error) {
-    console.error('❌ Restore hatası:', error);
   }
 }
 
