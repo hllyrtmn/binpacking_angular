@@ -1,35 +1,269 @@
 .responsive-stepper {
   width: 100%;
-  max-width: 100%;
-  overflow-x: auto;
-}
+  background: transparent;
 
-/* For small screens, adjust the stepper header */
-@media (max-width: 768px) {
-  .responsive-stepper ::ng-deep .mat-step-header {
-    padding: 10px;
+  transform: translateZ(0);
+  will-change: transform;
+
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+
+  ::ng-deep {
+    .mat-stepper-horizontal {
+      .mat-horizontal-stepper-header-container {
+        border-bottom: 1px solid #e0e0e0;
+        background: #fafafa;
+
+        contain: layout style;
+      }
+
+      .mat-stepper-horizontal-line {
+        border-top-color: #d6bb86;
+        margin: 0 24px;
+        min-height: 1px;
+
+        contain: layout;
+      }
+    }
+
+    .mat-stepper-vertical {
+      .mat-step-header {
+        padding: 16px 24px;
+        min-height: 72px;
+
+        contain: layout style;
+      }
+    }
+
+    .mat-step-content {
+      margin-top: 8px;
+      margin-left: 50px;
+      min-height: 400px;
+
+      position: relative;
+      z-index: 1;
+
+      contain: layout style;
+
+      content-visibility: auto;
+      contain-intrinsic-size: 400px;
+
+      @media (max-width: 768px) {
+        margin-left: 24px;
+        min-height: 300px;
+        contain-intrinsic-size: 300px;
+      }
+    }
+
+    .mat-step-header {
+      cursor: pointer;
+      outline: none;
+      position: relative;
+
+      &:hover {
+        background-color: rgba(214, 187, 134, 0.1);
+
+        transform: translateY(-1px);
+        transition: all 0.2s ease-out;
+      }
+
+      &.cdk-keyboard-focused,
+      &.cdk-program-focused {
+        background-color: rgba(214, 187, 134, 0.2);
+        outline: 2px solid #006a6a;
+        outline-offset: 2px;
+      }
+
+      .mat-step-icon-state-done,
+      .mat-step-icon-state-edit {
+        background-color: #006a6a !important;
+        color: white !important;
+
+        transform: scale(1);
+        transition: transform 0.2s ease-out;
+
+        &:hover {
+          transform: scale(1.05);
+        }
+      }
+
+      .mat-step-icon-state-number {
+        background-color: #d6bb86 !important;
+        color: #333 !important;
+        font-weight: 600;
+      }
+    }
+
+    .mat-step-text-label {
+      color: #333;
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 1.4;
+
+      user-select: none;
+
+      text-rendering: optimizeLegibility;
+    }
   }
-
-  .responsive-stepper ::ng-deep .mat-step-label {
-    font-size: 14px;
-    white-space: normal;
-    line-height: 1.2;
-  }
 }
 
-/* Make sure content inside the stepper fits too */
-.responsive-stepper ::ng-deep .mat-step-content {
-  width: 100%;
-  overflow-x: auto;
-}
-
-// Mevcut CSS'nizin sonuna ekleyin
 .edit-mode-badge {
-  background: #D6BB86;
+  display: inline-block;
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
   color: white;
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 10px;
+  font-weight: 700;
   margin-left: 8px;
-  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  transform: translateZ(0);
+  animation: pulse-glow 2s ease-in-out infinite;
+
+  contain: layout style;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    transform: scale(1) translateZ(0);
+    box-shadow: 0 0 5px rgba(255, 107, 53, 0.3);
+  }
+  50% {
+    transform: scale(1.02) translateZ(0);
+    box-shadow: 0 0 15px rgba(255, 107, 53, 0.5);
+  }
+}
+
+.stepper-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+
+  contain: layout style;
+
+  p {
+    color: #666;
+    font-size: 14px;
+    margin: 0;
+
+    text-rendering: optimizeSpeed;
+  }
+}
+
+.debug-info {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  z-index: 9999;
+  max-width: 300px;
+
+  contain: layout style paint;
+
+  backdrop-filter: blur(10px);
+
+  h4 {
+    margin: 0 0 8px 0;
+    color: #4CAF50;
+    font-size: 14px;
+  }
+
+  p {
+    margin: 4px 0;
+    line-height: 1.3;
+  }
+
+  strong {
+    color: #FFD700;
+  }
+}
+
+@media (max-width: 768px) {
+  .responsive-stepper {
+    ::ng-deep {
+      .mat-stepper-vertical .mat-step-content {
+        margin-left: 16px;
+        padding: 16px 8px;
+      }
+
+      .mat-step-header {
+        padding: 12px 16px;
+        min-height: 64px;
+      }
+    }
+  }
+
+  .edit-mode-badge {
+    font-size: 9px;
+    padding: 1px 4px;
+
+    animation: none;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .responsive-stepper,
+  .edit-mode-badge,
+  .mat-step-header {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .mat-step-header:hover {
+    transform: none !important;
+  }
+}
+
+@media print {
+  .responsive-stepper {
+    transform: none;
+
+    .edit-mode-badge,
+    .debug-info {
+      display: none;
+    }
+
+    ::ng-deep {
+      .mat-stepper-horizontal-line {
+        border-top: 1px solid #000;
+      }
+
+      .mat-step-header {
+        background: white;
+        color: black;
+      }
+    }
+  }
+}
+
+.responsive-stepper {
+  ::ng-deep {
+    .mat-step-header:focus {
+      outline: 2px solid #006a6a;
+      outline-offset: 2px;
+
+      position: relative;
+      z-index: 2;
+    }
+  }
+}
+
+@container (max-width: 600px) {
+  .responsive-stepper {
+    font-size: 14px;
+
+    .edit-mode-badge {
+      font-size: 8px;
+    }
+  }
 }

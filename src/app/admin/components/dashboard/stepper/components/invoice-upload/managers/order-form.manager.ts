@@ -121,6 +121,7 @@ export class OrderFormManager {
       this.order = this.initializeNewOrder();
     }
 
+
     this.order.company_relation = selectedCompany;
 
     // Order ID'si varsa repository service'e bildir
