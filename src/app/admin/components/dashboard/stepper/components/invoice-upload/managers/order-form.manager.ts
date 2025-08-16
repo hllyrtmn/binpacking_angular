@@ -30,35 +30,12 @@ export class OrderFormManager {
     return this.uploadForm;
   }
 
-  getForm(): FormGroup {
-    return this.uploadForm;
-  }
 
-  updateFormValidation(order: Order): void {
-    if (!this.uploadForm) return;
-
-    this.uploadForm.patchValue({
-      orderName: order.name || '',
-      orderDate: order.date || '',
-      companyRelation: order.company_relation || '',
-      truck: order.truck || '',
-      weightType: order.weight_type || '',
-    });
-  }
 
   resetForm(): void {
     if (this.uploadForm) {
       this.uploadForm.reset();
     }
-  }
-
-  isFormValid(): boolean {
-    return !!(
-      this.order?.date &&
-      this.order?.company_relation &&
-      this.order?.truck &&
-      this.order?.weight_type
-    );
   }
 
   initializeNewOrder(): Order {
@@ -79,22 +56,6 @@ export class OrderFormManager {
     return this.order;
   }
 
-  setOrder(order: Order): void {
-    // Immutable object'i deep clone et
-    this.order = order
-
-    if(this.order)
-    this.updateFormValidation(this.order);
-
-    // Order set edildiğinde repository service'e ID'sini bildir
-    if (this.order?.id) {
-      this.repositoryService.setOrderId(this.order.id);
-    }
-}
-
-  getOrder(): Order | null {
-    return this.order;
-  }
 
   updateOrderField(field: string, value: any): Order {
     if (!this.order) {
@@ -106,8 +67,6 @@ export class OrderFormManager {
       ...this.order,
       [field]: value
     };
-
-    this.updateFormValidation(this.order);
 
     // Eğer ID field'ı güncellendiyse repository service'e bildir
     if (field === 'id' && value) {
@@ -197,7 +156,6 @@ export class OrderFormManager {
       .padStart(2, '0')}.${dateObj.getFullYear()}`;
   }
 
-  // Comparison methods for template
   compareObjects(a: any, b: any): boolean {
     if (!a || !b) return false;
     return a.id === b.id;
@@ -210,20 +168,5 @@ export class OrderFormManager {
 
   compareWeightTypes(a: string, b: string): boolean {
     return a === b;
-  }
-
-  resetOrder(): void {
-    this.order = null;
-    this.resetForm();
-    // Order reset edildiğinde repository service'deki ID'yi de temizle
-    this.repositoryService.setOrderId('');
-  }
-
-  getFormData(): FormData {
-    if (!this.uploadForm) {
-      throw new Error('Form not initialized');
-    }
-
-    return this.uploadForm.value as FormData;
   }
 }

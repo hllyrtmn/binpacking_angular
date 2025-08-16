@@ -17,7 +17,6 @@ export class OrderDetailManager {
   private readonly dialog = inject(MatDialog);
   private readonly toastService = inject(ToastService);
   private readonly repositoryService = inject(RepositoryService);
-  private readonly stateManager = inject(StateManager);
 
   private orderDetails: OrderDetail[] = [];
 
@@ -25,38 +24,10 @@ export class OrderDetailManager {
     this.orderDetails = [...orderDetails];
   }
 
-  getOrderDetails(): OrderDetail[] {
-    return [...this.orderDetails];
-  }
-
   addOrderDetail(orderDetail: OrderDetail): void {
     this.orderDetails.unshift(orderDetail);
-    this.stateManager.addOrderDetail(orderDetail);
   }
 
-  updateOrderDetail(event: OrderDetailUpdateEvent): OrderDetail | null {
-    const { item, data } = event;
-    if (!this.orderDetails?.length) return null;
-
-    const index = this.orderDetails.findIndex((detail) => detail.id === item.id);
-    if (index !== -1) {
-      const updatedDetail = { ...this.orderDetails[index], ...data };
-      this.orderDetails[index] = updatedDetail;
-      this.stateManager.updateOrderDetail(updatedDetail);
-      return updatedDetail;
-    }
-    return null;
-  }
-
-  deleteOrderDetail(id: string): boolean {
-    const index = this.orderDetails.findIndex((item: any) => item.id === id);
-    if (index !== -1) {
-      this.orderDetails = this.orderDetails.filter((item: any) => item.id !== id);
-      this.stateManager.deleteOrderDetail(id);
-      return true;
-    }
-    return false;
-  }
 
   openOrderDetailDialog(order: Order): Observable<OrderDetail | null> {
     const dialogRef = this.dialog.open(OrderDetailAddDialogComponent, {
@@ -104,69 +75,9 @@ export class OrderDetailManager {
     );
   }
 
-  syncWithBackendData(backendOrderDetails: OrderDetail[]): void {
-    this.orderDetails = [...backendOrderDetails];
-  }
-
-  clearOrderDetails(): void {
-    this.orderDetails = [];
-  }
-
   getOrderDetailById(id: string): OrderDetail | undefined {
     return this.orderDetails.find(detail => detail.id === id);
   }
 
-  getOrderDetailCount(): number {
-    return this.orderDetails.length;
-  }
 
-  validateOrderDetails(): boolean {
-    return this.orderDetails.length > 0;
-  }
-
-  getOrderDetailChanges(): OrderDetailChanges {
-    const changes = this.stateManager.saveStep1Changes();
-    const totalChanges = changes.added.length + changes.deleted.length + changes.modified.length
-
-    if(totalChanges === 0 && this.orderDetails.length > 0){
-      return{
-        added: [...this.orderDetails],
-        modified: changes.modified,
-        deleted: changes.deleted.map((detail: any) => typeof detail === 'string' ? detail : detail.id),
-      }
-    }
-    return {
-      added: changes.added,
-      modified: changes.modified,
-      deleted: changes.deleted.map((detail: any) => typeof detail === 'string' ? detail : detail.id),
-    };
-  }
-
-  // Bulk operations
-  addMultipleOrderDetails(orderDetails: OrderDetail[]): void {
-    this.orderDetails = [...orderDetails, ...this.orderDetails];
-  }
-
-  replaceAllOrderDetails(orderDetails: OrderDetail[]): void {
-    this.orderDetails = [...orderDetails];
-  }
-
-  // Search and filter
-  searchOrderDetails(searchTerm: string): OrderDetail[] {
-    if (!searchTerm.trim()) {
-      return this.getOrderDetails();
-    }
-
-    const term = searchTerm.toLowerCase();
-    return this.orderDetails.filter(detail =>
-      detail.product?.name?.toLowerCase().includes(term) ||
-      detail.product?.product_type?.type?.toLowerCase().includes(term) ||
-      detail.product?.product_type?.code?.toLowerCase().includes(term)
-    );
-  }
-
-  // Statistics
-  getTotalItemCount(): number {
-    return this.orderDetails.reduce((total, detail) => total + (detail.count || 0), 0);
-  }
 }
