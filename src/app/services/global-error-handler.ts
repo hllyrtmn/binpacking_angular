@@ -10,9 +10,10 @@ export class GlobalErrorHandler implements ErrorHandler {
     if (error instanceof HttpErrorResponse) {
       this.handleHttpError(error);
     } else {
-      this.zone.run(() => {
-        this.router.navigate(['error'], { queryParams: { error: error.message | error } });
-      })
+      console.log(error)
+      // this.zone.run(() => {
+      //   this.router.navigate(['error'], { queryParams: { error: error.message | error } });
+      // })
     }
   }
 

@@ -81,10 +81,8 @@ export class OrderFormManager {
 
   setOrder(order: Order): void {
     // Immutable object'i deep clone et
-    this.order = JSON.parse(JSON.stringify(order));
+    this.order = order
 
-    console.log('🔄 Order cloned (unfrozen):', this.order);
-    console.log('🔍 Cloned order frozen?', Object.isFrozen(this.order));
     if(this.order)
     this.updateFormValidation(this.order);
 

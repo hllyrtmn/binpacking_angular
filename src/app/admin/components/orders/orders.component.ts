@@ -1,5 +1,4 @@
 import { Component, inject, OnInit, ViewChild } from '@angular/core';
-import { OrderResultService } from '../services/order-result.service';
 import { OrderDetailService } from '../services/order-detail.service';
 import { PackageDetailService } from '../services/package-detail.service';
 import { CommonModule } from '@angular/common';
@@ -15,6 +14,7 @@ import { CdkAccordionModule } from '@angular/cdk/accordion';
 import { MatIconModule } from '@angular/material/icon';
 import { FileService } from '../services/file.service';
 import { Router } from '@angular/router';
+import { OrderService } from '../services/order.service';
 
 @Component({
   selector: 'app-orders',
@@ -36,7 +36,7 @@ import { Router } from '@angular/router';
   styleUrl: './orders.component.scss'
 })
 export class OrdersComponent implements OnInit {
-  orderResultService = inject(OrderResultService);
+  orderService = inject(OrderService);
   orderDetailService = inject(OrderDetailService);
   packageDetailService = inject(PackageDetailService);
   fileService = inject(FileService)
@@ -44,9 +44,9 @@ export class OrdersComponent implements OnInit {
   @ViewChild('orderSelect') orderSelect!: MatSelect;
 
   // Order results data
-  orderResults: any[] = [];
+  orders: any[] = [];
   filteredOrderResults: any[] = [];
-  selectedOrderResult: any;
+  selectedOrder: any;
 
   // Order details data
   orderDetails: any = null;
@@ -77,14 +77,14 @@ export class OrdersComponent implements OnInit {
     this.searchTerm = searchTerm.toLowerCase().trim();
 
     if (!this.searchTerm) {
-      this.filteredOrderResults = this.orderResults.slice(0, 10);
+      this.filteredOrderResults = this.orders.slice(0, 10);
       return;
     }
 
-    this.filteredOrderResults = this.orderResults.filter(o_r => {
-      const orderId = o_r.order.id.toLowerCase();
-      const companyName = o_r.order.company_relation.target_company_name.toLowerCase();
-      const country = o_r.order.company_relation.target_company_name.toLowerCase();
+    this.filteredOrderResults = this.orders.filter(o => {
+      const orderId = o.id.toLowerCase();
+      const companyName = o.company_relation.target_company_name.toLowerCase();
+      const country = o.company_relation.target_company_name.toLowerCase();
 
       return orderId.includes(this.searchTerm) ||
              companyName.includes(this.searchTerm) ||
@@ -97,11 +97,11 @@ export class OrdersComponent implements OnInit {
   }
 
   editOrder(): void {
-    if (!this.selectedOrderResult) {
+    if (!this.selectedOrder) {
       return;
     }
 
-    const orderId = this.selectedOrderResult.order.id;
+    const orderId = this.selectedOrder.id;
 
     // Ana sayfaya orderId ile yönlendir
     this.router.navigate(['/'], {
@@ -114,10 +114,10 @@ export class OrdersComponent implements OnInit {
 
   // Load all order results
   loadOrderResults() {
-    this.orderResultService.getAll().subscribe({
+    this.orderService.getAll().subscribe({
       next: (response) => {
-        this.orderResults = response.results;
-        this.filteredOrderResults = this.orderResults.slice(0, 10);
+        this.orders = response.results;
+        this.filteredOrderResults = this.orders.slice(0, 10);
 
       },
       error: (error) => {
@@ -264,8 +264,8 @@ export class OrdersComponent implements OnInit {
     this.groupedPackages = [];
 
     // Load order details if an order is selected
-    if (this.selectedOrderResult && this.selectedOrderResult.order) {
-      this.loadOrderDetails(this.selectedOrderResult.order.id);
+    if (this.selectedOrder) {
+      this.loadOrderDetails(this.selectedOrder.id);
     }
   }
 

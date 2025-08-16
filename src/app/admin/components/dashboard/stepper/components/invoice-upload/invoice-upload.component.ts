@@ -496,8 +496,10 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       .pipe(
         switchMap((orderResponse) => {
           if (orderResponse?.id && this.order) {
-            this.order.id = orderResponse.id;
-            this.repositoryService.setOrderId(orderResponse.id)
+            this.orderFormManager.setOrder({
+              ...this.order,
+              id: orderResponse.id
+            });
           }
 
           if (this.fileUploadManager.hasTempFile()) {

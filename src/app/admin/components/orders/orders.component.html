@@ -20,13 +20,13 @@
       <div class="selector-container">
         <mat-form-field appearance="outline" class="order-selector">
           <mat-label style="margin-left: 20px;">Sipariş Seçin</mat-label>
-          <mat-select #orderSelect [(ngModel)]="selectedOrderResult" (selectionChange)="onOrderResultSelected()">
+          <mat-select #orderSelect [(ngModel)]="selectedOrder" (selectionChange)="onOrderResultSelected()">
             <!-- Search input inside select panel -->
             <mat-select-trigger>
               <div class="select-trigger-content">
-                <mat-icon *ngIf="selectedOrderResult">assignment</mat-icon>
-                {{ selectedOrderResult ?
-                   'Sipariş No: ' + (selectedOrderResult.order.name) + '(' + selectedOrderResult.order.company_relation.target_company_name + ')' :
+                <mat-icon *ngIf="selectedOrder">assignment</mat-icon>
+                {{ selectedOrder ?
+                   'Sipariş No: ' + (selectedOrder.name) + '(' + selectedOrder.company_relation.target_company_name + ')' :
                    'Sevkiyat Emri Seçin' }}
               </div>
             </mat-select-trigger>
@@ -44,17 +44,17 @@
               </mat-form-field>
             </div>
 
-            <mat-option *ngFor="let o_r of filteredOrderResults" [value]="o_r">
+            <mat-option *ngFor="let o of filteredOrderResults" [value]="o">
               <div class="order-option">
                 <div class="order-icon">
                   <mat-icon>receipt</mat-icon>
                 </div>
                 <div class="order-details">
-                  <span class="order-id">{{ o_r.order.name }}</span>
-                  <span class="company-name">{{ o_r.order.company_relation.target_company_name }}</span>
+                  <span class="order-id">{{ o.name }}</span>
+                  <span class="company-name">{{ o.company_relation.target_company_name }}</span>
                 </div>
                 <div class="order-date">
-                  {{ o_r.order.date | date:'dd.MM.yyyy' }}
+                  {{ o.date | date:'dd.MM.yyyy' }}
                 </div>
               </div>
             </mat-option>
@@ -63,7 +63,7 @@
       </div>
 
       <!-- Order Summary Card -->
-      <div *ngIf="selectedOrderResult" class="card-container">
+      <div *ngIf="selectedOrder" class="card-container">
         <mat-card class="compact-card">
           <div class="card-ribbon"></div>
           <div class="card-header">
@@ -71,7 +71,7 @@
               <mat-icon class="card-icon">description</mat-icon>
               <div class="card-title-content">
                 <h3 class="card-title">Sevkiyat Özeti</h3>
-                <p class="card-subtitle">{{ selectedOrderResult.order.company_relation.target_company_name }} - {{ selectedOrderResult.order.date | date }}</p>
+                <p class="card-subtitle">{{ selectedOrder.company_relation.target_company_name }} - {{ selectedOrder.date | date }}</p>
               </div>
             </div>
             <div class="card-actions">
@@ -106,7 +106,7 @@
                 <mat-icon>error_outline</mat-icon>
               </div>
               <p class="error-message">{{ detailsError }}</p>
-              <button mat-button class="retry-button" (click)="loadOrderDetails(selectedOrderResult.order.id)">
+              <button mat-button class="retry-button" (click)="loadOrderDetails(selectedOrder.id)">
                 <mat-icon>refresh</mat-icon>
                 Tekrar Dene
               </button>
