@@ -54,6 +54,8 @@ import { UIStateManager } from './managers/ui-state.manager';
 import { InvoiceDataLoaderService } from './services/invoice-data-loader.service';
 import { InvoiceCalculatorService } from './services/invoice-calculator.service';
 
+import * as StepperSelectors from '../../../../../../store/stepper/stepper.selectors';
+import * as StepperActions from '../../../../../../store/stepper/stepper.actions';
 // Types and constants
 import {
   OrderDetailUpdateEvent,
@@ -64,6 +66,8 @@ import {
 } from './models/invoice-upload-interfaces';
 import { INVOICE_UPLOAD_CONSTANTS } from './constants/invoice-upload.constants';
 import { RepositoryService } from '../../services/repository.service';
+import { AppState } from '../../../../../../store';
+import { Store } from '@ngrx/store';
 
 @Component({
   selector: 'app-invoice-upload',
@@ -112,7 +116,13 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   private readonly autoSaveService = inject(AutoSaveService);
   private readonly localService = inject(LocalStorageService);
   private readonly stateManager = inject(StateManager);
-  private readonly repositoryService = inject(RepositoryService)
+  private readonly repositoryService = inject(RepositoryService);
+
+  private readonly store = inject(Store<AppState>);
+
+  // NgRx Observables
+  public isEditMode$ = this.store.select(StepperSelectors.selectIsEditMode);
+  public editOrderId$ = this.store.select(StepperSelectors.selectEditOrderId);
 
   // Form and data
   uploadForm!: FormGroup;
@@ -312,14 +322,21 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
   private triggerAutoSave(changeType: 'form' | 'user-action' | 'api-response' = 'user-action'): void {
     if (this.order && this.orderDetails.length > 0) {
-      const autoSaveData: AutoSaveData = {
+      const autoSaveData = {
         order: this.order,
         orderDetails: this.orderDetails,
         hasFile: this.fileUploadManager.hasTempFile(),
         fileName: this.fileUploadManager.getFileName(),
       };
 
-      this.autoSaveService.triggerStep1AutoSave(autoSaveData, changeType);
+      // NgRx action dispatch et (eski AutoSaveService yerine)
+      this.store.dispatch(StepperActions.triggerAutoSave({
+        stepNumber: 0,
+        data: autoSaveData,
+        changeType: changeType
+      }));
+
+      console.log('🎯 NgRx Auto-save triggered for Step 1');
     }
   }
 
@@ -507,6 +524,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
           this.handleSubmitSuccess(result);
         },
         error: (error) => {
+          console.log(error)
           this.toastService.error(
             INVOICE_UPLOAD_CONSTANTS.MESSAGES.ERROR.OPERATION_ERROR + (error.message || error)
           );
@@ -545,6 +563,9 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
     this.stateManager.markStep1AsSaved();
 
+    this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
+    this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 0, isValid: true }));
+
     if (result?.order_details && Array.isArray(result.order_details)) {
       this.syncComponentWithBackendData(result.order_details);
     }
@@ -579,17 +600,22 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     }
   }
 
-  forceSaveStep1(): void {
+    forceSaveStep1(): void {
     if (this.order && this.orderDetails.length > 0) {
-      const autoSaveData: AutoSaveData = {
+      const autoSaveData = {
         order: this.order,
         orderDetails: this.orderDetails,
         hasFile: this.fileUploadManager.hasTempFile(),
         fileName: this.fileUploadManager.getFileName(),
       };
 
-      this.autoSaveService.forceSave(1, autoSaveData);
-      this.toastService.success(INVOICE_UPLOAD_CONSTANTS.MESSAGES.SUCCESS.FORCE_SAVED);
+      // Force save action dispatch et
+      this.store.dispatch(StepperActions.forceSave({
+        stepNumber: 0,
+        data: autoSaveData
+      }));
+
+      console.log('⚡ NgRx Force save triggered for Step 1');
     }
   }
 

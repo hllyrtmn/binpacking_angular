@@ -33,6 +33,12 @@ import { StepperStore, STATUSES } from '../../services/stepper.store';
 import { LocalStorageService } from '../../services/local-storage.service';
 import { AutoSaveService } from '../../services/auto-save.service';
 
+import { Store } from '@ngrx/store';
+import { AppState } from '../../../../../../store';
+import * as StepperSelectors from '../../../../../../store/stepper/stepper.selectors';
+import * as StepperActions from '../../../../../../store/stepper/stepper.actions';
+import { take } from 'rxjs/operators';
+
 @Component({
   selector: 'app-pallet-control',
   imports: [
@@ -59,6 +65,14 @@ export class PalletControlComponent implements OnInit {
   stepperService = inject(StepperStore);
   private readonly localStorageService = inject(LocalStorageService);
   private readonly autoSaveService = inject(AutoSaveService);
+  private readonly store = inject(Store<AppState>);
+
+  // NgRx Observables
+  public isEditMode$ = this.store.select(StepperSelectors.selectIsEditMode);
+  public editOrderId$ = this.store.select(StepperSelectors.selectEditOrderId);
+  public autoSaveStatus$ = this.store.select(StepperSelectors.selectStepAutoSaveStatus(1));
+  public autoSaveStatusText$ = this.store.select(StepperSelectors.selectAutoSaveStatusText(1));
+  public hasPendingChanges$ = this.store.select(StepperSelectors.selectStepHasPendingChanges(1));
 
   // YENİ: Form change tracking
   private lastPackageState: string = '';
@@ -100,15 +114,22 @@ export class PalletControlComponent implements OnInit {
 
   // YENİ METHOD: Force save (emergency durumlar için)
   forceSaveStep2(): void {
-    this.autoSaveService.forceSave(2, {
+    const autoSaveData = {
       packages: this.packages,
+      availableProducts: this.availableProducts,
       totalWeight: this.totalWeight,
       totalMeter: this.totalMeter,
       remainingArea: this.remainingArea,
       remainingWeight: this.remainingWeight,
-    });
+    };
 
-    this.toastService.success('Pallet verileri zorla kaydedildi');
+    // Force save action dispatch et
+    this.store.dispatch(StepperActions.forceSave({
+      stepNumber: 1,
+      data: autoSaveData
+    }));
+
+    console.log('⚡ NgRx Force save triggered for Step 2');
   }
 
   /**
@@ -205,7 +226,7 @@ export class PalletControlComponent implements OnInit {
         this.triggerAutoSave('user-action');
         this.lastPackageState = currentState;
       }
-    }, 1500);
+    }, 5000); // Interval'ı biraz artırdık çünkü debounce effect'te
   }
 
   private getCurrentPackageState(): string {
@@ -230,35 +251,49 @@ export class PalletControlComponent implements OnInit {
   }
 
   private triggerAutoSave(
-    changeType:
-      | 'form'
-      | 'drag-drop'
-      | 'user-action'
-      | 'api-response' = 'user-action'
-  ): void {
-    if (this.autoSaveTimeout) {
-      clearTimeout(this.autoSaveTimeout);
-    }
+  changeType: 'form' | 'drag-drop' | 'user-action' | 'api-response' = 'user-action'
+): void {
+  if (this.packages.length > 0) {
+    // Data'yı sadeleştir (serializable hale getir)
+    const autoSaveData = {
+      packages: this.packages.map(pkg => ({
+        id: pkg.id,
+        name: pkg.name,
+        pallet: pkg.pallet ? {
+          id: pkg.pallet.id,
+          name: pkg.pallet.name,
+          dimension: pkg.pallet.dimension
+        } : null,
+        products: pkg.products.map(product => ({
+          id: product.id,
+          name: product.name,
+          count: product.count
+        }))
+      })),
+      availableProducts: this.availableProducts.map(product => ({
+        id: product.id,
+        name: product.name,
+        count: product.count
+      })),
+      // Basit sayısal veriler
+      totalWeight: this.totalWeight || 0,
+      totalMeter: this.totalMeter || 0,
+      remainingArea: this.remainingArea || 0,
+      remainingWeight: this.remainingWeight || 0
+    };
 
-    this.autoSaveTimeout = setTimeout(
-      () => {
-        if (this.packages.length > 0) {
-          this.autoSaveService.triggerStep2AutoSave(
-            {
-              packages: this.packages,
-              availableProducts: this.availableProducts,
-              totalWeight: this.totalWeight,
-              totalMeter: this.totalMeter,
-              remainingArea: this.remainingArea,
-              remainingWeight: this.remainingWeight,
-            },
-            changeType
-          );
-        }
-      },
-      changeType === 'drag-drop' ? 1000 : 500
-    );
+    console.log('🎯 Simplified data for NgRx:', autoSaveData);
+
+    // NgRx action dispatch et
+    this.store.dispatch(StepperActions.triggerAutoSave({
+      stepNumber: 1,
+      data: autoSaveData,
+      changeType: changeType
+    }));
+
+    console.log('🎯 NgRx Auto-save triggered for Step 2');
   }
+}
 
   private restoreFromSession(): void {
     try {
@@ -305,6 +340,12 @@ export class PalletControlComponent implements OnInit {
      COMPONENT SETUP
   ===================== */
   configureComponent(): void {
+    this.store.select(StepperSelectors.selectIsEditMode).pipe(take(1)).subscribe(isEditMode => {
+      if (isEditMode) {
+        console.log('🔄 PalletControl: Edit mode detected, loading existing data...');
+      }
+    });
+
     this.loadPallets();
     this.repository.calculatePackageDetail().subscribe({
       next: (response) => {
@@ -1322,6 +1363,8 @@ export class PalletControlComponent implements OnInit {
     this.repository.bulkCreatePackageDetail(packageData).subscribe({
       next: (response) => {
         this.toastService.success('Kaydedildi', 'Başarılı');
+        this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 1 }));
+        this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 1, isValid: true }));
         this.stepperService.setStepStatus(2, STATUSES.completed, true);
 
         this.saveCurrentStateToSession();

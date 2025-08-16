@@ -14,6 +14,12 @@ import { loadingInterceptor } from './components/loading/loading.interceptor';
 import { ToastrModule } from 'ngx-toastr';
 import { PermissionService } from './services/permission.service';
 
+import { provideStore } from '@ngrx/store';
+import { provideEffects } from '@ngrx/effects';
+import { provideStoreDevtools } from '@ngrx/store-devtools';
+import { reducers } from './store';
+import { StepperEffects } from './store/stepper/stepper.effects';
+
 export function appInitialization() {
   const configService = inject(ConfigService);
   const permissionService = inject(PermissionService);
@@ -33,7 +39,6 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withInterceptors([
         AuthInterceptor,
-        CsrfTokenInterceptor,
         loadingInterceptor
       ]
       )
@@ -49,6 +54,12 @@ export const appConfig: ApplicationConfig = {
     ),
     {
       provide: ErrorHandler, useClass: GlobalErrorHandler
-    }
+    },
+    provideStore(reducers),
+    provideEffects([StepperEffects]),
+    provideStoreDevtools({
+      maxAge: 25,
+      logOnly: false
+    })
   ]
 };

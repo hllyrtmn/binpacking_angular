@@ -80,14 +80,19 @@ export class OrderFormManager {
   }
 
   setOrder(order: Order): void {
-    this.order = order;
-    this.updateFormValidation(order);
+    // Immutable object'i deep clone et
+    this.order = JSON.parse(JSON.stringify(order));
+
+    console.log('🔄 Order cloned (unfrozen):', this.order);
+    console.log('🔍 Cloned order frozen?', Object.isFrozen(this.order));
+    if(this.order)
+    this.updateFormValidation(this.order);
 
     // Order set edildiğinde repository service'e ID'sini bildir
-    if (order?.id) {
-      this.repositoryService.setOrderId(order.id);
+    if (this.order?.id) {
+      this.repositoryService.setOrderId(this.order.id);
     }
-  }
+}
 
   getOrder(): Order | null {
     return this.order;

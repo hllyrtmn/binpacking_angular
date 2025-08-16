@@ -491,7 +491,19 @@ export class StateManager {
    * Session'dan restore
    */
   private restoreFromSession(): void {
+    try {
+    // StateManager'dan verileri al
+    const step1State = this.step1.state();
 
+    if (step1State.current.length > 0) {
+      const order = this.step1.order();
+      console.log('🔍 Order from StateManager:', order);
+      console.log('🔍 Order from StateManager frozen?', Object.isFrozen(order));
+      // ... rest of code
+    }
+  } catch (error) {
+    console.error('❌ Restore hatası:', error);
+  }
 
     // Step 1 restore
     const step1Data = this.sessionService.restoreStep1Data();

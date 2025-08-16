@@ -8,18 +8,6 @@ import { IUiProduct } from "../../interfaces/ui-interfaces/ui-product.interface"
 export class UiPackage implements IUiPackage {
   pallet: IUiPallet | null;
   products: IUiProduct[];
-  // addProduct(product: IUiProduct): void {
-  //   throw new Error("Method not implemented.");
-  // }
-  // removeProduct(product: IUiProduct): void {
-  //   throw new Error("Method not implemented.");
-  // }
-  // addPallet(pallet: IUiPallet): void {
-  //   throw new Error("Method not implemented.");
-  // }
-  // isValid(product: IUiPallet): boolean {
-  //   throw new Error("Method not implemented.");
-  // }
   order: Order;
   company?: Company | undefined;
   id: string;

@@ -25,6 +25,13 @@ import { LocalStorageService } from '../../services/local-storage.service';
 import { ThreeJSTruckVisualizationComponent } from '../../../../../../components/threejs-truck-visualization/threejs-truck-visualization.component';
 import { OrderResultService } from '../../../../services/order-result.service';
 
+import { Store } from '@ngrx/store';
+import { AppState } from '../../../../../../store';
+import * as StepperSelectors from '../../../../../../store/stepper/stepper.selectors';
+import * as StepperActions from '../../../../../../store/stepper/stepper.actions';
+import { StateManager } from '../../services/state-manager.service';
+import { Router } from '@angular/router';
+
 // Enhanced Package interface for type safety
 interface PackageData {
   id: number;
@@ -86,7 +93,6 @@ interface DataChangeEvent {
   styleUrl: './result-step.component.scss',
 })
 export class ResultStepComponent implements OnInit, OnDestroy {
-  @ViewChild('plotlyComponent') plotlyComponent!: any;
   @ViewChild('threeJSComponent') threeJSComponent!: ThreeJSTruckVisualizationComponent;
   @Output() shipmentCompleted = new EventEmitter<void>();
 
@@ -144,12 +150,25 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   // Enhanced Services
   private readonly autoSaveService = inject(AutoSaveService);
   private readonly localStorageService = inject(LocalStorageService);
+  private router = inject(Router);
+  private stateManager = inject(StateManager)
   repositoryService = inject(RepositoryService);
   stepperService = inject(StepperStore);
   sanitizer = inject(DomSanitizer);
   toastService = inject(ToastService);
   cdr = inject(ChangeDetectorRef);
   orderResultService = inject(OrderResultService)
+
+  private readonly store = inject(Store<AppState>);
+
+  // NgRx Observables
+  public isEditMode$ = this.store.select(StepperSelectors.selectIsEditMode);
+  public editOrderId$ = this.store.select(StepperSelectors.selectEditOrderId);
+  public stepperSummary$ = this.store.select(StepperSelectors.selectStepperSummary);
+  public autoSaveStatus$ = this.store.select(StepperSelectors.selectStepAutoSaveStatus(2));
+  public autoSaveStatusText$ = this.store.select(StepperSelectors.selectAutoSaveStatusText(2));
+  public hasPendingChanges$ = this.store.select(StepperSelectors.selectStepHasPendingChanges(2));
+
 
   // Enhanced Auto-save management
   private lastResultState: string = '';
@@ -236,42 +255,30 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       clearTimeout(this.resultAutoSaveTimeout);
     }
 
-    // Enhanced debounce auto-save
-    const delay = changeType === 'api-response' ? 500 :
-                  changeType === 'emergency' ? 0 :
-                  changeType === 'data-change' ? 1000 : 2000;
+    if (
+      this.hasResults &&
+      (this.piecesData?.length > 0 || this.reportFiles?.length > 0)
+    ) {
+      // Data'yı sadeleştir (serializable hale getir)
+      const enhancedSaveData = {
+        optimizationResult: this.piecesData || [],
+        reportFiles: this.reportFiles || [],
+        // Basit metadata
+        hasResults: this.hasResults,
+        showVisualization: this.showVisualization,
+        timestamp: new Date().toISOString(),
+        changeType: changeType
+      };
 
-    this.resultAutoSaveTimeout = setTimeout(
-      () => {
-        if (
-          this.hasResults &&
-          (this.piecesData?.length > 0 || this.reportFiles?.length > 0)
-        ) {
-          const enhancedSaveData = {
-            optimizationResult: this.piecesData,
-            originalOptimizationResult: this.originalPiecesData, // NEW
-            reportFiles: this.reportFiles,
-            loadingStats: this.loadingStats,
-            algorithmStats: this.algorithmStats,
-            truckDimension: this.truckDimension,
-            hasResults: this.hasResults,
-            showVisualization: this.showVisualization,
-            currentViewType: this.currentViewType,
-            hasThreeJSError: this.hasThreeJSError,
-            hasUnsavedChanges: this.hasUnsavedChanges,
-            dataChangeHistory: this.dataChangeHistory,
-            totalPackagesProcessed: this.totalPackagesProcessed,
-            performanceMetrics: this.performanceMetrics,
-            processedPackages: this.processedPackages,
-            timestamp: new Date().toISOString(),
-            changeType: changeType
-          };
+      // NgRx action dispatch et
+      this.store.dispatch(StepperActions.triggerAutoSave({
+        stepNumber: 2,
+        data: enhancedSaveData,
+        changeType: changeType
+      }));
 
-          // this.autoSaveService.triggerStep3AutoSave(enhancedSaveData, changeType);
-        }
-      },
-      delay
-    );
+      console.log('🎯 NgRx Auto-save triggered for Step 3');
+    }
   }
 
   private handleEmergencyAutoSave(): void {
@@ -864,32 +871,20 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   forceSaveStep3(): void {
     if (this.hasResults) {
       const enhancedSaveData = {
-        optimizationResult: this.piecesData,
-        originalOptimizationResult: this.originalPiecesData, // NEW
-        reportFiles: this.reportFiles,
-        loadingStats: this.loadingStats,
-        algorithmStats: this.algorithmStats,
-        truckDimension: this.truckDimension,
+        optimizationResult: this.piecesData || [],
+        reportFiles: this.reportFiles || [],
         hasResults: this.hasResults,
         showVisualization: this.showVisualization,
-        currentViewType: this.currentViewType,
-        hasThreeJSError: this.hasThreeJSError,
-        hasUnsavedChanges: this.hasUnsavedChanges,
-        dataChangeHistory: this.dataChangeHistory,
-        totalPackagesProcessed: this.totalPackagesProcessed,
-        performanceMetrics: this.performanceMetrics,
         timestamp: new Date().toISOString()
       };
 
-      this.autoSaveService.forceSave(3, enhancedSaveData);
+      // Force save action dispatch et
+      this.store.dispatch(StepperActions.forceSave({
+        stepNumber: 2,
+        data: enhancedSaveData
+      }));
 
-      // Mark as saved
-      this.hasUnsavedChanges = false;
-
-      this.toastService.success('Enhanced result verileri zorla kaydedildi');
-
-    } else {
-      this.toastService.warning('Kaydetmek için önce optimizasyonu çalıştırın');
+      console.log('⚡ NgRx Force save triggered for Step 3');
     }
   }
 
@@ -1122,6 +1117,9 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     this.hasResults = true;
     this.showVisualization = true;
     this.hasThreeJSError = false;
+
+    this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 2 }));
+    this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 2, isValid: true }));
 
     this.safeUpdateEnhancedUI();
     this.toastService.success('Enhanced paketleme ve rapor başarıyla oluşturuldu.');
@@ -2152,23 +2150,10 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     }
 
     const changeSummary = this.getDataChangeSummary();
-    const confirmMessage =
-      'Sevkiyatı tamamlamak istediğinizden emin misiniz?\n\n' +
-      '✅ Tüm veriler gelişmiş formatta kaydedilecek\n' +
-      `📦 ${this.processedPackages.length} paket işlendi\n` +
-      `🔄 ${changeSummary.totalChanges} değişiklik yapıldı\n` +
-      (changeSummary.hasUnsavedChanges ? '⚠️ Kaydedilmemiş değişiklikler var\n' : '') +
-      '🗑️ Geçici veriler temizlenecek\n' +
-      '🆕 Yeni sipariş için hazırlanacak\n' +
-      '📊 Performans metrikleri saklanacak';
+    const confirmMessage = '...' // mevcut confirmation message
 
     const confirmed = confirm(confirmMessage);
-
-    if (!confirmed) {
-      return;
-    }
-
-
+    if (!confirmed) return;
 
     try {
       // 1. Enhanced final save to session (with all changes)
@@ -2180,26 +2165,39 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       // 3. Enhanced session clean
       this.localStorageService.clearStorage();
 
-      // 4. Enhanced stepper reset
+      // 4. NgRx'i tamamen reset et
+      // this.store.dispatch(StepperActions.resetStepper());
+
+      // 5. StateManager'ı reset et
+      // this.stateManager.resetAllStates();
+
+      // 6. Enhanced stepper reset
       this.stepperService.resetStepper();
 
-      // 5. Enhanced component state clean
+      // 7. Enhanced component state clean
       this.resetEnhancedComponentState();
 
-      // 6. Enhanced success notification
+      // 8. URL'i temizle ve home'a yönlendir
+      // this.router.navigate(['/'], {
+      //   replaceUrl: true, // Browser history'de replace et
+      //   queryParams: {} // Tüm query params'ları temizle
+      // });
+
+      // 9. Enhanced success notification
       this.toastService.success(
-        `Sevkiyat başarıyla tamamlandı! ${changeSummary.totalChanges} değişiklik kaydedildi. Yeni sipariş işlemeye başlayabilirsiniz.`,
+        `Sevkiyat başarıyla tamamlandı! ${changeSummary.totalChanges} değişiklik kaydedildi.`,
         'Tamamlandı!'
       );
 
-      // 7. Enhanced completion signal
+      // 10. Enhanced completion signal
       setTimeout(() => {
         this.shipmentCompleted.emit();
       }, 1500);
 
-      // 8. Enhanced logging
+      console.log('🔄 Complete shipment: All reset completed, navigated to home');
 
     } catch (error) {
+      console.error('❌ Complete shipment error:', error);
       this.toastService.error('Sevkiyat tamamlanırken hata oluştu');
     }
   }

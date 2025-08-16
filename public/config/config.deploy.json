@@ -15,7 +15,7 @@
         "clientId": "#{aadClientId}"
     },
     "apiServer": {
-        "url": "https://api.industricode.com/api",
+        "url": "http://localhost:8000/api",
         "metadata": "https://#{apiServerPrefix}.demo.com/api/v1.0/",
         "rule": "https://#{apiServerPrefix}.demo.com/api/v1.0/"
     }

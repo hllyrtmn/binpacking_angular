@@ -467,13 +467,6 @@
         }
       }
     }
-
-    // Plotly component container
-    app-plotly {
-      display: block;
-      width: 100%;
-      height: 600px;
-    }
   }
 
   // ========================================
@@ -1049,10 +1042,6 @@
 
     .visualization-container {
       min-height: 400px;
-
-      app-plotly {
-        height: 400px;
-      }
     }
 
     .results-summary .summary-cards {
