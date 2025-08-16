@@ -17,12 +17,14 @@
         >}
       </ng-template>
 
+      @if (selectedIndex === 0 || vm.isEditMode) {
       <app-invoice-upload
         #invoiceUploadComponent
         (invoiceUploaded)="invoiceUploaded()"
         (configurePallet)="configureEditModeInPalletComponent()"
       >
       </app-invoice-upload>
+      }
     </mat-step>
 
     <mat-step [completed]="getStepCompleted(1)" [editable]="getStepEditable(1)">
@@ -44,7 +46,7 @@
         >}
       </ng-template>
 
-      @if (selectedIndex === 2 || vm.isEditMode) {
+      @if (selectedIndex === 2 || (vm.isEditMode && getStepCompleted(1))) {
       <app-result-step
         #resultStepComponent
         (shipmentCompleted)="onShipmentCompleted()"

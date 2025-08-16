@@ -31,6 +31,38 @@ export interface StepperState {
       pendingChanges: boolean;
     };
   };
+
+  globalError: {
+    message: string;
+    code?: string;
+    stepIndex?: number;
+    timestamp?: Date;
+  } | null;
+
+  retryAttempts: {
+    [stepIndex: number]: number;
+  };
+
+  stepLoading: {
+    [stepIndex: number]: {
+      isLoading: boolean;
+      operation?: string;
+      progress?: number;
+      message?: string;
+    };
+  };
+
+  step1State: {
+    order: any | null;
+    orderDetails: any[];
+    original: any[];
+    added: any[];
+    modified: any[];
+    deleted: any[];
+    hasFile: boolean;
+    fileName?: string;
+    isDirty: boolean;
+  };
 }
 
 export const initialStepperState: StepperState = {
@@ -58,5 +90,29 @@ export const initialStepperState: StepperState = {
     0: { status: 'idle', lastSaved: null, error: null, pendingChanges: false },
     1: { status: 'idle', lastSaved: null, error: null, pendingChanges: false },
     2: { status: 'idle', lastSaved: null, error: null, pendingChanges: false }
+  },
+
+  globalError: null,
+  retryAttempts: {
+    0: 0,
+    1: 0,
+    2: 0
+  },
+
+  stepLoading: {
+    0: { isLoading: false },
+    1: { isLoading: false },
+    2: { isLoading: false }
+  },
+
+  step1State: {
+    order: null,
+    orderDetails: [],
+    original: [],
+    added: [],
+    modified: [],
+    deleted: [],
+    hasFile: false,
+    isDirty: false
   }
 };

@@ -101,7 +101,12 @@ export class OrderFormManager {
       this.order = this.initializeNewOrder();
     }
 
-    (this.order as any)[field] = value;
+    // immutable güncelleme
+    this.order = {
+      ...this.order,
+      [field]: value
+    };
+
     this.updateFormValidation(this.order);
 
     // Eğer ID field'ı güncellendiyse repository service'e bildir
@@ -121,10 +126,12 @@ export class OrderFormManager {
       this.order = this.initializeNewOrder();
     }
 
+    // immutable güncelleme
+    this.order = {
+      ...this.order,
+      company_relation: selectedCompany
+    };
 
-    this.order.company_relation = selectedCompany;
-
-    // Order ID'si varsa repository service'e bildir
     if (this.order.id) {
       this.repositoryService.setOrderId(this.order.id);
     }
@@ -137,9 +144,11 @@ export class OrderFormManager {
       this.order = this.initializeNewOrder();
     }
 
-    this.order.truck = selectedTruck;
+    this.order = {
+      ...this.order,
+      truck: selectedTruck
+    };
 
-    // Order ID'si varsa repository service'e bildir
     if (this.order.id) {
       this.repositoryService.setOrderId(this.order.id);
     }
@@ -152,9 +161,11 @@ export class OrderFormManager {
       this.order = this.initializeNewOrder();
     }
 
-    this.order.weight_type = selectedWeightType;
+    this.order = {
+      ...this.order,
+      weight_type: selectedWeightType
+    };
 
-    // Order ID'si varsa repository service'e bildir
     if (this.order.id) {
       this.repositoryService.setOrderId(this.order.id);
     }

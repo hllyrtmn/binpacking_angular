@@ -198,5 +198,149 @@ export const stepperReducer = createReducer(
         pendingChanges: true
       }
     }
-  }))
+  })),
+  // Global Error Management Reducers
+  on(StepperActions.setGlobalError, (state, { error }) => ({
+    ...state,
+    globalError: {
+      ...error,
+      timestamp: new Date()
+    }
+  })),
+
+  on(StepperActions.clearGlobalError, (state) => ({
+    ...state,
+    globalError: null
+  })),
+
+  on(StepperActions.retryOperation, (state, { stepIndex }) => ({
+    ...state,
+    retryAttempts: {
+      ...state.retryAttempts,
+      [stepIndex]: (state.retryAttempts[stepIndex] || 0) + 1
+    },
+    globalError: null // Retry'da error'ı temizle
+  })),
+
+    // Step Loading Reducers (error reducers'ların altına ekle)
+  on(StepperActions.setStepLoading, (state, { stepIndex, loading, operation }) => ({
+    ...state,
+    stepLoading: {
+      ...state.stepLoading,
+      [stepIndex]: {
+        ...state.stepLoading[stepIndex],
+        isLoading: loading,
+        operation: loading ? operation : undefined,
+        progress: loading ? state.stepLoading[stepIndex]?.progress : undefined,
+        message: loading ? state.stepLoading[stepIndex]?.message : undefined
+      }
+    }
+  })),
+
+  on(StepperActions.setStepProgress, (state, { stepIndex, progress, message }) => ({
+    ...state,
+    stepLoading: {
+      ...state.stepLoading,
+      [stepIndex]: {
+        ...state.stepLoading[stepIndex],
+        progress,
+        message
+      }
+    }
+  })),
+
+  on(StepperActions.clearStepProgress, (state, { stepIndex }) => ({
+    ...state,
+    stepLoading: {
+      ...state.stepLoading,
+      [stepIndex]: {
+        ...state.stepLoading[stepIndex],
+        progress: undefined,
+        message: undefined
+      }
+    }
+  })),
+
+  // Step1 Migration Reducers
+  on(StepperActions.initializeStep1State, (state, { order, orderDetails, hasFile, fileName }) => ({
+    ...state,
+    step1State: {
+      order,
+      orderDetails: [...orderDetails],
+      original: [...orderDetails],
+      added: [],
+      modified: [],
+      deleted: [],
+      hasFile,
+      fileName,
+      isDirty: false
+    }
+  })),
+
+  on(StepperActions.updateStep1OrderDetails, (state, { orderDetails }) => ({
+    ...state,
+    step1State: {
+      ...state.step1State,
+      orderDetails: [...orderDetails],
+      isDirty: true
+    }
+  })),
+
+  on(StepperActions.addOrderDetail, (state, { orderDetail }) => ({
+    ...state,
+    step1State: {
+      ...state.step1State,
+      orderDetails: [...state.step1State.orderDetails, orderDetail],
+      added: [...state.step1State.added, orderDetail],
+      isDirty: true
+    }
+  })),
+
+  on(StepperActions.updateOrderDetail, (state, { orderDetail }) => {
+    const orderDetails = state.step1State.orderDetails.map(detail =>
+      detail.id === orderDetail.id ? orderDetail : detail
+    );
+
+    const isOriginal = state.step1State.original.some(item => item.id === orderDetail.id);
+    const isAlreadyModified = state.step1State.modified.some(item => item.id === orderDetail.id);
+
+    let modified = [...state.step1State.modified];
+    if (isOriginal && !isAlreadyModified) {
+      modified.push(orderDetail);
+    } else if (isAlreadyModified) {
+      modified = modified.map(item => item.id === orderDetail.id ? orderDetail : item);
+    }
+
+    return {
+      ...state,
+      step1State: {
+        ...state.step1State,
+        orderDetails,
+        modified,
+        isDirty: true
+      }
+    };
+  }),
+
+  on(StepperActions.deleteOrderDetail, (state, { orderDetailId }) => {
+    const itemToDelete = state.step1State.orderDetails.find(item => item.id === orderDetailId);
+    const orderDetails = state.step1State.orderDetails.filter(item => item.id !== orderDetailId);
+
+    const isOriginal = state.step1State.original.some(item => item.id === orderDetailId);
+    const deleted = isOriginal && itemToDelete ? [...state.step1State.deleted, itemToDelete] : state.step1State.deleted;
+    const added = state.step1State.added.filter(item => item.id !== orderDetailId);
+    const modified = state.step1State.modified.filter(item => item.id !== orderDetailId);
+
+    return {
+      ...state,
+      step1State: {
+        ...state.step1State,
+        orderDetails,
+        added,
+        modified,
+        deleted,
+        isDirty: true
+      }
+    };
+  })
 );

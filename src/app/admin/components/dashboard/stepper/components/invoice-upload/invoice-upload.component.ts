@@ -34,6 +34,7 @@ import {
   catchError,
   Subscription,
   interval,
+  take,
 } from 'rxjs';
 
 import { OrderService } from '../../../../services/order.service';
@@ -68,6 +69,9 @@ import { INVOICE_UPLOAD_CONSTANTS } from './constants/invoice-upload.constants';
 import { RepositoryService } from '../../services/repository.service';
 import { AppState } from '../../../../../../store';
 import { Store } from '@ngrx/store';
+
+import { selectStep1Order, selectStep1OrderDetails, selectStep1IsDirty,
+         selectStep1HasFile, selectStep1FileName } from '../../../../../../store/stepper/stepper.selectors';
 
 @Component({
   selector: 'app-invoice-upload',
@@ -119,6 +123,12 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   private readonly repositoryService = inject(RepositoryService);
 
   private readonly store = inject(Store<AppState>);
+  // NgRx Step1 Migration Observables
+  public step1Order$ = this.store.select(selectStep1Order);
+  public step1OrderDetails$ = this.store.select(selectStep1OrderDetails);
+  public step1IsDirty$ = this.store.select(selectStep1IsDirty);
+  public step1HasFile$ = this.store.select(selectStep1HasFile);
+  public step1FileName$ = this.store.select(selectStep1FileName);
 
   // NgRx Observables
   public isEditMode$ = this.store.select(StepperSelectors.selectIsEditMode);
@@ -139,11 +149,15 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
   // Getters for template access
   get order(): Order | null {
-    return this.orderFormManager.getOrder();
+    let currentOrder: Order | null = null;
+    this.step1Order$.pipe(take(1)).subscribe(order => currentOrder = order);
+    return currentOrder || this.orderFormManager.getOrder(); // Fallback
   }
 
   get orderDetails(): OrderDetail[] {
-    return this.orderDetailManager.getOrderDetails();
+    let currentOrderDetails: OrderDetail[] = [];
+  this.step1OrderDetails$.pipe(take(1)).subscribe(details => currentOrderDetails = details);
+  return currentOrderDetails.length > 0 ? currentOrderDetails : this.orderDetailManager.getOrderDetails(); // Fallback
   }
 
   get uiState$(): Observable<UIState> {
@@ -257,6 +271,15 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       const orderDetails = step1State.current;
 
       if (order) {
+        // NgRx store'a yükle
+        this.store.dispatch(StepperActions.initializeStep1State({
+          order,
+          orderDetails,
+          hasFile: false,
+          fileName: 'Restored Data'
+        }));
+
+        // Legacy için de set et (geçiş süreci)
         this.orderFormManager.setOrder(order);
       }
 
@@ -396,9 +419,23 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
   // Order field updates
   onOrderFieldChange(field: string, value: any): void {
+    let currentOrder = this.order;
+    if (currentOrder) {
+      const updatedOrder = { ...currentOrder, [field]: value };
+
+      this.store.dispatch(StepperActions.initializeStep1State({
+        order: updatedOrder,
+        orderDetails: this.orderDetails,
+        hasFile: this.step1HasFile$ ? true : false,
+        fileName: this.step1FileName$ ? 'Updated' : undefined
+      }));
+    }
+
+    // Legacy için de güncelle (geçiş süreci)
     this.orderFormManager.updateOrderField(field, value);
     this.triggerAutoSave('user-action');
   }
+
 
   onCompanyChange(selectedCompany: any): void {
     this.orderFormManager.updateCompanyRelation(selectedCompany);
@@ -427,6 +464,12 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (newOrderDetail) => {
           if (newOrderDetail) {
+            // NgRx store'a ekle
+            this.store.dispatch(StepperActions.addOrderDetail({
+              orderDetail: newOrderDetail
+            }));
+
+            // Legacy için de ekle (geçiş süreci)
             this.updateTableData();
             this.calculateTotals();
             this.triggerAutoSave('user-action');
@@ -438,8 +481,14 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   updateOrderDetail(event: OrderDetailUpdateEvent): void {
-    const updatedDetail = this.orderDetailManager.updateOrderDetail(event);
-    if (updatedDetail) {
+    const updatedDetail = { ...event.item, ...event.data };
+    this.store.dispatch(StepperActions.updateOrderDetail({
+      orderDetail: updatedDetail
+    }));
+
+    // Legacy için de güncelle (geçiş süreci)
+    const legacyUpdatedDetail = this.orderDetailManager.updateOrderDetail(event);
+    if (legacyUpdatedDetail) {
       this.updateTableData();
       this.calculateTotals();
       this.triggerAutoSave('user-action');
@@ -447,6 +496,10 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   deleteOrderDetail(id: string): void {
+    this.store.dispatch(StepperActions.deleteOrderDetail({
+      orderDetailId: id
+    }));
+
     const deleted = this.orderDetailManager.deleteOrderDetail(id);
     if (deleted) {
       this.updateTableData();

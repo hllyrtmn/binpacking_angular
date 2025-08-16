@@ -98,3 +98,59 @@ export const forceSave = createAction(
   '[Auto-Save] Force Save',
   props<{ stepNumber: number; data: any }>()
 );
+
+export const setGlobalError = createAction(
+  '[Error] Set Global Error',
+  props<{ error: { message: string; code?: string; stepIndex?: number } }>()
+);
+
+export const clearGlobalError = createAction(
+  '[Error] Clear Global Error'
+);
+
+export const retryOperation = createAction(
+  '[Error] Retry Operation',
+  props<{ stepIndex: number; operation: string }>()
+);
+
+// Step-specific Loading Actions
+export const setStepLoading = createAction(
+  '[Loading] Set Step Loading',
+  props<{ stepIndex: number; loading: boolean; operation?: string }>()
+);
+
+export const setStepProgress = createAction(
+  '[Loading] Set Step Progress',
+  props<{ stepIndex: number; progress: number; message?: string }>()
+);
+
+export const clearStepProgress = createAction(
+  '[Loading] Clear Step Progress',
+  props<{ stepIndex: number }>()
+);
+
+// StateManager Migration Actions
+export const initializeStep1State = createAction(
+  '[Migration] Initialize Step1 State',
+  props<{ order: any; orderDetails: any[]; hasFile: boolean; fileName?: string }>()
+);
+
+export const updateStep1OrderDetails = createAction(
+  '[Migration] Update Step1 OrderDetails',
+  props<{ orderDetails: any[] }>()
+);
+
+export const addOrderDetail = createAction(
+  '[Migration] Add Order Detail',
+  props<{ orderDetail: any }>()
+);
+
+export const updateOrderDetail = createAction(
+  '[Migration] Update Order Detail',
+  props<{ orderDetail: any }>()
+);
+
+export const deleteOrderDetail = createAction(
+  '[Migration] Delete Order Detail',
+  props<{ orderDetailId: string }>()
+);

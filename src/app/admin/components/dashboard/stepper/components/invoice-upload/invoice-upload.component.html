@@ -89,124 +89,122 @@
   <!-- Order Details Dashboard -->
   <div *ngIf="(order && order.id) && !isLoading" class="details-section">
     <!-- Order Summary -->
-    <div class="dashboard-panel">
-      <!-- Sipariş Tarihi -->
-      <div class="dashboard-item">
-        <div class="dashboard-icon">
-          <mat-icon>event</mat-icon>
-        </div>
-        <div class="dashboard-info">
-          <span class="dashboard-label">Sipariş Tarihi</span>
-          <div class="dashboard-value-container">
-            <mat-form-field class="edit-field" appearance="outline">
-              <input
-                matInput
-                [matDatepicker]="picker"
-                [(ngModel)]="order.date"
-                (ngModelChange)="onOrderFieldChange('date', $event)"
-                placeholder="Tarih seçin"
-                required
-              />
-              <mat-datepicker-toggle
-                matSuffix
-                [for]="picker"
-              ></mat-datepicker-toggle>
-              <mat-datepicker #picker></mat-datepicker>
-              <mat-error *ngIf="!order?.date">
-                Sipariş tarihi zorunludur
-              </mat-error>
-            </mat-form-field>
-          </div>
-        </div>
-      </div>
-
-      <!-- Müşteri -->
-      <div class="dashboard-item">
-        <div class="dashboard-icon">
-          <mat-icon>business</mat-icon>
-        </div>
-        <div class="dashboard-info">
-          <span class="dashboard-label">Müşteri</span>
-          <div class="dashboard-value-container">
-            <mat-form-field class="edit-field" appearance="outline">
-              <mat-select
-                [(ngModel)]="order.company_relation"
-                (selectionChange)="onCompanyChange($event.value)"
-                placeholder="Müşteri seçin"
-                [compareWith]="compareCompanies"
-                required
-              >
-                <mat-option
-                  *ngFor="let company of targetCompanies"
-                  [value]="company"
-                >
-                  {{ company.target_company_name }}
-                </mat-option>
-              </mat-select>
-              <mat-error *ngIf="!order?.company_relation">
-                Müşteri seçimi zorunludur
-              </mat-error>
-            </mat-form-field>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tır Bilgisi -->
-      <div class="dashboard-item">
-        <div class="dashboard-icon">
-          <mat-icon>local_shipping</mat-icon>
-        </div>
-        <div class="dashboard-info">
-          <span class="dashboard-label">Tır</span>
-          <div class="dashboard-value-container">
-            <mat-form-field class="edit-field" appearance="outline">
-              <mat-select
-                [(ngModel)]="order.truck"
-                (selectionChange)="onTruckChange($event.value)"
-                placeholder="Tır seçin"
-                [compareWith]="compareObjects"
-                required
-              >
-                <mat-option *ngFor="let truck of trucks" [value]="truck">
-                  {{ truck.name }}
-                </mat-option>
-              </mat-select>
-              <mat-error *ngIf="!order?.truck">
-                Tır seçimi zorunludur
-              </mat-error>
-            </mat-form-field>
-          </div>
-        </div>
-      </div>
-
-      <!-- Ağırlık Tipi -->
-      <div class="dashboard-item">
-        <div class="dashboard-icon">
-          <mat-icon>category</mat-icon>
-        </div>
-        <div class="dashboard-info">
-          <span class="dashboard-label">Ağırlık Tipi</span>
-          <div class="dashboard-value-container">
-            <mat-form-field class="edit-field" appearance="outline">
-              <mat-select
-                [(ngModel)]="order.weight_type"
-                (selectionChange)="onWeightTypeChange($event.value)"
-                placeholder="Ağırlık tipi seçin"
-                [compareWith]="compareWeightTypes"
-                required
-              >
-                <mat-option value="eco">Eco</mat-option>
-                <mat-option value="std">Std</mat-option>
-                <mat-option value="pre">Pre</mat-option>
-              </mat-select>
-              <mat-error *ngIf="!order?.weight_type">
-                Ağırlık tipi seçimi zorunludur
-              </mat-error>
-            </mat-form-field>
-          </div>
-        </div>
+<div class="dashboard-panel">
+  <!-- Sipariş Tarihi -->
+  <div class="dashboard-item">
+    <div class="dashboard-icon">
+      <mat-icon>event</mat-icon>
+    </div>
+    <div class="dashboard-info">
+      <span class="dashboard-label">Sipariş Tarihi</span>
+      <div class="dashboard-value-container">
+        <mat-form-field class="edit-field" appearance="outline">
+          <input
+            matInput
+            [matDatepicker]="picker"
+            [value]="order?.date"
+            (dateChange)="onOrderFieldChange('date', $event.value)"
+            placeholder="Tarih seçin"
+            required
+          />
+          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+          <mat-error *ngIf="!order?.date">
+            Sipariş tarihi zorunludur
+          </mat-error>
+        </mat-form-field>
       </div>
     </div>
+  </div>
+
+  <!-- Müşteri -->
+  <div class="dashboard-item">
+    <div class="dashboard-icon">
+      <mat-icon>business</mat-icon>
+    </div>
+    <div class="dashboard-info">
+      <span class="dashboard-label">Müşteri</span>
+      <div class="dashboard-value-container">
+        <mat-form-field class="edit-field" appearance="outline">
+          <mat-select
+            [value]="order?.company_relation"
+            (selectionChange)="onCompanyChange($event.value)"
+            placeholder="Müşteri seçin"
+            [compareWith]="compareCompanies"
+            required
+          >
+            <mat-option
+              *ngFor="let company of targetCompanies"
+              [value]="company"
+            >
+              {{ company.target_company_name }}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="!order?.company_relation">
+            Müşteri seçimi zorunludur
+          </mat-error>
+        </mat-form-field>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tır Bilgisi -->
+  <div class="dashboard-item">
+    <div class="dashboard-icon">
+      <mat-icon>local_shipping</mat-icon>
+    </div>
+    <div class="dashboard-info">
+      <span class="dashboard-label">Tır</span>
+      <div class="dashboard-value-container">
+        <mat-form-field class="edit-field" appearance="outline">
+          <mat-select
+            [value]="order?.truck"
+            (selectionChange)="onTruckChange($event.value)"
+            placeholder="Tır seçin"
+            [compareWith]="compareObjects"
+            required
+          >
+            <mat-option *ngFor="let truck of trucks" [value]="truck">
+              {{ truck.name }}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="!order?.truck">
+            Tır seçimi zorunludur
+          </mat-error>
+        </mat-form-field>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ağırlık Tipi -->
+  <div class="dashboard-item">
+    <div class="dashboard-icon">
+      <mat-icon>category</mat-icon>
+    </div>
+    <div class="dashboard-info">
+      <span class="dashboard-label">Ağırlık Tipi</span>
+      <div class="dashboard-value-container">
+        <mat-form-field class="edit-field" appearance="outline">
+          <mat-select
+            [value]="order?.weight_type"
+            (selectionChange)="onWeightTypeChange($event.value)"
+            placeholder="Ağırlık tipi seçin"
+            [compareWith]="compareWeightTypes"
+            required
+          >
+            <mat-option value="eco">Eco</mat-option>
+            <mat-option value="std">Std</mat-option>
+            <mat-option value="pre">Pre</mat-option>
+          </mat-select>
+          <mat-error *ngIf="!order?.weight_type">
+            Ağırlık tipi seçimi zorunludur
+          </mat-error>
+        </mat-form-field>
+      </div>
+    </div>
+  </div>
+</div>
+
 
     <!-- Order Details Table -->
     <div class="logistics-card">

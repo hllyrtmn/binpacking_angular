@@ -174,3 +174,105 @@ export const selectAutoSaveStatusText = (stepNumber: number) => createSelector(
     }
   }
 );
+
+// Global Error Management Selectors
+export const selectGlobalError = createSelector(
+  selectStepperState,
+  (state) => state.globalError
+);
+
+export const selectHasGlobalError = createSelector(
+  selectGlobalError,
+  (error) => error !== null
+);
+
+export const selectRetryAttempts = createSelector(
+  selectStepperState,
+  (state) => state.retryAttempts
+);
+
+export const selectStepRetryCount = (stepIndex: number) => createSelector(
+  selectRetryAttempts,
+  (retryAttempts) => retryAttempts[stepIndex] || 0
+);
+
+export const selectCanRetry = (stepIndex: number) => createSelector(
+  selectStepRetryCount(stepIndex),
+  (retryCount) => retryCount < 3 // Max 3 retry
+);
+
+// Step Loading Selectors
+export const selectStepLoading = createSelector(
+  selectStepperState,
+  (state) => state.stepLoading
+);
+
+export const selectStepLoadingState = (stepIndex: number) => createSelector(
+  selectStepLoading,
+  (stepLoading) => stepLoading[stepIndex]
+);
+
+export const selectIsStepLoading = (stepIndex: number) => createSelector(
+  selectStepLoadingState(stepIndex),
+  (loadingState) => loadingState?.isLoading || false
+);
+
+export const selectStepProgress = (stepIndex: number) => createSelector(
+  selectStepLoadingState(stepIndex),
+  (loadingState) => loadingState?.progress
+);
+
+export const selectStepLoadingMessage = (stepIndex: number) => createSelector(
+  selectStepLoadingState(stepIndex),
+  (loadingState) => loadingState?.message
+);
+
+export const selectAnyStepLoading = createSelector(
+  selectStepLoading,
+  (stepLoading) => Object.values(stepLoading).some(step => step.isLoading)
+);
+
+// Step1 Migration Selectors
+export const selectStep1State = createSelector(
+  selectStepperState,
+  (state) => state.step1State
+);
+
+export const selectStep1Order = createSelector(
+  selectStep1State,
+  (step1State) => step1State.order
+);
+
+export const selectStep1OrderDetails = createSelector(
+  selectStep1State,
+  (step1State) => step1State.orderDetails
+);
+
+export const selectStep1Original = createSelector(
+  selectStep1State,
+  (step1State) => step1State.original
+);
+
+export const selectStep1Changes = createSelector(
+  selectStep1State,
+  (step1State) => ({
+    added: step1State.added,
+    modified: step1State.modified,
+    deleted: step1State.deleted
+  })
+);
+
+export const selectStep1IsDirty = createSelector(
+  selectStep1State,
+  (step1State) => step1State.isDirty
+);
+
+export const selectStep1HasFile = createSelector(
+  selectStep1State,
+  (step1State) => step1State.hasFile
+);
+
+export const selectStep1FileName = createSelector(
+  selectStep1State,
+  (step1State) => step1State.fileName
+);
