@@ -1,4 +1,4 @@
-import { Component, inject, Input, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -29,16 +29,12 @@ import { UiPallet } from '../ui-models/ui-pallet.model';
 import { UiPackage } from '../ui-models/ui-package.model';
 import { ToastService } from '../../../../../../services/toast.service';
 import { mapPackageToPackageDetail } from '../../../../../../models/mappers/package-detail.mapper';
-import { StepperStore, STATUSES } from '../../services/stepper.store';
 import { LocalStorageService } from '../../services/local-storage.service';
-import { AutoSaveService } from '../../services/auto-save.service';
-
 import { Store } from '@ngrx/store';
 import { AppState } from '../../../../../../store';
 import * as StepperSelectors from '../../../../../../store/stepper/stepper.selectors';
 import { take } from 'rxjs/operators';
 
-// NgRx Step2 Migration imports
 import { selectStep2Packages, selectStep2AvailableProducts, selectStep2IsDirty,
          selectStep2Changes } from '../../../../../../store/stepper/stepper.selectors';
 import * as StepperActions from '../../../../../../store/stepper/stepper.actions';
@@ -121,7 +117,6 @@ export class PalletControlComponent implements OnInit {
     });
   }
 
-  // NgRx'ten packages'i al
   get packages(): UiPackage[] {
     let currentPackages: UiPackage[] = [];
     this.step2Packages$.pipe(take(1)).subscribe(packages => {
@@ -130,7 +125,6 @@ export class PalletControlComponent implements OnInit {
     return currentPackages;
   }
 
-  // NgRx'ten availableProducts'ı al
   get availableProducts(): UiProduct[] {
     let currentProducts: UiProduct[] = [];
     this.step2AvailableProducts$.pipe(take(1)).subscribe(products => {
@@ -138,7 +132,7 @@ export class PalletControlComponent implements OnInit {
     });
     return currentProducts;
   }
-  // YENİ METHOD: Force save (emergency durumlar için)
+
   forceSaveStep2(): void {
     const autoSaveData = {
       packages: this.packages,
@@ -149,18 +143,14 @@ export class PalletControlComponent implements OnInit {
       remainingWeight: this.remainingWeight,
     };
 
-    // Force save action dispatch et
     this.store.dispatch(StepperActions.forceSave({
       stepNumber: 1,
       data: autoSaveData
     }));
 
-    console.log('⚡ NgRx Force save triggered for Step 2');
+
   }
 
-  /**
-   * Component destroy'da cleanup
-   */
   ngOnDestroy(): void {
     if (this.autoSaveTimeout) {
       clearTimeout(this.autoSaveTimeout);
@@ -168,11 +158,7 @@ export class PalletControlComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    if (!this.checkPrerequisites()) {
-      return;
-    }
-
-    // Session restore
+    if (!this.checkPrerequisites()) return;
     this.restoreFromSession();
     this.setupAutoSaveListeners();
   }
@@ -187,7 +173,6 @@ export class PalletControlComponent implements OnInit {
 
   resetComponentState(): void {
     try {
-      // 1. Ana data properties'i reset et
       this.store.dispatch(StepperActions.initializeStep2State({
         packages: [],
         availableProducts: []
@@ -196,33 +181,25 @@ export class PalletControlComponent implements OnInit {
       this.selectedPallets = [];
       this.order = null;
       this.trailer = null;
-
-      // 2. Calculation values'ı reset et
       this.remainingArea = 0;
       this.remainingWeight = 0;
       this.totalWeight = 0;
       this.totalMeter = 0;
 
-      // 3. Drag state'i reset et
       this.currentDraggedProduct = null;
       this.isDragInProgress = false;
 
-      // 4. Form'u reset et
       this.secondFormGroup.reset();
 
-      // 5. Cache'i temizle
       this._calculationCache.clear();
       this._lastCalculationHash = '';
       this._activePalletWeights = [];
 
-      // 6. Auto-save state'ini reset et
       this.lastPackageState = '';
       if (this.autoSaveTimeout) {
         clearTimeout(this.autoSaveTimeout);
         this.autoSaveTimeout = null;
       }
-
-      // 7. Clone count'ı reset et
       this.cloneCount = 1;
     } catch (error) {
       this.store.dispatch(StepperActions.initializeStep2State({
@@ -234,10 +211,8 @@ export class PalletControlComponent implements OnInit {
       this.trailer = null;
     }
   }
-
   private setupAutoSaveListeners(): void {
     this.watchPackageChanges();
-
     this.secondFormGroup.valueChanges.subscribe(() => {
       this.triggerAutoSave('form');
     });
@@ -248,14 +223,12 @@ export class PalletControlComponent implements OnInit {
       if (this.isDragInProgress) {
         return;
       }
-
       const currentState = this.getCurrentPackageState();
-
       if (currentState !== this.lastPackageState && this.packages.length > 0) {
         this.triggerAutoSave('user-action');
         this.lastPackageState = currentState;
       }
-    }, 5000); // Interval'ı biraz artırdık çünkü debounce effect'te
+    }, 5000);
   }
 
   private getCurrentPackageState(): string {
@@ -283,7 +256,6 @@ export class PalletControlComponent implements OnInit {
   changeType: 'form' | 'drag-drop' | 'user-action' | 'api-response' = 'user-action'
 ): void {
   if (this.packages.length > 0) {
-    // Data'yı sadeleştir (serializable hale getir)
     const autoSaveData = {
       packages: this.packages.map(pkg => ({
         id: pkg.id,
@@ -304,29 +276,21 @@ export class PalletControlComponent implements OnInit {
         name: product.name,
         count: product.count
       })),
-      // Basit sayısal veriler
       totalWeight: this.totalWeight || 0,
       totalMeter: this.totalMeter || 0,
       remainingArea: this.remainingArea || 0,
       remainingWeight: this.remainingWeight || 0
     };
-
-    console.log('🎯 Simplified data for NgRx:', autoSaveData);
-
-    // NgRx action dispatch et
     this.store.dispatch(StepperActions.triggerAutoSave({
       stepNumber: 1,
       data: autoSaveData,
       changeType: changeType
     }));
-
-    console.log('🎯 NgRx Auto-save triggered for Step 2');
   }
 }
 
   private restoreFromSession(): void {
     try {
-      // NgRx store'dan verileri kontrol et
       let hasNgRxData = false;
       this.step2Packages$.pipe(take(1)).subscribe(packages => {
         hasNgRxData = packages.length > 0;
@@ -338,8 +302,6 @@ export class PalletControlComponent implements OnInit {
         this.toastService.info('NgRx store\'dan paket verileri yüklendi');
         return;
       }
-
-      // Fallback: LocalStorage'dan restore et
       const restoredPackages = this.localStorageService.restoreStep2Data();
       if (
         restoredPackages &&
@@ -347,7 +309,6 @@ export class PalletControlComponent implements OnInit {
           restoredPackages.availableProducts.length > 0) ||
           (restoredPackages.packages && restoredPackages.packages.length > 0))
       ) {
-        // NgRx store'a yükle
         this.store.dispatch(StepperActions.initializeStep2State({
           packages: restoredPackages.packages || [],
           availableProducts: restoredPackages.availableProducts || []
@@ -373,20 +334,10 @@ export class PalletControlComponent implements OnInit {
     } catch (error) {}
   }
 
-  /* =====================
-     COMPONENT SETUP
-  ===================== */
   configureComponent(): void {
-    this.store.select(StepperSelectors.selectIsEditMode).pipe(take(1)).subscribe(isEditMode => {
-      if (isEditMode) {
-        console.log('🔄 PalletControl: Edit mode detected, loading existing data...');
-      }
-    });
-
     this.loadPallets();
     this.repository.calculatePackageDetail().subscribe({
       next: (response) => {
-        // **GÜVENLİK: Response kontrolü**
         if (
           !response ||
           !response.packages ||
@@ -403,7 +354,6 @@ export class PalletControlComponent implements OnInit {
           availableProducts: response.remainingProducts || []
         }));
 
-        // **GÜVENLİK: Order kontrolü**
         if (
           this.packages.length > 0 &&
           this.packages[0] &&
@@ -419,13 +369,10 @@ export class PalletControlComponent implements OnInit {
         this.addNewEmptyPackage();
         this.updateAllCalculations();
 
-        // YENİ: Configuration sonrası auto-save
         this.triggerAutoSave('api-response');
       },
       error: (error) => {
         this.toastService.error('Paket hesaplaması sırasında hata oluştu');
-
-        // **GÜVENLİK: Hata durumunda fallback**
         this.order = null;
         this.trailer = null;
         this.addNewEmptyPackage();
@@ -442,13 +389,6 @@ export class PalletControlComponent implements OnInit {
     });
   }
 
-  /* =====================
-     PALLET STATISTICS - OPTIMIZED WITH CACHING
-  ===================== */
-
-  /**
-   * Get calculation hash for cache validation
-   */
   private getCalculationHash(): string {
     return this.packages
       .map(
@@ -460,9 +400,6 @@ export class PalletControlComponent implements OnInit {
       .join('|');
   }
 
-  /**
-   * Get active pallet weights (cached calculation)
-   */
   private getActivePalletWeights(): number[] {
     const currentHash = this.getCalculationHash();
 
@@ -478,25 +415,16 @@ export class PalletControlComponent implements OnInit {
     return this._activePalletWeights;
   }
 
-  /**
-   * Get heaviest pallet weight
-   */
   getHeaviestPalletWeight(): number {
     const weights = this.getActivePalletWeights();
     return weights.length > 0 ? Math.max(...weights) : 0;
   }
 
-  /**
-   * Get lightest pallet weight
-   */
   getLightestPalletWeight(): number {
     const weights = this.getActivePalletWeights();
     return weights.length > 0 ? Math.min(...weights) : 0;
   }
 
-  /**
-   * Get average pallet weight
-   */
   getAveragePalletWeight(): number {
     const weights = this.getActivePalletWeights();
     if (weights.length === 0) return 0;
@@ -505,28 +433,15 @@ export class PalletControlComponent implements OnInit {
     return Math.round((totalWeight / weights.length) * 100) / 100;
   }
 
-  /**
-   * Get active pallet count
-   */
   getActivePalletCount(): number {
     return this.getActivePalletWeights().length;
   }
 
-  /**
-   * Get total pallet weight
-   */
   getTotalPalletWeight(): number {
     const weights = this.getActivePalletWeights();
     return weights.reduce((sum, weight) => sum + weight, 0);
   }
 
-  /* =====================
-     CALCULATIONS - OPTIMIZED WITH CACHING
-  ===================== */
-
-  /**
-   * Calculate remaining volume with caching
-   */
   calculateArea(): void {
     const cacheKey = `area-${this.getCalculationHash()}`;
 
@@ -542,7 +457,6 @@ export class PalletControlComponent implements OnInit {
       return total + palletArea;
     }, 0);
 
-    // Optional chaining ve nullish coalescing kullanın
     const trailerArea =
       (this.trailer?.dimension?.width ?? 0) *
       (this.trailer?.dimension?.depth ?? 0);
@@ -552,13 +466,7 @@ export class PalletControlComponent implements OnInit {
     this._calculationCache.set(cacheKey, this.remainingArea);
   }
 
-  /**
-   * Calculate total and remaining weight with caching
-   */
   calculateWeight(): void {
-    type WeightTypeKey = 'std' | 'pre' | 'eco';
-    const selectedWeightType = this.order?.weight_type as WeightTypeKey;
-
     const cacheKey = `weight-${this.getCalculationHash()}`;
 
     if (this._calculationCache.has(cacheKey)) {
@@ -584,14 +492,11 @@ export class PalletControlComponent implements OnInit {
           return pTotal + Math.floor(weight * product.count);
         },0
       );
-
       return total + palletWeight + productsWeight;
     }, 0);
 
     this.totalWeight = totalWeight;
-
     const trailerWeightLimit = this.trailer?.weight_limit ?? 0;
-
     this.remainingWeight = Math.floor(trailerWeightLimit - totalWeight);
 
     this._calculationCache.set(cacheKey, {
@@ -600,9 +505,6 @@ export class PalletControlComponent implements OnInit {
     });
   }
 
-  /**
-   * Calculate total meter with caching
-   */
   calculateTotalMeter(): void {
     const cacheKey = `meter-${this.getCalculationHash()}`;
 
@@ -630,9 +532,6 @@ export class PalletControlComponent implements OnInit {
     this._calculationCache.set(cacheKey, this.totalMeter);
   }
 
-  /**
-   * Calculate package total weight with caching
-   */
   packageTotalWeight(pkg: UiPackage): number {
     type WeightTypeKey = 'std' | 'pre' | 'eco';
     const selectedWeightType = this.order?.weight_type as WeightTypeKey;
@@ -656,9 +555,6 @@ export class PalletControlComponent implements OnInit {
     return totalWeight;
   }
 
-  /**
-   * Update all calculations at once and clear cache
-   */
   private updateAllCalculations(): void {
     this._calculationCache.clear();
     this._lastCalculationHash = '';
@@ -668,30 +564,17 @@ export class PalletControlComponent implements OnInit {
     this.calculateTotalMeter();
   }
 
-  /* =====================
-     PRODUCT FITTING METHODS - OPTIMIZED
-  ===================== */
-
-  /**
-   * Main product fitting check method - Optimized version
-   */
   canFitProductToPallet(
     product: UiProduct,
     pallet: UiPallet,
     existingProducts: UiProduct[]
   ): boolean {
-    // Quick dimension check first (most likely to fail)
     if (!this.checkDimensionsFit(product, pallet)) {
       return false;
     }
-
-    // Volume check only if dimension check passes
     return this.checkVolumeAvailable(product, pallet, existingProducts);
   }
 
-  /**
-   * Dimension check - Optimized version
-   */
   private checkDimensionsFit(product: UiProduct, pallet: UiPallet): boolean {
     // Safe number conversion
     if (!product?.dimension || !pallet?.dimension) {
@@ -705,12 +588,10 @@ export class PalletControlComponent implements OnInit {
     const safePalletDepth = this.safeNumber(pallet.dimension.depth);
     const safePalletHeight = this.safeNumber(pallet.dimension.height);
 
-    // Height check first (most restrictive)
     if (safeProductHeight > safePalletHeight) {
       return false;
     }
 
-    // Check both normal and rotated orientations
     const normalFit =
       safeProductWidth <= safePalletWidth &&
       safeProductDepth <= safePalletDepth;
@@ -721,9 +602,6 @@ export class PalletControlComponent implements OnInit {
     return normalFit || rotatedFit;
   }
 
-  /**
-   * Volume check - Optimized version
-   */
   private checkVolumeAvailable(
     product: UiProduct,
     pallet: UiPallet,
@@ -733,29 +611,22 @@ export class PalletControlComponent implements OnInit {
       return false;
     }
 
-    // Calculate pallet total volume
     const palletTotalVolume =
       this.safeNumber(pallet.dimension.width) *
       this.safeNumber(pallet.dimension.depth) *
       this.safeNumber(pallet.dimension.height);
 
-    // Calculate used volume
     const usedVolume = this.calculateUsedVolume(existingProducts);
 
-    // Calculate new product volume
     const newProductVolume =
       this.safeNumber(product.dimension.width) *
       this.safeNumber(product.dimension.depth) *
       this.safeNumber(product.dimension.height) *
       this.safeNumber(product.count);
 
-    // Check if it fits
     return newProductVolume <= palletTotalVolume - usedVolume;
   }
 
-  /**
-   * Calculate used volume - Optimized version
-   */
   private calculateUsedVolume(products: UiProduct[]): number {
     if (products.length === 0) return 0;
 
@@ -772,9 +643,6 @@ export class PalletControlComponent implements OnInit {
     }, 0);
   }
 
-  /**
-   * Safe number conversion - Optimized
-   */
   private safeNumber(value: any): number {
     if (typeof value === 'number') {
       return isNaN(value) ? 0 : value;
@@ -796,9 +664,6 @@ export class PalletControlComponent implements OnInit {
     return 0;
   }
 
-  /**
-   * Get remaining pallet volume
-   */
   getRemainingPalletVolume(
     pallet: UiPallet,
     existingProducts: UiProduct[]
@@ -814,9 +679,6 @@ export class PalletControlComponent implements OnInit {
     return Math.max(0, palletTotalVolume - usedVolume);
   }
 
-  /**
-   * Get pallet fill percentage
-   */
   getPalletFillPercentage(
     pallet: UiPallet,
     existingProducts: UiProduct[]
@@ -832,9 +694,6 @@ export class PalletControlComponent implements OnInit {
     return Math.round((usedVolume / palletTotalVolume) * 100);
   }
 
-  /**
-   * Get maximum product count that fits in pallet
-   */
   getMaxProductCount(
     product: UiProduct,
     pallet: UiPallet,
@@ -860,27 +719,14 @@ export class PalletControlComponent implements OnInit {
     return Math.floor(remainingVolume / singleProductVolume);
   }
 
-  /* =====================
-     UTILITY FUNCTIONS
-  ===================== */
-
-  /**
-   * Ensure UiProduct instance
-   */
   private ensureUiProduct(product: any): UiProduct {
     return product instanceof UiProduct ? product : new UiProduct(product);
   }
 
-  /**
-   * Ensure UiProduct instances array
-   */
   private ensureUiProducts(products: any[]): UiProduct[] {
     return products.map((product) => this.ensureUiProduct(product));
   }
 
-  /**
-   * Ensure UiProduct instance with list update
-   */
   private ensureUiProductInstance(product: any): UiProduct {
     if (!(product instanceof UiProduct)) {
       const uiProduct = new UiProduct(product);
@@ -893,24 +739,6 @@ export class PalletControlComponent implements OnInit {
     return product;
   }
 
-  /**
-   * Replace product in list
-   */
-  private replaceProductInList(
-    oldProduct: UiProduct,
-    newProducts: UiProduct[]
-  ): void {
-    const index = this.availableProducts.indexOf(oldProduct);
-    if (index !== -1) {
-      this.availableProducts.splice(index, 1, ...newProducts);
-    } else {
-      this.availableProducts.push(...newProducts);
-    }
-  }
-
-  /**
-   * Consolidate products by combining same IDs - Optimized
-   */
   consolidateProducts(products: UiProduct[]): UiProduct[] {
     const consolidatedMap = new Map<string, UiProduct>();
 
@@ -935,15 +763,7 @@ export class PalletControlComponent implements OnInit {
     return Array.from(consolidatedMap.values());
   }
 
-  /* =====================
-     DRAG & DROP OPERATIONS
-  ===================== */
-
-  /**
-   * Drop product to pallet - Optimized
-   */
   dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
-    // Mevcut drop logic'i aynı kalacak...
     const product = event.previousContainer.data[event.previousIndex];
     const targetPalletId = event.container.id;
     const targetPackage = this.packages.find(
@@ -988,7 +808,6 @@ export class PalletControlComponent implements OnInit {
       this.cdr.markForCheck();
     }
 
-    // Perform drop operation
     if (event.previousContainer === event.container) {
       moveItemInArray(
         event.container.data,
@@ -1008,12 +827,10 @@ export class PalletControlComponent implements OnInit {
       const consolidatedProducts = this.consolidateProducts(targetPackage.products);
       const updatedPackage = { ...targetPackage, products: consolidatedProducts };
 
-      // NgRx store'da package'ı güncelle
       this.store.dispatch(StepperActions.updatePackage({
         package: updatedPackage
       }));
 
-      // Available products'ı da güncelle (eğer transferArrayItem ile değiştiyse)
       this.store.dispatch(StepperActions.updateAvailableProducts({
         availableProducts: this.availableProducts
       }));
@@ -1023,11 +840,7 @@ export class PalletControlComponent implements OnInit {
     this.triggerAutoSave('drag-drop');
   }
 
-  /**
-   * Drop pallet to package
-   */
   dropPalletToPackage(event: CdkDragDrop<any>): void {
-    // Mevcut logic aynı kalacak...
     if (event.previousContainer === event.container) {
       return;
     }
@@ -1057,16 +870,12 @@ export class PalletControlComponent implements OnInit {
     this.triggerAutoSave('drag-drop');
   }
 
-  /**
-   * Drag started - Optimized
-   */
   dragStarted(event: CdkDragStart): void {
     this.isDragInProgress = true;
 
     const product = event.source.data as UiProduct;
     this.currentDraggedProduct = product;
 
-    // Mevcut fitting logic...
     const palletElements = new Map<string, HTMLElement>();
 
     if (!product?.dimension) {
@@ -1132,9 +941,6 @@ export class PalletControlComponent implements OnInit {
     });
   }
 
-  /**
-   * Drag ended event
-   */
   dragEnded(): void {
     this.isDragInProgress = false;
     this.currentDraggedProduct = null;
@@ -1143,21 +949,12 @@ export class PalletControlComponent implements OnInit {
       el.classList.remove('can-drop', 'cannot-drop');
     });
 
-    // YENİ: Drag işlemi bitince auto-save trigger et
     setTimeout(() => {
       this.triggerAutoSave('drag-drop');
     }, 500); // 500ms sonra kaydet
   }
 
-  /* =====================
-     PRODUCT MANAGEMENT
-  ===================== */
-
-  /**
-   * Optimized split product method
-   */
   splitProduct(product: UiProduct, splitCount?: number | null): void {
-    // Mevcut split logic...
     const uiProduct = this.ensureUiProductInstance(product);
     const validatedCount = this.validateSplitCount(uiProduct, splitCount);
 
@@ -1165,14 +962,10 @@ export class PalletControlComponent implements OnInit {
 
     this.performSplit(uiProduct, validatedCount);
 
-    // YENİ: Split sonrası auto-save
     this.triggerAutoSave('user-action');
     this.cdr.markForCheck();
   }
 
-  /**
-   * Validate split count
-   */
   private validateSplitCount(
     product: UiProduct,
     splitCount?: number | null
@@ -1198,9 +991,6 @@ export class PalletControlComponent implements OnInit {
     return Math.floor(product.count / 2);
   }
 
-  /**
-   * Perform split operation
-   */
   private performSplit(product: UiProduct, splitCount: number): void {
     const isCustomSplit = splitCount !== Math.floor(product.count / 2);
 
@@ -1247,20 +1037,15 @@ export class PalletControlComponent implements OnInit {
     }
   }
 
-  /**
-   * Remove product from package
-   */
   removeProductFromPackage(pkg: UiPackage, productIndex: number): void {
     const removedProduct = pkg.products.splice(productIndex, 1)[0];
     const uiProduct = this.ensureUiProduct(removedProduct);
 
-    // NgRx store'da package'ı güncelle
     const updatedPackage = { ...pkg, products: [...pkg.products] };
     this.store.dispatch(StepperActions.updatePackage({
       package: updatedPackage
     }));
 
-    // NgRx store'da available products'ı güncelle
     const updatedProducts = [...this.availableProducts, uiProduct];
     this.store.dispatch(StepperActions.updateAvailableProducts({
       availableProducts: updatedProducts
@@ -1271,9 +1056,6 @@ export class PalletControlComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  /**
-   * Remove all packages
-   */
   removeAllPackage(): void {
     const allProducts: UiProduct[] = [];
 
@@ -1287,7 +1069,6 @@ export class PalletControlComponent implements OnInit {
 
     const consolidatedProducts = this.consolidateProducts([...this.availableProducts, ...allProducts]);
 
-    // NgRx store'u reset et
     this.store.dispatch(StepperActions.initializeStep2State({
       packages: [],
       availableProducts: consolidatedProducts
@@ -1300,11 +1081,9 @@ export class PalletControlComponent implements OnInit {
 
     this.toastService.success('Tüm paletler temizlendi.', 'Başarılı');
 
-    // YENİ: Remove all sonrası auto-save
     this.triggerAutoSave('user-action');
   }
   removePackage(packageToRemove: any): void {
-    // Mevcut logic...
     const packageIndex = this.packages.findIndex(
       (pkg) =>
         pkg === packageToRemove ||
@@ -1347,19 +1126,13 @@ export class PalletControlComponent implements OnInit {
     this.updateAllCalculations();
     this.toastService.success('Paket silindi.', 'Başarılı');
 
-    // YENİ: Remove package sonrası auto-save
     this.triggerAutoSave('user-action');
   }
-  /**
-   * Remove pallet from package
-   */
+
   removePalletFromPackage(packageItem: UiPackage): void {
-    // Mevcut logic...
     if (packageItem.pallet) {
       if (packageItem.products?.length > 0) {
         const uiProducts = this.ensureUiProducts(packageItem.products);
-
-        // NgRx store'da available products'ı güncelle
         const updatedProducts = [...this.availableProducts, ...uiProducts];
         this.store.dispatch(StepperActions.updateAvailableProducts({
           availableProducts: updatedProducts
@@ -1373,7 +1146,6 @@ export class PalletControlComponent implements OnInit {
         this.selectedPallets.splice(palletIndex, 1);
       }
 
-      // NgRx store'da package'ı güncelle (pallet = null, products = [])
       const updatedPackage = { ...packageItem, pallet: null, products: [] };
       this.store.dispatch(StepperActions.updatePackage({
         package: updatedPackage
@@ -1384,9 +1156,6 @@ export class PalletControlComponent implements OnInit {
     }
   }
 
-  /**
-   * Add new empty package
-   */
   addNewEmptyPackage(): void {
     const emptyPackages = this.packages.filter((p) => p.pallet === null);
 
@@ -1399,20 +1168,12 @@ export class PalletControlComponent implements OnInit {
         name: (this.packages.length + 1).toString()
       });
 
-      // NgRx store'a ekle
       this.store.dispatch(StepperActions.addPackage({
         package: newPackage
       }));
     }
   }
 
-  /* =====================
-     GETTERS
-  ===================== */
-
-  /**
-   * Get all pallet product lists
-   */
   get palletProductsLists(): string[] {
     const allPalletIds: string[] = ['productsList'];
     for (const pkg of this.packages) {
@@ -1423,18 +1184,11 @@ export class PalletControlComponent implements OnInit {
     return allPalletIds;
   }
 
-  /**
-   * Get empty package IDs
-   */
   get packageIds(): string[] {
     return this.packages
       .filter((pkg) => pkg.pallet === null)
       .map((pkg) => pkg.id);
   }
-
-  /* =====================
-     FORM OPERATIONS
-  ===================== */
 
   getPackageData(): any {
     return mapPackageToPackageDetail(this.packages);
@@ -1447,11 +1201,9 @@ export class PalletControlComponent implements OnInit {
       next: (response) => {
         this.toastService.success('Kaydedildi', 'Başarılı');
 
-        // NgRx store'da step completion'ı işaretle
         this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 1 }));
         this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 1, isValid: true }));
 
-        // NgRx auto-save trigger et
         this.store.dispatch(StepperActions.triggerAutoSave({
           stepNumber: 1,
           data: {
@@ -1464,8 +1216,7 @@ export class PalletControlComponent implements OnInit {
         this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 1 }));
         this.saveCurrentStateToSession();
       },
-      error: (error) => {  // Bunu EKLE
-        // Global error dispatch et
+      error: (error) => {
         this.store.dispatch(StepperActions.setGlobalError({
           error: {
             message: 'Paket verileri kaydedilirken hata oluştu: ' + (error.message || error),

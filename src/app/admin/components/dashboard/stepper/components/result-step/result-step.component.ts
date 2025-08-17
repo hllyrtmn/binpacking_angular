@@ -1,4 +1,3 @@
-// result-step.component.ts - ENHANCED FINAL VERSION
 import {
   Component,
   OnDestroy,
@@ -14,7 +13,6 @@ import { LoadingComponent } from '../../../../../../components/loading/loading.c
 import { MatButton } from '@angular/material/button';
 import { MatStepperPrevious } from '@angular/material/stepper';
 import { RepositoryService } from '../../services/repository.service';
-import { StepperStore, STATUSES } from '../../services/stepper.store';
 import { DomSanitizer } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
@@ -30,9 +28,8 @@ import { Store } from '@ngrx/store';
 import { AppState } from '../../../../../../store';
 import * as StepperSelectors from '../../../../../../store/stepper/stepper.selectors';
 import * as StepperActions from '../../../../../../store/stepper/stepper.actions';
-import { Router } from '@angular/router';
 
-// Enhanced Package interface for type safety
+
 interface PackageData {
   id: number;
   x: number;
@@ -46,7 +43,6 @@ interface PackageData {
   dimensions?: string;
 }
 
-// Enhanced Loading statistics interface
 interface LoadingStats {
   totalPackages: number;
   packagesLoaded: number;
@@ -59,7 +55,6 @@ interface LoadingStats {
   rotatedCount?: number;
 }
 
-// Enhanced Algorithm stats interface
 interface AlgorithmStats {
   executionTime: number;
   generations: number;
@@ -68,7 +63,6 @@ interface AlgorithmStats {
   convergenceRate?: number;
 }
 
-// NEW: Data change tracking interface
 interface DataChangeEvent {
   timestamp: Date;
   type: 'drag' | 'rotate' | 'delete' | 'restore' | 'initial'| 'unknown';
@@ -97,17 +91,14 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   @ViewChild('threeJSComponent') threeJSComponent!: ThreeJSTruckVisualizationComponent;
   @Output() shipmentCompleted = new EventEmitter<void>();
 
-  // **ENHANCED: Component lifecycle ve cleanup için**
   private destroy$ = new Subject<void>();
   private isDestroyed = false;
   public processingLock = false;
 
-  // Enhanced Data properties
   piecesData: any[] = [];
   originalPiecesData: any[] = []; // NEW: Track original data
   truckDimension: number[] = [13200, 2200, 2900];
   orderResultId: string = '';
-  // Enhanced loading statistics
   loadingStats: LoadingStats = {
     totalPackages: 0,
     packagesLoaded: 0,
@@ -120,20 +111,17 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     rotatedCount: 0
   };
 
-  // Enhanced UI state
   isLoading: boolean = false;
   hasResults: boolean = false;
   showVisualization: boolean = false;
   optimizationProgress: number = 0;
   hasThreeJSError: boolean = false;
 
-  // NEW: Data change tracking
   hasUnsavedChanges: boolean = false;
   dataChangeHistory: DataChangeEvent[] = [];
   lastDataChangeTime: Date = new Date();
   totalPackagesProcessed: number = 0;
 
-  // Enhanced Results data
   reportFiles: any[] = [];
   processedPackages: PackageData[] = [];
   algorithmStats: AlgorithmStats = {
@@ -144,11 +132,9 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     convergenceRate: 0
   };
 
-  // Enhanced popup and progress management
   private popupWindow: Window | null = null;
   private progressInterval: any = null;
 
-  // Enhanced Services
   private readonly autoSaveService = inject(AutoSaveService);
   private readonly localStorageService = inject(LocalStorageService);
   repositoryService = inject(RepositoryService);
@@ -167,13 +153,10 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   public autoSaveStatusText$ = this.store.select(StepperSelectors.selectAutoSaveStatusText(2));
   public hasPendingChanges$ = this.store.select(StepperSelectors.selectStepHasPendingChanges(2));
 
-
-  // Enhanced Auto-save management
   private lastResultState: string = '';
   private resultAutoSaveTimeout: any;
   public currentViewType: string = 'isometric';
 
-  // Enhanced performance tracking
   public performanceMetrics = {
     startTime: 0,
     endTime: 0,
@@ -184,47 +167,33 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   };
 
   ngOnInit(): void {
-
-    // Enhanced prerequisites check
-    if (!this.checkEnhancedPrerequisites()) {
+    if (!this.checkPrerequisites()) {
       return;
     }
-
-    // Enhanced session restoration
-    this.restoreFromEnhancedSession();
-
-    // Enhanced auto-save setup
-    this.setupEnhancedAutoSaveListeners();
-
-    // Performance tracking
+    this.restoreFromSession();
+    this.setupAutoSaveListeners();
     this.performanceMetrics.startTime = performance.now();
   }
 
-  private setupEnhancedAutoSaveListeners(): void {
-    // Enhanced result state changes tracking
-    this.watchEnhancedResultChanges();
-
-    // Window beforeunload listener for emergency save
+  private setupAutoSaveListeners(): void {
+    this.watchResultChanges();
     window.addEventListener('beforeunload', this.handleEmergencyAutoSave.bind(this));
   }
 
-  private watchEnhancedResultChanges(): void {
+  private watchResultChanges(): void {
     setInterval(() => {
-      // Loading state'de auto-save'i skip et
       if (this.isLoading || this.processingLock || this.isDestroyed) {
         return;
       }
-
-      const currentState = this.getCurrentEnhancedResultState();
-
+      const currentState = this.getCurrentResultState();
       if (currentState !== this.lastResultState && this.hasResults) {
-        this.triggerEnhancedAutoSave('user-action');
+        this.triggerAutoSave('user-action');
         this.lastResultState = currentState;
       }
-    }, 3000); // 3 saniye interval
+    }, 3000);
   }
 
-  private getCurrentEnhancedResultState(): string {
+  private getCurrentResultState(): string {
     try {
       return JSON.stringify({
         hasResults: this.hasResults,
@@ -240,53 +209,46 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         timestamp: Date.now()
       });
     } catch (error) {
-
       return '';
     }
   }
 
-  private triggerEnhancedAutoSave(
+  private triggerAutoSave(
     changeType: 'user-action' | 'api-response' | 'emergency' | 'data-change' = 'user-action'
   ): void {
-    // Clear existing timeout
     if (this.resultAutoSaveTimeout) {
       clearTimeout(this.resultAutoSaveTimeout);
     }
-
     if (
       this.hasResults &&
       (this.piecesData?.length > 0 || this.reportFiles?.length > 0)
     ) {
-      // Data'yı sadeleştir (serializable hale getir)
-      const enhancedSaveData = {
+      const SaveData = {
         optimizationResult: this.piecesData || [],
         reportFiles: this.reportFiles || [],
-        // Basit metadata
         hasResults: this.hasResults,
         showVisualization: this.showVisualization,
         timestamp: new Date().toISOString(),
         changeType: changeType
       };
 
-      // NgRx action dispatch et
       this.store.dispatch(StepperActions.triggerAutoSave({
         stepNumber: 2,
-        data: enhancedSaveData,
+        data: SaveData,
         changeType: changeType
       }));
 
-      console.log('🎯 NgRx Auto-save triggered for Step 3');
+
     }
   }
 
   private handleEmergencyAutoSave(): void {
     if (this.hasResults && this.hasUnsavedChanges) {
-      this.triggerEnhancedAutoSave('emergency');
-
+      this.triggerAutoSave('emergency');
     }
   }
 
-  private checkEnhancedPrerequisites(): boolean {
+  private checkPrerequisites(): boolean {
     const step1Completed = this.localStorageService.isStepCompleted(1);
     const step2Completed = this.localStorageService.isStepCompleted(2);
 
@@ -294,46 +256,30 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       let message = 'Önceki adımları tamamlayın: ';
       if (!step1Completed) message += 'Step 1 ';
       if (!step2Completed) message += 'Step 2 ';
-
       this.toastService.warning(message);
-
       return false;
     }
-
     return true;
   }
 
-  private restoreFromEnhancedSession(): void {
+  private restoreFromSession(): void {
     try {
       const restoredData = this.localStorageService.restoreStep3Data();
-
       if (restoredData) {
-
         this.hasResults = true;
         this.showVisualization = true;
         this.isLoading = false;
         this.hasThreeJSError = false;
-
         if (restoredData.optimizationResult) {
           this.piecesData = restoredData.optimizationResult;
-          this.safeProcessEnhancedOptimizationResult({
+          this.safeProcessOptimizationResult({
             data: restoredData.optimizationResult,
           });
         }
-
-        // NEW: Restore original data if available
-        // if (restoredData.originalOptimizationResult) {
-        //   this.originalPiecesData = restoredData.originalOptimizationResult;
-        // } else {
-        //   // Fallback: use current data as original
-        //   this.originalPiecesData = JSON.parse(JSON.stringify(this.piecesData));
-        // }
-
         if (restoredData.reportFiles) {
           this.reportFiles = restoredData.reportFiles;
         }
 
-        // Enhanced restoration with additional properties
         if (restoredData.loadingStats) {
           this.loadingStats = { ...this.loadingStats, ...restoredData.loadingStats };
         }
@@ -346,19 +292,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
           this.currentViewType = restoredData.currentViewType;
         }
 
-        // // NEW: Restore change tracking data
-        // if (restoredData.dataChangeHistory) {
-        //   this.dataChangeHistory = restoredData.dataChangeHistory;
-        // }
-
-        // if (restoredData.hasUnsavedChanges) {
-        //   this.hasUnsavedChanges = restoredData.hasUnsavedChanges;
-        // }
-
-        // if (restoredData.totalPackagesProcessed) {
-        //   this.totalPackagesProcessed = restoredData.totalPackagesProcessed;
-        // }
-
         this.toastService.info('Optimizasyon sonuçları restore edildi');
       }
     } catch (error) {
@@ -366,10 +299,9 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     }
   }
 
-  private saveEnhancedResultsToSession(): void {
+  private saveResultsToSession(): void {
     try {
-      // Enhanced save with additional metadata
-      const enhancedSaveData = {
+      const SaveData = {
         optimizationResult: this.piecesData,
         originalOptimizationResult: this.originalPiecesData, // NEW
         reportFiles: this.reportFiles,
@@ -385,15 +317,11 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         totalPackagesProcessed: this.totalPackagesProcessed,
         performanceMetrics: this.performanceMetrics,
         timestamp: new Date().toISOString(),
-        version: '3.0' // Updated version
+        version: '3.0'
       };
 
-      this.localStorageService.saveStep3Data(this.piecesData, this.reportFiles, enhancedSaveData);
-
-      // Mark changes as saved
+      this.localStorageService.saveStep3Data(this.piecesData, this.reportFiles, SaveData);
       this.hasUnsavedChanges = false;
-
-      // Enhanced stepper store update
       this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 2 }));
     } catch (error) {
       this.toastService.error('Sonuçlar kaydedilemedi');
@@ -401,32 +329,25 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-
     this.isDestroyed = true;
     this.processingLock = false;
-
-    // Enhanced cleanup
-    this.performEnhancedCleanup();
+    this.performCleanup();
   }
 
-  private performEnhancedCleanup(): void {
-    // Signal destruction to all observables
+  private performCleanup(): void {
     this.destroy$.next();
     this.destroy$.complete();
 
-    // Clear enhanced auto-save timeout
     if (this.resultAutoSaveTimeout) {
       clearTimeout(this.resultAutoSaveTimeout);
       this.resultAutoSaveTimeout = null;
     }
 
-    // Clear enhanced progress interval
     if (this.progressInterval) {
       clearInterval(this.progressInterval);
       this.progressInterval = null;
     }
 
-    // Enhanced popup cleanup
     if (this.popupWindow && !this.popupWindow.closed) {
       try {
         this.popupWindow.close();
@@ -434,38 +355,22 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       }
       this.popupWindow = null;
     }
-
-    // Remove enhanced event listeners
     window.removeEventListener('beforeunload', this.handleEmergencyAutoSave.bind(this));
-
-    // Performance metrics
     this.performanceMetrics.endTime = performance.now();
-    const totalTime = this.performanceMetrics.endTime - this.performanceMetrics.startTime;
-
-
   }
 
-  // ========================================
-  // ENHANCED BUSINESS LOGIC
-  // ========================================
-
   calculateBinpacking(): void {
-    // Enhanced processing lock with timeout
     if (this.processingLock || this.isDestroyed) {
-
       return;
     }
     this.processingLock = true;
-
-    // Enhanced state reset
-    this.safeResetEnhancedState();
+    this.safeResetState();
     this.store.dispatch(StepperActions.setStepLoading({
       stepIndex: 2,
       loading: true,
       operation: 'Calculating bin packing optimization'
     }));
-    // Enhanced progress simulation
-    this.startEnhancedProgressSimulation();
+    this.startProgressSimulation();
 
     this.repositoryService
       .calculatePacking()
@@ -476,38 +381,24 @@ export class ResultStepComponent implements OnInit, OnDestroy {
             throw new Error('Component destroyed during processing');
           }
           this.orderResultId = response.data.order_result_id
-
-
-          // Enhanced processing
-          this.safeProcessEnhancedOptimizationResult(response);
-
-          // NEW: Store original data for comparison
+          this.safeProcessOptimizationResult(response);
           this.originalPiecesData = JSON.parse(JSON.stringify(this.piecesData));
-
-          // Enhanced progress update
           this.optimizationProgress = Math.min(80, this.optimizationProgress);
-          this.safeUpdateEnhancedUI();
-
-          // Enhanced auto-save after calculation
-          this.triggerEnhancedAutoSave('api-response');
-
-          // NEW: Track initial data event
+          this.safeUpdateUI();
+          this.triggerAutoSave('api-response');
           this.trackDataChange('initial', undefined, {
             packageCount: this.piecesData.length,
             timestamp: new Date().toISOString()
           });
-
-          // Enhanced report creation
           return this.repositoryService.createReport();
         }),
         catchError((error) => {
-
-          this.handleEnhancedError(error);
+          this.handleError(error);
           return EMPTY;
         }),
         finalize(() => {
           this.processingLock = false;
-          this.stopEnhancedProgressSimulation();
+          this.stopProgressSimulation();
           this.store.dispatch(StepperActions.setStepLoading({
             stepIndex: 2,
             loading: false
@@ -521,12 +412,10 @@ export class ResultStepComponent implements OnInit, OnDestroy {
             ? reportResponse.files
             : [];
           this.optimizationProgress = 100;
-
-          // Enhanced finalization
           setTimeout(() => {
             if (!this.isDestroyed) {
-              this.safeEnhancedFinalize();
-              this.triggerEnhancedAutoSave('api-response');
+              this.safeFinalize();
+              this.triggerAutoSave('api-response');
             }
           }, 500);
           this.cdr.markForCheck();
@@ -542,114 +431,72 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               }
             }));
 
-            this.handleEnhancedError(error);
+            this.handleError(error);
             this.cdr.markForCheck();
           }
         },
       });
   }
 
-  // ========================================
-  // NEW: ENHANCED DATA CHANGE HANDLING
-  // ========================================
-
-  /**
-   * NEW: ThreeJS component'ten gelen veri değişikliklerini handle et
-   */
   onDataChanged(updatedData: any[]): void {
     if (this.isDestroyed || !updatedData) {
-
       return;
     }
 
     try {
-      // Enhanced data validation
       const validatedData = this.validateUpdatedData(updatedData);
-
       if (!validatedData || validatedData.length === 0) {
-
         return;
       }
 
-      // Track changes before updating
       const changeEvent = this.analyzeDataChanges(this.piecesData, validatedData);
-
-      // Update data
       this.piecesData = validatedData;
       this.store.dispatch(StepperActions.updateStep3OptimizationResult({
         optimizationResult: validatedData
       }));
 
-      // Mark as having unsaved changes
       this.hasUnsavedChanges = true;
       this.lastDataChangeTime = new Date();
 
-      // Update performance metrics
       this.performanceMetrics.dataChangeCount++;
       this.performanceMetrics.averageResponseTime =
         (this.performanceMetrics.averageResponseTime + (Date.now() - this.performanceMetrics.startTime)) / 2;
 
-      // Reprocess packages with updated data
-      this.safeProcessEnhancedOptimizationResult({
+      this.safeProcessOptimizationResult({
         data: validatedData
       });
-
-      // Recalculate statistics
-      this.calculateEnhancedStats();
-
-      // Track the change
+      this.calculateStats();
       this.trackDataChange(changeEvent.type, undefined, changeEvent.metadata);
-
-      // Enhanced auto-save trigger for data changes
-      this.triggerEnhancedAutoSave('data-change');
-
-      // Enhanced UI update
-      this.safeUpdateEnhancedUI();
-
+      this.triggerAutoSave('data-change');
+      this.safeUpdateUI();
     } catch (error) {
-
       this.toastService.error('Veri değişikliği işlenirken hata oluştu');
     }
     this.cdr.markForCheck();
   }
 
-  /**
-   * NEW: Validate updated data from ThreeJS component
-   */
   private validateUpdatedData(updatedData: any[]): any[] | null {
     if (!Array.isArray(updatedData)) {
-
       return null;
     }
-
     try {
       return updatedData.filter((piece, index) => {
-        // Enhanced validation for each piece
         if (!Array.isArray(piece) || piece.length < 6) {
-
           return false;
         }
 
-        // Validate numeric values
         const [x, y, z, length, width, height] = piece;
         if ([x, y, z, length, width, height].some(val =>
           typeof val !== 'number' || isNaN(val) || val < 0)) {
-
           return false;
         }
-
         return true;
       });
-
     } catch (error) {
-
       return null;
     }
   }
 
-  /**
-   * NEW: Analyze what type of change occurred
-   */
   private analyzeDataChanges(oldData: any[], newData: any[]): {
     type: 'drag' | 'rotate' | 'delete' | 'restore' | 'unknown',
     metadata: any
@@ -676,7 +523,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         }
       };
     } else {
-      // Same count - could be drag or rotate
       const hasPositionChanges = this.detectPositionChanges(oldData, newData);
       const hasDimensionChanges = this.detectDimensionChanges(oldData, newData);
 
@@ -709,17 +555,13 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     };
   }
 
-  /**
-   * NEW: Detect position changes between data sets
-   */
   private detectPositionChanges(oldData: any[], newData: any[]): number {
     let changes = 0;
-    const tolerance = 1; // 1mm tolerance
+    const tolerance = 1;
 
     newData.forEach((newPackage, index) => {
       const oldPackage = oldData[index];
       if (oldPackage && Array.isArray(oldPackage) && Array.isArray(newPackage)) {
-        // Compare positions (x, y, z)
         if (Math.abs(oldPackage[0] - newPackage[0]) > tolerance ||
             Math.abs(oldPackage[1] - newPackage[1]) > tolerance ||
             Math.abs(oldPackage[2] - newPackage[2]) > tolerance) {
@@ -731,9 +573,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     return changes;
   }
 
-  /**
-   * NEW: Detect dimension changes (rotation)
-   */
   private detectDimensionChanges(oldData: any[], newData: any[]): number {
     let changes = 0;
 
@@ -752,9 +591,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     return changes;
   }
 
-  /**
-   * NEW: Track data change event
-   */
   private trackDataChange(
     type: 'drag' | 'rotate' | 'delete' | 'restore' | 'initial' | 'unknown',
     packageId?: number,
@@ -768,21 +604,13 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     };
 
     this.dataChangeHistory.push(changeEvent);
-
-    // Keep only last 50 changes to prevent memory issues
     if (this.dataChangeHistory.length > 50) {
       this.dataChangeHistory = this.dataChangeHistory.slice(-50);
     }
 
-    // Update loading stats based on change type
     this.updateLoadingStatsFromChange(type, metadata);
-
-
   }
 
-  /**
-   * NEW: Update loading stats based on data change
-   */
   private updateLoadingStatsFromChange(
     type: 'drag' | 'rotate' | 'delete' | 'restore' | 'initial' | 'unknown',
     metadata?: any
@@ -798,16 +626,12 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         this.loadingStats.deletedCount = (this.loadingStats.deletedCount || 0) + (metadata?.deletedCount || 1);
         break;
       case 'restore':
-        // Reduce deleted count when restoring
         this.loadingStats.deletedCount = Math.max(0,
           (this.loadingStats.deletedCount || 0) - (metadata?.restoredCount || 1));
         break;
     }
   }
 
-  /**
-   * NEW: Get data change summary for display
-   */
   getDataChangeSummary(): {
     totalChanges: number;
     hasUnsavedChanges: boolean;
@@ -815,7 +639,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     recentChanges: DataChangeEvent[];
   } {
     const recentChanges = this.dataChangeHistory.slice(-10).reverse();
-
     return {
       totalChanges: this.dataChangeHistory.length,
       hasUnsavedChanges: this.hasUnsavedChanges,
@@ -824,9 +647,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     };
   }
 
-  /**
-   * NEW: Reset to original data (undo all changes)
-   */
   resetToOriginalData(): void {
     if (!this.originalPiecesData || this.originalPiecesData.length === 0) {
       this.toastService.warning('Sıfırlamak için orijinal veri bulunamadı');
@@ -842,33 +662,24 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     );
 
     if (!confirmed) return;
-
     try {
-      // Reset data
       this.piecesData = JSON.parse(JSON.stringify(this.originalPiecesData));
-
-      // Clear change history
       this.dataChangeHistory = [];
       this.hasUnsavedChanges = false;
 
-      // Reprocess data
-      this.safeProcessEnhancedOptimizationResult({
+      this.safeProcessOptimizationResult({
         data: this.piecesData
       });
 
-      // Recalculate stats
-      this.calculateEnhancedStats();
+      this.calculateStats();
 
-      // Reset loading stats counters
       this.loadingStats.deletedCount = 0;
       this.loadingStats.movedCount = 0;
       this.loadingStats.rotatedCount = 0;
 
-      // Trigger auto-save
-      this.triggerEnhancedAutoSave('data-change');
+      this.triggerAutoSave('data-change');
 
-      // Update UI
-      this.safeUpdateEnhancedUI();
+      this.safeUpdateUI();
 
       this.toastService.success('Veriler orijinal haline sıfırlandı');
       this.cdr.markForCheck();
@@ -879,13 +690,9 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ========================================
-  // ENHANCED EXISTING METHODS (Updated)
-  // ========================================
-
   forceSaveStep3(): void {
     if (this.hasResults) {
-      const enhancedSaveData = {
+      const SaveData = {
         optimizationResult: this.piecesData || [],
         reportFiles: this.reportFiles || [],
         hasResults: this.hasResults,
@@ -893,19 +700,15 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         timestamp: new Date().toISOString()
       };
 
-      // Force save action dispatch et
       this.store.dispatch(StepperActions.forceSave({
         stepNumber: 2,
-        data: enhancedSaveData
+        data: SaveData
       }));
-
-      console.log('⚡ NgRx Force save triggered for Step 3');
     }
   }
 
-  private safeResetEnhancedState(): void {
+  private safeResetState(): void {
     if (this.isDestroyed) return;
-
     this.isLoading = true;
     this.hasResults = false;
     this.showVisualization = false;
@@ -916,21 +719,19 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     this.processedPackages = [];
     this.reportFiles = [];
 
-    // NEW: Reset change tracking
     this.hasUnsavedChanges = false;
     this.dataChangeHistory = [];
     this.lastDataChangeTime = new Date();
     this.totalPackagesProcessed = 0;
 
-    this.resetEnhancedStats();
-    this.safeUpdateEnhancedUI();
+    this.resetStats();
+    this.safeUpdateUI();
   }
 
-  private safeProcessEnhancedOptimizationResult(response: any): void {
+  private safeProcessOptimizationResult(response: any): void {
     if (this.isDestroyed) return;
 
     try {
-      // Enhanced response handling with validation
       let packingData = null;
 
       if (response?.data) {
@@ -950,23 +751,16 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       }
 
       if (packingData && Array.isArray(packingData) && packingData.length > 0) {
-        // Enhanced array creation with validation
         this.piecesData = this.validateAndCleanPackingData(packingData);
-        this.safeProcessEnhancedPackageData();
-        this.calculateEnhancedStats();
-
-        // NEW: Update total processed count
+        this.safeProcessPackageData();
+        this.calculateStats();
         this.totalPackagesProcessed = this.piecesData.length;
-
-
       } else {
-
         this.piecesData = [];
         this.processedPackages = [];
         this.totalPackagesProcessed = 0;
       }
 
-      // Enhanced algorithm stats extraction
       if (response?.stats) {
         this.algorithmStats = {
           executionTime: response.stats.execution_time || 0,
@@ -977,7 +771,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         };
       }
     } catch (error) {
-
       this.piecesData = [];
       this.processedPackages = [];
       this.totalPackagesProcessed = 0;
@@ -986,24 +779,19 @@ export class ResultStepComponent implements OnInit, OnDestroy {
 
   private validateAndCleanPackingData(rawData: any[]): any[] {
     return rawData.filter((piece, index) => {
-      // Enhanced validation for each piece
       if (!Array.isArray(piece) || piece.length < 6) {
-
         return false;
       }
-
-      // Validate numeric values
       const [x, y, z, length, width, height] = piece;
       if ([x, y, z, length, width, height].some(val => typeof val !== 'number' || isNaN(val) || val < 0)) {
 
         return false;
       }
-
       return true;
     });
   }
 
-  private safeProcessEnhancedPackageData(): void {
+  private safeProcessPackageData(): void {
     if (this.isDestroyed || !Array.isArray(this.piecesData)) return;
 
     try {
@@ -1017,21 +805,18 @@ export class ResultStepComponent implements OnInit, OnDestroy {
           width: piece[4] || 0,
           height: piece[5] || 0,
           weight: piece[7] || 0,
-          color: this.getEnhancedPackageColor(index),
+          color: this.getPackageColor(index),
           dimensions: `${piece[3] || 0}×${piece[4] || 0}×${piece[5] || 0}mm`,
         })
       );
-
-
     } catch (error) {
-
       this.processedPackages = [];
     }
   }
 
-  private calculateEnhancedStats(): void {
+  private calculateStats(): void {
     if (this.isDestroyed || this.processedPackages.length === 0) {
-      this.resetEnhancedStats();
+      this.resetStats();
       return;
     }
 
@@ -1051,12 +836,12 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         0
       );
 
-      const cogScore = this.calculateEnhancedCOGScore();
+      const cogScore = this.calculateCOGScore();
       const utilizationRate = Math.round((usedVolume / totalVolume) * 100);
       const efficiency = Math.round((utilizationRate + cogScore) / 2);
 
       this.loadingStats = {
-        ...this.loadingStats, // Preserve existing counts (deletedCount, movedCount, rotatedCount)
+        ...this.loadingStats,
         totalPackages: this.processedPackages.length,
         packagesLoaded: this.processedPackages.length,
         utilizationRate: utilizationRate,
@@ -1065,14 +850,13 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         efficiency: efficiency,
       };
 
-
     } catch (error) {
 
-      this.resetEnhancedStats();
+      this.resetStats();
     }
   }
 
-  private calculateEnhancedCOGScore(): number {
+  private calculateCOGScore(): number {
     if (this.isDestroyed || this.processedPackages.length === 0) return 0;
 
     try {
@@ -1098,7 +882,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       const cogY = weightedY / totalWeight;
       const cogZ = weightedZ / totalWeight;
 
-      // Enhanced ideal COG calculation
       const idealX = this.truckDimension[0] / 2;
       const idealY = this.truckDimension[1] / 2;
       const idealZ = this.truckDimension[2] * 0.4;
@@ -1116,16 +899,13 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       );
 
       const score = Math.round(Math.max(0, 100 - (distance / maxDistance) * 100));
-
-
       return score;
     } catch (error) {
-
       return 0;
     }
   }
 
-  private safeEnhancedFinalize(): void {
+  private safeFinalize(): void {
     if (this.isDestroyed) return;
 
     this.isLoading = false;
@@ -1136,34 +916,31 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 2 }));
     this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 2, isValid: true }));
 
-    this.safeUpdateEnhancedUI();
-    this.toastService.success('Enhanced paketleme ve rapor başarıyla oluşturuldu.');
+    this.safeUpdateUI();
+    this.toastService.success(' paketleme ve rapor başarıyla oluşturuldu.');
 
-    // Enhanced finalization with session save
-    this.saveEnhancedResultsToSession();
+    this.saveResultsToSession();
 
-    // Performance tracking
     this.performanceMetrics.endTime = performance.now();
-    const processingTime = this.performanceMetrics.endTime - this.performanceMetrics.startTime;
 
   }
 
-  private handleEnhancedError(error: any): void {
+  private handleError(error: any): void {
     if (this.isDestroyed) return;
 
     this.isLoading = false;
     this.hasResults = false;
     this.optimizationProgress = 0;
 
-    this.safeUpdateEnhancedUI();
+    this.safeUpdateUI();
 
-    const errorMessage = this.getEnhancedErrorMessage(error);
+    const errorMessage = this.getErrorMessage(error);
     this.toastService.error(errorMessage);
 
 
   }
 
-  private safeUpdateEnhancedUI(): void {
+  private safeUpdateUI(): void {
     if (this.isDestroyed) return;
 
     try {
@@ -1173,129 +950,82 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ========================================
-  // ENHANCED PROGRESS SIMULATION
-  // ========================================
-
-  private startEnhancedProgressSimulation(): void {
+  private startProgressSimulation(): void {
     if (this.progressInterval) {
       clearInterval(this.progressInterval);
     }
 
     this.progressInterval = setInterval(() => {
       if (this.isDestroyed || !this.isLoading) {
-        this.stopEnhancedProgressSimulation();
+        this.stopProgressSimulation();
         return;
       }
 
       if (this.optimizationProgress < 70) {
-        // Enhanced progress with variable speed
-        const increment = Math.random() * 8 + 2; // 2-10 increment
+        const increment = Math.random() * 8 + 2;
         this.optimizationProgress = Math.min(70, this.optimizationProgress + increment);
-        this.safeUpdateEnhancedUI();
+        this.safeUpdateUI();
       }
     }, 500);
   }
 
-  private stopEnhancedProgressSimulation(): void {
+  private stopProgressSimulation(): void {
     if (this.progressInterval) {
       clearInterval(this.progressInterval);
       this.progressInterval = null;
     }
   }
 
-  // ========================================
-  // ENHANCED EVENT HANDLERS
-  // ========================================
-
   onPackageSelected(packageData: any): void {
     if (this.isDestroyed) return;
-
-
-
     try {
-      // Enhanced package selection validation
       if (!packageData || !packageData.id) {
 
         return;
       }
-
-      // Enhanced package state management
-      this.updateEnhancedPackageInternalState(packageData);
-
-      // Enhanced auto-save trigger
-      this.triggerEnhancedAutoSave('user-action');
-
-      // Enhanced statistics update
+      this.updatePackageInternalState(packageData);
+      this.triggerAutoSave('user-action');
       this.updatePackageInteractionStats('selected');
-
     } catch (error) {
-
       this.toastService.error('Paket seçiminde hata oluştu');
     }
   }
 
   onViewChanged(viewType: string): void {
     if (this.isDestroyed) return;
-
-
-
     try {
-      // Enhanced view state management
       this.currentViewType = viewType;
-
-      // Enhanced auto-save trigger
-      this.triggerEnhancedAutoSave('user-action');
-
-      // Enhanced UI update
+      this.triggerAutoSave('user-action');
       this.cdr.detectChanges();
-
-
-
     } catch (error) {
-
     }
   }
 
-  // Enhanced three.js component error handling
   onThreeJSError(error: any): void {
-
     this.hasThreeJSError = true;
     this.showVisualization = false;
     this.toastService.error('3D görselleştirmede hata oluştu');
     this.cdr.detectChanges();
   }
 
-  // Enhanced three.js component ready handler
   onThreeJSReady(): void {
-
     this.hasThreeJSError = false;
     this.cdr.detectChanges();
   }
 
-  // ========================================
-  // ENHANCED HELPER METHODS
-  // ========================================
-
-  private updateEnhancedPackageInternalState(packageData: any): void {
+  private updatePackageInternalState(packageData: any): void {
     try {
-      // Enhanced package finding and updating
       const packageIndex = this.processedPackages.findIndex(pkg => pkg.id === packageData.id);
 
       if (packageIndex > -1) {
-        // Enhanced package update with validation
         const updatedPackage = {
           ...this.processedPackages[packageIndex],
           ...packageData,
           lastModified: new Date().toISOString()
         };
-
         this.processedPackages[packageIndex] = updatedPackage;
-
       }
-
     } catch (error) {
-
     }
   }
 
@@ -1313,15 +1043,9 @@ export class ResultStepComponent implements OnInit, OnDestroy {
           break;
       }
 
-
     } catch (error) {
-
     }
   }
-
-  // ========================================
-  // ENHANCED UI HELPER METHODS
-  // ========================================
 
   getUtilizationRate(): number {
     return this.loadingStats.utilizationRate;
@@ -1347,7 +1071,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     return 'poor';
   }
 
-  // NEW: Get change status class for UI styling
   getChangeStatusClass(): string {
     if (!this.hasUnsavedChanges) return 'saved';
     if (this.dataChangeHistory.length > 10) return 'many-changes';
@@ -1355,7 +1078,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     return 'no-changes';
   }
 
-  // NEW: Format change type for display
   formatChangeType(changeType: string): string {
     const typeMap: { [key: string]: string } = {
       'drag': '🎯 Taşındı',
@@ -1408,10 +1130,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     return 'insert_drive_file';
   }
 
-  // ========================================
-  // ENHANCED VISUALIZATION METHODS
-  // ========================================
-
   openInNewTab(): void {
     if (
       !this.hasResults ||
@@ -1427,7 +1145,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       const dataStr = JSON.stringify(this.piecesData);
       const dimensionsStr = JSON.stringify(this.truckDimension);
 
-      // Enhanced popup creation
       const newWindow = window.open(
         '',
         '_blank',
@@ -1435,33 +1152,27 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       );
 
       if (newWindow) {
-        newWindow.document.write(this.createEnhancedThreeJSPopupHTML(dataStr, dimensionsStr));
+        newWindow.document.write(this.createThreeJSPopupHTML(dataStr, dimensionsStr));
         newWindow.document.close();
         this.popupWindow = newWindow;
 
-        // Enhanced auto-save trigger
-        this.triggerEnhancedAutoSave('user-action');
-
-
+        this.triggerAutoSave('user-action');
       }
     } catch (error) {
-
       this.toastService.error('3D görünüm açılamadı.');
     }
   }
 
-  private createEnhancedThreeJSPopupHTML(dataStr: string, dimensionsStr: string): string {
+  private createThreeJSPopupHTML(dataStr: string, dimensionsStr: string): string {
     try {
-      // Enhanced validation
       if (!dataStr || !dimensionsStr) {
-        throw new Error('Invalid data for enhanced popup generation');
+        throw new Error('Invalid data for  popup generation');
       }
-
       return `
         <!DOCTYPE html>
         <html>
         <head>
-          <title>Enhanced 3D Tır Yükleme Görselleştirmesi</title>
+          <title> 3D Tır Yükleme Görselleştirmesi</title>
           <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
           <style>
             body {
@@ -1497,7 +1208,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               background-clip: text;
             }
 
-            .enhanced-stats {
+            .-stats {
               display: flex;
               justify-content: center;
               gap: 20px;
@@ -1505,7 +1216,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               flex-wrap: wrap;
             }
 
-            .enhanced-stat-item {
+            .-stat-item {
               text-align: center;
               padding: 16px 20px;
               background: white;
@@ -1516,13 +1227,13 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               transition: all 0.3s ease;
             }
 
-            .enhanced-stat-item:hover {
+            .-stat-item:hover {
               transform: translateY(-4px);
               box-shadow: 0 8px 16px rgba(0, 106, 106, 0.2);
               border-color: #006A6A;
             }
 
-            .enhanced-stat-value {
+            .-stat-value {
               font-weight: 700;
               color: #006A6A;
               font-size: 1.5rem;
@@ -1530,13 +1241,13 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               margin-bottom: 4px;
             }
 
-            .enhanced-stat-label {
+            .-stat-label {
               font-size: 0.875rem;
               color: #666;
               font-weight: 500;
             }
 
-            .enhanced-controls {
+            .-controls {
               position: absolute;
               top: 15px;
               left: 15px;
@@ -1549,7 +1260,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               border: 1px solid rgba(0, 106, 106, 0.2);
             }
 
-            .enhanced-controls h3 {
+            .-controls h3 {
               margin: 0 0 12px;
               color: #006A6A;
               font-size: 1rem;
@@ -1558,7 +1269,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               gap: 8px;
             }
 
-            .enhanced-control-btn {
+            .-control-btn {
               display: block;
               width: 100%;
               margin-bottom: 8px;
@@ -1573,21 +1284,21 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               transition: all 0.2s ease;
             }
 
-            .enhanced-control-btn:hover {
+            .-control-btn:hover {
               background: #006A6A;
               color: white;
               transform: translateY(-1px);
               box-shadow: 0 4px 8px rgba(0, 106, 106, 0.3);
             }
 
-            .enhanced-view-buttons {
+            .-view-buttons {
               display: grid;
               grid-template-columns: 1fr 1fr;
               gap: 8px;
               margin-top: 12px;
             }
 
-            .enhanced-view-btn {
+            .-view-btn {
               padding: 8px 12px;
               border: 1px solid #006A6A;
               background: white;
@@ -1599,12 +1310,12 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               transition: all 0.2s ease;
             }
 
-            .enhanced-view-btn:hover, .enhanced-view-btn.active {
+            .-view-btn:hover, .-view-btn.active {
               background: #006A6A;
               color: white;
             }
 
-            .enhanced-loading-indicator {
+            .-loading-indicator {
               position: absolute;
               top: 50%;
               left: 50%;
@@ -1617,7 +1328,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               gap: 12px;
             }
 
-            .enhanced-loading-spinner {
+            .-loading-spinner {
               width: 24px;
               height: 24px;
               border: 3px solid #e0f2f1;
@@ -1630,7 +1341,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               to { transform: rotate(360deg); }
             }
 
-            .enhanced-error-message {
+            .-error-message {
               position: absolute;
               top: 50%;
               left: 50%;
@@ -1648,97 +1359,97 @@ export class ResultStepComponent implements OnInit, OnDestroy {
             @media (max-width: 768px) {
               body { padding: 10px; }
               #threejs-container { height: 500px; }
-              .enhanced-controls { position: static; margin-bottom: 15px; }
-              .enhanced-stats { flex-direction: column; align-items: center; }
-              .enhanced-stat-item { min-width: 120px; }
+              .-controls { position: static; margin-bottom: 15px; }
+              .-stats { flex-direction: column; align-items: center; }
+              .-stat-item { min-width: 120px; }
             }
           </style>
         </head>
         <body>
           <div class="header">
-            <h1>🚛 Enhanced Tır Yükleme Optimizasyonu</h1>
+            <h1>🚛  Tır Yükleme Optimizasyonu</h1>
             <p>Three.js 3D Görselleştirme - Gelişmiş Sürüm v3.0</p>
           </div>
 
-          <div class="enhanced-stats">
-            <div class="enhanced-stat-item">
-              <span class="enhanced-stat-value">${this.loadingStats.packagesLoaded}</span>
-              <span class="enhanced-stat-label">Yüklenen Paket</span>
+          <div class="-stats">
+            <div class="-stat-item">
+              <span class="-stat-value">${this.loadingStats.packagesLoaded}</span>
+              <span class="-stat-label">Yüklenen Paket</span>
             </div>
-            <div class="enhanced-stat-item">
-              <span class="enhanced-stat-value">${this.loadingStats.utilizationRate}%</span>
-              <span class="enhanced-stat-label">Doluluk Oranı</span>
+            <div class="-stat-item">
+              <span class="-stat-value">${this.loadingStats.utilizationRate}%</span>
+              <span class="-stat-label">Doluluk Oranı</span>
             </div>
-            <div class="enhanced-stat-item">
-              <span class="enhanced-stat-value">${this.loadingStats.cogScore}/100</span>
-              <span class="enhanced-stat-label">COG Skoru</span>
+            <div class="-stat-item">
+              <span class="-stat-value">${this.loadingStats.cogScore}/100</span>
+              <span class="-stat-label">COG Skoru</span>
             </div>
-            <div class="enhanced-stat-item">
-              <span class="enhanced-stat-value">${this.loadingStats.totalWeight} kg</span>
-              <span class="enhanced-stat-label">Toplam Ağırlık</span>
+            <div class="-stat-item">
+              <span class="-stat-value">${this.loadingStats.totalWeight} kg</span>
+              <span class="-stat-label">Toplam Ağırlık</span>
             </div>
-            <div class="enhanced-stat-item">
-              <span class="enhanced-stat-value">${this.algorithmStats.executionTime.toFixed(1)}s</span>
-              <span class="enhanced-stat-label">İşlem Süresi</span>
+            <div class="-stat-item">
+              <span class="-stat-value">${this.algorithmStats.executionTime.toFixed(1)}s</span>
+              <span class="-stat-label">İşlem Süresi</span>
             </div>
-            <div class="enhanced-stat-item">
-              <span class="enhanced-stat-value">${this.dataChangeHistory.length}</span>
-              <span class="enhanced-stat-label">Değişiklik Sayısı</span>
+            <div class="-stat-item">
+              <span class="-stat-value">${this.dataChangeHistory.length}</span>
+              <span class="-stat-label">Değişiklik Sayısı</span>
             </div>
           </div>
 
           <div id="threejs-container">
-            <div class="enhanced-loading-indicator" id="loading">
-              <div class="enhanced-loading-spinner"></div>
-              <span>Enhanced Three.js yükleniyor...</span>
+            <div class="-loading-indicator" id="loading">
+              <div class="-loading-spinner"></div>
+              <span> Three.js yükleniyor...</span>
             </div>
 
-            <div class="enhanced-controls" id="controls" style="display: none;">
+            <div class="-controls" id="controls" style="display: none;">
               <h3>🎮 Gelişmiş Kontroller v3.0</h3>
-              <button class="enhanced-control-btn" onclick="resetView()">🎯 Görünümü Sıfırla</button>
-              <button class="enhanced-control-btn" onclick="toggleWireframe()">🔳 Wireframe</button>
-              <button class="enhanced-control-btn" onclick="autoRotate()">🔄 Otomatik Döndür</button>
-              <button class="enhanced-control-btn" onclick="enhancedFullscreen()">⛶ Tam Ekran</button>
+              <button class="-control-btn" onclick="resetView()">🎯 Görünümü Sıfırla</button>
+              <button class="-control-btn" onclick="toggleWireframe()">🔳 Wireframe</button>
+              <button class="-control-btn" onclick="autoRotate()">🔄 Otomatik Döndür</button>
+              <button class="-control-btn" onclick="Fullscreen()">⛶ Tam Ekran</button>
 
-              <div class="enhanced-view-buttons">
-                <button class="enhanced-view-btn" onclick="setView('front')">⬜ Ön</button>
-                <button class="enhanced-view-btn" onclick="setView('side')">▫️ Yan</button>
-                <button class="enhanced-view-btn" onclick="setView('top')">⬛ Üst</button>
-                <button class="enhanced-view-btn" onclick="setView('iso')">🔲 3D</button>
+              <div class="-view-buttons">
+                <button class="-view-btn" onclick="setView('front')">⬜ Ön</button>
+                <button class="-view-btn" onclick="setView('side')">▫️ Yan</button>
+                <button class="-view-btn" onclick="setView('top')">⬛ Üst</button>
+                <button class="-view-btn" onclick="setView('iso')">🔲 3D</button>
               </div>
             </div>
           </div>
 
           <script>
-            // Enhanced Three.js implementation
+            //  Three.js implementation
             let scene, camera, renderer, truckGroup, packagesGroup;
             let isWireframe = false;
             let autoRotateEnabled = false;
             let animationId;
 
-            // Enhanced initialization
+            //  initialization
             function initThreeJS() {
               try {
                 const container = document.getElementById('threejs-container');
                 const loading = document.getElementById('loading');
                 const controls = document.getElementById('controls');
 
-                // Enhanced data parsing with validation
+                //  data parsing with validation
                 const piecesData = JSON.parse('${dataStr}');
                 const truckDimension = JSON.parse('${dimensionsStr}');
 
                 if (!piecesData || !truckDimension) {
-                  throw new Error('Enhanced: Invalid data provided');
+                  throw new Error(': Invalid data provided');
                 }
 
 
 
-                // Enhanced scene setup
+                //  scene setup
                 scene = new THREE.Scene();
                 scene.background = new THREE.Color(0xf8fafc);
                 scene.fog = new THREE.Fog(0xf8fafc, 1000, 50000);
 
-                // Enhanced camera
+                //  camera
                 camera = new THREE.PerspectiveCamera(
                   75,
                   container.clientWidth / container.clientHeight,
@@ -1746,7 +1457,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
                   100000
                 );
 
-                // Enhanced renderer
+                //  renderer
                 renderer = new THREE.WebGLRenderer({
                   antialias: true,
                   alpha: true,
@@ -1759,7 +1470,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
 
                 container.appendChild(renderer.domElement);
 
-                // Enhanced lighting
+                //  lighting
                 const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
                 scene.add(ambientLight);
 
@@ -1770,24 +1481,24 @@ export class ResultStepComponent implements OnInit, OnDestroy {
                 directionalLight.shadow.mapSize.height = 2048;
                 scene.add(directionalLight);
 
-                // Enhanced groups
+                //  groups
                 truckGroup = new THREE.Group();
                 packagesGroup = new THREE.Group();
                 scene.add(truckGroup);
                 scene.add(packagesGroup);
 
-                // Create enhanced truck and packages
-                createEnhancedTruck(truckDimension);
-                createEnhancedPackages(piecesData);
+                // Create  truck and packages
+                createTruck(truckDimension);
+                createPackages(piecesData);
 
                 // Set initial view
                 setView('iso');
 
-                // Start enhanced render loop
+                // Start  render loop
                 animate();
 
-                // Enhanced mouse controls
-                setupEnhancedControls();
+                //  mouse controls
+                setupControls();
 
                 // Show controls
                 loading.style.display = 'none';
@@ -1798,12 +1509,12 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               } catch (error) {
 
                 document.getElementById('loading').innerHTML =
-                  '<div class="enhanced-error-message">❌ Enhanced Görselleştirme hatası:<br>' + error.message + '</div>';
+                  '<div class="-error-message">❌  Görselleştirme hatası:<br>' + error.message + '</div>';
               }
             }
 
-            // Enhanced truck creation
-            function createEnhancedTruck(dimensions) {
+            //  truck creation
+            function createTruck(dimensions) {
               const geometry = new THREE.BoxGeometry(dimensions[0], dimensions[1], dimensions[2]);
               const edges = new THREE.EdgesGeometry(geometry);
               const material = new THREE.LineBasicMaterial({
@@ -1818,7 +1529,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
 
               truckGroup.add(wireframe);
 
-              // Enhanced floor
+              //  floor
               const floorGeometry = new THREE.PlaneGeometry(dimensions[0], dimensions[2]);
               const floorMaterial = new THREE.MeshLambertMaterial({
                 color: 0xeeeeee,
@@ -1833,8 +1544,8 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               truckGroup.add(floor);
             }
 
-            // Enhanced packages creation
-            function createEnhancedPackages(piecesData) {
+            //  packages creation
+            function createPackages(piecesData) {
               const colors = ['#006A6A', '#D6BB86', '#004A4A', '#C0A670', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1'];
 
               piecesData.forEach((piece, index) => {
@@ -1853,7 +1564,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
                 mesh.castShadow = true;
                 mesh.receiveShadow = true;
 
-                // Enhanced edge highlight
+                //  edge highlight
                 const edgesGeometry = new THREE.EdgesGeometry(geometry);
                 const edgesMaterial = new THREE.LineBasicMaterial({
                   color: 0xffffff,
@@ -1867,8 +1578,8 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               });
             }
 
-            // Enhanced controls setup
-            function setupEnhancedControls() {
+            //  controls setup
+            function setupControls() {
               const canvas = renderer.domElement;
               let isMouseDown = false;
               let mouseX = 0, mouseY = 0;
@@ -1897,7 +1608,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
                 canvas.style.cursor = 'grab';
               });
 
-              // Enhanced zoom
+              //  zoom
               canvas.addEventListener('wheel', (event) => {
                 event.preventDefault();
                 const zoomSpeed = 0.1;
@@ -1910,13 +1621,13 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               canvas.style.cursor = 'grab';
             }
 
-            // Enhanced animation loop
+            //  animation loop
             function animate() {
               if (!renderer) return;
 
               animationId = requestAnimationFrame(animate);
 
-              // Enhanced auto rotation
+              //  auto rotation
               if (autoRotateEnabled) {
                 packagesGroup.rotation.y += 0.005;
                 truckGroup.rotation.y += 0.005;
@@ -1925,7 +1636,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               renderer.render(scene, camera);
             }
 
-            // Enhanced control functions
+            //  control functions
             function rotateView(deltaX, deltaY) {
               const spherical = new THREE.Spherical();
               const target = new THREE.Vector3(${this.truckDimension[0]/2}, ${this.truckDimension[1]/2}, ${this.truckDimension[2]/2});
@@ -1944,7 +1655,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               const distance = maxDim * 1.5;
               const target = new THREE.Vector3(truckDim[0]/2, truckDim[1]/2, truckDim[2]/2);
 
-              document.querySelectorAll('.enhanced-view-btn').forEach(btn => btn.classList.remove('active'));
+              document.querySelectorAll('.-view-btn').forEach(btn => btn.classList.remove('active'));
 
               switch (viewType) {
                 case 'front':
@@ -1988,7 +1699,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               autoRotateEnabled = !autoRotateEnabled;
             }
 
-            function enhancedFullscreen() {
+            function Fullscreen() {
               if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen();
               } else {
@@ -1996,7 +1707,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               }
             }
 
-            // Enhanced resize handler
+            //  resize handler
             window.addEventListener('resize', () => {
               if (!camera || !renderer) return;
 
@@ -2006,7 +1717,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               renderer.setSize(container.clientWidth, container.clientHeight);
             });
 
-            // Enhanced cleanup
+            //  cleanup
             window.addEventListener('beforeunload', () => {
               if (animationId) {
                 cancelAnimationFrame(animationId);
@@ -2024,16 +1735,14 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         </body>
         </html>
       `;
-
     } catch (error) {
-
       return `
         <!DOCTYPE html>
         <html>
-        <head><title>Enhanced Hata</title></head>
+        <head><title> Hata</title></head>
         <body>
           <div style="padding: 40px; text-align: center; color: #ef4444;">
-            <h2>❌ Enhanced Görselleştirme Hatası</h2>
+            <h2>❌  Görselleştirme Hatası</h2>
             <p>3D görünüm oluşturulurken hata oluştu.</p>
             <p>Lütfen sayfayı yenileyin ve tekrar deneyin.</p>
             <p><small>Error:</small></p>
@@ -2044,11 +1753,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ========================================
-  // ENHANCED UTILITY METHODS
-  // ========================================
-
-  private resetEnhancedStats(): void {
+  private resetStats(): void {
     this.loadingStats = {
       totalPackages: 0,
       packagesLoaded: 0,
@@ -2062,7 +1767,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     };
   }
 
-  private getEnhancedPackageColor(index: number): string {
+  private getPackageColor(index: number): string {
     const colors = [
       '#006A6A', '#D6BB86', '#004A4A', '#C0A670', '#8b5cf6',
       '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#6366f1',
@@ -2072,7 +1777,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     return colors[index % colors.length];
   }
 
-  private getEnhancedErrorMessage(error: any): string {
+  private getErrorMessage(error: any): string {
     if (error?.status === 0) {
       return 'Sunucuya bağlanılamıyor. İnternet bağlantınızı kontrol edin.';
     } else if (error?.status >= 400 && error?.status < 500) {
@@ -2083,10 +1788,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       return error?.message || 'Beklenmeyen bir hata oluştu.';
     }
   }
-
-  // ========================================
-  // ENHANCED ACTION METHODS
-  // ========================================
 
   saveResults(): void {
     if (!this.hasResults || this.isDestroyed) {
@@ -2101,7 +1802,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         this.repositoryService.partialUpdateOrderResult(this.piecesData, this.orderResultId)
         .pipe(
           switchMap(response => {
-            // İlk işlem tamamlandıktan sonra ikinci işlem başlar
             return this.repositoryService.createTruckPlacementReport();
           }),
           catchError(error => {
@@ -2111,28 +1811,23 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         )
         .subscribe({
           next: (response) => {
-            // 'Tır_Yerleşimi' ile başlayan dosyayı reportFiles'tan kaldır
             this.reportFiles = this.reportFiles.filter(file =>
               !file.name.startsWith('Tır_Yerleşimi')
             );
 
-            // Yeni dosyayı reportFiles'a ekle
             if (response && response.file) {
               this.reportFiles.push(response.file);
             }
 
-            // Diğer işlemleriniz
             this.reportFiles.forEach(file => file.name);
           },
           error: (error) => {
-            // Subscribe seviyesinde hata yakalama (catchError'dan kaçan hatalar için)
             this.toastService.error('Hata:', error);
           },
           complete: () => {
-            // İşlem tamamlandığında çalışacak kod (opsiyonel)
             this.hasUnsavedChanges = false;
             this.toastService.success('Sonuçlar başarıyla kaydedildi.');
-            this.triggerEnhancedAutoSave('user-action');
+            this.triggerAutoSave('user-action');
           }
         });
       }
@@ -2155,9 +1850,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   }
 
-  /**
-   * Enhanced sevkiyatı tamamla ve yeni workflow'a hazırla
-   */
   completeShipment(): void {
     if (!this.hasResults) {
       this.toastService.warning('Önce optimizasyonu tamamlayın');
@@ -2165,56 +1857,33 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     }
 
     const changeSummary = this.getDataChangeSummary();
-    const confirmMessage = '...' // mevcut confirmation message
+    const confirmMessage = '...'
 
     const confirmed = confirm(confirmMessage);
     if (!confirmed) return;
 
     try {
-      // 1. Enhanced final save to session (with all changes)
-      this.saveEnhancedResultsToSession();
-
-      // 2. Enhanced auto-save history clean
+      this.saveResultsToSession();
       this.autoSaveService.clearHistory();
-
-      // 3. Enhanced session clean
       this.localStorageService.clearStorage();
-
-      // 4. NgRx'i tamamen reset et
       this.store.dispatch(StepperActions.resetStepper());
+      this.resetComponentState();
 
-      // 7. Enhanced component state clean
-      this.resetEnhancedComponentState();
-
-      // 8. URL'i temizle ve home'a yönlendir
-      // this.router.navigate(['/'], {
-      //   replaceUrl: true, // Browser history'de replace et
-      //   queryParams: {} // Tüm query params'ları temizle
-      // });
-
-      // 9. Enhanced success notification
       this.toastService.success(
         `Sevkiyat başarıyla tamamlandı! ${changeSummary.totalChanges} değişiklik kaydedildi.`,
         'Tamamlandı!'
       );
 
-      // 10. Enhanced completion signal
       setTimeout(() => {
         this.shipmentCompleted.emit();
       }, 1500);
 
-      console.log('🔄 Complete shipment: All reset completed, navigated to home');
-
     } catch (error) {
-      console.error('❌ Complete shipment error:', error);
       this.toastService.error('Sevkiyat tamamlanırken hata oluştu');
     }
   }
 
-  /**
-   * Enhanced component state temizle
-   */
-  private resetEnhancedComponentState(): void {
+  private resetComponentState(): void {
     this.hasResults = false;
     this.showVisualization = false;
     this.isLoading = false;
@@ -2226,16 +1895,13 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     this.processedPackages = [];
     this.currentViewType = 'isometric';
 
-    // NEW: Reset change tracking
     this.hasUnsavedChanges = false;
     this.dataChangeHistory = [];
     this.lastDataChangeTime = new Date();
     this.totalPackagesProcessed = 0;
 
-    // Enhanced reset loading stats
-    this.resetEnhancedStats();
+    this.resetStats();
 
-    // Enhanced reset algorithm stats
     this.algorithmStats = {
       executionTime: 0,
       generations: 0,
@@ -2244,7 +1910,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       convergenceRate: 0
     };
 
-    // Enhanced reset performance metrics
     this.performanceMetrics = {
       startTime: 0,
       endTime: 0,

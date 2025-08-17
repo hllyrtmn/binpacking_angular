@@ -66,7 +66,6 @@ import {
   WeightType,
 } from './models/invoice-upload-interfaces';
 import { INVOICE_UPLOAD_CONSTANTS } from './constants/invoice-upload.constants';
-import { RepositoryService } from '../../services/repository.service';
 import { AppState } from '../../../../../../store';
 import { Store } from '@ngrx/store';
 
@@ -121,7 +120,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   private readonly orderService = inject(OrderService);
   private readonly toastService = inject(ToastService);
   private readonly localService = inject(LocalStorageService);
-  private readonly repositoryService = inject(RepositoryService);
 
   private readonly store = inject(Store<AppState>);
   // NgRx Step1 Migration Observables
@@ -141,6 +139,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   referenceData: ReferenceData = { targetCompanies: [], trucks: [] };
   totalWeight: number = 0;
   processingLock:boolean = true;
+
   // Subscriptions
   private subscriptions: Subscription[] = [];
   private autoSaveSubscription?: Subscription;
@@ -153,7 +152,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   get order(): Order | null {
     let currentOrder: Order | null = null;
     this.step1Order$.pipe(take(1)).subscribe(order => currentOrder = order);
-    console.log('currentOrder',currentOrder)
     return currentOrder
   }
 
@@ -237,54 +235,28 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   };
 
   ngOnInit(): void {
-    const startTime = performance.now();
-    console.log('🚀 Invoice Upload Component initialization started');
-
     this.initializeComponent();
-
-    const endTime = performance.now();
-    console.log(`✅ Invoice Upload Component initialized in ${(endTime - startTime).toFixed(2)}ms`);
   }
 
   ngOnDestroy(): void {
-    console.log('🧹 Invoice Upload Component cleanup started');
-
-    // NgRx subscriptions cleanup
     this.subscriptions.forEach(sub => {
       if (sub && !sub.closed) {
         sub.unsubscribe();
       }
     });
-
-    // Auto-save cleanup
     this.autoSaveSubscription?.unsubscribe();
-
-    console.log('✅ Invoice Upload Component cleanup completed');
   }
 
   private initializeComponent(): void {
-    // Initialize form
     this.uploadForm = this.orderFormManager.initializeForm();
-
-    // Setup UI state subscription
     this.setupUIStateSubscription();
-
-    // Load reference data
     this.loadReferenceData();
-
-    // Restore session data
     this.restoreFromSession();
-
-    // Setup auto-save
     this.setupAutoSaveListeners();
-
-    // Initialize state manager if data exists
-    // this.initializeStateManager();
   }
 
   private setupUIStateSubscription(): void {
     const uiSub = this.uiState$.subscribe(state => {
-      // Handle UI state changes if needed
     });
     this.subscriptions.push(uiSub);
   }
@@ -293,9 +265,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     const dataSub = this.dataLoaderService.loadAllReferenceData().subscribe({
       next: (data) => {
         this.referenceData = data;
-      },
-      error: (error) => {
-
       }
     });
     this.subscriptions.push(dataSub);
@@ -303,7 +272,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
   private restoreFromSession(): void {
     try {
-      // MIGRATED: NgRx Store'dan verileri kontrol et
       let hasNgRxData = false;
       this.step1OrderDetails$.pipe(take(1)).subscribe(details => {
         hasNgRxData = details.length > 0;
@@ -315,8 +283,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
         this.toastService.info('NgRx store\'dan veriler yüklendi');
         return;
       }
-
-      // Fallback: LocalStorage'dan restore et
       const restoredData = this.localService.restoreStep1Data();
       if (restoredData) {
         this.store.dispatch(StepperActions.initializeStep1State({
@@ -335,13 +301,10 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   private setupAutoSaveListeners(): void {
-    // Form changes auto-save
     const formSub = this.uploadForm.valueChanges.subscribe(() => {
       this.triggerAutoSave('form');
     });
     this.subscriptions.push(formSub);
-
-    // Periodic auto-save for user actions
     this.autoSaveSubscription = interval(INVOICE_UPLOAD_CONSTANTS.AUTO_SAVE.INTERVAL_MS)
       .subscribe(() => {
         this.checkForChangesAndAutoSave();
@@ -377,26 +340,20 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
         hasFile: this.fileUploadManager.hasTempFile(),
         fileName: this.fileUploadManager.getFileName(),
       };
-
-      // NgRx Full Migration - no legacy dependencies
       this.store.dispatch(StepperActions.triggerAutoSave({
         stepNumber: 0,
         data: autoSaveData,
         changeType: changeType
       }));
-
-      console.log('🎯 NgRx Auto-save triggered for Step 1 (Full Migration)');
     }
   }
 
-  // File operations
   onFileSelected(event: Event): void {
     this.fileUploadManager.selectFile(event);
   }
 
   uploadFile(): void {
     this.uiStateManager.startFileUpload();
-
     const uploadSub = this.fileUploadManager.uploadFile()
       .pipe(
         finalize(() => this.uiStateManager.finishFileUpload())
@@ -409,9 +366,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
             hasFile: true,
             fileName: 'File Upload Result'
           }));
-
           this.calculateTotals();
-
           this.toastService.success(INVOICE_UPLOAD_CONSTANTS.MESSAGES.SUCCESS.FILE_PROCESSED);
           this.resetForm();
 
@@ -421,13 +376,10 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
           this.toastService.error(INVOICE_UPLOAD_CONSTANTS.MESSAGES.ERROR.FILE_PROCESSING, error);
         },
       });
-
     this.subscriptions.push(uploadSub);
   }
 
-  // Order field updates
   onOrderFieldChange(field: string, value: any): void {
-    // NgRx store'da order'ı güncelle
     let currentOrder = this.order;
     if (currentOrder) {
       const updatedOrder = { ...currentOrder, [field]: value };
@@ -443,7 +395,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     this.triggerAutoSave('user-action');
     this.cdr.markForCheck();
   }
-
 
   onCompanyChange(selectedCompany: any): void {
     let currentOrder = this.order;
@@ -463,7 +414,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   onTruckChange(selectedTruck: any): void {
-    // NgRx store'da truck'ı güncelle
     let currentOrder = this.order;
     if (currentOrder) {
       const updatedOrder = { ...currentOrder, truck: selectedTruck };
@@ -481,7 +431,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   onWeightTypeChange(selectedWeightType: string): void {
-    // NgRx store'da weight type'ı güncelle
     let currentOrder = this.order;
     if (currentOrder) {
       const updatedOrder = { ...currentOrder, weight_type: selectedWeightType };
@@ -499,17 +448,16 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  // OrderDetail operations
   createOrderDetail(): void {
     let currentOrder = this.order;
     if (!currentOrder) {
-      // NgRx store'da yeni order oluştur
+
       const now = new Date();
       const newOrder = {
-        id: crypto.randomUUID(), // Modern UUID generation
+        id: crypto.randomUUID(),
         name: '',
         date: now.toISOString(),
-        company_relation: {} as CompanyRelation, // Use empty object as CompanyRelation
+        company_relation: {} as CompanyRelation,
         truck: {} as Truck,
         weight_type: '',
         created_at: now,
@@ -532,7 +480,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (newOrderDetail:any) => {
           if (newOrderDetail) {
-            // NgRx store'a ekle
             this.store.dispatch(StepperActions.addOrderDetail({
               orderDetail: newOrderDetail.orderDetail
             }));
@@ -570,24 +517,19 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
   }
 
-  // Calculations
   calculateTotals(): void {
     if (!this.order?.weight_type) {
       this.totalWeight = 0;
       return;
     }
-
     const result = this.calculatorService.calculateTotalWeight(
       this.orderDetails,
       this.order.weight_type as WeightType
     );
-
     this.totalWeight = result.totalWeight;
   }
 
-  // Validation and submission
   isFormValid(): boolean {
-    // NgRx store'dan validation data'sını al
     let hasValidOrder = false;
     let hasValidOrderDetails = false;
 
@@ -598,9 +540,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     this.step1OrderDetails$.pipe(take(1)).subscribe(details => {
       hasValidOrderDetails = details.length > 0;
     });
-    console.log('hasValidOrder',hasValidOrder )
-    console.log('hasValidOrderDetails',hasValidOrderDetails)
-
     return hasValidOrder && hasValidOrderDetails;
   }
 
@@ -628,7 +567,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       orderDetailChanges = {
         added: changes.added,
         modified: changes.modified,
-        deleted: changes.deleted.map(detail => detail.id || detail) // ID'leri extract et
+        deleted: changes.deleted.map(detail => detail.id || detail)
       };
     });
     const orderOperation = this.getOrderOperation();
@@ -667,8 +606,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
         finalize(() => {
           this.processingLock = false;
           this.uiStateManager.finishSubmit();
-
-          // NgRx loading state'i durdur
           this.store.dispatch(StepperActions.setStepLoading({
             stepIndex: 0,
             loading: false
@@ -679,8 +616,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
           this.handleSubmitSuccess(result);
         },
         error: (error) => {
-          console.log(error)
-          // Global error dispatch et
           this.store.dispatch(StepperActions.setGlobalError({
             error: {
               message: INVOICE_UPLOAD_CONSTANTS.MESSAGES.ERROR.OPERATION_ERROR + (error.message || error),
@@ -722,17 +657,13 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   private handleSubmitSuccess(result: any): void {
-    console.log('🎉 SUBMIT SUCCESS ÇAĞRILDI'); // Bunu EKLE
     this.invoiceUploaded.emit();
     this.toastService.success(INVOICE_UPLOAD_CONSTANTS.MESSAGES.SUCCESS.CHANGES_SAVED);
-
     this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
     this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 0, isValid: true }));
-
     if (result?.order_details && Array.isArray(result.order_details)) {
       this.syncComponentWithBackendData(result.order_details);
     }
-
     this.localService.saveStep1Data(
       this.order!,
       this.orderDetails,
@@ -741,7 +672,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     );
   }
 
-  // Utility methods
   resetForm(): void {
     this.fileUploadManager.moveFileToTemp();
     this.orderFormManager.resetForm();
@@ -775,13 +705,12 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
         fileName: this.fileUploadManager.getFileName(),
       };
 
-      // Force save action dispatch et
       this.store.dispatch(StepperActions.forceSave({
         stepNumber: 0,
         data: autoSaveData
       }));
 
-      console.log('⚡ NgRx Force save triggered for Step 1');
+
     }
   }
 
@@ -801,12 +730,10 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     this.calculateTotals();
   }
 
-  // Template helper methods (delegated to managers)
   getFormattedDate(date: string | Date | null | undefined): string {
     return this.orderFormManager.getFormattedDate(date);
   }
 
-  // Comparison methods for mat-select [compareWith] - must be bound to component context
   compareObjects = (a: any, b: any): boolean => {
     return this.orderFormManager.compareObjects(a, b);
   }

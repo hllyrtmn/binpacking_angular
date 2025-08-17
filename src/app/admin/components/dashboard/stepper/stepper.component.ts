@@ -56,7 +56,6 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('resultStepComponent') resultStepComponent!: ResultStepComponent;
 
   private readonly cdr = inject(ChangeDetectorRef);
-
   private readonly legacyLocalStorage = inject(LocalStorageService);
   private readonly legacyToastService = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
@@ -195,10 +194,7 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
     const previousStep = event.previouslySelectedIndex;
     const currentStep = event.selectedIndex;
 
-    console.log('🔄 Step Navigation:', previousStep, '→', currentStep);
-
     this.clearStepCaches();
-
     this.store.dispatch(StepperActions.navigateToStep({ stepIndex: currentStep }));
 
     if (previousStep < currentStep && previousStep >= 0) {
@@ -209,14 +205,9 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
   };
 
   invoiceUploaded = (): void => {
-
     this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
     this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 0, isValid: true }));
-
-    console.log('🔄 invoiceUploaded - Step 2 data loading başlatılıyor...');
-
     this.loadPackageDataForStep2();
-
     this.cdr.markForCheck();
   };
 
@@ -231,22 +222,14 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
   };
 
   onShipmentCompleted = (): void => {
-    console.log('🔄 Shipment completed, performing full reset...');
-
     try {
       this.store.dispatch(StepperActions.resetStepper());
-
       this.performFullReset();
-
       this.router.navigate(['/'], {
         replaceUrl: true,
         queryParams: {}
       });
-
-      console.log('✅ Full reset completed');
-
     } catch (error) {
-      console.error('❌ Shipment completion error:', error);
       this.handleResetFailure();
     }
   };
@@ -260,7 +243,6 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
   };
 
   resetStepper = (): void => {
-    console.log('🔄 NgRx Stepper Reset');
     this.store.dispatch(StepperActions.resetStepper());
     this.clearStepCaches();
     this.cdr.markForCheck();
@@ -272,7 +254,6 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngAfterViewInit(): void {
     if (this.pendingEditData) {
-      console.log('🔄 ViewChild hazır, pending edit data işleniyor...');
       setTimeout(() => {
         this.loadDataToInvoiceUploadComponent(
           this.pendingEditData!.order,
@@ -288,7 +269,6 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
     try {
       this.cleanupComponent();
     } catch (error) {
-      console.error('❌ Cleanup error:', error);
     }
   }
 
@@ -296,7 +276,6 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
     try {
       this.currentStep$.subscribe(step => {
         this.selectedIndex = step;
-        console.log('🎯 NgRx Current Step:', step);
         this.cdr.markForCheck();
       });
 
@@ -304,26 +283,19 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
         distinctUntilChanged(),
         takeUntil(this.destroy$)
       ).subscribe(async (params) => {
-        console.log('🔍 Route Query Params:', params);
-
         const editOrderId = params['orderId'];
         const editMode = params['mode'] === 'edit';
 
         if (editMode && editOrderId) {
-          console.log('🔄 Edit mode detect edildi:', editOrderId);
           this.store.dispatch(StepperActions.enableEditMode({ orderId: editOrderId }));
           await this.loadOrderForEdit(editOrderId);
         } else {
-          console.log('🆕 Normal mode');
           this.store.dispatch(StepperActions.initializeStepper({}));
           await this.initializeComponent();
         }
-
         this.cdr.markForCheck();
       });
-
     } catch (error) {
-      console.error('❌ Initialize error:', error);
     }
   }
 
@@ -360,88 +332,60 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
   private cleanupComponent(): void {
     this.destroy$.next();
     this.destroy$.complete();
-
     this.clearStepCaches();
   }
 
   private loadDataToInvoiceUploadComponent(order: any, orderDetails: any[]): void {
-    console.log('📤 StateManager\'a data yükleniyor:', { order, orderDetails });
-
     this.store.dispatch(StepperActions.initializeStep1State({
       order: order,
       orderDetails: orderDetails,
       hasFile: false,
       fileName: 'Edit Mode Data'
     }));
-
     if (!this.invoiceUploadComponent) {
-      console.log('⏳ InvoiceUpload component henüz hazır değil, pending...');
+
       this.pendingEditData = { orderId: order.id, order, orderDetails };
       return;
     }
-
-
-    console.log('✅ StateManager Step 1 initialize tamamlandı');
-
     setTimeout(() => {
-      console.log('🔄 Change detection trigger...');
       if (this.invoiceUploadComponent) {
         (this.invoiceUploadComponent as any).restoreFromSession?.();
-        console.log('🔄 InvoiceUpload restoreFromSession çağrıldı');
       }
       this.cdr.markForCheck();
     }, 200);
   }
 
   private syncEditModeDataToNgRx(orderId: string): void {
-    console.log('🔄 Edit mode: NgRx sync (StateManager removed)');
-
     // NgRx store'dan mevcut data'yı kontrol et
     this.store.select(StepperSelectors.selectStep1State).pipe(take(1)).subscribe(step1State => {
       if (step1State.orderDetails.length > 0 && step1State.order) {
         this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 0, isValid: true }));
         this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
-        console.log('✅ NgRx sync completed');
       }
     });
   }
 
   private async loadPackageDataForStep2(): Promise<void> {
-    console.log('🔍 loadPackageDataForStep2 çağrıldı');
-
     this.route.queryParams.pipe(take(1)).subscribe(async (params) => {
       const editMode = params['mode'] === 'edit';
       const orderId = params['orderId'];
-
-      console.log('🔍 Step 2 params:', { editMode, orderId });
       if (editMode && orderId) {
-        console.log('🔄 Step 2 için paket verileri yükleniyor...');
-
         try {
           const packageResponse = await this.repositoryService.calculatePackageDetail().toPromise();
-          console.log('📦 Package response:', packageResponse);
-
           if (packageResponse?.packages) {
-            console.log('✅ Paket verileri alındı, StateManager\'a yükleniyor...');
             this.store.dispatch(StepperActions.initializeStep2State({
               packages: packageResponse.packages || [],
               availableProducts: packageResponse.remainingProducts || []
             }));
-            console.log('✅ Step 2 NgRx store güncellendi');
-
             setTimeout(() => {
               if (this.palletControlComponent) {
-                console.log('🔄 PalletControl component\'ine data aktarımı...');
+
                 (this.palletControlComponent as any).restoreFromSession?.();
-              } else {
-                console.log('⚠️ PalletControl component henüz hazır değil');
               }
               this.cdr.markForCheck();
             }, 300);
           }
-
         } catch (error) {
-          console.error('❌ Step 2 paket yükleme hatası:', error);
         }
       }
     });
@@ -456,11 +400,9 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private resetStepperNavigation(): void {
     if (!this.stepper) return;
-
     this.stepper.linear = false;
     this.stepper.selectedIndex = 0;
     this.selectedIndex = 0;
-
     setTimeout(() => {
       this.cdr.markForCheck();
     }, 500);
@@ -470,7 +412,6 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.legacyToastService?.error) {
       this.legacyToastService.error('Reset sırasında hata oluştu. Sayfa yeniden yüklenecek.');
     }
-
     setTimeout(() => {
       window.location.reload();
     }, 2000);

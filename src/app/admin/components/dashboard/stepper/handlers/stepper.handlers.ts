@@ -1,10 +1,6 @@
-// ==========================================
-// FIXED: Handler Classes with Injection Tokens
-// ==========================================
-
 import { Injectable, Inject } from '@angular/core';
 import { BaseComponentManager, BaseStepperHandler, ComponentType, IActivityTracker, IErrorHandler, INotificationService, isConfigurableComponent, isResettableComponent, IStepManager, IStepperConfig, IStepValidator, IStorageInfo, IStorageManager, NOTIFICATION_SERVICE_TOKEN, STEP_MANAGER_TOKEN, STEPPER_CONFIG, STORAGE_MANAGER_TOKEN } from '../interfaces/stepper.interface';
-// ✅ 1. FIXED: Step Validation Handler (SRP - Single Responsibility)
+
 @Injectable({
   providedIn: 'root'
 })
@@ -17,9 +13,8 @@ export class StepValidationHandler extends BaseStepperHandler implements IStepVa
     super();
   }
 
-  // ✅ FIXED: Override modifier eklendi
   protected override handleError(error: any, method: string): void {
-    console.error(`❌ ${this.serviceName}.${method} error:`, error);
+
   }
 
   isCompleted(stepIndex: number): boolean {
@@ -32,7 +27,6 @@ export class StepValidationHandler extends BaseStepperHandler implements IStepVa
         return false;
       }
 
-      // Delegate to step manager with safe access
       const steps = (this.stepManager as any).steps;
       if (!steps || !steps[stepIndex]) {
 
@@ -51,7 +45,7 @@ export class StepValidationHandler extends BaseStepperHandler implements IStepVa
   isEditable(stepIndex: number): boolean {
     try {
       if (!this.validateStepIndex(stepIndex)) {
-        return stepIndex === 0; // Safe default: first step always editable
+        return stepIndex === 0;
       }
 
       if (!this.validateService(this.stepManager, 'StepManager')) {
@@ -68,7 +62,7 @@ export class StepValidationHandler extends BaseStepperHandler implements IStepVa
 
     } catch (error) {
       this.handleError(error, 'isEditable');
-      return stepIndex === 0; // Safe fallback
+      return stepIndex === 0;
     }
   }
 
@@ -101,7 +95,6 @@ export class StepValidationHandler extends BaseStepperHandler implements IStepVa
   }
 }
 
-// ✅ 2. FIXED: Storage Management Handler (SRP)
 @Injectable({
   providedIn: 'root'
 })
@@ -109,15 +102,12 @@ export class StorageHandler extends BaseStepperHandler implements IStorageManage
   protected serviceName = 'StorageHandler';
 
   constructor(
-    // ✅ FIXED: LocalStorageService'i direkt inject ediyoruz (legacy uyumluluk için)
     @Inject('LocalStorageService') private localStorage: any
   ) {
     super();
   }
 
-  // ✅ FIXED: Override modifier eklendi
   protected override handleError(error: any, method: string): void {
-    console.error(`❌ ${this.serviceName}.${method} error:`, error);
   }
 
   hasExistingData(): boolean {
@@ -136,12 +126,11 @@ export class StorageHandler extends BaseStepperHandler implements IStorageManage
   getCurrentStep(): number {
     try {
       if (!this.validateService(this.localStorage, 'LocalStorageService')) {
-        return 1; // Safe default
+        return 1;
       }
 
       const step = this.localStorage.getCurrentStep?.();
 
-      // Validate step number
       if (typeof step !== 'number' || step < 1 || step > STEPPER_CONFIG.MAX_STEPS) {
 
         return 1;
@@ -204,7 +193,6 @@ export class StorageHandler extends BaseStepperHandler implements IStorageManage
   }
 }
 
-// ✅ 3. FIXED: Activity Tracking Handler (SRP)
 @Injectable({
   providedIn: 'root'
 })
@@ -217,15 +205,13 @@ export class ActivityTrackingHandler extends BaseStepperHandler implements IActi
 
   constructor(
     @Inject(STORAGE_MANAGER_TOKEN) private storageManager: IStorageManager,
-    // ✅ FIXED: Config'i direkt inject ediyoruz
     @Inject('StepperConfig') private config: IStepperConfig
   ) {
     super();
   }
 
-  // ✅ FIXED: Override modifier eklendi
   protected override handleError(error: any, method: string): void {
-    console.error(`❌ ${this.serviceName}.${method} error:`, error);
+
   }
 
   startTracking(): void {
@@ -263,7 +249,6 @@ export class ActivityTrackingHandler extends BaseStepperHandler implements IActi
         return;
       }
 
-      // Refresh activity timestamp
       this.logAction('refreshActivity', 'Activity refreshed');
     } catch (error) {
       this.handleError(error, 'refreshActivity');
@@ -314,7 +299,6 @@ export class ActivityTrackingHandler extends BaseStepperHandler implements IActi
   }
 }
 
-// ✅ 4. FIXED: Error Handling Handler (SRP)
 @Injectable({
   providedIn: 'root'
 })
@@ -329,14 +313,12 @@ export class ErrorHandler extends BaseStepperHandler implements IErrorHandler {
     super();
   }
 
-  // ✅ FIXED: Override modifier eklendi
   protected override handleError(error: any, method: string): void {
-    console.error(`❌ ${this.serviceName}.${method} error:`, error);
+
   }
 
   handleErrors(error: any, context: string): void {
     const errorId = this.generateErrorId();
-    // Don't show every error to user, only critical ones
     if (this.isCriticalError(error, context)) {
       this.notificationService.error(`Sistem hatası oluştu. Hata ID: ${errorId}`);
     }
@@ -346,21 +328,14 @@ export class ErrorHandler extends BaseStepperHandler implements IErrorHandler {
     try {
       this.logAction('handleInitializationError', 'Attempting fallback initialization');
 
-      // Try to reset services
       this.attemptServiceReset();
-
-      // Show user notification
       this.notificationService.warning('Sistem başlatılırken bir sorun oluştu. Sayfa yeniden yüklenecek.');
-
-      // Schedule page reload as last resort
       setTimeout(() => {
         window.location.reload();
       }, STEPPER_CONFIG.RELOAD_DELAY);
 
     } catch (error) {
       this.handleError(error, 'handleInitializationError');
-
-      // Force immediate reload if fallback fails
       setTimeout(() => {
         window.location.reload();
       }, 1000);
@@ -395,7 +370,6 @@ export class ErrorHandler extends BaseStepperHandler implements IErrorHandler {
   }
 }
 
-// ✅ 5. FIXED: Component Management Handler (SRP) - Safe Implementation
 @Injectable({
   providedIn: 'root'
 })
@@ -404,12 +378,10 @@ export class ComponentManager extends BaseComponentManager {
 
   private componentRefs = new Map<ComponentType, any>();
 
-  // ✅ FIXED: Override modifier eklendi
   protected override handleError(error: any, method: string): void {
-    console.error(`❌ ${this.serviceName}.${method} error:`, error);
+
   }
 
-  // ✅ FIXED: Güvenli component registration - interface kontrolü yapmıyor
   registerComponent(type: ComponentType, component: any): void {
     this.componentRefs.set(type, component);
     this.logAction('registerComponent', `${type} registered`);
@@ -421,7 +393,6 @@ export class ComponentManager extends BaseComponentManager {
 
       for (const [type, component] of this.componentRefs) {
         try {
-          // ✅ FIXED: Güvenli reset - sadece method varsa çağır
           if (component && isResettableComponent(component)) {
             component.resetComponentState();
             this.logAction('resetComponent', `${type} reset successful`);
@@ -443,8 +414,6 @@ export class ComponentManager extends BaseComponentManager {
     try {
       const type = componentName as ComponentType;
       const component = this.componentRefs.get(type);
-
-      // ✅ FIXED: Güvenli configure - sadece method varsa çağır
       if (isConfigurableComponent(component)) {
         component.configureComponent();
         this.logAction('configureComponent', `${componentName} configured`);
@@ -459,22 +428,16 @@ export class ComponentManager extends BaseComponentManager {
   }
 }
 
-// ✅ 6. FIXED: Service Health Checker (SRP)
 @Injectable({
   providedIn: 'root'
 })
 export class ServiceHealthChecker extends BaseStepperHandler {
   protected serviceName = 'ServiceHealthChecker';
-
-  // ✅ FIXED: Override modifier eklendi
   protected override handleError(error: any, method: string): void {
-    console.error(`❌ ${this.serviceName}.${method} error:`, error);
   }
-
   checkAllServices(services: Array<{ name: string, service: any }>): boolean {
     try {
       this.logAction('checkAllServices', 'Starting health check');
-
       let allHealthy = true;
 
       for (const { name, service } of services) {
@@ -497,16 +460,12 @@ export class ServiceHealthChecker extends BaseStepperHandler {
     if (!service) {
       return false;
     }
-
-    // Check if service has health check method
     if (typeof service.isHealthy === 'function') {
       const isHealthy = service.isHealthy();
       if (!isHealthy) {
         return false;
       }
     }
-
-
     return true;
   }
 }

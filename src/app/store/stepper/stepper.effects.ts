@@ -27,7 +27,7 @@ export class StepperEffects {
           StepperActions.setStepCompleted
         ),
         tap((action) => {
-          console.log('🎯 NgRx Stepper Action:', action.type, action);
+
         })
       ),
     { dispatch: false }
@@ -39,7 +39,7 @@ export class StepperEffects {
       ofType(StepperActions.triggerAutoSave),
       debounceTime(1500), // 1.5 saniye debounce
       map(({ stepNumber, data, changeType }) => {
-        console.log('💾 Auto-save triggered for step:', stepNumber, 'type:', changeType);
+
         return StepperActions.performAutoSave({ stepNumber, data });
       })
     )
@@ -50,25 +50,25 @@ export class StepperEffects {
     this.actions$.pipe(
       ofType(StepperActions.performAutoSave),
       switchMap(({ stepNumber, data }) => {
-        console.log('💾 Performing auto-save for step:', stepNumber);
-        console.log('💾 Data:', data);
+
+
 
         return timer(100).pipe(
           switchMap(() => {
             try {
-              console.log('💾 Trying to save step data...');
+
 
               // Step'e göre save işlemi
               this.saveStepData(stepNumber, data);
 
-              console.log('✅ Save step data success');
+
 
               return of(StepperActions.autoSaveSuccess({
                 stepNumber,
                 timestamp: new Date()
               }));
             } catch (error) {
-              console.error('❌ Auto-save error in try-catch:', error);
+
               return of(StepperActions.autoSaveFailure({
                 stepNumber,
                 error: error instanceof Error ? error.message : 'Auto-save failed'
@@ -76,7 +76,7 @@ export class StepperEffects {
             }
           }),
           catchError((error) => {
-            console.error('❌ Auto-save effect error in catchError:', error);
+
             return of(StepperActions.autoSaveFailure({
               stepNumber,
               error: error.message || 'Auto-save failed'
@@ -92,7 +92,7 @@ export class StepperEffects {
     this.actions$.pipe(
       ofType(StepperActions.forceSave),
       switchMap(({ stepNumber, data }) => {
-        console.log('⚡ Force save for step:', stepNumber);
+
 
         try {
           this.saveStepData(stepNumber, data);
@@ -117,7 +117,7 @@ export class StepperEffects {
       this.actions$.pipe(
         ofType(StepperActions.autoSaveSuccess),
         tap(({ stepNumber, timestamp }) => {
-          console.log(`✅ Step ${stepNumber + 1} auto-saved at:`, timestamp.toLocaleTimeString());
+
           // Optional: Show toast notification
           // this.toastService.info(`Step ${stepNumber + 1} kaydedildi`);
         })
@@ -131,7 +131,7 @@ export class StepperEffects {
       this.actions$.pipe(
         ofType(StepperActions.autoSaveFailure),
         tap(({ stepNumber, error }) => {
-          console.error(`❌ Step ${stepNumber + 1} auto-save failed:`, error);
+
           this.toastService.warning(`Step ${stepNumber + 1} kaydedilemedi: ${error}`);
         })
       ),
@@ -140,11 +140,11 @@ export class StepperEffects {
 
   // Private helper method
   private saveStepData(stepNumber: number, data: any): void {
-    console.log('💾 saveStepData called with:', { stepNumber, data });
+
     try {
       switch (stepNumber) {
         case 0: // Step 1
-          console.log('💾 Saving Step 1...');
+
           if (data.order && data.orderDetails) {
             this.localStorageService.saveStep1Data(
               data.order,
@@ -152,32 +152,32 @@ export class StepperEffects {
               data.hasFile || false,
               data.fileName
             );
-            console.log('✅ Step 1 saved');
+
           } else {
-            console.warn('⚠️ Step 1 data incomplete');
+
           }
           break;
 
         case 1: // Step 2
-          console.log('💾 Saving Step 2...');
+
           if (data.packages) {
             this.localStorageService.saveStep2Data(data.packages, data.availableProducts || []);
-            console.log('✅ Step 2 saved');
+
           } else {
-            console.warn('⚠️ Step 2 data incomplete');
+
           }
           break;
 
         case 2: // Step 3
-          console.log('💾 Saving Step 3...');
+
           if (data.optimizationResult || data.reportFiles) {
             this.localStorageService.saveStep3Data(
               data.optimizationResult,
               data.reportFiles || []
             );
-            console.log('✅ Step 3 saved');
+
           } else {
-            console.warn('⚠️ Step 3 data incomplete');
+
           }
           break;
 
@@ -185,7 +185,7 @@ export class StepperEffects {
           throw new Error(`Invalid step number: ${stepNumber}`);
       }
     } catch (error) {
-      console.error('❌ saveStepData error:', error);
+
       throw error; // Re-throw to be caught by effect
     }
   }
@@ -195,7 +195,7 @@ export class StepperEffects {
       this.actions$.pipe(
         ofType(StepperActions.setGlobalError),
         tap(({ error }) => {
-          console.error('🚨 Global Stepper Error:', error);
+
 
           // Error toast göster
           this.toastService.error(
@@ -212,7 +212,7 @@ export class StepperEffects {
       this.actions$.pipe(
         ofType(StepperActions.retryOperation),
         tap(({ stepIndex, operation }) => {
-          console.log('🔄 Retry operation:', operation, 'for step:', stepIndex);
+
           this.toastService.info(`Step ${stepIndex + 1} yeniden deneniyor...`);
         })
       ),
@@ -224,7 +224,7 @@ export class StepperEffects {
     this.actions$.pipe(
       ofType(StepperActions.retryOperation),
       switchMap(({ stepIndex, operation }) => {
-        console.log('🔄 Starting retry for step:', stepIndex, 'operation:', operation);
+
 
         return of(null).pipe(
           // İlk önce loading başlat
