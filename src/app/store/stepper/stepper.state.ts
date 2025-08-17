@@ -63,6 +63,32 @@ export interface StepperState {
     fileName?: string;
     isDirty: boolean;
   };
+
+   step2State: {
+    packages: any[];
+    availableProducts: any[];
+    originalPackages: any[];
+    originalProducts: any[];
+    addedPackages: any[];
+    modifiedPackages: any[];
+    deletedPackages: any[];
+    isDirty: boolean;
+  };
+
+  step3State: {
+    optimizationResult: any[];
+    reportFiles: any[];
+    loadingStats: any | null;
+    algorithmStats: any | null;
+    hasResults: boolean;
+    showVisualization: boolean;
+    currentViewType: string;
+    hasThreeJSError: boolean;
+    processedPackages: any[];
+    dataChangeHistory: any[];
+    hasUnsavedChanges: boolean;
+    isDirty: boolean;
+  };
 }
 
 export const initialStepperState: StepperState = {
@@ -113,6 +139,32 @@ export const initialStepperState: StepperState = {
     modified: [],
     deleted: [],
     hasFile: false,
+    isDirty: false
+  },
+
+  step2State: {
+    packages: [],
+    availableProducts: [],
+    originalPackages: [],
+    originalProducts: [],
+    addedPackages: [],
+    modifiedPackages: [],
+    deletedPackages: [],
+    isDirty: false
+  },
+
+  step3State: {
+    optimizationResult: [],
+    reportFiles: [],
+    loadingStats: null,
+    algorithmStats: null,
+    hasResults: false,
+    showVisualization: false,
+    currentViewType: 'isometric',
+    hasThreeJSError: false,
+    processedPackages: [],
+    dataChangeHistory: [],
+    hasUnsavedChanges: false,
     isDirty: false
   }
 };

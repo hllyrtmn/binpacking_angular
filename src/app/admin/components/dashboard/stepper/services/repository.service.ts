@@ -98,7 +98,8 @@ export class RepositoryService {
   calculatePackageDetail(order_id: string = this.orderId()): Observable<{packages: any[], remainingProducts: any[]}> {
     // api/orders/packages/{id}/
     // get package detail by package id.
-
+    debugger
+    order_id = 'd0bfd14f-cd5d-4954-a9fe-4bc90fa787ac'
     return this.http
       .get<any>(`${this.api.getApiUrl()}/logistics/calculate-box/${order_id}/`)
       .pipe(map((response) =>({

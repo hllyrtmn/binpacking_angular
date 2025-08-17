@@ -36,8 +36,12 @@ import { AutoSaveService } from '../../services/auto-save.service';
 import { Store } from '@ngrx/store';
 import { AppState } from '../../../../../../store';
 import * as StepperSelectors from '../../../../../../store/stepper/stepper.selectors';
-import * as StepperActions from '../../../../../../store/stepper/stepper.actions';
 import { take } from 'rxjs/operators';
+
+// NgRx Step2 Migration imports
+import { selectStep2Packages, selectStep2AvailableProducts, selectStep2IsDirty,
+         selectStep2Changes } from '../../../../../../store/stepper/stepper.selectors';
+import * as StepperActions from '../../../../../../store/stepper/stepper.actions';
 
 @Component({
   selector: 'app-pallet-control',
@@ -67,6 +71,12 @@ export class PalletControlComponent implements OnInit {
   private readonly autoSaveService = inject(AutoSaveService);
   private readonly store = inject(Store<AppState>);
 
+  // NgRx Step2 Migration Observables
+  public step2Packages$ = this.store.select(selectStep2Packages);
+  public step2AvailableProducts$ = this.store.select(selectStep2AvailableProducts);
+  public step2IsDirty$ = this.store.select(selectStep2IsDirty);
+  public step2Changes$ = this.store.select(selectStep2Changes);
+
   // NgRx Observables
   public isEditMode$ = this.store.select(StepperSelectors.selectIsEditMode);
   public editOrderId$ = this.store.select(StepperSelectors.selectEditOrderId);
@@ -79,8 +89,7 @@ export class PalletControlComponent implements OnInit {
   private autoSaveTimeout: any;
   private isDragInProgress: boolean = false;
   // Main data properties
-  packages: UiPackage[] = [];
-  availableProducts: UiProduct[] = [];
+
   availablePallets: UiPallet[] = [];
   selectedPallets: UiPallet[] = [];
   secondFormGroup: FormGroup;
@@ -112,6 +121,23 @@ export class PalletControlComponent implements OnInit {
     });
   }
 
+  // NgRx'ten packages'i al
+  get packages(): UiPackage[] {
+    let currentPackages: UiPackage[] = [];
+    this.step2Packages$.pipe(take(1)).subscribe(packages => {
+      currentPackages = packages.map(pkg => new UiPackage(pkg));
+    });
+    return currentPackages;
+  }
+
+  // NgRx'ten availableProducts'ı al
+  get availableProducts(): UiProduct[] {
+    let currentProducts: UiProduct[] = [];
+    this.step2AvailableProducts$.pipe(take(1)).subscribe(products => {
+      currentProducts = products.map(product => new UiProduct(product));
+    });
+    return currentProducts;
+  }
   // YENİ METHOD: Force save (emergency durumlar için)
   forceSaveStep2(): void {
     const autoSaveData = {
@@ -162,9 +188,11 @@ export class PalletControlComponent implements OnInit {
   resetComponentState(): void {
     try {
       // 1. Ana data properties'i reset et
-      this.packages = [];
-      this.availableProducts = [];
-      this.availablePallets = [];
+      this.store.dispatch(StepperActions.initializeStep2State({
+        packages: [],
+        availableProducts: []
+      }));
+
       this.selectedPallets = [];
       this.order = null;
       this.trailer = null;
@@ -197,12 +225,13 @@ export class PalletControlComponent implements OnInit {
       // 7. Clone count'ı reset et
       this.cloneCount = 1;
     } catch (error) {
-      // Fallback reset
-      this.trailer = null;
+      this.store.dispatch(StepperActions.initializeStep2State({
+        packages: [],
+        availableProducts: []
+      }));
+      this.selectedPallets = [];
       this.order = null;
-      this.packages = [];
-      this.availableProducts = [];
-      this.availablePallets = [];
+      this.trailer = null;
     }
   }
 
@@ -297,28 +326,36 @@ export class PalletControlComponent implements OnInit {
 
   private restoreFromSession(): void {
     try {
-      const restoredPackages = this.localStorageService.restoreStep2Data();
+      // NgRx store'dan verileri kontrol et
+      let hasNgRxData = false;
+      this.step2Packages$.pipe(take(1)).subscribe(packages => {
+        hasNgRxData = packages.length > 0;
+      });
 
+      if (hasNgRxData) {
+        this.loadPallets();
+        this.updateAllCalculations();
+        this.toastService.info('NgRx store\'dan paket verileri yüklendi');
+        return;
+      }
+
+      // Fallback: LocalStorage'dan restore et
+      const restoredPackages = this.localStorageService.restoreStep2Data();
       if (
         restoredPackages &&
         ((restoredPackages.availableProducts &&
           restoredPackages.availableProducts.length > 0) ||
           (restoredPackages.packages && restoredPackages.packages.length > 0))
       ) {
-        this.packages =
-          restoredPackages && restoredPackages.packages
-            ? restoredPackages.packages.map((pkg) => new UiPackage(pkg))
-            : [];
-        this.availableProducts =
-          restoredPackages && restoredPackages.availableProducts
-            ? restoredPackages.availableProducts.map(
-                (prod) => new UiProduct(prod)
-              )
-            : [];
+        // NgRx store'a yükle
+        this.store.dispatch(StepperActions.initializeStep2State({
+          packages: restoredPackages.packages || [],
+          availableProducts: restoredPackages.availableProducts || []
+        }));
+
         this.loadPallets();
         this.updateAllCalculations();
-
-        this.toastService.info('Pallet konfigürasyonunuz restore edildi');
+        this.toastService.info('LocalStorage\'dan NgRx\'e restore edildi');
       } else {
         this.configureComponent();
       }
@@ -356,14 +393,15 @@ export class PalletControlComponent implements OnInit {
           !Array.isArray(response.packages) ||
           response.packages.length === 0
         ) {
-          this.packages = [];
           this.addNewEmptyPackage();
           this.updateAllCalculations();
           return;
         }
 
-        this.availableProducts = response.remainingProducts;
-        this.packages = response.packages;
+        this.store.dispatch(StepperActions.initializeStep2State({
+          packages: response.packages || [],
+          availableProducts: response.remainingProducts || []
+        }));
 
         // **GÜVENLİK: Order kontrolü**
         if (
@@ -378,15 +416,6 @@ export class PalletControlComponent implements OnInit {
           this.trailer = null;
         }
 
-        this.packages.forEach((pkg, index) => {
-          if (pkg && pkg.pallet) {
-            pkg.pallet.id = pkg.pallet.id + '/' + index;
-          }
-          if (pkg) {
-            pkg.products = this.ensureUiProducts(pkg.products || []);
-          }
-        });
-
         this.addNewEmptyPackage();
         this.updateAllCalculations();
 
@@ -397,7 +426,6 @@ export class PalletControlComponent implements OnInit {
         this.toastService.error('Paket hesaplaması sırasında hata oluştu');
 
         // **GÜVENLİK: Hata durumunda fallback**
-        this.packages = [];
         this.order = null;
         this.trailer = null;
         this.addNewEmptyPackage();
@@ -976,12 +1004,21 @@ export class PalletControlComponent implements OnInit {
     }
 
     if (targetPackage) {
-      targetPackage.products = this.consolidateProducts(targetPackage.products);
+      const consolidatedProducts = this.consolidateProducts(targetPackage.products);
+      const updatedPackage = { ...targetPackage, products: consolidatedProducts };
+
+      // NgRx store'da package'ı güncelle
+      this.store.dispatch(StepperActions.updatePackage({
+        package: updatedPackage
+      }));
+
+      // Available products'ı da güncelle (eğer transferArrayItem ile değiştiyse)
+      this.store.dispatch(StepperActions.updateAvailableProducts({
+        availableProducts: this.availableProducts
+      }));
     }
 
     this.updateAllCalculations();
-
-    // YENİ: Drop sonrası auto-save
     this.triggerAutoSave('drag-drop');
   }
 
@@ -1008,11 +1045,14 @@ export class PalletControlComponent implements OnInit {
       id: originalPallet.id + '/' + this.cloneCount++,
     });
 
-    this.packages[packageIndex].pallet = palletClone;
+    const updatedPackage = { ...this.packages[packageIndex], pallet: palletClone };
+    this.store.dispatch(StepperActions.updatePackage({
+      package: updatedPackage
+    }));
+
     this.selectedPallets.push(palletClone);
     this.addNewEmptyPackage();
 
-    // YENİ: Pallet drop sonrası auto-save
     this.triggerAutoSave('drag-drop');
   }
 
@@ -1175,7 +1215,12 @@ export class PalletControlComponent implements OnInit {
         id: `${product.id}/2`,
       });
 
-      this.replaceProductInList(product, [firstPart, secondPart]);
+      const updatedProducts = this.availableProducts.filter(p => p !== product);
+      updatedProducts.push(firstPart, secondPart);
+
+      this.store.dispatch(StepperActions.updateAvailableProducts({
+        availableProducts: updatedProducts
+      }));
 
       this.toastService.success(
         `${product.name} ${splitCount} ve ${
@@ -1189,7 +1234,12 @@ export class PalletControlComponent implements OnInit {
       }
 
       const splitProducts = product.split();
-      this.replaceProductInList(product, splitProducts);
+      const updatedProducts = this.availableProducts.filter(p => p !== product);
+      updatedProducts.push(...splitProducts);
+
+      this.store.dispatch(StepperActions.updateAvailableProducts({
+        availableProducts: updatedProducts
+      }));
 
       this.toastService.success(`${product.name} yarıya bölündü.`, 'Başarılı');
     }
@@ -1201,10 +1251,20 @@ export class PalletControlComponent implements OnInit {
   removeProductFromPackage(pkg: UiPackage, productIndex: number): void {
     const removedProduct = pkg.products.splice(productIndex, 1)[0];
     const uiProduct = this.ensureUiProduct(removedProduct);
-    this.availableProducts.push(uiProduct);
-    this.updateAllCalculations();
 
-    // YENİ: Remove sonrası auto-save
+    // NgRx store'da package'ı güncelle
+    const updatedPackage = { ...pkg, products: [...pkg.products] };
+    this.store.dispatch(StepperActions.updatePackage({
+      package: updatedPackage
+    }));
+
+    // NgRx store'da available products'ı güncelle
+    const updatedProducts = [...this.availableProducts, uiProduct];
+    this.store.dispatch(StepperActions.updateAvailableProducts({
+      availableProducts: updatedProducts
+    }));
+
+    this.updateAllCalculations();
     this.triggerAutoSave('user-action');
   }
 
@@ -1222,12 +1282,17 @@ export class PalletControlComponent implements OnInit {
       pkg.pallet = null;
     });
 
-    this.availableProducts.push(...allProducts);
-    this.availableProducts = this.consolidateProducts(this.availableProducts);
+    const consolidatedProducts = this.consolidateProducts([...this.availableProducts, ...allProducts]);
 
-    this.packages = [];
+    // NgRx store'u reset et
+    this.store.dispatch(StepperActions.initializeStep2State({
+      packages: [],
+      availableProducts: consolidatedProducts
+    }));
+
     this.selectedPallets = [];
     this.addNewEmptyPackage();
+
     this.updateAllCalculations();
 
     this.toastService.success('Tüm paletler temizlendi.', 'Başarılı');
@@ -1252,8 +1317,11 @@ export class PalletControlComponent implements OnInit {
 
     if (pkg.products?.length > 0) {
       const productsToReturn = this.ensureUiProducts(pkg.products);
-      this.availableProducts.push(...productsToReturn);
-      this.availableProducts = this.consolidateProducts(this.availableProducts);
+      const updatedProducts = [...this.availableProducts, ...productsToReturn];
+      const consolidatedProducts = this.consolidateProducts(updatedProducts);
+      this.store.dispatch(StepperActions.updateAvailableProducts({
+        availableProducts: consolidatedProducts
+      }));
     }
 
     if (pkg.pallet) {
@@ -1265,7 +1333,9 @@ export class PalletControlComponent implements OnInit {
       }
     }
 
-    this.packages.splice(packageIndex, 1);
+    this.store.dispatch(StepperActions.deletePackage({
+      packageId: pkg.id
+    }));
 
     if (this.packages.length === 0) {
       this.addNewEmptyPackage();
@@ -1285,8 +1355,12 @@ export class PalletControlComponent implements OnInit {
     if (packageItem.pallet) {
       if (packageItem.products?.length > 0) {
         const uiProducts = this.ensureUiProducts(packageItem.products);
-        this.availableProducts.push(...uiProducts);
-        packageItem.products = [];
+
+        // NgRx store'da available products'ı güncelle
+        const updatedProducts = [...this.availableProducts, ...uiProducts];
+        this.store.dispatch(StepperActions.updateAvailableProducts({
+          availableProducts: updatedProducts
+        }));
       }
 
       const palletIndex = this.selectedPallets.findIndex(
@@ -1296,10 +1370,13 @@ export class PalletControlComponent implements OnInit {
         this.selectedPallets.splice(palletIndex, 1);
       }
 
-      packageItem.pallet = null;
-      this.updateAllCalculations();
+      // NgRx store'da package'ı güncelle (pallet = null, products = [])
+      const updatedPackage = { ...packageItem, pallet: null, products: [] };
+      this.store.dispatch(StepperActions.updatePackage({
+        package: updatedPackage
+      }));
 
-      // YENİ: Remove pallet sonrası auto-save
+      this.updateAllCalculations();
       this.triggerAutoSave('user-action');
     }
   }
@@ -1319,7 +1396,10 @@ export class PalletControlComponent implements OnInit {
         name: (this.packages.length + 1).toString()
       });
 
-      this.packages.push(newPackage);
+      // NgRx store'a ekle
+      this.store.dispatch(StepperActions.addPackage({
+        package: newPackage
+      }));
     }
   }
 
@@ -1363,10 +1443,22 @@ export class PalletControlComponent implements OnInit {
     this.repository.bulkCreatePackageDetail(packageData).subscribe({
       next: (response) => {
         this.toastService.success('Kaydedildi', 'Başarılı');
+
+        // NgRx store'da step completion'ı işaretle
         this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 1 }));
         this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 1, isValid: true }));
-        this.stepperService.setStepStatus(2, STATUSES.completed, true);
 
+        // NgRx auto-save trigger et
+        this.store.dispatch(StepperActions.triggerAutoSave({
+          stepNumber: 1,
+          data: {
+            packages: this.packages,
+            availableProducts: this.availableProducts
+          },
+          changeType: 'api-response'
+        }));
+
+        this.stepperService.setStepStatus(2, STATUSES.completed, true);
         this.saveCurrentStateToSession();
       },
     });

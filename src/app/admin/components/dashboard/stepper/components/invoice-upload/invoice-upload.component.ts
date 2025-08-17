@@ -155,8 +155,8 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
   get orderDetails(): OrderDetail[] {
     let currentOrderDetails: OrderDetail[] = [];
-  this.step1OrderDetails$.pipe(take(1)).subscribe(details => currentOrderDetails = details);
-  return currentOrderDetails
+    this.step1OrderDetails$.pipe(take(1)).subscribe(details => currentOrderDetails = details);
+    return currentOrderDetails
   }
 
   get uiState$(): Observable<UIState> {
@@ -384,6 +384,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
             hasFile: true,
             fileName: 'File Upload Result'
           }));
+
           this.calculateTotals();
 
           this.toastService.success(INVOICE_UPLOAD_CONSTANTS.MESSAGES.SUCCESS.FILE_PROCESSED);
@@ -596,6 +597,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
         deleted: changes.deleted.map(detail => detail.id || detail) // ID'leri extract et
       };
     });
+    debugger
     const orderOperation = this.getOrderOperation();
 
     const submitSub = orderOperation
@@ -609,7 +611,9 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
               hasFile: this.step1HasFile$ ? true : false,
               fileName: this.step1FileName$ ? 'Order Saved' : undefined
             }));
+            this.store.dispatch(StepperActions.clearAdded())
             this.repositoryService.setOrderId(orderResponse?.id);
+            debugger
           }
 
           if (this.fileUploadManager.hasTempFile()) {

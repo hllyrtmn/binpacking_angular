@@ -276,3 +276,99 @@ export const selectStep1FileName = createSelector(
   selectStep1State,
   (step1State) => step1State.fileName
 );
+
+// Step2 Migration Selectors
+export const selectStep2State = createSelector(
+  selectStepperState,
+  (state) => state.step2State
+);
+
+export const selectStep2Packages = createSelector(
+  selectStep2State,
+  (step2State) => step2State.packages
+);
+
+export const selectStep2AvailableProducts = createSelector(
+  selectStep2State,
+  (step2State) => step2State.availableProducts
+);
+
+export const selectStep2OriginalPackages = createSelector(
+  selectStep2State,
+  (step2State) => step2State.originalPackages
+);
+
+export const selectStep2Changes = createSelector(
+  selectStep2State,
+  (step2State) => ({
+    added: step2State.addedPackages,
+    modified: step2State.modifiedPackages,
+    deleted: step2State.deletedPackages
+  })
+);
+
+export const selectStep2IsDirty = createSelector(
+  selectStep2State,
+  (step2State) => step2State.isDirty
+);
+
+export const selectStep2PackageCount = createSelector(
+  selectStep2Packages,
+  (packages) => packages.length
+);
+
+export const selectStep2ProductCount = createSelector(
+  selectStep2AvailableProducts,
+  (products) => products.length
+);
+
+// Step3 Migration Selectors (Step2 selectors'ların altına ekle)
+export const selectStep3State = createSelector(
+  selectStepperState,
+  (state) => state.step3State
+);
+
+export const selectStep3OptimizationResult = createSelector(
+  selectStep3State,
+  (step3State) => step3State.optimizationResult
+);
+
+export const selectStep3ReportFiles = createSelector(
+  selectStep3State,
+  (step3State) => step3State.reportFiles
+);
+
+export const selectStep3LoadingStats = createSelector(
+  selectStep3State,
+  (step3State) => step3State.loadingStats
+);
+
+export const selectStep3AlgorithmStats = createSelector(
+  selectStep3State,
+  (step3State) => step3State.algorithmStats
+);
+
+export const selectStep3HasResults = createSelector(
+  selectStep3State,
+  (step3State) => step3State.hasResults
+);
+
+export const selectStep3ShowVisualization = createSelector(
+  selectStep3State,
+  (step3State) => step3State.showVisualization
+);
+
+export const selectStep3HasUnsavedChanges = createSelector(
+  selectStep3State,
+  (step3State) => step3State.hasUnsavedChanges
+);
+
+export const selectStep3IsDirty = createSelector(
+  selectStep3State,
+  (step3State) => step3State.isDirty
+);
+
+export const selectStep3DataChangeHistory = createSelector(
+  selectStep3State,
+  (step3State) => step3State.dataChangeHistory
+);

@@ -286,6 +286,11 @@ export const stepperReducer = createReducer(
     }
   })),
 
+  on(StepperActions.clearAdded, (state) => ({
+    ...state,
+    added: []
+  })),
+
   on(StepperActions.addOrderDetail, (state, { orderDetail }) => ({
     ...state,
     step1State: {
@@ -342,5 +347,159 @@ export const stepperReducer = createReducer(
         isDirty: true
       }
     };
-  })
+  }),
+    // Step2 Migration Reducers
+  on(StepperActions.initializeStep2State, (state, { packages, availableProducts }) => ({
+    ...state,
+    step2State: {
+      packages: [...packages],
+      availableProducts: [...availableProducts],
+      originalPackages: [...packages],
+      originalProducts: [...availableProducts],
+      addedPackages: [],
+      modifiedPackages: [],
+      deletedPackages: [],
+      isDirty: false
+    }
+  })),
+
+  on(StepperActions.updateStep2Packages, (state, { packages }) => ({
+    ...state,
+    step2State: {
+      ...state.step2State,
+      packages: [...packages],
+      isDirty: true
+    }
+  })),
+
+  on(StepperActions.addPackage, (state, { package: newPackage }) => ({
+    ...state,
+    step2State: {
+      ...state.step2State,
+      packages: [...state.step2State.packages, newPackage],
+      addedPackages: [...state.step2State.addedPackages, newPackage],
+      isDirty: true
+    }
+  })),
+
+  on(StepperActions.updatePackage, (state, { package: updatedPackage }) => {
+    const packages = state.step2State.packages.map(pkg =>
+      pkg.id === updatedPackage.id ? updatedPackage : pkg
+    );
+
+    const isOriginal = state.step2State.originalPackages.some(item => item.id === updatedPackage.id);
+    const isAlreadyModified = state.step2State.modifiedPackages.some(item => item.id === updatedPackage.id);
+
+    let modified = [...state.step2State.modifiedPackages];
+    if (isOriginal && !isAlreadyModified) {
+      modified.push(updatedPackage);
+    } else if (isAlreadyModified) {
+      modified = modified.map(item => item.id === updatedPackage.id ? updatedPackage : item);
+    }
+
+    return {
+      ...state,
+      step2State: {
+        ...state.step2State,
+        packages,
+        modifiedPackages: modified,
+        isDirty: true
+      }
+    };
+  }),
+
+  on(StepperActions.deletePackage, (state, { packageId }) => {
+    const itemToDelete = state.step2State.packages.find(item => item.id === packageId);
+    const packages = state.step2State.packages.filter(item => item.id !== packageId);
+
+    const isOriginal = state.step2State.originalPackages.some(item => item.id === packageId);
+    const deleted = isOriginal && itemToDelete ? [...state.step2State.deletedPackages, itemToDelete] : state.step2State.deletedPackages;
+    const added = state.step2State.addedPackages.filter(item => item.id !== packageId);
+    const modified = state.step2State.modifiedPackages.filter(item => item.id !== packageId);
+
+    return {
+      ...state,
+      step2State: {
+        ...state.step2State,
+        packages,
+        addedPackages: added,
+        modifiedPackages: modified,
+        deletedPackages: deleted,
+        isDirty: true
+      }
+    };
+  }),
+
+  on(StepperActions.updateAvailableProducts, (state, { availableProducts }) => ({
+    ...state,
+    step2State: {
+      ...state.step2State,
+      availableProducts: [...availableProducts],
+      isDirty: true
+    }
+  })),
+
+  // Step3 Migration Reducers
+  on(StepperActions.initializeStep3State, (state, { optimizationResult, reportFiles, loadingStats, algorithmStats }) => ({
+    ...state,
+    step3State: {
+      ...state.step3State,
+      optimizationResult: [...optimizationResult],
+      reportFiles: [...reportFiles],
+      loadingStats: loadingStats || state.step3State.loadingStats,
+      algorithmStats: algorithmStats || state.step3State.algorithmStats,
+      hasResults: optimizationResult.length > 0 || reportFiles.length > 0,
+      showVisualization: optimizationResult.length > 0,
+      isDirty: false
+    }
+  })),
+
+  on(StepperActions.updateStep3OptimizationResult, (state, { optimizationResult }) => ({
+    ...state,
+    step3State: {
+      ...state.step3State,
+      optimizationResult: [...optimizationResult],
+      hasResults: optimizationResult.length > 0,
+      showVisualization: optimizationResult.length > 0,
+      hasUnsavedChanges: true,
+      isDirty: true
+    }
+  })),
+
+  on(StepperActions.updateStep3ReportFiles, (state, { reportFiles }) => ({
+    ...state,
+    step3State: {
+      ...state.step3State,
+      reportFiles: [...reportFiles],
+      isDirty: true
+    }
+  })),
+
+  on(StepperActions.updateStep3LoadingStats, (state, { loadingStats }) => ({
+    ...state,
+    step3State: {
+      ...state.step3State,
+      loadingStats: loadingStats,
+      isDirty: true
+    }
+  })),
+
+  on(StepperActions.updateStep3AlgorithmStats, (state, { algorithmStats }) => ({
+    ...state,
+    step3State: {
+      ...state.step3State,
+      algorithmStats: algorithmStats,
+      isDirty: true
+    }
+  })),
+
+  on(StepperActions.setStep3HasResults, (state, { hasResults }) => ({
+    ...state,
+    step3State: {
+      ...state.step3State,
+      hasResults: hasResults,
+      showVisualization: hasResults,
+      isDirty: true
+    }
+  }))
 );

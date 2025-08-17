@@ -140,10 +140,17 @@ export const updateStep1OrderDetails = createAction(
   props<{ orderDetails: any[] }>()
 );
 
+export const initializeAddOrderDetails = createAction(
+  '[Migration] Add Order Details',
+  props<{added:any[]}>()
+)
+
 export const addOrderDetail = createAction(
   '[Migration] Add Order Detail',
   props<{ orderDetail: any }>()
 );
+
+export const clearAdded = createAction('[Migration] Clear Added');
 
 export const updateOrderDetail = createAction(
   '[Migration] Update Order Detail',
@@ -153,4 +160,66 @@ export const updateOrderDetail = createAction(
 export const deleteOrderDetail = createAction(
   '[Migration] Delete Order Detail',
   props<{ orderDetailId: string }>()
+);
+
+// Step2 (Pallet Control) Migration Actions
+export const initializeStep2State = createAction(
+  '[Migration] Initialize Step2 State',
+  props<{ packages: any[]; availableProducts: any[] }>()
+);
+
+export const updateStep2Packages = createAction(
+  '[Migration] Update Step2 Packages',
+  props<{ packages: any[] }>()
+);
+
+export const addPackage = createAction(
+  '[Migration] Add Package',
+  props<{ package: any }>()
+);
+
+export const updatePackage = createAction(
+  '[Migration] Update Package',
+  props<{ package: any }>()
+);
+
+export const deletePackage = createAction(
+  '[Migration] Delete Package',
+  props<{ packageId: string }>()
+);
+
+export const updateAvailableProducts = createAction(
+  '[Migration] Update Available Products',
+  props<{ availableProducts: any[] }>()
+);
+
+// Step3 (Result Step) Migration Actions
+export const initializeStep3State = createAction(
+  '[Migration] Initialize Step3 State',
+  props<{ optimizationResult: any[]; reportFiles: any[]; loadingStats?: any; algorithmStats?: any }>()
+);
+
+export const updateStep3OptimizationResult = createAction(
+  '[Migration] Update Step3 Optimization Result',
+  props<{ optimizationResult: any[] }>()
+);
+
+export const updateStep3ReportFiles = createAction(
+  '[Migration] Update Step3 Report Files',
+  props<{ reportFiles: any[] }>()
+);
+
+export const updateStep3LoadingStats = createAction(
+  '[Migration] Update Step3 Loading Stats',
+  props<{ loadingStats: any }>()
+);
+
+export const updateStep3AlgorithmStats = createAction(
+  '[Migration] Update Step3 Algorithm Stats',
+  props<{ algorithmStats: any }>()
+);
+
+export const setStep3HasResults = createAction(
+  '[Migration] Set Step3 Has Results',
+  props<{ hasResults: boolean }>()
 );

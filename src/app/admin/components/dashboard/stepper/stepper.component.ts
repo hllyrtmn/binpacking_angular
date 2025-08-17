@@ -437,6 +437,13 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
   private loadDataToInvoiceUploadComponent(order: any, orderDetails: any[]): void {
     console.log('📤 StateManager\'a data yükleniyor:', { order, orderDetails });
 
+    this.store.dispatch(StepperActions.initializeStep1State({
+      order: order,
+      orderDetails: orderDetails,
+      hasFile: false,
+      fileName: 'Edit Mode Data'
+    }));
+
     if (!this.invoiceUploadComponent) {
       console.log('⏳ InvoiceUpload component henüz hazır değil, pending...');
       this.pendingEditData = { orderId: order.id, order, orderDetails };
@@ -457,22 +464,24 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private syncEditModeDataToNgRx(orderId: string): void {
-    console.log('🔄 Edit mode: One-time sync to NgRx');
+    console.log('🔄 Edit mode: Enhanced sync to NgRx');
 
     const step1State = this.stateManager.step1.state();
     const order = this.stateManager.step1.order();
 
     if (step1State.current.length > 0 && order) {
-      this.store.dispatch(StepperActions.setStepData({
-        stepNumber: 0,
-        data: {
-          order: order,
-          orderDetails: step1State.current,
-          hasFile: this.stateManager.step1.hasFile(),
-          fileName: this.stateManager.step1.fileName()
-        }
+      // Enhanced: initializeStep1State kullan (daha güçlü)
+      this.store.dispatch(StepperActions.initializeStep1State({
+        order: order,
+        orderDetails: step1State.current,
+        hasFile: this.stateManager.step1.hasFile(),
+        fileName: this.stateManager.step1.fileName() || 'Edit Mode'
       }));
+
       this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 0, isValid: true }));
+      this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
+
+      console.log('✅ Enhanced NgRx sync completed');
     }
   }
 
@@ -484,16 +493,20 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
       const orderId = params['orderId'];
 
       console.log('🔍 Step 2 params:', { editMode, orderId });
-
+      debugger
       if (editMode && orderId) {
         console.log('🔄 Step 2 için paket verileri yükleniyor...');
 
         try {
-          const packageResponse = await this.repositoryService.calculatePackageDetail(orderId).toPromise();
+          const packageResponse = await this.repositoryService.calculatePackageDetail().toPromise();
           console.log('📦 Package response:', packageResponse);
 
           if (packageResponse?.packages) {
             console.log('✅ Paket verileri alındı, StateManager\'a yükleniyor...');
+            this.store.dispatch(StepperActions.initializeStep2State({
+              packages: packageResponse.packages || [],
+              availableProducts: packageResponse.remainingProducts || []
+            }));
             this.stateManager.initializeStep2(packageResponse.packages);
             console.log('✅ Step 2 StateManager güncellendi');
 

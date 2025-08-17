@@ -59,7 +59,7 @@ export class OrderDetailManager {
   processOrderDetailChanges(changes: OrderDetailChanges, orderId: string): Observable<any> {
     const totalOperations =
       changes.added.length + changes.modified.length + changes.deleted.length;
-
+    debugger
     if (totalOperations === 0) {
       return of(null);
     }
@@ -69,6 +69,7 @@ export class OrderDetailManager {
       const detail = this.getOrderDetailById(id);
       return detail ? detail : { id } as OrderDetail;
     });
+    debugger
     return this.repositoryService.bulkUpdateOrderDetails(
       { ...changes, deleted: deletedOrderDetails },
       orderId
