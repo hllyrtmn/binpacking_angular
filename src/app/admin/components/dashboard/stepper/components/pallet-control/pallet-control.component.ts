@@ -1,4 +1,4 @@
-import { Component, inject, Input, OnInit } from '@angular/core';
+import { Component, inject, Input, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -61,15 +61,15 @@ import * as StepperActions from '../../../../../../store/stepper/stepper.actions
   ],
   templateUrl: './pallet-control.component.html',
   styleUrl: './pallet-control.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PalletControlComponent implements OnInit {
   // Service injections
   repository: RepositoryService = inject(RepositoryService);
   toastService: ToastService = inject(ToastService);
-  stepperService = inject(StepperStore);
   private readonly localStorageService = inject(LocalStorageService);
-  private readonly autoSaveService = inject(AutoSaveService);
   private readonly store = inject(Store<AppState>);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   // NgRx Step2 Migration Observables
   public step2Packages$ = this.store.select(selectStep2Packages);
@@ -985,6 +985,7 @@ export class PalletControlComponent implements OnInit {
         this.toastService.error(errorMessage, 'Ürün Palete Sığmıyor!');
         return;
       }
+      this.cdr.markForCheck();
     }
 
     // Perform drop operation
@@ -1166,6 +1167,7 @@ export class PalletControlComponent implements OnInit {
 
     // YENİ: Split sonrası auto-save
     this.triggerAutoSave('user-action');
+    this.cdr.markForCheck();
   }
 
   /**
@@ -1266,6 +1268,7 @@ export class PalletControlComponent implements OnInit {
 
     this.updateAllCalculations();
     this.triggerAutoSave('user-action');
+    this.cdr.markForCheck();
   }
 
   /**
@@ -1458,9 +1461,22 @@ export class PalletControlComponent implements OnInit {
           changeType: 'api-response'
         }));
 
-        this.stepperService.setStepStatus(2, STATUSES.completed, true);
+        this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 1 }));
         this.saveCurrentStateToSession();
       },
+      error: (error) => {  // Bunu EKLE
+        // Global error dispatch et
+        this.store.dispatch(StepperActions.setGlobalError({
+          error: {
+            message: 'Paket verileri kaydedilirken hata oluştu: ' + (error.message || error),
+            code: error.status?.toString(),
+            stepIndex: 1
+          }
+        }));
+
+        this.toastService.error('Paket verileri kaydedilemedi');
+        this.cdr.markForCheck();
+      }
     });
   }
 }

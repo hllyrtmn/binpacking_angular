@@ -24,26 +24,12 @@ import { AppState } from '../../../../store';
 import * as StepperActions from '../../../../store/stepper/stepper.actions';
 import * as StepperSelectors from '../../../../store/stepper/stepper.selectors';
 
-// SOLID Dependencies
-import {IStepperConfig,
-  ComponentType, STEPPER_CONFIG,
-  STEP_VALIDATOR_TOKEN, STORAGE_MANAGER_TOKEN, ACTIVITY_TRACKER_TOKEN,
-  ERROR_HANDLER_TOKEN, STEP_MANAGER_TOKEN, NOTIFICATION_SERVICE_TOKEN
-} from './interfaces/stepper.interface';
-
-import {
-  StepValidationHandler, StorageHandler, ActivityTrackingHandler,
-  ErrorHandler, ComponentManager, ServiceHealthChecker
-} from './handlers/stepper.handlers';
-
 // Legacy services
-import { StepperStore, STATUSES } from './services/stepper.store';
 import { LocalStorageService } from './services/local-storage.service';
 import { ToastService } from '../../../../services/toast.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UIStateManager } from './components/invoice-upload/managers/ui-state.manager';
 import { RepositoryService } from './services/repository.service';
-import { StateManager } from './services/state-manager.service';
 import { OrderService } from '../../services/order.service';
 import { OrderDetailManager } from './components/invoice-upload/managers/order-detail.manager';
 
@@ -56,29 +42,9 @@ import { OrderDetailManager } from './components/invoice-upload/managers/order-d
     ResultStepComponent,CommonModule
   ],
   providers: [
-    // Existing providers...
-    { provide: STEP_VALIDATOR_TOKEN, useClass: StepValidationHandler },
-    { provide: STORAGE_MANAGER_TOKEN, useClass: StorageHandler },
-    { provide: ACTIVITY_TRACKER_TOKEN, useClass: ActivityTrackingHandler },
-    { provide: ERROR_HANDLER_TOKEN, useClass: ErrorHandler },
-    { provide: STEP_MANAGER_TOKEN, useExisting: StepperStore },
-    { provide: NOTIFICATION_SERVICE_TOKEN, useExisting: ToastService },
-    { provide: 'LocalStorageService', useExisting: LocalStorageService },
-    {
-      provide: 'StepperConfig',
-      useValue: {
-        enableActivityTracking: true,
-        activityRefreshInterval: STEPPER_CONFIG.DEFAULT_ACTIVITY_INTERVAL,
-        enableAutoSave: true,
-        enableLinearMode: true
-      } as IStepperConfig
-    },
-    ComponentManager,
-    ServiceHealthChecker
   ],
   templateUrl: './stepper.component.html',
   styleUrl: './stepper.component.scss',
-  // ✅ PERFORMANCE: OnPush Change Detection
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
@@ -91,19 +57,10 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private readonly cdr = inject(ChangeDetectorRef);
 
-  private readonly stepValidator = inject(STEP_VALIDATOR_TOKEN);
-  private readonly storageManager = inject(STORAGE_MANAGER_TOKEN);
-  private readonly activityTracker = inject(ACTIVITY_TRACKER_TOKEN);
-  private readonly errorHandler = inject(ERROR_HANDLER_TOKEN);
-  private readonly componentManager = inject(ComponentManager);
-  private readonly serviceHealthChecker = inject(ServiceHealthChecker);
-
-  private readonly legacyStepperService = inject(StepperStore);
   private readonly legacyLocalStorage = inject(LocalStorageService);
   private readonly legacyToastService = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly uiStateManager = inject(UIStateManager);
-  private readonly stateManager = inject(StateManager);
   private readonly repositoryService = inject(RepositoryService);
   private readonly orderService = inject(OrderService);
   private readonly orderDetailManager = inject(OrderDetailManager);
@@ -156,13 +113,6 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private stepCompletedCache = new Map<number, boolean>();
   private stepEditableCache = new Map<number, boolean>();
-
-  private readonly config: IStepperConfig = {
-    enableActivityTracking: true,
-    activityRefreshInterval: STEPPER_CONFIG.DEFAULT_ACTIVITY_INTERVAL,
-    enableAutoSave: true,
-    enableLinearMode: true
-  };
 
   constructor() {
     const breakpointObserver = inject(BreakpointObserver);
@@ -217,9 +167,7 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
       .pipe(take(1))
       .subscribe(completed => isCompleted = completed);
 
-    const result = isCompleted || this.stepValidator.isCompleted(stepIndex);
-
-    this.stepCompletedCache.set(stepIndex, result);
+    const result = isCompleted;
     return result;
   }
 
@@ -238,7 +186,7 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
       return true;
     }
 
-    const result = this.stepValidator.isEditable(stepIndex);
+    const result = stepIndex === 0;
     this.stepEditableCache.set(stepIndex, result);
     return result;
   }
@@ -261,14 +209,9 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
   };
 
   invoiceUploaded = (): void => {
-    this.configurePalletComponent();
 
     this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
     this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 0, isValid: true }));
-
-    if (this.legacyStepperService?.setStepStatus) {
-      this.legacyStepperService.setStepStatus(1, STATUSES.completed, true);
-    }
 
     console.log('🔄 invoiceUploaded - Step 2 data loading başlatılıyor...');
 
@@ -283,9 +226,7 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
   };
 
   onPalletControlCompleted = (): void => {
-    if (this.legacyStepperService?.setStepStatus) {
-      this.legacyStepperService.setStepStatus(2, STATUSES.completed, true);
-    }
+    this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 1 }));
     this.cdr.markForCheck();
   };
 
@@ -305,19 +246,15 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
       console.log('✅ Full reset completed');
 
     } catch (error) {
-      this.errorHandler.handleErrors(error, 'onShipmentCompleted');
+      console.error('❌ Shipment completion error:', error);
       this.handleResetFailure();
     }
   };
 
   clearDraftData = (): void => {
     if (confirm('Draft verilerini silmek istediğinizden emin misiniz?')) {
-      this.storageManager.clearStorage();
-
-      if (this.legacyStepperService?.resetStepper) {
-        this.legacyStepperService.resetStepper();
-      }
-
+      this.legacyLocalStorage.clearStorage();
+      this.store.dispatch(StepperActions.resetStepper());
       this.cdr.markForCheck();
     }
   };
@@ -325,11 +262,6 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
   resetStepper = (): void => {
     console.log('🔄 NgRx Stepper Reset');
     this.store.dispatch(StepperActions.resetStepper());
-
-    if (this.legacyStepperService?.resetStepper) {
-      this.legacyStepperService.resetStepper();
-    }
-
     this.clearStepCaches();
     this.cdr.markForCheck();
   };
@@ -356,7 +288,7 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
     try {
       this.cleanupComponent();
     } catch (error) {
-      this.errorHandler.handleErrors(error, 'ngOnDestroy');
+      console.error('❌ Cleanup error:', error);
     }
   }
 
@@ -391,7 +323,7 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
       });
 
     } catch (error) {
-      this.errorHandler.handleErrors(error, 'ngOnInit');
+      console.error('❌ Initialize error:', error);
     }
   }
 
@@ -400,7 +332,6 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
       this.uiStateManager.setLoading(true);
       this.cdr.markForCheck();
 
-      this.repositoryService.setOrderId(orderId);
       const orderDetailsResponse = await this.repositoryService.orderDetailsOriginal(orderId).toPromise();
       this.orderDetailManager.setOrderDetails(orderDetailsResponse);
 
@@ -409,7 +340,7 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
         if (order) {
           this.loadDataToInvoiceUploadComponent(order, orderDetailsResponse);
           this.syncEditModeDataToNgRx(orderId);
-          this.legacyStepperService?.setStepStatus(1, STATUSES.completed, true);
+          this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
 
           setTimeout(() => {
             this.selectedIndex = 1;
@@ -427,7 +358,6 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private cleanupComponent(): void {
-    this.activityTracker.stopTracking();
     this.destroy$.next();
     this.destroy$.complete();
 
@@ -450,7 +380,7 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
-    this.stateManager.initializeStep1(order, orderDetails, false, 'Mevcut Order');
+
     console.log('✅ StateManager Step 1 initialize tamamlandı');
 
     setTimeout(() => {
@@ -464,25 +394,16 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private syncEditModeDataToNgRx(orderId: string): void {
-    console.log('🔄 Edit mode: Enhanced sync to NgRx');
+    console.log('🔄 Edit mode: NgRx sync (StateManager removed)');
 
-    const step1State = this.stateManager.step1.state();
-    const order = this.stateManager.step1.order();
-
-    if (step1State.current.length > 0 && order) {
-      // Enhanced: initializeStep1State kullan (daha güçlü)
-      this.store.dispatch(StepperActions.initializeStep1State({
-        order: order,
-        orderDetails: step1State.current,
-        hasFile: this.stateManager.step1.hasFile(),
-        fileName: this.stateManager.step1.fileName() || 'Edit Mode'
-      }));
-
-      this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 0, isValid: true }));
-      this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
-
-      console.log('✅ Enhanced NgRx sync completed');
-    }
+    // NgRx store'dan mevcut data'yı kontrol et
+    this.store.select(StepperSelectors.selectStep1State).pipe(take(1)).subscribe(step1State => {
+      if (step1State.orderDetails.length > 0 && step1State.order) {
+        this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 0, isValid: true }));
+        this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
+        console.log('✅ NgRx sync completed');
+      }
+    });
   }
 
   private async loadPackageDataForStep2(): Promise<void> {
@@ -493,7 +414,6 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
       const orderId = params['orderId'];
 
       console.log('🔍 Step 2 params:', { editMode, orderId });
-      debugger
       if (editMode && orderId) {
         console.log('🔄 Step 2 için paket verileri yükleniyor...');
 
@@ -507,8 +427,7 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
               packages: packageResponse.packages || [],
               availableProducts: packageResponse.remainingProducts || []
             }));
-            this.stateManager.initializeStep2(packageResponse.packages);
-            console.log('✅ Step 2 StateManager güncellendi');
+            console.log('✅ Step 2 NgRx store güncellendi');
 
             setTimeout(() => {
               if (this.palletControlComponent) {
@@ -528,18 +447,8 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
-  private configurePalletComponent(): void {
-    this.componentManager.configureComponent(ComponentType.PALLET_CONTROL);
-  }
-
   private performFullReset(): void {
-    this.componentManager.resetAllComponents();
-    this.storageManager.clearStorage();
-
-    if (this.legacyStepperService?.resetStepper) {
-      this.legacyStepperService.resetStepper();
-    }
-
+    this.legacyLocalStorage.clearStorage();
     this.resetStepperNavigation();
     this.order_id = '';
     this.clearStepCaches();
@@ -553,11 +462,8 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
     this.selectedIndex = 0;
 
     setTimeout(() => {
-      if (this.stepper && this.config.enableLinearMode) {
-        this.stepper.linear = true;
-      }
       this.cdr.markForCheck();
-    }, STEPPER_CONFIG.RESET_DELAY);
+    }, 500);
   }
 
   private handleResetFailure(): void {
@@ -567,107 +473,10 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
 
     setTimeout(() => {
       window.location.reload();
-    }, STEPPER_CONFIG.RELOAD_DELAY);
+    }, 2000);
   }
 
   private async initializeComponent(): Promise<void> {
-    if (!this.performHealthCheck()) {
-      throw new Error('Service health check failed');
-    }
-
-    setTimeout(() => this.registerComponents(), 100);
-    await this.initializeFromStorage();
-
-    if (this.config.enableActivityTracking) {
-      this.activityTracker.startTracking();
-    }
-
     this.cdr.markForCheck();
-  }
-
-  private performHealthCheck(): boolean {
-    const services = [
-      { name: 'StepperStore', service: this.legacyStepperService },
-      { name: 'LocalStorageService', service: this.legacyLocalStorage },
-      { name: 'ToastService', service: this.legacyToastService }
-    ];
-
-    return this.serviceHealthChecker.checkAllServices(services);
-  }
-
-  private registerComponents(): void {
-    try {
-      if (this.invoiceUploadComponent) {
-        this.componentManager.registerComponent(ComponentType.INVOICE_UPLOAD, this.invoiceUploadComponent);
-      }
-      if (this.palletControlComponent) {
-        this.componentManager.registerComponent(ComponentType.PALLET_CONTROL, this.palletControlComponent);
-      }
-      if (this.resultStepComponent) {
-        this.componentManager.registerComponent(ComponentType.RESULT_STEP, this.resultStepComponent);
-      }
-    } catch (error) {
-      this.errorHandler.handleErrors(error, 'registerComponents');
-    }
-  }
-
-  private async initializeFromStorage(): Promise<void> {
-    try {
-      if (!this.storageManager.hasExistingData()) {
-        return;
-      }
-
-      const storageInfo = this.storageManager.getStorageInfo();
-
-      if (storageInfo.isExpiringSoon) {
-        this.showExpirationWarning();
-      }
-
-      await this.restoreStepStates();
-      this.navigateToCurrentStep();
-
-    } catch (error) {
-      this.errorHandler.handleErrors(error, 'initializeFromStorage');
-    }
-  }
-
-  private async restoreStepStates(): Promise<void> {
-    const currentStep = this.storageManager.getCurrentStep();
-
-    for (let i = 1; i <= Math.min(currentStep + 1, STEPPER_CONFIG.MAX_STEPS); i++) {
-      if (this.storageManager.isStepCompleted(i)) {
-        if (this.legacyStepperService?.setStepStatus) {
-          this.legacyStepperService.setStepStatus(i, STATUSES.completed, true);
-        }
-      }
-    }
-  }
-
-  private navigateToCurrentStep(): void {
-    const currentStep = this.storageManager.getCurrentStep();
-
-    if (this.stepper && currentStep > 1) {
-      setTimeout(() => {
-        try {
-          this.stepper.selectedIndex = currentStep - 1;
-          this.selectedIndex = currentStep - 1;
-          this.cdr.markForCheck();
-        } catch (error) {
-          this.errorHandler.handleErrors(error, 'navigateToCurrentStep');
-        }
-      }, STEPPER_CONFIG.NAVIGATION_DELAY);
-    }
-  }
-
-  private showExpirationWarning(): void {
-    if (this.legacyToastService?.warning) {
-      this.legacyToastService.warning(
-        'Kaydedilmiş verileriniz yakında silinecek. Lütfen işleminizi tamamlayın.'
-      );
-    }
-  }
-
-  getStepDirty(stepIndex: number): boolean {
-    return this.stepValidator.isDirty(stepIndex);
   }
 }

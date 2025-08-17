@@ -133,10 +133,7 @@
             [compareWith]="compareCompanies"
             required
           >
-            <mat-option
-              *ngFor="let company of targetCompanies"
-              [value]="company"
-            >
+            <mat-option *ngFor="let company of targetCompanies; trackBy: trackByCompanyId" [value]="company">
               {{ company.target_company_name }}
             </mat-option>
           </mat-select>
@@ -164,7 +161,7 @@
             [compareWith]="compareObjects"
             required
           >
-            <mat-option *ngFor="let truck of trucks" [value]="truck">
+            <mat-option *ngFor="let truck of trucks; trackBy: trackByTruckId" [value]="truck">
               {{ truck.name }}
             </mat-option>
           </mat-select>

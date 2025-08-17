@@ -8,6 +8,7 @@ import {
   OnInit,
   EventEmitter,
   Output,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { LoadingComponent } from '../../../../../../components/loading/loading.component';
 import { MatButton } from '@angular/material/button';
@@ -29,7 +30,6 @@ import { Store } from '@ngrx/store';
 import { AppState } from '../../../../../../store';
 import * as StepperSelectors from '../../../../../../store/stepper/stepper.selectors';
 import * as StepperActions from '../../../../../../store/stepper/stepper.actions';
-import { StateManager } from '../../services/state-manager.service';
 import { Router } from '@angular/router';
 
 // Enhanced Package interface for type safety
@@ -91,6 +91,7 @@ interface DataChangeEvent {
   ],
   templateUrl: './result-step.component.html',
   styleUrl: './result-step.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ResultStepComponent implements OnInit, OnDestroy {
   @ViewChild('threeJSComponent') threeJSComponent!: ThreeJSTruckVisualizationComponent;
@@ -150,13 +151,10 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   // Enhanced Services
   private readonly autoSaveService = inject(AutoSaveService);
   private readonly localStorageService = inject(LocalStorageService);
-  private router = inject(Router);
-  private stateManager = inject(StateManager)
   repositoryService = inject(RepositoryService);
-  stepperService = inject(StepperStore);
   sanitizer = inject(DomSanitizer);
   toastService = inject(ToastService);
-  cdr = inject(ChangeDetectorRef);
+  private readonly cdr = inject(ChangeDetectorRef);
   orderResultService = inject(OrderResultService)
 
   private readonly store = inject(Store<AppState>);
@@ -396,7 +394,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       this.hasUnsavedChanges = false;
 
       // Enhanced stepper store update
-      this.stepperService.setStepStatus(3, STATUSES.completed, true);
+      this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 2 }));
     } catch (error) {
       this.toastService.error('Sonuçlar kaydedilemedi');
     }
@@ -457,14 +455,15 @@ export class ResultStepComponent implements OnInit, OnDestroy {
 
       return;
     }
-
-
-
     this.processingLock = true;
 
     // Enhanced state reset
     this.safeResetEnhancedState();
-
+    this.store.dispatch(StepperActions.setStepLoading({
+      stepIndex: 2,
+      loading: true,
+      operation: 'Calculating bin packing optimization'
+    }));
     // Enhanced progress simulation
     this.startEnhancedProgressSimulation();
 
@@ -509,14 +508,15 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         finalize(() => {
           this.processingLock = false;
           this.stopEnhancedProgressSimulation();
+          this.store.dispatch(StepperActions.setStepLoading({
+            stepIndex: 2,
+            loading: false
+          }));
         })
       )
       .subscribe({
         next: (reportResponse) => {
           if (this.isDestroyed) return;
-
-
-
           this.reportFiles = Array.isArray(reportResponse?.files)
             ? reportResponse.files
             : [];
@@ -529,10 +529,21 @@ export class ResultStepComponent implements OnInit, OnDestroy {
               this.triggerEnhancedAutoSave('api-response');
             }
           }, 500);
+          this.cdr.markForCheck();
         },
         error: (error) => {
           if (!this.isDestroyed) {
+            // Global error dispatch et
+            this.store.dispatch(StepperActions.setGlobalError({
+              error: {
+                message: 'Optimizasyon hesaplaması sırasında hata oluştu: ' + (error.message || error),
+                code: error.status?.toString(),
+                stepIndex: 2
+              }
+            }));
+
             this.handleEnhancedError(error);
+            this.cdr.markForCheck();
           }
         },
       });
@@ -565,6 +576,9 @@ export class ResultStepComponent implements OnInit, OnDestroy {
 
       // Update data
       this.piecesData = validatedData;
+      this.store.dispatch(StepperActions.updateStep3OptimizationResult({
+        optimizationResult: validatedData
+      }));
 
       // Mark as having unsaved changes
       this.hasUnsavedChanges = true;
@@ -596,6 +610,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
 
       this.toastService.error('Veri değişikliği işlenirken hata oluştu');
     }
+    this.cdr.markForCheck();
   }
 
   /**
@@ -856,7 +871,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       this.safeUpdateEnhancedUI();
 
       this.toastService.success('Veriler orijinal haline sıfırlandı');
-
+      this.cdr.markForCheck();
 
     } catch (error) {
 
@@ -2166,13 +2181,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
       this.localStorageService.clearStorage();
 
       // 4. NgRx'i tamamen reset et
-      // this.store.dispatch(StepperActions.resetStepper());
-
-      // 5. StateManager'ı reset et
-      // this.stateManager.resetAllStates();
-
-      // 6. Enhanced stepper reset
-      this.stepperService.resetStepper();
+      this.store.dispatch(StepperActions.resetStepper());
 
       // 7. Enhanced component state clean
       this.resetEnhancedComponentState();

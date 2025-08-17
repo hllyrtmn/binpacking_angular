@@ -223,3 +223,29 @@ export const setStep3HasResults = createAction(
   '[Migration] Set Step3 Has Results',
   props<{ hasResults: boolean }>()
 );
+
+// Step3 Enhanced Actions (dosyanın sonuna ekle)
+export const updateStep3DataChangeHistory = createAction(
+  '[Step3] Update Data Change History',
+  props<{ changes: any[] }>()
+);
+
+export const setStep3ThreeJSError = createAction(
+  '[Step3] Set ThreeJS Error',
+  props<{ hasError: boolean; errorMessage?: string }>()
+);
+
+export const setStep3ViewType = createAction(
+  '[Step3] Set View Type',
+  props<{ viewType: string }>()
+);
+
+export const setStep3UnsavedChanges = createAction(
+  '[Step3] Set Unsaved Changes',
+  props<{ hasUnsavedChanges: boolean }>()
+);
+
+export const updateStep3ProcessedPackages = createAction(
+  '[Step3] Update Processed Packages',
+  props<{ processedPackages: any[] }>()
+);

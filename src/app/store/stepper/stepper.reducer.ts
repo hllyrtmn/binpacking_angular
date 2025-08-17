@@ -501,5 +501,56 @@ export const stepperReducer = createReducer(
       showVisualization: hasResults,
       isDirty: true
     }
+  })),
+  // Step3 Enhanced Reducers (son Step3 reducer'dan sonra ekle)
+  on(StepperActions.updateStep3DataChangeHistory, (state, { changes }) => ({
+    ...state,
+    step3State: {
+      ...state.step3State,
+      dataChangeHistory: [...changes],
+      isDirty: true
+    }
+  })),
+
+  on(StepperActions.setStep3ThreeJSError, (state, { hasError, errorMessage }) => ({
+    ...state,
+    step3State: {
+      ...state.step3State,
+      hasThreeJSError: hasError,
+      showVisualization: !hasError,
+      isDirty: true
+    },
+    globalError: hasError ? {
+      message: errorMessage || 'ThreeJS visualization error',
+      stepIndex: 2,
+      timestamp: new Date()
+    } : state.globalError
+  })),
+
+  on(StepperActions.setStep3ViewType, (state, { viewType }) => ({
+    ...state,
+    step3State: {
+      ...state.step3State,
+      currentViewType: viewType,
+      isDirty: true
+    }
+  })),
+
+  on(StepperActions.setStep3UnsavedChanges, (state, { hasUnsavedChanges }) => ({
+    ...state,
+    step3State: {
+      ...state.step3State,
+      hasUnsavedChanges: hasUnsavedChanges,
+      isDirty: hasUnsavedChanges
+    }
+  })),
+
+  on(StepperActions.updateStep3ProcessedPackages, (state, { processedPackages }) => ({
+    ...state,
+    step3State: {
+      ...state.step3State,
+      processedPackages: [...processedPackages],
+      isDirty: true
+    }
   }))
 );

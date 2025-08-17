@@ -8,6 +8,8 @@ import {
   Output,
   ViewChild,
   OnDestroy,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef
 } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 import { MatStepperModule } from '@angular/material/stepper';
@@ -99,6 +101,7 @@ import { Truck } from '../../../../../../models/truck.interface';
   ],
   templateUrl: './invoice-upload.component.html',
   styleUrl: './invoice-upload.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class InvoiceUploadComponent implements OnInit, OnDestroy {
   @Output() invoiceUploaded = new EventEmitter<any>();
@@ -132,11 +135,12 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   public isEditMode$ = this.store.select(StepperSelectors.selectIsEditMode);
   public editOrderId$ = this.store.select(StepperSelectors.selectEditOrderId);
 
+  private readonly cdr = inject(ChangeDetectorRef);
   // Form and data
   uploadForm!: FormGroup;
   referenceData: ReferenceData = { targetCompanies: [], trucks: [] };
   totalWeight: number = 0;
-
+  processingLock:boolean = true;
   // Subscriptions
   private subscriptions: Subscription[] = [];
   private autoSaveSubscription?: Subscription;
@@ -165,7 +169,11 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
   // UI State getters
   get isLoading(): boolean {
-    return this.uiStateManager.getLoading();
+   let loading = false;
+    this.store.select(StepperSelectors.selectIsStepLoading(0)).pipe(take(1)).subscribe(isLoading => {
+      loading = isLoading;
+    });
+    return loading || this.uiStateManager.getLoading();
   }
 
   get excelUpload(): boolean {
@@ -210,6 +218,23 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   get excludeFields(): string[] {
     return INVOICE_UPLOAD_CONSTANTS.TABLE.EXCLUDE_FIELDS as string[];
   }
+
+  // Performance Optimization - TrackBy functions
+  trackByOrderDetailId = (index: number, item: any): any => {
+    return item?.id || index;
+  };
+
+  trackByCompanyId = (index: number, item: any): any => {
+    return item?.id || index;
+  };
+
+  trackByTruckId = (index: number, item: any): any => {
+    return item?.id || index;
+  };
+
+  trackByWeightType = (index: number, item: string): string => {
+    return item;
+  };
 
   ngOnInit(): void {
     const startTime = performance.now();
@@ -416,6 +441,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     }
 
     this.triggerAutoSave('user-action');
+    this.cdr.markForCheck();
   }
 
 
@@ -433,6 +459,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     }
 
     this.triggerAutoSave('user-action');
+    this.cdr.markForCheck();
   }
 
   onTruckChange(selectedTruck: any): void {
@@ -450,6 +477,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     }
 
     this.triggerAutoSave('user-action');
+    this.cdr.markForCheck();
   }
 
   onWeightTypeChange(selectedWeightType: string): void {
@@ -468,6 +496,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
     this.calculateTotals();
     this.triggerAutoSave('user-action');
+    this.cdr.markForCheck();
   }
 
   // OrderDetail operations
@@ -587,6 +616,11 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     }
 
     this.uiStateManager.startSubmit();
+    this.store.dispatch(StepperActions.setStepLoading({
+      stepIndex: 0,
+      loading: true,
+      operation: 'Submitting order data'
+    }));
     this.toastService.info(INVOICE_UPLOAD_CONSTANTS.MESSAGES.INFO.OPERATION_IN_PROGRESS);
 
     let orderDetailChanges: any;
@@ -597,7 +631,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
         deleted: changes.deleted.map(detail => detail.id || detail) // ID'leri extract et
       };
     });
-    debugger
     const orderOperation = this.getOrderOperation();
 
     const submitSub = orderOperation
@@ -612,8 +645,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
               fileName: this.step1FileName$ ? 'Order Saved' : undefined
             }));
             this.store.dispatch(StepperActions.clearAdded())
-            this.repositoryService.setOrderId(orderResponse?.id);
-            debugger
           }
 
           if (this.fileUploadManager.hasTempFile()) {
@@ -633,14 +664,31 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
             );
           }
         }),
-        finalize(() => this.uiStateManager.finishSubmit())
-      )
+        finalize(() => {
+          this.processingLock = false;
+          this.uiStateManager.finishSubmit();
+
+          // NgRx loading state'i durdur
+          this.store.dispatch(StepperActions.setStepLoading({
+            stepIndex: 0,
+            loading: false
+          }));
+        }))
       .subscribe({
         next: (result) => {
           this.handleSubmitSuccess(result);
         },
         error: (error) => {
           console.log(error)
+          // Global error dispatch et
+          this.store.dispatch(StepperActions.setGlobalError({
+            error: {
+              message: INVOICE_UPLOAD_CONSTANTS.MESSAGES.ERROR.OPERATION_ERROR + (error.message || error),
+              code: error.status?.toString(),
+              stepIndex: 0
+            }
+          }));
+
           this.toastService.error(
             INVOICE_UPLOAD_CONSTANTS.MESSAGES.ERROR.OPERATION_ERROR + (error.message || error)
           );
@@ -674,6 +722,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   private handleSubmitSuccess(result: any): void {
+    console.log('🎉 SUBMIT SUCCESS ÇAĞRILDI'); // Bunu EKLE
     this.invoiceUploaded.emit();
     this.toastService.success(INVOICE_UPLOAD_CONSTANTS.MESSAGES.SUCCESS.CHANGES_SAVED);
 

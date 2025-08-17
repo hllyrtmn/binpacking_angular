@@ -372,3 +372,35 @@ export const selectStep3DataChangeHistory = createSelector(
   selectStep3State,
   (step3State) => step3State.dataChangeHistory
 );
+
+// Step3 Enhanced Selectors (mevcut Step3 selector'larından sonra ekle)
+export const selectStep3CurrentViewType = createSelector(
+  selectStep3State,
+  (step3State) => step3State.currentViewType
+);
+
+export const selectStep3HasThreeJSError = createSelector(
+  selectStep3State,
+  (step3State) => step3State.hasThreeJSError
+);
+
+export const selectStep3ProcessedPackages = createSelector(
+  selectStep3State,
+  (step3State) => step3State.processedPackages
+);
+
+export const selectStep3Summary = createSelector(
+  selectStep3HasResults,
+  selectStep3ShowVisualization,
+  selectStep3HasUnsavedChanges,
+  selectStep3IsDirty,
+  selectStep3ProcessedPackages,
+  (hasResults, showVisualization, hasUnsavedChanges, isDirty, processedPackages) => ({
+    hasResults,
+    showVisualization,
+    hasUnsavedChanges,
+    isDirty,
+    totalPackages: processedPackages.length,
+    canSave: hasUnsavedChanges && hasResults
+  })
+);

@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { ApiService } from '../../../../../services/api.service';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable, tap } from 'rxjs';
@@ -12,13 +12,28 @@ import { Order } from '../../../../../models/order.interface';
 import { Truck } from '../../../../../models/truck.interface';
 import { CompanyRelation } from '../../../../../models/company-relation.interface';
 
+import { Store } from '@ngrx/store';
+import { AppState } from '../../../../../store';
+import * as StepperSelectors from '../../../../../store/stepper/stepper.selectors';
+import { take } from 'rxjs/operators';
+
 @Injectable({
   providedIn: 'root',
 })
 export class RepositoryService {
-  private orderId = signal('');
+  private store = inject(Store<AppState>);
 
   constructor(private api: ApiService, private http: HttpClient) {}
+
+  private getOrderId(): string {
+    let orderId = '';
+    this.store.select(StepperSelectors.selectStep1Order)
+      .pipe(take(1))
+      .subscribe(order => {
+        orderId = order?.id || '';
+      });
+    return orderId;
+  }
 
   orderDetails(id: string): Observable<any> {
     // api/orders/order-details/{id}/
@@ -67,9 +82,6 @@ export class RepositoryService {
     );
   }
 
-  setOrderId(orderId: string) {
-    this.orderId.set(orderId);
-  }
 
   uploadFile(file: File, orderId: string): Observable<FileResponse> {
     const formData = new FormData();
@@ -95,11 +107,7 @@ export class RepositoryService {
     }>(`${this.api.getApiUrl()}/orders/process-file/`, formData);
   }
 
-  calculatePackageDetail(order_id: string = this.orderId()): Observable<{packages: any[], remainingProducts: any[]}> {
-    // api/orders/packages/{id}/
-    // get package detail by package id.
-    debugger
-    order_id = 'd0bfd14f-cd5d-4954-a9fe-4bc90fa787ac'
+  calculatePackageDetail(order_id: string = this.getOrderId()): Observable<{packages: any[], remainingProducts: any[]}> {
     return this.http
       .get<any>(`${this.api.getApiUrl()}/logistics/calculate-box/${order_id}/`)
       .pipe(map((response) =>({
@@ -110,7 +118,7 @@ export class RepositoryService {
 
   bulkCreatePackageDetail(
     packageDetailList: PackageDetail[],
-    order_id: string = this.orderId()
+    order_id: string = this.getOrderId()
   ) {
     const payload = {
       packageDetails: packageDetailList,
@@ -131,7 +139,7 @@ export class RepositoryService {
       modified: OrderDetail[];
       deleted: OrderDetail[];
     },
-    order_id: string = this.orderId()
+    order_id: string = this.getOrderId()
   ): Observable<any> {
     // Deleted array'indeki object'lerin ID'lerini al
     const deletedIds = changes.deleted
@@ -159,25 +167,25 @@ export class RepositoryService {
     );
   }
 
-  createReport(order_id: string = this.orderId()): Observable<any> {
+  createReport(order_id: string = this.getOrderId()): Observable<any> {
     return this.http.get<any>(
       `${this.api.getApiUrl()}/logistics/create-report/${order_id}/`
     );
   }
 
-  calculatePacking(order_id: string = this.orderId()) {
+  calculatePacking(order_id: string = this.getOrderId()) {
     return this.http.get<any>(
       `${this.api.getApiUrl()}/logistics/calculate-packing/${order_id}/`
     );
   }
 
-  createTruckPlacementReport(order_id:string = this.orderId()){
+  createTruckPlacementReport(order_id: string = this.getOrderId()){
     return this.http.get<any>(
       `${this.api.getApiUrl()}/logistics/create-truck-placement-report/${order_id}/`
     )
   }
 
-  partialUpdateOrderResult(piecesData:any,order_result_id: string = this.orderId()){
+  partialUpdateOrderResult(piecesData:any,order_result_id: string = this.getOrderId()){
     const resultString = JSON.stringify(piecesData);
     const updateData = {
         result: resultString

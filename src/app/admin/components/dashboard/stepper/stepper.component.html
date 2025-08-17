@@ -1,4 +1,11 @@
 <ng-container *ngIf="vm$ | async as vm">
+  <div style="background: yellow; padding: 10px; margin: 10px;">
+  <h4>Debug Info:</h4>
+  <p>Step 0 completed: {{ getStepCompleted(0) }}</p>
+  <p>Step 1 editable: {{ getStepEditable(1) }}</p>
+  <p>Current step: {{ selectedIndex }}</p>
+  <p>Edit mode: {{ isEditMode$ | async }}</p>
+</div>
   <mat-stepper
     #stepper
     class="responsive-stepper"

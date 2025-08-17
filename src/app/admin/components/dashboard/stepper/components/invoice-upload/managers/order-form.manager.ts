@@ -48,11 +48,6 @@ export class OrderFormManager {
       weight_type: '',
     } as unknown as Order;
 
-    // Yeni order oluşturulduğunda repository service'e set et
-    if (this.order.id) {
-      this.repositoryService.setOrderId(this.order.id);
-    }
-
     return this.order;
   }
 
@@ -68,15 +63,6 @@ export class OrderFormManager {
       [field]: value
     };
 
-    // Eğer ID field'ı güncellendiyse repository service'e bildir
-    if (field === 'id' && value) {
-      this.repositoryService.setOrderId(value);
-    }
-    // Veya mevcut order'ın ID'si varsa her güncellemede bildir
-    else if (this.order.id) {
-      this.repositoryService.setOrderId(this.order.id);
-    }
-
     return this.order;
   }
 
@@ -91,10 +77,6 @@ export class OrderFormManager {
       company_relation: selectedCompany
     };
 
-    if (this.order.id) {
-      this.repositoryService.setOrderId(this.order.id);
-    }
-
     return this.order;
   }
 
@@ -108,10 +90,6 @@ export class OrderFormManager {
       truck: selectedTruck
     };
 
-    if (this.order.id) {
-      this.repositoryService.setOrderId(this.order.id);
-    }
-
     return this.order;
   }
 
@@ -124,10 +102,6 @@ export class OrderFormManager {
       ...this.order,
       weight_type: selectedWeightType
     };
-
-    if (this.order.id) {
-      this.repositoryService.setOrderId(this.order.id);
-    }
 
     return this.order;
   }
