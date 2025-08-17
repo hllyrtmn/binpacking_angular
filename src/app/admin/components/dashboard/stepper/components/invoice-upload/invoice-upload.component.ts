@@ -167,11 +167,13 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
   // UI State getters
   get isLoading(): boolean {
-   let loading = false;
+    let ngrxLoading = false;
     this.store.select(StepperSelectors.selectIsStepLoading(0)).pipe(take(1)).subscribe(isLoading => {
-      loading = isLoading;
+      ngrxLoading = isLoading;
     });
-    return loading || this.uiStateManager.getLoading();
+
+    const uiLoading = this.uiStateManager.getLoading();
+    return ngrxLoading || uiLoading;
   }
 
   get excelUpload(): boolean {

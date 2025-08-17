@@ -268,7 +268,7 @@ export const stepperReducer = createReducer(
       order,
       orderDetails: [...orderDetails],
       original: [...orderDetails],
-      added: [],
+      added: [...orderDetails],
       modified: [],
       deleted: [],
       hasFile,

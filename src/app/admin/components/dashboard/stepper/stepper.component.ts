@@ -392,6 +392,7 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private performFullReset(): void {
+    this.uiStateManager.resetAllStates();
     this.legacyLocalStorage.clearStorage();
     this.resetStepperNavigation();
     this.order_id = '';
