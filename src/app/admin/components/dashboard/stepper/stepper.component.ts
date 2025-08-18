@@ -69,6 +69,10 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly destroy$ = new Subject<void>();
   private pendingEditData: { orderId: string; order: any; orderDetails: any[] } | null = null;
 
+  public step0Loading$ = this.store.select(StepperSelectors.selectIsStepLoading(0));
+  public step1Loading$ = this.store.select(StepperSelectors.selectIsStepLoading(1));
+  public step2Loading$ = this.store.select(StepperSelectors.selectIsStepLoading(2));
+
   public readonly currentStep$ = this.store.select(StepperSelectors.selectCurrentStep)
     .pipe(
       distinctUntilChanged(),
@@ -165,7 +169,6 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
     this.store.select(StepperSelectors.selectIsStepCompleted(stepIndex))
       .pipe(take(1))
       .subscribe(completed => isCompleted = completed);
-
     const result = isCompleted;
     return result;
   }
@@ -207,8 +210,17 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
   invoiceUploaded = (): void => {
     this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
     this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 0, isValid: true }));
-    this.loadPackageDataForStep2();
-    this.cdr.markForCheck();
+    this.loadPackageDataForStep2().then(() => {
+    // Data yüklendikten sonra navigate et
+    setTimeout(() => {
+      this.selectedIndex = 1;
+      if (this.stepper) {
+        this.stepper.selectedIndex = 1;
+      }
+      this.store.dispatch(StepperActions.navigateToStep({ stepIndex: 1 }));
+      this.cdr.markForCheck();
+    }, 300);
+  });
   };
 
   configureEditModeInPalletComponent = (): void => {
@@ -317,7 +329,7 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
           setTimeout(() => {
             this.selectedIndex = 1;
             this.cdr.markForCheck();
-          }, 500);
+          }, 10000);
         }
       }
 
@@ -352,7 +364,7 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
         (this.invoiceUploadComponent as any).restoreFromSession?.();
       }
       this.cdr.markForCheck();
-    }, 200);
+    }, 5000);
   }
 
   private syncEditModeDataToNgRx(orderId: string): void {
@@ -366,29 +378,39 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private async loadPackageDataForStep2(): Promise<void> {
-    this.route.queryParams.pipe(take(1)).subscribe(async (params) => {
-      const editMode = params['mode'] === 'edit';
-      const orderId = params['orderId'];
-      if (editMode && orderId) {
-        try {
-          const packageResponse = await this.repositoryService.calculatePackageDetail().toPromise();
-          if (packageResponse?.packages) {
-            this.store.dispatch(StepperActions.initializeStep2State({
-              packages: packageResponse.packages || [],
-              availableProducts: packageResponse.remainingProducts || []
-            }));
-            setTimeout(() => {
-              if (this.palletControlComponent) {
+    try {
+      this.store.dispatch(StepperActions.setStepLoading({
+        stepIndex: 1,
+        loading: true,
+        operation: 'Loading package data'
+      }));
 
-                (this.palletControlComponent as any).restoreFromSession?.();
-              }
-              this.cdr.markForCheck();
-            }, 300);
-          }
-        } catch (error) {
+      const packageResponse = await this.repositoryService.calculatePackageDetail().toPromise();
+
+      if (packageResponse?.packages) {
+        this.store.dispatch(StepperActions.initializeStep2State({
+          packages: packageResponse.packages || [],
+          availableProducts: packageResponse.remainingProducts || []
+        }));
+
+        this.store.dispatch(StepperActions.setStepLoading({
+          stepIndex: 1,
+          loading: false
+        }));
+
+        if (this.palletControlComponent) {
+          setTimeout(() => {
+            (this.palletControlComponent as any).updateComponentFromStore?.();
+          }, 100);
         }
       }
-    });
+    } catch (error) {
+      console.error('Error loading package data:', error);
+      this.store.dispatch(StepperActions.setStepLoading({
+        stepIndex: 1,
+        loading: false
+      }));
+    }
   }
 
   private performFullReset(): void {

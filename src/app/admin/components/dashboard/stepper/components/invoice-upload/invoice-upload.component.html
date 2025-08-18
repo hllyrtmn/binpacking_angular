@@ -13,7 +13,7 @@
   </div>
 
   <!-- Empty State Card -->
-  <div class="logistics-card" *ngIf="(!order || !order.id) && !isLoading">
+  <div class="logistics-card" *ngIf="(!order || !order.id) && isLoading$ | async">
     <div class="empty-state">
       <div class="empty-icon">
         <mat-icon>description</mat-icon>
@@ -72,7 +72,8 @@
   </div>
 
   <!-- Loading Indicator -->
-  <div class="loading-container" *ngIf="isLoading ">
+   @if (!isLoading$ | async) {
+    <div class="loading-container">
     <div class="loading-content">
       <div class="animated-icon">
         <mat-icon>local_shipping</mat-icon>
@@ -85,37 +86,40 @@
       <p>Sipariş verileri yükleniyor...</p>
     </div>
   </div>
+   }
+
 
   <!-- Order Details Dashboard -->
-  <div *ngIf="(order && order.id) && !isLoading" class="details-section">
+   @if ((order && order.id) && isLoading$ | async) {
+    <div class="details-section">
     <!-- Order Summary -->
-<div class="dashboard-panel">
-  <!-- Sipariş Tarihi -->
-  <div class="dashboard-item">
-    <div class="dashboard-icon">
-      <mat-icon>event</mat-icon>
-    </div>
-    <div class="dashboard-info">
-      <span class="dashboard-label">Sipariş Tarihi</span>
-      <div class="dashboard-value-container">
-        <mat-form-field class="edit-field" appearance="outline">
-          <input
-            matInput
-            [matDatepicker]="picker"
-            [value]="order?.date"
-            (dateChange)="onOrderFieldChange('date', $event.value)"
-            placeholder="Tarih seçin"
-            required
-          />
-          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-          <mat-datepicker #picker></mat-datepicker>
-          <mat-error *ngIf="!order?.date">
-            Sipariş tarihi zorunludur
-          </mat-error>
-        </mat-form-field>
+    <div class="dashboard-panel">
+      <!-- Sipariş Tarihi -->
+      <div class="dashboard-item">
+        <div class="dashboard-icon">
+          <mat-icon>event</mat-icon>
+        </div>
+        <div class="dashboard-info">
+          <span class="dashboard-label">Sipariş Tarihi</span>
+          <div class="dashboard-value-container">
+            <mat-form-field class="edit-field" appearance="outline">
+              <input
+                matInput
+                [matDatepicker]="picker"
+                [value]="order?.date"
+                (dateChange)="onOrderFieldChange('date', $event.value)"
+                placeholder="Tarih seçin"
+                required
+              />
+              <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+              <mat-datepicker #picker></mat-datepicker>
+              <mat-error *ngIf="!order?.date">
+                Sipariş tarihi zorunludur
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
 
   <!-- Müşteri -->
   <div class="dashboard-item">
@@ -264,6 +268,8 @@
       </div>
     </div>
   </div>
+   }
+
 
   <!-- Navigation Controls -->
   <div class="navigation-controls">

@@ -36,9 +36,8 @@ import {
   catchError,
   Subscription,
   interval,
-  take,
+  take
 } from 'rxjs';
-
 import { OrderService } from '../../../../services/order.service';
 import { ToastService } from '../../../../../../services/toast.service';
 import { LocalStorageService } from '../../services/local-storage.service';
@@ -73,6 +72,8 @@ import { selectStep1Order, selectStep1OrderDetails, selectStep1IsDirty,
          selectStep1HasFile, selectStep1FileName } from '../../../../../../store/stepper/stepper.selectors';
 import { CompanyRelation } from '../../../../../../models/company-relation.interface';
 import { Truck } from '../../../../../../models/truck.interface';
+import { combineLatest } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-invoice-upload',
@@ -166,15 +167,12 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   // UI State getters
-  get isLoading(): boolean {
-    let ngrxLoading = false;
-    this.store.select(StepperSelectors.selectIsStepLoading(0)).pipe(take(1)).subscribe(isLoading => {
-      ngrxLoading = isLoading;
-    });
-
-    const uiLoading = this.uiStateManager.getLoading();
-    return ngrxLoading || uiLoading;
-  }
+  isLoading$ = combineLatest([
+    this.store.select(StepperSelectors.selectIsStepLoading(0)),
+    this.uiState$
+  ]).pipe(
+    map(([ngrxLoading, uiLoading]) => ngrxLoading || uiLoading)
+  );
 
   get excelUpload(): boolean {
     return this.uiStateManager.getExcelUpload();
@@ -285,17 +283,34 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
         this.toastService.info('NgRx store\'dan veriler yüklendi');
         return;
       }
-      const restoredData = this.localService.restoreStep1Data();
-      if (restoredData) {
+      const restoredStep1Data = this.localService.restoreStep1Data();
+      const restoredStep2Data = this.localService.restoreStep2Data();
+      const restoredStep3Data = this.localService.restoreStep3Data();
+      if (restoredStep1Data) {
         this.store.dispatch(StepperActions.initializeStep1State({
-          order: restoredData.order,
-          orderDetails: restoredData.orderDetails,
-          hasFile: restoredData.hasFile,
-          fileName: restoredData.fileName
+          order: restoredStep1Data.order,
+          orderDetails: restoredStep1Data.orderDetails,
+          hasFile: restoredStep1Data.hasFile,
+          fileName: restoredStep1Data.fileName
         }));
-
         this.calculateTotals();
         this.toastService.info('LocalStorage\'dan NgRx\'e restore edildi');
+      }
+      if(restoredStep2Data){
+        this.store.dispatch(StepperActions.initializeStep2State({
+          packages: restoredStep2Data.packages,
+          availableProducts: restoredStep2Data.availableProducts
+        }))
+        this.store.dispatch(StepperActions.setStepCompleted({stepIndex:0}))
+      }
+      if(restoredStep3Data){
+        this.store.dispatch(StepperActions.initializeStep3State({
+          optimizationResult:restoredStep3Data.optimizationResult,
+          reportFiles:restoredStep3Data.reportFiles,
+          algorithmStats:restoredStep3Data.algorithmStats,
+          loadingStats:restoredStep3Data.loadingStats
+        }))
+        this.store.dispatch(StepperActions.setStepCompleted({stepIndex:1}))
       }
     } catch (error) {
       this.toastService.warning('Önceki veriler yüklenirken hata oluştu');
@@ -356,13 +371,24 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
   uploadFile(): void {
     this.uiStateManager.startFileUpload();
+    this.store.dispatch(StepperActions.setStepLoading({
+      stepIndex: 0,
+      loading: true,
+      operation: 'File upload'
+    }));
     const uploadSub = this.fileUploadManager.uploadFile()
       .pipe(
-        finalize(() => this.uiStateManager.finishFileUpload())
-      )
+        finalize(() => {
+          this.uiStateManager.finishFileUpload();
+          // NgRx store loading'i de bitir
+          this.store.dispatch(StepperActions.setStepLoading({
+            stepIndex: 0,
+            loading: false
+          }));
+      }))
       .subscribe({
         next: (response) => {
-          this.store.dispatch(StepperActions.initializeStep1State({
+          this.store.dispatch(StepperActions.initializeStep1StateFromUpload({
             order: response.order,
             orderDetails: response.orderDetail,
             hasFile: true,
@@ -585,7 +611,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
               hasFile: this.step1HasFile$ ? true : false,
               fileName: this.step1FileName$ ? 'Order Saved' : undefined
             }));
-            this.store.dispatch(StepperActions.clearAdded())
           }
 
           if (this.fileUploadManager.hasTempFile()) {
@@ -616,6 +641,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (result) => {
           this.handleSubmitSuccess(result);
+          this.triggerStep2DataLoad();
         },
         error: (error) => {
           this.store.dispatch(StepperActions.setGlobalError({
@@ -633,6 +659,14 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       });
 
     this.subscriptions.push(submitSub);
+  }
+
+  private clearChangesAfterSubmit(): void {
+    // Added, modified, deleted'ları temizle ve isDirty'yi false yap
+    this.store.dispatch(StepperActions.resetStep1Changes());
+  }
+  private triggerStep2DataLoad(): void {
+    this.configurePallet.emit();
   }
 
   private getOrderOperation(): Observable<any> {
@@ -663,9 +697,14 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     this.toastService.success(INVOICE_UPLOAD_CONSTANTS.MESSAGES.SUCCESS.CHANGES_SAVED);
     this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
     this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 0, isValid: true }));
+    this.store.dispatch(StepperActions.clearAdded());
     if (result?.order_details && Array.isArray(result.order_details)) {
       this.syncComponentWithBackendData(result.order_details);
-    }
+    } else {
+    // Backend'den order_details gelmezse mevcut state'i temizle
+    this.clearChangesAfterSubmit();
+  }
+
     this.localService.saveStep1Data(
       this.order!,
       this.orderDetails,
@@ -698,7 +737,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     }
   }
 
-    forceSaveStep1(): void {
+  forceSaveStep1(): void {
     if (this.order && this.orderDetails.length > 0) {
       const autoSaveData = {
         order: this.order,
@@ -711,8 +750,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
         stepNumber: 0,
         data: autoSaveData
       }));
-
-
     }
   }
 
@@ -724,10 +761,9 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   private syncComponentWithBackendData(backendOrderDetails: OrderDetail[]): void {
-    this.store.dispatch(StepperActions.updateStep1OrderDetails({
+    this.store.dispatch(StepperActions.syncStep1WithBackend({
       orderDetails: backendOrderDetails
     }));
-
     this.updateTableData();
     this.calculateTotals();
   }

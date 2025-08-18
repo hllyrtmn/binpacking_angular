@@ -268,12 +268,52 @@ export const stepperReducer = createReducer(
       order,
       orderDetails: [...orderDetails],
       original: [...orderDetails],
-      added: [...orderDetails],
+      added: [],
       modified: [],
       deleted: [],
       hasFile,
       fileName,
       isDirty: false
+    }
+  })),
+
+  on(StepperActions.resetStep1Changes, (state) => ({
+    ...state,
+    step1State: {
+      ...state.step1State,
+      added: [],
+      modified: [],
+      deleted: [],
+      isDirty: false
+    }
+  })),
+
+  // Backend ile sync
+  on(StepperActions.syncStep1WithBackend, (state, { orderDetails }) => ({
+    ...state,
+    step1State: {
+      ...state.step1State,
+      orderDetails: [...orderDetails],
+      original: [...orderDetails], // Yeni original data
+      added: [], // Temizle
+      modified: [], // Temizle
+      deleted: [], // Temizle
+      isDirty: false // Clean state
+    }
+  })),
+
+  on(StepperActions.initializeStep1StateFromUpload, (state, { order, orderDetails, hasFile, fileName }) => ({
+    ...state,
+    step1State: {
+      order,
+      orderDetails: [...orderDetails],
+      original: [], // File upload'da original yok
+      added: [...orderDetails], // File'dan gelen tüm data added
+      modified: [],
+      deleted: [],
+      hasFile,
+      fileName,
+      isDirty: true // File upload'ta dirty true
     }
   })),
 

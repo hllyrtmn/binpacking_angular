@@ -481,15 +481,13 @@ export class LocalStorageService {
     return null;
   }
 
-  restoreStep2Data(): { packages: UiPackage[], availableProducts: UiProduct[] } | null {
+  restoreStep2Data(): { packages: UiPackage[], availableProducts: UiProduct[] } {
     const data = this.getStepperData();
-    if (data.step2?.isCompleted) {
-      return {
-        packages: data.step2.packages,
-        availableProducts: data.step2.availableProducts
-      };
-    }
-    return null;
+    return {
+      packages: data.step2.packages || [],
+      availableProducts: data.step2.availableProducts || []
+    };
+
   }
 
   restoreStep3Data(): EnhancedStep3Data | null {

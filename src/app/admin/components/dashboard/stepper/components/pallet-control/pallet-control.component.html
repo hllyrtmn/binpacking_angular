@@ -16,7 +16,7 @@
       </div>
       <div class="dashboard-info">
         <span class="dashboard-label">Kalan Alan</span>
-        <span class="dashboard-value">{{ remainingArea }} m²</span>
+        <span class="dashboard-value">{{ remainingArea() }} m²</span>
       </div>
     </div>
 
@@ -26,7 +26,7 @@
       </div>
       <div class="dashboard-info">
         <span class="dashboard-label">Toplam Ağırlık</span>
-        <span class="dashboard-value">{{ totalWeight }} kg</span>
+        <span class="dashboard-value">{{ totalWeight() }} kg</span>
       </div>
     </div>
 
@@ -36,7 +36,7 @@
       </div>
       <div class="dashboard-info">
         <span class="dashboard-label">Kalan Ağırlık</span>
-        <span class="dashboard-value">{{ remainingWeight }} kg</span>
+        <span class="dashboard-value">{{ remainingWeight() }} kg</span>
       </div>
     </div>
 
@@ -46,7 +46,7 @@
       </div>
       <div class="dashboard-info">
         <span class="dashboard-label">Toplam Metre</span>
-        <span class="dashboard-value">{{ totalMeter }} m</span>
+        <span class="dashboard-value">{{ totalMeter() }} m</span>
       </div>
     </div>
   </div>
@@ -63,14 +63,14 @@
         cdkDropList
         #productsList="cdkDropList"
         id="productsList"
-        [cdkDropListData]="availableProducts"
-        [cdkDropListConnectedTo]="palletProductsLists"
+        [cdkDropListData]="availableProducts()"
+        [cdkDropListConnectedTo]="palletProductsLists()"
         class="inventory-list"
         (cdkDropListDropped)="dropProductToPallet($event)">
 
         <div
           class="product-item"
-          *ngFor="let product of availableProducts"
+          *ngFor="let product of availableProducts(); trackBy: trackByProductId"
           cdkDrag
           (cdkDragStarted)="dragStarted($event)"
           (cdkDragEnded)="dragEnded()"
@@ -125,7 +125,7 @@
               <mat-icon>fitness_center</mat-icon>
               <div class="stat-info">
                 <span class="stat-label">En Ağır</span>
-                <span class="stat-value">{{ getHeaviestPalletWeight() }} kg</span>
+                <span class="stat-value">{{ heaviestPalletWeight() }} kg</span>
               </div>
             </div>
 
@@ -133,7 +133,7 @@
               <mat-icon>feather</mat-icon>
               <div class="stat-info">
                 <span class="stat-label">En Hafif</span>
-                <span class="stat-value">{{ getLightestPalletWeight() }} kg</span>
+                <span class="stat-value">{{ lightestPalletWeight() }} kg</span>
               </div>
             </div>
 
@@ -141,7 +141,7 @@
               <mat-icon>analytics</mat-icon>
               <div class="stat-info">
                 <span class="stat-label">Ortalama</span>
-                <span class="stat-value">{{ getAveragePalletWeight() }} kg</span>
+                <span class="stat-value">{{ averagePalletWeight() }} kg</span>
               </div>
             </div>
           </div>
@@ -158,7 +158,7 @@
       </div>
 
       <div class="packages-grid">
-        <div class="package-card" *ngFor="let package of packages">
+        <div class="package-card" *ngFor="let package of packages(); trackBy: trackByPackageId">
           <div class="package-header">
             <div class="package-title">
               <mat-icon>inbox</mat-icon>
@@ -200,14 +200,14 @@
               <div
                 cdkDropList
                 [id]="package.pallet.id"
-                [cdkDropListData]="package.products"
+                [cdkDropListData]="package.productsSignal()"
                 [cdkDropListConnectedTo]="palletProductsLists"
                 class="pallet-content"
                 (cdkDropListDropped)="dropProductToPallet($event)">
 
                 <div
                   class="pallet-item"
-                  *ngFor="let product of package.products; let j = index"
+                  *ngFor="let product of package.productsSignal(); let j = index"
                   cdkDrag
                   [cdkDragData]="product"
                   (cdkDragStarted)="dragStarted($event)"
@@ -228,7 +228,7 @@
                 </div>
 
                 <!-- Boş palet mesajı -->
-                <div class="empty-state" *ngIf="package.products.length === 0">
+                <div class="empty-state" *ngIf="package.productsSignal().length === 0">
                   <mat-icon>drag_indicator</mat-icon>
                   <p>Bu palete ürün sürükleyin</p>
                 </div>
@@ -242,18 +242,18 @@
                   </div>
                   <div class="metric">
                     <mat-icon>straighten</mat-icon>
-                    <span>{{ package.totalMeter }} m</span>
+                    <span>{{ package.totalMeter() }} m</span>
                   </div>
                   <div class="metric efficiency-metric">
                     <mat-icon>analytics</mat-icon>
                     <div class="efficiency-container">
-                      <span class="efficiency-value">{{ getPalletFillPercentage(package.pallet, package.products) }}%</span>
+                      <span class="efficiency-value">{{ getPalletFillPercentage(package.pallet, package.productsSignal()) }}%</span>
                       <div class="efficiency-bar">
                         <div class="efficiency-fill"
-                             [style.width.%]="getPalletFillPercentage(package.pallet, package.products)"
-                             [class.high-efficiency]="getPalletFillPercentage(package.pallet, package.products) >= 80"
-                             [class.medium-efficiency]="getPalletFillPercentage(package.pallet, package.products) >= 50 && getPalletFillPercentage(package.pallet, package.products) < 80"
-                             [class.low-efficiency]="getPalletFillPercentage(package.pallet, package.products) < 50">
+                             [style.width.%]="getPalletFillPercentage(package.pallet, package.productsSignal())"
+                             [class.high-efficiency]="getPalletFillPercentage(package.pallet, package.productsSignal()) >= 80"
+                             [class.medium-efficiency]="getPalletFillPercentage(package.pallet, package.productsSignal()) >= 50 && getPalletFillPercentage(package.pallet, package.productsSignal()) < 80"
+                             [class.low-efficiency]="getPalletFillPercentage(package.pallet, package.productsSignal()) < 50">
                         </div>
                       </div>
                     </div>
@@ -283,17 +283,17 @@
         cdkDropList
         #palletsList="cdkDropList"
         id="palletsList"
-        [cdkDropListData]="availablePallets"
-        [cdkDropListConnectedTo]="packageIds"
+        [cdkDropListData]="availablePallets()"
+        [cdkDropListConnectedTo]="packageIds()"
         class="pallets-list"
         (cdkDropListDropped)="dropPalletToPackage($event)">
 
-        <div class="pallet-item" *ngFor="let pallet of availablePallets" cdkDrag>
+        <div class="pallet-item" *ngFor="let pallet of availablePallets(); trackBy: trackByPalletId" cdkDrag>
           <div class="pallet-base-icon"></div>
           <span class="pallet-name">{{ pallet.name }}</span>
         </div>
 
-        <div class="empty-state" *ngIf="availablePallets.length === 0">
+        <div class="empty-state" *ngIf="availablePallets().length === 0">
           <mat-icon>info</mat-icon>
           <p>Henüz palet bulunmamaktadır.</p>
         </div>

@@ -22,6 +22,7 @@
           class="edit-mode-badge"
           >DÜZENLEME</span
         >}
+           <mat-spinner *ngIf="step0Loading$ | async" diameter="16" class="step-spinner"></mat-spinner>
       </ng-template>
 
       @if (selectedIndex === 0 || vm.isEditMode) {
@@ -39,6 +40,7 @@
         Palet Kontrolü @if (vm.isEditMode) {<span class="edit-mode-badge"
           >DÜZENLEME</span
         >}
+         <mat-spinner *ngIf="step1Loading$ | async" diameter="16" class="step-spinner"></mat-spinner>
       </ng-template>
 
       @if (selectedIndex === 1 || vm.isEditMode) {
@@ -51,6 +53,7 @@
         Sonuç Ekranı @if (vm.isEditMode) {<span class="edit-mode-badge"
           >DÜZENLEME</span
         >}
+         <mat-spinner *ngIf="step2Loading$ | async" diameter="16" class="step-spinner"></mat-spinner>
       </ng-template>
 
       @if (selectedIndex === 2 || (vm.isEditMode && getStepCompleted(1))) {

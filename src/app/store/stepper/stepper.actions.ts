@@ -135,6 +135,21 @@ export const initializeStep1State = createAction(
   props<{ order: any; orderDetails: any[]; hasFile: boolean; fileName?: string }>()
 );
 
+export const resetStep1Changes = createAction(
+  '[Migration] Reset Step1 Changes'
+);
+
+// Backend sync action
+export const syncStep1WithBackend = createAction(
+  '[Migration] Sync Step1 With Backend',
+  props<{ orderDetails: any[] }>()
+);
+
+export const initializeStep1StateFromUpload = createAction(
+  '[Migration] Initialize Step1 State From Upload',
+  props<{ order: any; orderDetails: any[]; hasFile: boolean; fileName?: string }>()
+);
+
 export const updateStep1OrderDetails = createAction(
   '[Migration] Update Step1 OrderDetails',
   props<{ orderDetails: any[] }>()

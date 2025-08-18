@@ -267,3 +267,9 @@
     }
   }
 }
+.step-spinner {
+  margin-left: 8px;
+  ::ng-deep .mat-progress-spinner circle {
+    stroke: #006A6A;
+  }
+}

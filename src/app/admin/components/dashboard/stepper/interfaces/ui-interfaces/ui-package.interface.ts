@@ -1,3 +1,5 @@
+// ui-package.interface.ts
+import { Signal } from '@angular/core';
 import { Package } from "../../../../../../models/package.interface";
 import { IUiPallet } from "./ui-pallet.interface";
 import { IUiProduct } from "./ui-product.interface";
@@ -5,12 +7,12 @@ import { IUiProduct } from "./ui-product.interface";
 export interface IUiPackage extends Package {
   pallet: IUiPallet | null;
   products: IUiProduct[];
-  totalMeter:number;
-  totalWeight:number;
-  totalVolume:number
+
+  readonly totalMeter: Signal<number>;
+  readonly totalVolume: Signal<number>;
+  readonly totalWeight: Signal<number>;
+
   isSavedInDb: boolean;
-  // addProduct(product: IUiProduct): void;
-  // removeProduct(product: IUiProduct): void;
-  // addPallet(pallet: IUiPallet): void;
-  // isValid(product: IUiPallet): boolean;
+
+  readonly productsSignal: Signal<IUiProduct[]>;
 }
