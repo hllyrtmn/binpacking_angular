@@ -39,7 +39,7 @@ import { OrderDetailManager } from './components/invoice-upload/managers/order-d
     MatStepperModule, FormsModule, LoadingComponent, ReactiveFormsModule,
     MatFormFieldModule, MatInputModule, MatButtonModule, AsyncPipe,
     InvoiceUploadComponent, PalletControlComponent, LoadingComponent,
-    ResultStepComponent,CommonModule
+    ResultStepComponent, CommonModule
   ],
   providers: [
   ],
@@ -56,7 +56,7 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('resultStepComponent') resultStepComponent!: ResultStepComponent;
 
   private readonly cdr = inject(ChangeDetectorRef);
-  private readonly legacyLocalStorage = inject(LocalStorageService);
+  private readonly localStorageService = inject(LocalStorageService);
   private readonly legacyToastService = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly uiStateManager = inject(UIStateManager);
@@ -211,16 +211,16 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
     this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
     this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 0, isValid: true }));
     this.loadPackageDataForStep2().then(() => {
-    // Data yüklendikten sonra navigate et
-    setTimeout(() => {
-      this.selectedIndex = 1;
-      if (this.stepper) {
-        this.stepper.selectedIndex = 1;
-      }
-      this.store.dispatch(StepperActions.navigateToStep({ stepIndex: 1 }));
-      this.cdr.markForCheck();
-    }, 300);
-  });
+      // Data yüklendikten sonra navigate et
+      setTimeout(() => {
+        this.selectedIndex = 1;
+        if (this.stepper) {
+          this.stepper.selectedIndex = 1;
+        }
+        this.store.dispatch(StepperActions.navigateToStep({ stepIndex: 1 }));
+        this.cdr.markForCheck();
+      }, 300);
+    });
   };
 
   configureEditModeInPalletComponent = (): void => {
@@ -248,7 +248,7 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
 
   clearDraftData = (): void => {
     if (confirm('Draft verilerini silmek istediğinizden emin misiniz?')) {
-      this.legacyLocalStorage.clearStorage();
+      this.localStorageService.clearStorage();
       this.store.dispatch(StepperActions.resetStepper());
       this.cdr.markForCheck();
     }
@@ -415,7 +415,7 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private performFullReset(): void {
     this.uiStateManager.resetAllStates();
-    this.legacyLocalStorage.clearStorage();
+    this.localStorageService.clearStorage();
     this.resetStepperNavigation();
     this.order_id = '';
     this.clearStepCaches();
@@ -442,5 +442,65 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private async initializeComponent(): Promise<void> {
     this.cdr.markForCheck();
+  }
+
+  private configureChildComponents(): any {
+    // const step1data = this.localStorageService.restoreStep1Data();
+    // const step2data = this.localStorageService.restoreStep2Data();
+    // const step3data = this.localStorageService.restoreStep3Data();
+
+    // if(step1data){}
+
+    // 1. local storage kontrol et ve verileri oku
+    // 2. eger veri varsa drumu analiz et hangi durumdayiz
+    // durumlar: edit mode, yarim process, storage bos
+    // store verilerini yukle.
+    // 
+    // edit mode da 
+    // load order for edit ile order ve order deatillar getiriyoruz
+
+    //edit mode = yarim is = bos sayfa = 
+    // bos sayfa senaryosu
+    // kaydet butonu kalkacak
+    // 2 senaryo var
+    // 1 maneul fatura acma
+    // 2 fatura yukleme
+    // 1.1 ileri butonu ile ekrandaki veriler backende kayit edilir.
+    // 1.2 eger kullanici 2 ye gectikten sonra geri doner ve tekrar 2 ye donerse
+    // ngrx store isdirty flag ile api istegi gerekliligi kontrol edilir.
+    // 2.1 fatura yukelemeden sonra database e kayitli olmayan order ve order detailar bulunmakta
+    // ileri butonu ile bunlar veri tabanina gider.
+    // yine ileri geri durumunda isdirty flag kontorl edilir
+    // local storage her zaman eventlarda duzenli olarak guncellenir
+    // her biri kendi verisinden kendi sorumlu kendi yazacak child component icin
+    // sayfa refresh durumu 
+    // stepper component tum steplerin store larini local stage den doldurmakla sorumlu
+    // ============================================ 
+    // edit mode ve local bos
+    // edit mode ve local local dolu
+    // kaydedilmemis invoice sayfasi silinir. eger kullanici ileriye bastiysa veri tabani kaydi olusur 
+    // tamamlanmamais siparisler bolumunde bulabilir.
+    // yarim siparisler zaman asimindan sonra kaldirilir.
+    // ============================================ 
+    // normal mode ve local storage
+    // bu senaryoda veriler local storage dan getirilir
+    // daha sonra bu kullanici yeni bir siparis acmak isterse 
+    // ilgili butona basarak yeni siparise gecer.
+    // ileri butonuna 1 kere basildiysa eger bu tamamlanmamais siparise 
+    // siparisler bolumunden bulup geri donebilir.
+    // ileri butonuna hic basmadiysa local storage temizlenir kullanici 
+    // stepper i resetlemis olur
+    // normal mode ve local bos
+    // tertemiz bir stepper acilir`
+    // buton ismi dinamik olucak isdirty flagine gore "kaydet ve ilerle" veya "ilerle" olacak
+    // ============================================ 
+    // gorevler
+    // 1. localstorage dan veri cekme ve storu doldurma gorevi stepper componentte
+    // 2. veri tabanina kayit ve update islemi icin her component kendi verisinden sorumlu
+    // 3. islem sirasi icin sharedservice ve subject kullanilacak
+    // 4.
+
+
+
   }
 }
