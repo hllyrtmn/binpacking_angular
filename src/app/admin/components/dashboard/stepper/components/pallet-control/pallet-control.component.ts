@@ -289,7 +289,6 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   ngOnInit(): void {
-    console.log("palet component başlatıldı");
     this.loadPallets();
 
     // Store'dan veri yükleme işlemi
@@ -593,26 +592,6 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
       data: autoSaveData
     }));
   }
-
-  debugPackageIssues(): void {
-  const packages = this.packages();
-  console.log('=== PACKAGE DEBUG ===');
-
-  packages.forEach((pkg, index) => {
-    console.log(`Package ${index}:`, {
-      id: pkg.id,
-      name: pkg.name,
-      isUiPackageInstance: pkg instanceof UiPackage,
-      palletId: pkg.pallet?.id,
-      productCount: pkg.products?.length,
-      productsAreUiProduct: pkg.products?.every(p => p instanceof UiProduct),
-      products: pkg.products?.map(p => ({
-        name: p.name,
-        isUiProductInstance: p instanceof UiProduct
-      }))
-    });
-  });
-}
 
   packageTotalWeight(pkg: UiPackage): number {
     const palletWeight = Math.floor(pkg.pallet?.weight ?? 0);
@@ -1041,22 +1020,6 @@ dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
     this.isDragInProgress = true;
 
     const product = event.source.data as UiProduct;
-    console.log('=== DRAG DEBUG ===');
-  console.log('Product:', product);
-  console.log('Product is UiProduct?', product instanceof UiProduct);
-  console.log('Source container ID:', event.source.dropContainer.id);
-
-  const sourcePackage = this.packages().find(pkg =>
-    pkg.pallet && pkg.pallet.id === event.source.dropContainer.id
-  );
-
-  if (sourcePackage) {
-    console.log('Source package:', {
-      id: sourcePackage.id,
-      isUiPackage: sourcePackage instanceof UiPackage,
-      productInArray: sourcePackage.products.includes(product)
-    });
-  }
 
     this.currentDraggedProduct = product;
 
