@@ -533,12 +533,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   configureComponent(): void {
     this.repository.calculatePackageDetail().subscribe({
       next: (response) => {
-        if (
-          !response ||
-          !response.packages ||
-          !Array.isArray(response.packages) ||
-          response.packages.length === 0
-        ) {
+        if (response.packages.length === 0) {
           this.addNewEmptyPackage();
           return;
         }
