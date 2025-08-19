@@ -6,7 +6,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { StepperOrientation, MatStepperModule, MatStepper } from '@angular/material/stepper';
 import { Observable, Subject, combineLatest } from 'rxjs';
-import { map, take, takeUntil, distinctUntilChanged } from 'rxjs/operators';
+import { map, take, takeUntil, distinctUntilChanged, timeout, filter } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -260,21 +260,39 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
     this.cdr.markForCheck();
   };
 
-  ngOnInit(): Promise<void> {
-    return this.initializeComponentOptimized();
+  ngOnInit(): void {
+    this.initializeComponentOptimized().catch(error => {
+      console.error('Stepper initialization failed:', error);
+      this.handleInitializationFailure();
+    });
+  }
+
+  private handleInitializationFailure(error?: any): void {
+    console.error('Stepper initialization failed:', error);
+
+    // Edit mode'daysa anasayfaya yönlendirme
+    let isEditMode = false;
+    this.route.queryParams.pipe(take(1)).subscribe(params => {
+      isEditMode = params?.['mode'] === 'edit';
+    });
+
+    if (isEditMode) {
+      this.legacyToastService?.error('Edit mode yüklenirken hata oluştu. Lütfen tekrar deneyin.');
+      // Edit mode'da hata varsa query params'ı temizleyip aynı sayfada kal
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: {},
+        replaceUrl: true
+      });
+    } else {
+      this.legacyToastService?.error('Component yüklenirken hata oluştu');
+      this.store.dispatch(StepperActions.initializeStepper({}));
+      this.router.navigate(['/'], { queryParams: {} });
+    }
   }
 
   ngAfterViewInit(): void {
-    if (this.pendingEditData) {
-      setTimeout(() => {
-        this.loadDataToInvoiceUploadComponent(
-          this.pendingEditData!.order,
-          this.pendingEditData!.orderDetails
-        );
-        this.pendingEditData = null;
-        this.cdr.markForCheck();
-      }, 100);
-    }
+    this.cdr.markForCheck();
   }
 
   ngOnDestroy(): void {
@@ -286,55 +304,129 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private async initializeComponentOptimized(): Promise<void> {
     try {
+      // Önce current step subscription'ı başlat
       this.currentStep$.subscribe(step => {
         this.selectedIndex = step;
         this.cdr.markForCheck();
       });
 
-      this.route.queryParams.pipe(
-        distinctUntilChanged(),
-        takeUntil(this.destroy$)
-      ).subscribe(async (params) => {
-        const editOrderId = params['orderId'];
-        const editMode = params['mode'] === 'edit';
+      // Route params'ı bekle ve işle
+      const params = await this.route.queryParams.pipe(take(1)).toPromise();
+      const editOrderId = (params ?? {})['orderId'];
+      const editMode = (params ?? {})['mode'] === 'edit';
 
-        if (editMode && editOrderId) {
-          this.store.dispatch(StepperActions.enableEditMode({ orderId: editOrderId }));
+      console.log('Initialization params:', { editOrderId, editMode }); // Debug log
+
+      if (editMode && editOrderId) {
+        console.log('Starting edit mode initialization...'); // Debug log
+        this.store.dispatch(StepperActions.enableEditMode({ orderId: editOrderId }));
+
+        try {
           await this.loadOrderForEdit(editOrderId);
-        } else {
+          console.log('Edit mode initialization completed successfully'); // Debug log
+        } catch (editError) {
+          console.error('Edit mode specific error:', editError);
+          // Edit mode özel hatası - anasayfaya gitme, sadece normal mode'a geç
+          this.legacyToastService?.error('Edit verileri yüklenirken hata oluştu');
           this.store.dispatch(StepperActions.initializeStepper({}));
-          await this.initializeComponent();
+          // Query params'ı temizle ama aynı sayfada kal
+          this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: {},
+            replaceUrl: true
+          });
+          return;
         }
-        this.cdr.markForCheck();
-      });
+      } else {
+        this.store.dispatch(StepperActions.initializeStepper({}));
+        this.initializeComponent();
+      }
+
+      // Son olarak change detection'ı triggerla
+      this.cdr.detectChanges();
     } catch (error) {
+      console.error('General initialization error:', error);
+      this.handleInitializationFailure(error);
     }
   }
 
   private async loadOrderForEdit(orderId: string): Promise<void> {
     try {
+      console.log('Loading order for edit:', orderId); // Debug log
+
       this.uiStateManager.setLoading(true);
       this.cdr.markForCheck();
 
+      // Önce order'ı kontrol et
+      const order = await this.orderService.getById(orderId).toPromise();
+      if (!order) {
+        throw new Error(`Order not found: ${orderId}`);
+      }
+      console.log('Order loaded:', order); // Debug log
+
+      // Sonra order details'ı yükle
       const orderDetailsResponse = await this.repositoryService.orderDetailsOriginal(orderId).toPromise();
-      this.orderDetailManager.setOrderDetails(orderDetailsResponse);
+      const packageDetailResponse = await this.repositoryService.getPackageDetails(orderId).toPromise();
 
-      if (orderDetailsResponse && orderDetailsResponse.length > 0) {
-        const order = await this.orderService.getById(orderId).toPromise();
-        if (order) {
-          this.loadDataToInvoiceUploadComponent(order, orderDetailsResponse);
-          this.syncEditModeDataToNgRx(orderId);
-          this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
-
-          setTimeout(() => {
-            this.selectedIndex = 1;
-            this.cdr.markForCheck();
-          }, 10000);
-        }
+      if (!orderDetailsResponse || orderDetailsResponse.length === 0) {
+        throw new Error(`Order details not found for order: ${orderId}`);
       }
 
+      if (!packageDetailResponse || packageDetailResponse.packages.length === 0) {
+        throw new Error(`Package details not found for order: ${orderId}`);
+      }
+      console.log('Order details loaded:', orderDetailsResponse.length, 'items'); // Debug log
+
+      // Order detail manager'a set et
+      this.orderDetailManager.setOrderDetails(orderDetailsResponse);
+
+      // Store'a yaz
+      this.store.dispatch(StepperActions.initializeStep1State({
+        order: order,
+        orderDetails: orderDetailsResponse,
+        hasFile: false,
+        fileName: 'Edit Mode Data'
+      }));
+
+      this.store.dispatch(StepperActions.initializeStep2State({
+        packages: packageDetailResponse.packages || [],
+        availableProducts: packageDetailResponse.remainingProducts || []
+      }));
+
+      // Store yazma işleminin tamamlanmasını bekle
+      await this.store.select(StepperSelectors.selectStep1Order)
+        .pipe(
+          filter(storeOrder => storeOrder?.id === order.id),
+          take(1),
+          timeout(5000) // Timeout'u artır
+        ).toPromise();
+
+      console.log('Store state updated successfully'); // Debug log
+
+      // Step'i tamamlandı olarak işaretle
+      this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
+      this.selectedIndex = 1;
+      this.cdr.detectChanges();
+
+      console.log('Edit mode setup completed'); // Debug log
+
     } catch (error) {
-      this.legacyToastService?.error('Order verileri yüklenirken hata oluştu');
+      console.error('Edit mode load failed:', error);
+
+      // Hata türüne göre mesaj ver
+      if (error instanceof Error) {
+        if (error.message.includes('not found')) {
+          this.legacyToastService?.error('Belirtilen order bulunamadı');
+        } else if (error.message.includes('timeout')) {
+          this.legacyToastService?.error('Veri yükleme zaman aşımına uğradı');
+        } else {
+          this.legacyToastService?.error('Order verileri yüklenirken hata oluştu: ' + error.message);
+        }
+      } else {
+        this.legacyToastService?.error('Bilinmeyen bir hata oluştu');
+      }
+
+      throw error; // Hatayı yukarı fırlat ki üst seviye catch yakalasın
     } finally {
       this.uiStateManager.setLoading(false);
       this.cdr.markForCheck();
@@ -348,23 +440,13 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private loadDataToInvoiceUploadComponent(order: any, orderDetails: any[]): void {
+    // Store'a direkt yaz, component loading'i kendi halletsin
     this.store.dispatch(StepperActions.initializeStep1State({
       order: order,
       orderDetails: orderDetails,
       hasFile: false,
       fileName: 'Edit Mode Data'
     }));
-    if (!this.invoiceUploadComponent) {
-
-      this.pendingEditData = { orderId: order.id, order, orderDetails };
-      return;
-    }
-    setTimeout(() => {
-      if (this.invoiceUploadComponent) {
-        (this.invoiceUploadComponent as any).restoreFromSession?.();
-      }
-      this.cdr.markForCheck();
-    }, 5000);
   }
 
   private syncEditModeDataToNgRx(orderId: string): void {

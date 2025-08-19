@@ -1,4 +1,5 @@
 export const environment = {
     production: true,
-    name: 'deploy'
+    name: 'deploy',
+    apiUrl: 'https://api.industricode.com/api'
 };

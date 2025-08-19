@@ -29,7 +29,6 @@
               {
                 "glob": "**/*",
                 "input": "public"
-
               },
               "src/assets"
             ],
@@ -42,6 +41,16 @@
           },
           "configurations": {
             "production": {
+              "optimization": true,
+              "outputHashing": "all",
+              "sourceMap": false,
+              "extractLicenses": false,
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ],
               "budgets": [
                 {
                   "type": "initial",
@@ -53,8 +62,7 @@
                   "maximumWarning": "1MB",
                   "maximumError": "8MB"
                 }
-              ],
-              "outputHashing": "all"
+              ]
             },
             "development": {
               "optimization": false,

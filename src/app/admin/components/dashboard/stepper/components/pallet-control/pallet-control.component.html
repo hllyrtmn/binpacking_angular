@@ -64,7 +64,7 @@
         #productsList="cdkDropList"
         id="productsList"
         [cdkDropListData]="availableProducts()"
-        [cdkDropListConnectedTo]="palletProductsLists()"
+        [cdkDropListConnectedTo]="palletDropListIds()"
         class="inventory-list"
         (cdkDropListDropped)="dropProductToPallet($event)">
 
@@ -103,7 +103,7 @@
           </div>
         </div>
 
-        <div class="empty-state" *ngIf="availableProducts.length === 0">
+        <div class="empty-state" *ngIf="availableProducts().length === 0">
           <mat-icon>done_all</mat-icon>
           <p>Tüm ürünler paletlere yerleştirildi.</p>
         </div>
@@ -176,7 +176,7 @@
             cdkDropList
             [id]="package.id"
             [cdkDropListData]="[]"
-            [cdkDropListConnectedTo]="['palletsList']"
+            [cdkDropListConnectedTo]="['availablePalletsList']"
             class="package-dropzone"
             (cdkDropListDropped)="dropPalletToPackage($event)">
 
@@ -200,14 +200,14 @@
               <div
                 cdkDropList
                 [id]="package.pallet.id"
-                [cdkDropListData]="package.productsSignal()"
-                [cdkDropListConnectedTo]="palletProductsLists"
+                [cdkDropListData]="package.products"
+                [cdkDropListConnectedTo]="palletDropListIds()"
                 class="pallet-content"
                 (cdkDropListDropped)="dropProductToPallet($event)">
 
                 <div
                   class="pallet-item"
-                  *ngFor="let product of package.productsSignal(); let j = index"
+                  *ngFor="let product of package.products; let j = index"
                   cdkDrag
                   [cdkDragData]="product"
                   (cdkDragStarted)="dragStarted($event)"
@@ -228,7 +228,7 @@
                 </div>
 
                 <!-- Boş palet mesajı -->
-                <div class="empty-state" *ngIf="package.productsSignal().length === 0">
+                <div class="empty-state" *ngIf="package.products.length === 0">
                   <mat-icon>drag_indicator</mat-icon>
                   <p>Bu palete ürün sürükleyin</p>
                 </div>
@@ -247,13 +247,13 @@
                   <div class="metric efficiency-metric">
                     <mat-icon>analytics</mat-icon>
                     <div class="efficiency-container">
-                      <span class="efficiency-value">{{ getPalletFillPercentage(package.pallet, package.productsSignal()) }}%</span>
+                      <span class="efficiency-value">{{ getPalletFillPercentage(package.pallet, package.products) }}%</span>
                       <div class="efficiency-bar">
                         <div class="efficiency-fill"
-                             [style.width.%]="getPalletFillPercentage(package.pallet, package.productsSignal())"
-                             [class.high-efficiency]="getPalletFillPercentage(package.pallet, package.productsSignal()) >= 80"
-                             [class.medium-efficiency]="getPalletFillPercentage(package.pallet, package.productsSignal()) >= 50 && getPalletFillPercentage(package.pallet, package.productsSignal()) < 80"
-                             [class.low-efficiency]="getPalletFillPercentage(package.pallet, package.productsSignal()) < 50">
+                             [style.width.%]="getPalletFillPercentage(package.pallet, package.products)"
+                             [class.high-efficiency]="getPalletFillPercentage(package.pallet, package.products) >= 80"
+                             [class.medium-efficiency]="getPalletFillPercentage(package.pallet, package.products) >= 50 && getPalletFillPercentage(package.pallet, package.products) < 80"
+                             [class.low-efficiency]="getPalletFillPercentage(package.pallet, package.products) < 50">
                         </div>
                       </div>
                     </div>
@@ -282,9 +282,9 @@
       <div
         cdkDropList
         #palletsList="cdkDropList"
-        id="palletsList"
+        id="availablePalletsList"
         [cdkDropListData]="availablePallets()"
-        [cdkDropListConnectedTo]="packageIds()"
+        [cdkDropListConnectedTo]="packageDropListIds()"
         class="pallets-list"
         (cdkDropListDropped)="dropPalletToPackage($event)">
 

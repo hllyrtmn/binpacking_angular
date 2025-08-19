@@ -50,6 +50,15 @@ export class RepositoryService {
       .get<any>(`${this.api.getApiUrl()}/orders/order-details/?order_id=${id}`).pipe(map((response)=>response.results));
   }
 
+  getPackageDetails(order_id: string = this.getOrderId()): Observable<{packages: any[], remainingProducts: any[]}> {
+    return this.http
+      .get<any>(`${this.api.getApiUrl()}/logistics/package-details/?orderId=${order_id}/`)
+      .pipe(map((response) =>({
+        packages: mapPackageDetailToPackage(response.results),
+        remainingProducts: mapOrderDetailsToUiProductsSafe(response.remaining_order_details)
+      }) ));
+  }
+
   pallets(): Observable<any> {
     return this.http
       .get<any>(`${this.api.getApiUrl()}/logistics/pallets/`, {

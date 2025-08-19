@@ -1,11 +1,4 @@
 <ng-container *ngIf="vm$ | async as vm">
-  <div style="background: yellow; padding: 10px; margin: 10px;">
-  <h4>Debug Info:</h4>
-  <p>Step 0 completed: {{ getStepCompleted(0) }}</p>
-  <p>Step 1 editable: {{ getStepEditable(1) }}</p>
-  <p>Current step: {{ selectedIndex }}</p>
-  <p>Edit mode: {{ isEditMode$ | async }}</p>
-</div>
   <mat-stepper
     #stepper
     class="responsive-stepper"
@@ -65,26 +58,6 @@
       >}
     </mat-step>
   </mat-stepper>
-
-  @if(true){
-    <br><br><br><br><br>
-  <ng-container>
-    <div class="debug-info"style="margin-top:110px">
-      <h4>🐛 Debug Info (Performance Optimized)</h4>
-      <p><strong>Current Step:</strong> {{ vm.currentStep }}</p>
-      <p><strong>Edit Mode:</strong> {{ vm.isEditMode }}</p>
-      <p><strong>Edit Order ID:</strong> {{ vm.editOrderId }}</p>
-      <p>
-        <strong>Progress:</strong> {{ vm.stepperSummary.progressPercentage }}%
-      </p>
-      <p>
-        <strong>Completed Steps:</strong>
-        {{ vm.stepperSummary.completedSteps | json }}
-      </p>
-    </div>
-  </ng-container>
-
-  }
 </ng-container>
 
 @if (!(vm$ | async)) {
