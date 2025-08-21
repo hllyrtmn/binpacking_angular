@@ -42,7 +42,6 @@ export class InvoiceDataLoaderService {
 
   private saveCacheToStorage(): void {
     this.localStorageService.setItem(this.CACHE_KEY, JSON.stringify(this.cachedData));
-    console.log('💾 Cache localStorage\'a kaydedildi');
   }
 
   loadTargetCompanies(): Observable<any[]> {

@@ -1820,6 +1820,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
 
             if (response && response.file) {
               this.reportFiles.push(response.file);
+              this.cdr.detectChanges();
             }
 
             this.reportFiles.forEach(file => file.name);
