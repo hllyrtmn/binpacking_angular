@@ -262,6 +262,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   private loadReferenceData(): void {
+
     const dataSub = this.dataLoaderService.loadAllReferenceData().subscribe({
       next: (data) => {
         this.referenceData = data;

@@ -14,16 +14,15 @@
     height: 2em;
     width: 2em;
 }
-
-.profile-picture {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 6px solid #D6BB86;
-    background-color: #ffffff;
-    transition: opacity 0.3s ease;
+.profile-image {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  object-position: center;
+  /* Image loading optimizasyonu */
+  image-rendering: -webkit-optimize-contrast;
 }
+
 
 /* Logo Styles */
 .logo-container {

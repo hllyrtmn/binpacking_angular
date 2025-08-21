@@ -19,6 +19,7 @@ import { provideEffects } from '@ngrx/effects';
 import { provideStoreDevtools } from '@ngrx/store-devtools';
 import { reducers } from './store';
 import { StepperEffects } from './store/stepper/stepper.effects';
+import { UserEffects } from './store/user/user.effects';
 
 export function appInitialization() {
   const configService = inject(ConfigService);
@@ -56,7 +57,7 @@ export const appConfig: ApplicationConfig = {
       provide: ErrorHandler, useClass: GlobalErrorHandler
     },
     provideStore(reducers),
-    provideEffects([StepperEffects]),
+    provideEffects([StepperEffects,UserEffects]),
     provideStoreDevtools({
       maxAge: 25,
       logOnly: false

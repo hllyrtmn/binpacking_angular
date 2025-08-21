@@ -17,7 +17,7 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 import { ToastService } from '../../../../../../services/toast.service';
-import { switchMap, takeUntil, catchError, finalize } from 'rxjs/operators';
+import { switchMap, takeUntil, catchError, finalize, tap } from 'rxjs/operators';
 import { Subject, EMPTY, of } from 'rxjs';
 import { AutoSaveService } from '../../services/auto-save.service';
 import { LocalStorageService } from '../../services/local-storage.service';
@@ -1803,6 +1803,9 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         .pipe(
           switchMap(response => {
             return this.repositoryService.createTruckPlacementReport();
+          }),tap(() => {
+            this.hasUnsavedChanges = false;
+            this.dataChangeHistory = []
           }),
           catchError(error => {
             this.toastService.error('İşlem sırasında hata oluştu:', error);

@@ -20,6 +20,8 @@ import { UserService } from '../../../services/user.service';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ForgotPasswordDialogComponent } from './forgot-password-dialog/forgot-password-dialog.component';
 import { MatSelectModule } from '@angular/material/select';
+import { Store } from '@ngrx/store';
+import { AppState, loadUser, selectUser } from '../../../store';
 
 @Component({
   selector: 'app-profile',
@@ -46,6 +48,8 @@ export class ProfileComponent implements OnInit {
   private fb = inject(FormBuilder);
   private snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog); // Dialog servisini inject edin
+  private readonly store = inject(Store<AppState>);
+  user$ = this.store.select(selectUser);
 
   formChanged = false; // Form değişti mi?
   changedFields: Partial<User> = {}; // Değişen alanlar
@@ -166,12 +170,15 @@ export class ProfileComponent implements OnInit {
 
   loadProfile() {
     this.isLoading = true;
-    this.userService.getProfile().subscribe({
+    this.store.dispatch(loadUser());
+    this.user$.subscribe({
       next: (user) => {
         this.userProfile = user;
-        this.patchProfileForm(user);
-        if (user.profile_picture) {
-          this.profilePictureUrl = user.profile_picture;
+        if (user) {
+          this.patchProfileForm(user);
+          if (user.profile_picture) {
+            this.profilePictureUrl = user.profile_picture;
+          }
         }
         this.isLoading = false;
 

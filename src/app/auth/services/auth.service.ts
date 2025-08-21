@@ -1,10 +1,13 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable, Signal } from '@angular/core';
 import { User } from '../models/user.model';
-import { catchError, map, Observable, throwError } from 'rxjs';
+import { catchError, map, Observable, take, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
+import { Store } from '@ngrx/store';
+import { AppState, loadUser, loadUserSuccess } from '../../store';
+import { Actions, ofType } from '@ngrx/effects';
 
 @Injectable({
   providedIn: 'root'
@@ -19,7 +22,8 @@ export class AuthService {
   currentUser: User | null = null;
   private apiService = inject(ApiService);
   private toastService = inject(ToastService)
-  constructor(private http: HttpClient, private router: Router) { }
+  private store = inject(Store<AppState>)
+  constructor(private http: HttpClient, private router: Router,private actions$: Actions,) { }
 
   // Sign-up
   signUp(user: User): Observable<any> {
@@ -35,14 +39,21 @@ export class AuthService {
       next: (res) => {
         localStorage.setItem('access_token', res.access);
         localStorage.setItem('refresh_token', res.refresh);
-        const redirectUrlAfterLogin = localStorage.getItem('redirectUrlAfterLogin');
-        this.toastService.success("Giriş Başarılı","Başarılı")
-        if (redirectUrlAfterLogin) {
-          localStorage.removeItem('redirectUrlAfterLogin');
-          this.router.navigate([redirectUrlAfterLogin]);
-        } else {
-          this.router.navigate(['/']);
-        }
+        this.store.dispatch(loadUser());
+        this.actions$.pipe(
+        ofType(loadUserSuccess),
+        take(1) // Sadece bir kez dinle
+        ).subscribe(() => {
+          const redirectUrlAfterLogin = localStorage.getItem('redirectUrlAfterLogin');
+          this.toastService.success("Giriş Başarılı", "Başarılı");
+
+          if (redirectUrlAfterLogin) {
+            localStorage.removeItem('redirectUrlAfterLogin');
+            this.router.navigate([redirectUrlAfterLogin]);
+          } else {
+            this.router.navigate(['/']);
+          }
+        });
       },
       error: (err) => {
         this.handleError
@@ -68,15 +79,6 @@ export class AuthService {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     this.router.navigate(['/auth/login']);
-  }
-
-  // User profile
-  getUserProfile(id: string | number): Observable<any> {
-    const api = `${this.apiService.getApiUrl()}/user-profile/${id}`;
-    return this.http.get(api, { headers: this.headers }).pipe(
-      map((res) => res || {}),
-      catchError(this.handleError)
-    );
   }
 
   // Error handling

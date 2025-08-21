@@ -262,14 +262,11 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit(): void {
     this.initializeComponentOptimized().catch(error => {
-      console.error('Stepper initialization failed:', error);
       this.handleInitializationFailure();
     });
   }
 
   private handleInitializationFailure(error?: any): void {
-    console.error('Stepper initialization failed:', error);
-
     // Edit mode'daysa anasayfaya yönlendirme
     let isEditMode = false;
     this.route.queryParams.pipe(take(1)).subscribe(params => {
@@ -315,17 +312,13 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
       const editOrderId = (params ?? {})['orderId'];
       const editMode = (params ?? {})['mode'] === 'edit';
 
-      console.log('Initialization params:', { editOrderId, editMode }); // Debug log
 
       if (editMode && editOrderId) {
-        console.log('Starting edit mode initialization...'); // Debug log
         this.store.dispatch(StepperActions.enableEditMode({ orderId: editOrderId }));
 
         try {
           await this.loadOrderForEdit(editOrderId);
-          console.log('Edit mode initialization completed successfully'); // Debug log
         } catch (editError) {
-          console.error('Edit mode specific error:', editError);
           // Edit mode özel hatası - anasayfaya gitme, sadece normal mode'a geç
           this.legacyToastService?.error('Edit verileri yüklenirken hata oluştu');
           this.store.dispatch(StepperActions.initializeStepper({}));
@@ -345,14 +338,12 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
       // Son olarak change detection'ı triggerla
       this.cdr.detectChanges();
     } catch (error) {
-      console.error('General initialization error:', error);
       this.handleInitializationFailure(error);
     }
   }
 
   private async loadOrderForEdit(orderId: string): Promise<void> {
     try {
-      console.log('Loading order for edit:', orderId); // Debug log
 
       this.uiStateManager.setLoading(true);
       this.cdr.markForCheck();
@@ -362,7 +353,6 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
       if (!order) {
         throw new Error(`Order not found: ${orderId}`);
       }
-      console.log('Order loaded:', order); // Debug log
 
       // Sonra order details'ı yükle
       const orderDetailsResponse = await this.repositoryService.orderDetailsOriginal(orderId).toPromise();
@@ -375,7 +365,6 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
       if (!packageDetailResponse || packageDetailResponse.packages.length === 0) {
         throw new Error(`Package details not found for order: ${orderId}`);
       }
-      console.log('Order details loaded:', orderDetailsResponse.length, 'items'); // Debug log
 
       // Order detail manager'a set et
       this.orderDetailManager.setOrderDetails(orderDetailsResponse);
@@ -401,18 +390,12 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
           timeout(5000) // Timeout'u artır
         ).toPromise();
 
-      console.log('Store state updated successfully'); // Debug log
-
       // Step'i tamamlandı olarak işaretle
       this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
       this.selectedIndex = 1;
       this.cdr.detectChanges();
 
-      console.log('Edit mode setup completed'); // Debug log
-
     } catch (error) {
-      console.error('Edit mode load failed:', error);
-
       // Hata türüne göre mesaj ver
       if (error instanceof Error) {
         if (error.message.includes('not found')) {
@@ -487,7 +470,6 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       }
     } catch (error) {
-      console.error('Error loading package data:', error);
       this.store.dispatch(StepperActions.setStepLoading({
         stepIndex: 1,
         loading: false
@@ -537,11 +519,11 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
     // 2. eger veri varsa drumu analiz et hangi durumdayiz
     // durumlar: edit mode, yarim process, storage bos
     // store verilerini yukle.
-    // 
-    // edit mode da 
+    //
+    // edit mode da
     // load order for edit ile order ve order deatillar getiriyoruz
 
-    //edit mode = yarim is = bos sayfa = 
+    //edit mode = yarim is = bos sayfa =
     // bos sayfa senaryosu
     // kaydet butonu kalkacak
     // 2 senaryo var
@@ -555,27 +537,27 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
     // yine ileri geri durumunda isdirty flag kontorl edilir
     // local storage her zaman eventlarda duzenli olarak guncellenir
     // her biri kendi verisinden kendi sorumlu kendi yazacak child component icin
-    // sayfa refresh durumu 
+    // sayfa refresh durumu
     // stepper component tum steplerin store larini local stage den doldurmakla sorumlu
-    // ============================================ 
+    // ============================================
     // edit mode ve local bos
     // edit mode ve local local dolu
-    // kaydedilmemis invoice sayfasi silinir. eger kullanici ileriye bastiysa veri tabani kaydi olusur 
+    // kaydedilmemis invoice sayfasi silinir. eger kullanici ileriye bastiysa veri tabani kaydi olusur
     // tamamlanmamais siparisler bolumunde bulabilir.
     // yarim siparisler zaman asimindan sonra kaldirilir.
-    // ============================================ 
+    // ============================================
     // normal mode ve local storage
     // bu senaryoda veriler local storage dan getirilir
-    // daha sonra bu kullanici yeni bir siparis acmak isterse 
+    // daha sonra bu kullanici yeni bir siparis acmak isterse
     // ilgili butona basarak yeni siparise gecer.
-    // ileri butonuna 1 kere basildiysa eger bu tamamlanmamais siparise 
+    // ileri butonuna 1 kere basildiysa eger bu tamamlanmamais siparise
     // siparisler bolumunden bulup geri donebilir.
-    // ileri butonuna hic basmadiysa local storage temizlenir kullanici 
+    // ileri butonuna hic basmadiysa local storage temizlenir kullanici
     // stepper i resetlemis olur
     // normal mode ve local bos
     // tertemiz bir stepper acilir`
     // buton ismi dinamik olucak isdirty flagine gore "kaydet ve ilerle" veya "ilerle" olacak
-    // ============================================ 
+    // ============================================
     // gorevler
     // 1. localstorage dan veri cekme ve storu doldurma gorevi stepper componentte
     // 2. veri tabanina kayit ve update islemi icin her component kendi verisinden sorumlu

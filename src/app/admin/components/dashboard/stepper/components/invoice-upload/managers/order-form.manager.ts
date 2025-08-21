@@ -1,10 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { FormData } from '../models/invoice-upload-interfaces';
 import { FileUploadManager } from './file-upload.manager';
 import { v4 as uuidv4 } from 'uuid';
 import { Order } from '../../../../../../../models/order.interface';
-import { RepositoryService } from '../../../services/repository.service';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +10,6 @@ import { RepositoryService } from '../../../services/repository.service';
 export class OrderFormManager {
   private readonly formBuilder = inject(FormBuilder);
   private readonly fileUploadManager = inject(FileUploadManager);
-  private readonly repositoryService = inject(RepositoryService); // RepositoryService'i inject et
 
   private uploadForm!: FormGroup;
   private order: Order | null = null;

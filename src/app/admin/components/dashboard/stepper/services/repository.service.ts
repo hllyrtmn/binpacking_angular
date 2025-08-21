@@ -71,7 +71,7 @@ export class RepositoryService {
       );
   }
 
-  trucks(): Observable<any> {
+  getTrucks(): Observable<any> {
     return this.http.get<Truck>(`${this.api.getApiUrl()}/logistics/trucks/`, {
       params: new HttpParams().set('limit', 30).set('offset', 0),
     });

@@ -859,4 +859,49 @@ export class LocalStorageService {
       };
     }
   }
+
+    /**
+   * ✅ Generic localStorage methods for other services
+   */
+  setItem(key: string, value: string): void {
+    try {
+      localStorage.setItem(key, value);
+    } catch (error) {
+      this.handleEnhancedStorageError(error);
+    }
+  }
+
+  getItem(key: string): string | null {
+    try {
+      return localStorage.getItem(key);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  removeItem(key: string): void {
+    try {
+      localStorage.removeItem(key);
+    } catch (error) {
+    }
+  }
+
+  /**
+   * ✅ Generic object storage helper
+   */
+  setObject(key: string, value: any): void {
+    try {
+      this.setItem(key, JSON.stringify(value));
+    } catch (error) {
+    }
+  }
+
+  getObject<T>(key: string): T | null {
+    try {
+      const stored = this.getItem(key);
+      return stored ? JSON.parse(stored) : null;
+    } catch (error) {
+      return null;
+    }
+  }
 }
