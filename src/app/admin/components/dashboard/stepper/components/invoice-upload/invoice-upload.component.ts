@@ -68,7 +68,7 @@ import { INVOICE_UPLOAD_CONSTANTS } from './constants/invoice-upload.constants';
 import { AppState } from '../../../../../../store';
 import { Store } from '@ngrx/store';
 
-import { selectStep1Order, selectStep1OrderDetails, selectStep1IsDirty,
+import { selectOrder, selectStep1OrderDetails, selectStep1IsDirty,
          selectStep1HasFile, selectStep1FileName } from '../../../../../../store/stepper/stepper.selectors';
 import { CompanyRelation } from '../../../../../../models/company-relation.interface';
 import { Truck } from '../../../../../../models/truck.interface';
@@ -124,7 +124,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
   private readonly store = inject(Store<AppState>);
   // NgRx Step1 Migration Observables
-  public step1Order$ = this.store.select(selectStep1Order);
+  public order$ = this.store.select(selectOrder);
   public step1OrderDetails$ = this.store.select(selectStep1OrderDetails);
   public step1IsDirty$ = this.store.select(selectStep1IsDirty);
   public step1HasFile$ = this.store.select(selectStep1HasFile);
@@ -132,7 +132,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
   // NgRx Observables
   public isEditMode$ = this.store.select(StepperSelectors.selectIsEditMode);
-  public editOrderId$ = this.store.select(StepperSelectors.selectEditOrderId);
 
   private readonly cdr = inject(ChangeDetectorRef);
   // Form and data
@@ -152,7 +151,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   // Getters for template access
   get order(): Order | null {
     let currentOrder: Order | null = null;
-    this.step1Order$.pipe(take(1)).subscribe(order => currentOrder = order);
+    this.order$.pipe(take(1)).subscribe(order => currentOrder = order);
     return currentOrder
   }
 
@@ -288,19 +287,13 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       const restoredStep2Data = this.localService.restoreStep2Data();
       const restoredStep3Data = this.localService.restoreStep3Data();
       if (restoredStep1Data) {
-        this.store.dispatch(StepperActions.initializeStep1State({
-          order: restoredStep1Data.order,
-          orderDetails: restoredStep1Data.orderDetails,
-          hasFile: restoredStep1Data.hasFile,
-          fileName: restoredStep1Data.fileName
-        }));
         this.calculateTotals();
         this.toastService.info('LocalStorage\'dan NgRx\'e restore edildi');
       }
       if(restoredStep2Data){
         this.store.dispatch(StepperActions.initializeStep2State({
           packages: restoredStep2Data.packages,
-          availableProducts: restoredStep2Data.availableProducts
+          remainingProducts: restoredStep2Data.availableProducts
         }))
         this.store.dispatch(StepperActions.setStepCompleted({stepIndex:0}))
       }
@@ -562,7 +555,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     let hasValidOrder = false;
     let hasValidOrderDetails = false;
 
-    this.step1Order$.pipe(take(1)).subscribe(order => {
+    this.order$.pipe(take(1)).subscribe(order => {
       hasValidOrder = !!(order?.date && order?.company_relation && order?.truck && order?.weight_type);
     });
 

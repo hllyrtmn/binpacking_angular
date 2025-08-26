@@ -1,6 +1,6 @@
 import {
-  Component, inject, ViewChild, OnDestroy, OnInit,
-  ChangeDetectionStrategy, ChangeDetectorRef, AfterViewInit
+  Component, inject, ViewChild,  OnInit,
+  ChangeDetectionStrategy, ChangeDetectorRef,
 } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BreakpointObserver } from '@angular/cdk/layout';
@@ -12,6 +12,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { AsyncPipe, CommonModule } from '@angular/common';
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 // Components
 import { InvoiceUploadComponent } from './components/invoice-upload/invoice-upload.component';
@@ -29,9 +30,6 @@ import { LocalStorageService } from './services/local-storage.service';
 import { ToastService } from '../../../../services/toast.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UIStateManager } from './components/invoice-upload/managers/ui-state.manager';
-import { RepositoryService } from './services/repository.service';
-import { OrderService } from '../../services/order.service';
-import { OrderDetailManager } from './components/invoice-upload/managers/order-detail.manager';
 
 @Component({
   selector: 'app-stepper',
@@ -39,7 +37,7 @@ import { OrderDetailManager } from './components/invoice-upload/managers/order-d
     MatStepperModule, FormsModule, LoadingComponent, ReactiveFormsModule,
     MatFormFieldModule, MatInputModule, MatButtonModule, AsyncPipe,
     InvoiceUploadComponent, PalletControlComponent, LoadingComponent,
-    ResultStepComponent, CommonModule
+    ResultStepComponent, CommonModule, MatProgressSpinner
   ],
   providers: [
   ],
@@ -47,75 +45,32 @@ import { OrderDetailManager } from './components/invoice-upload/managers/order-d
   styleUrl: './stepper.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
+export class StepperComponent implements OnInit{
 
   // View References
   @ViewChild('stepper') stepper!: MatStepper;
-  @ViewChild('invoiceUploadComponent') invoiceUploadComponent!: InvoiceUploadComponent;
-  @ViewChild('palletControlComponent') palletControlComponent!: PalletControlComponent;
-  @ViewChild('resultStepComponent') resultStepComponent!: ResultStepComponent;
-
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly localStorageService = inject(LocalStorageService);
   private readonly legacyToastService = inject(ToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly uiStateManager = inject(UIStateManager);
-  private readonly repositoryService = inject(RepositoryService);
-  private readonly orderService = inject(OrderService);
-  private readonly orderDetailManager = inject(OrderDetailManager);
+
   private readonly store = inject(Store<AppState>);
   private readonly router = inject(Router);
 
   private readonly destroy$ = new Subject<void>();
-  private pendingEditData: { orderId: string; order: any; orderDetails: any[] } | null = null;
 
-  public step0Loading$ = this.store.select(StepperSelectors.selectIsStepLoading(0));
-  public step1Loading$ = this.store.select(StepperSelectors.selectIsStepLoading(1));
-  public step2Loading$ = this.store.select(StepperSelectors.selectIsStepLoading(2));
+  public invoiceUploadLoadingSignal = this.store.selectSignal(StepperSelectors.selectIsStepLoading(0));
+  public palletControlLoadingSignal = this.store.selectSignal(StepperSelectors.selectIsStepLoading(1));
+  public resultControlLoadingSignal = this.store.selectSignal(StepperSelectors.selectIsStepLoading(2));
+  public completedStepsSignal = this.store.selectSignal(StepperSelectors.selectCompletedStep);
+  public isEditModeSignal = this.store.selectSignal(StepperSelectors.selectIsEditMode);
 
-  public readonly currentStep$ = this.store.select(StepperSelectors.selectCurrentStep)
-    .pipe(
-      distinctUntilChanged(),
-      takeUntil(this.destroy$)
-    );
+  public selectedIndexSignal = this.store.selectSignal(StepperSelectors.selectCurrentStep)
+  public orderIdSignal = this.store.selectSignal((StepperSelectors.selectOrder))
 
-  public readonly isEditMode$ = this.store.select(StepperSelectors.selectIsEditMode)
-    .pipe(
-      distinctUntilChanged(),
-      takeUntil(this.destroy$)
-    );
-
-  public readonly editOrderId$ = this.store.select(StepperSelectors.selectEditOrderId)
-    .pipe(
-      distinctUntilChanged(),
-      takeUntil(this.destroy$)
-    );
-
-  public readonly stepperSummary$ = this.store.select(StepperSelectors.selectStepperSummary)
-    .pipe(
-      distinctUntilChanged((prev, curr) =>
-        prev.currentStep === curr.currentStep &&
-        prev.completedSteps.length === curr.completedSteps.length &&
-        prev.isEditMode === curr.isEditMode
-      ),
-      takeUntil(this.destroy$)
-    );
-
-  public readonly vm$ = combineLatest({
-    currentStep: this.currentStep$,
-    isEditMode: this.isEditMode$,
-    editOrderId: this.editOrderId$,
-    stepperSummary: this.stepperSummary$
-  }).pipe(
-    takeUntil(this.destroy$)
-  );
-
-  public selectedIndex: number = 0;
-  public order_id: string = '';
   public stepperOrientation: Observable<StepperOrientation>;
 
-  private stepCompletedCache = new Map<number, boolean>();
-  private stepEditableCache = new Map<number, boolean>();
 
   constructor() {
     const breakpointObserver = inject(BreakpointObserver);
@@ -128,105 +83,13 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
         takeUntil(this.destroy$)
       );
 
-    this.setupOptimizedChangeDetection();
-  }
-
-  private setupOptimizedChangeDetection(): void {
-    this.currentStep$.subscribe(() => {
-      this.clearStepCaches();
-      this.cdr.markForCheck();
-    });
-
-    this.isEditMode$.subscribe(() => {
-      this.clearStepCaches();
-      this.cdr.markForCheck();
-    });
-
-    this.store.select(StepperSelectors.selectAutoSaveSummary)
-      .pipe(
-        distinctUntilChanged((prev, curr) =>
-          prev.isAnySaving === curr.isAnySaving &&
-          prev.hasErrors === curr.hasErrors
-        ),
-        takeUntil(this.destroy$)
-      )
-      .subscribe(() => {
-        setTimeout(() => this.cdr.markForCheck(), 100);
-      });
-  }
-
-  private clearStepCaches(): void {
-    this.stepCompletedCache.clear();
-    this.stepEditableCache.clear();
-  }
-
-  getStepCompleted(stepIndex: number): boolean {
-    if (this.stepCompletedCache.has(stepIndex)) {
-      return this.stepCompletedCache.get(stepIndex)!;
-    }
-
-    let isCompleted = false;
-    this.store.select(StepperSelectors.selectIsStepCompleted(stepIndex))
-      .pipe(take(1))
-      .subscribe(completed => isCompleted = completed);
-    const result = isCompleted;
-    return result;
-  }
-
-  getStepEditable(stepIndex: number): boolean {
-    if (this.stepEditableCache.has(stepIndex)) {
-      return this.stepEditableCache.get(stepIndex)!;
-    }
-
-    let isEditMode = false;
-    this.store.select(StepperSelectors.selectIsEditMode)
-      .pipe(take(1))
-      .subscribe(editMode => isEditMode = editMode);
-
-    if (isEditMode) {
-      this.stepEditableCache.set(stepIndex, true);
-      return true;
-    }
-
-    const result = stepIndex === 0;
-    this.stepEditableCache.set(stepIndex, result);
-    return result;
   }
 
   onStepChange = (event: StepperSelectionEvent): void => {
-    const previousStep = event.previouslySelectedIndex;
     const currentStep = event.selectedIndex;
-
-    this.clearStepCaches();
     this.store.dispatch(StepperActions.navigateToStep({ stepIndex: currentStep }));
-
-    if (previousStep < currentStep && previousStep >= 0) {
-      this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: previousStep }));
-    }
-
-    this.cdr.markForCheck();
   };
 
-  invoiceUploaded = (): void => {
-    this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
-    this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 0, isValid: true }));
-    this.loadPackageDataForStep2().then(() => {
-      // Data yüklendikten sonra navigate et
-      setTimeout(() => {
-        this.selectedIndex = 1;
-        if (this.stepper) {
-          this.stepper.selectedIndex = 1;
-        }
-        this.store.dispatch(StepperActions.navigateToStep({ stepIndex: 1 }));
-        this.cdr.markForCheck();
-      }, 300);
-    });
-  };
-
-  configureEditModeInPalletComponent = (): void => {
-    this.loadPackageDataForStep2();
-    this.cdr.markForCheck();
-  };
 
   onPalletControlCompleted = (): void => {
     this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 1 }));
@@ -256,15 +119,8 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
 
   resetStepper = (): void => {
     this.store.dispatch(StepperActions.resetStepper());
-    this.clearStepCaches();
     this.cdr.markForCheck();
   };
-
-  ngOnInit(): void {
-    this.initializeComponentOptimized().catch(error => {
-      this.handleInitializationFailure();
-    });
-  }
 
   private handleInitializationFailure(error?: any): void {
     // Edit mode'daysa anasayfaya yönlendirme
@@ -288,192 +144,29 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  ngAfterViewInit(): void {
-    this.cdr.markForCheck();
-  }
+  ngOnInit(): void {
+    const orderId = this.route.snapshot.queryParamMap.get('orderId');
+    const localData = this.localStorageService.getStepperData();
+    const localOrderId = localData?.order?.id;
 
-  ngOnDestroy(): void {
-    try {
-      this.cleanupComponent();
-    } catch (error) {
+    if (!orderId) {
+      // Query paramda orderId yoksa → local storage'dan yükle
+      this.store.dispatch(StepperActions.getLocalStorageData());
+      return;
     }
-  }
 
-  private async initializeComponentOptimized(): Promise<void> {
-    try {
-      // Önce current step subscription'ı başlat
-      this.currentStep$.subscribe(step => {
-        this.selectedIndex = step;
-        this.cdr.markForCheck();
-      });
-
-      // Route params'ı bekle ve işle
-      const params = await this.route.queryParams.pipe(take(1)).toPromise();
-      const editOrderId = (params ?? {})['orderId'];
-      const editMode = (params ?? {})['mode'] === 'edit';
-
-
-      if (editMode && editOrderId) {
-        this.store.dispatch(StepperActions.enableEditMode({ orderId: editOrderId }));
-
-        try {
-          await this.loadOrderForEdit(editOrderId);
-        } catch (editError) {
-          // Edit mode özel hatası - anasayfaya gitme, sadece normal mode'a geç
-          this.legacyToastService?.error('Edit verileri yüklenirken hata oluştu');
-          this.store.dispatch(StepperActions.initializeStepper({}));
-          // Query params'ı temizle ama aynı sayfada kal
-          this.router.navigate([], {
-            relativeTo: this.route,
-            queryParams: {},
-            replaceUrl: true
-          });
-          return;
-        }
-      } else {
-        this.store.dispatch(StepperActions.initializeStepper({}));
-        this.initializeComponent();
-      }
-
-      // Son olarak change detection'ı triggerla
-      this.cdr.detectChanges();
-    } catch (error) {
-      this.handleInitializationFailure(error);
+    if (!this.localStorageService.hasExistingData()) {
+      // Local storage boşsa → edit mode başlat
+      this.store.dispatch(StepperActions.enableEditMode({ orderId }));
+      return;
     }
-  }
 
-  private async loadOrderForEdit(orderId: string): Promise<void> {
-    try {
-
-      this.uiStateManager.setLoading(true);
-      this.cdr.markForCheck();
-
-      // Önce order'ı kontrol et
-      const order = await this.orderService.getById(orderId).toPromise();
-      if (!order) {
-        throw new Error(`Order not found: ${orderId}`);
-      }
-
-      // Sonra order details'ı yükle
-      const orderDetailsResponse = await this.repositoryService.orderDetailsOriginal(orderId).toPromise();
-      const packageDetailResponse = await this.repositoryService.getPackageDetails(orderId).toPromise();
-
-      if (!orderDetailsResponse || orderDetailsResponse.length === 0) {
-        throw new Error(`Order details not found for order: ${orderId}`);
-      }
-
-      if (!packageDetailResponse || packageDetailResponse.packages.length === 0) {
-        throw new Error(`Package details not found for order: ${orderId}`);
-      }
-
-      // Order detail manager'a set et
-      this.orderDetailManager.setOrderDetails(orderDetailsResponse);
-
-      // Store'a yaz
-      this.store.dispatch(StepperActions.initializeStep1State({
-        order: order,
-        orderDetails: orderDetailsResponse,
-        hasFile: false,
-        fileName: 'Edit Mode Data'
-      }));
-
-      this.store.dispatch(StepperActions.initializeStep2State({
-        packages: packageDetailResponse.packages || [],
-        availableProducts: packageDetailResponse.remainingProducts || []
-      }));
-
-      // Store yazma işleminin tamamlanmasını bekle
-      await this.store.select(StepperSelectors.selectStep1Order)
-        .pipe(
-          filter(storeOrder => storeOrder?.id === order.id),
-          take(1),
-          timeout(5000) // Timeout'u artır
-        ).toPromise();
-
-      // Step'i tamamlandı olarak işaretle
-      this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
-      this.selectedIndex = 1;
-      this.cdr.detectChanges();
-
-    } catch (error) {
-      // Hata türüne göre mesaj ver
-      if (error instanceof Error) {
-        if (error.message.includes('not found')) {
-          this.legacyToastService?.error('Belirtilen order bulunamadı');
-        } else if (error.message.includes('timeout')) {
-          this.legacyToastService?.error('Veri yükleme zaman aşımına uğradı');
-        } else {
-          this.legacyToastService?.error('Order verileri yüklenirken hata oluştu: ' + error.message);
-        }
-      } else {
-        this.legacyToastService?.error('Bilinmeyen bir hata oluştu');
-      }
-
-      throw error; // Hatayı yukarı fırlat ki üst seviye catch yakalasın
-    } finally {
-      this.uiStateManager.setLoading(false);
-      this.cdr.markForCheck();
-    }
-  }
-
-  private cleanupComponent(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-    this.clearStepCaches();
-  }
-
-  private loadDataToInvoiceUploadComponent(order: any, orderDetails: any[]): void {
-    // Store'a direkt yaz, component loading'i kendi halletsin
-    this.store.dispatch(StepperActions.initializeStep1State({
-      order: order,
-      orderDetails: orderDetails,
-      hasFile: false,
-      fileName: 'Edit Mode Data'
-    }));
-  }
-
-  private syncEditModeDataToNgRx(orderId: string): void {
-    // NgRx store'dan mevcut data'yı kontrol et
-    this.store.select(StepperSelectors.selectStep1State).pipe(take(1)).subscribe(step1State => {
-      if (step1State.orderDetails.length > 0 && step1State.order) {
-        this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 0, isValid: true }));
-        this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
-      }
-    });
-  }
-
-  private async loadPackageDataForStep2(): Promise<void> {
-    try {
-      this.store.dispatch(StepperActions.setStepLoading({
-        stepIndex: 1,
-        loading: true,
-        operation: 'Loading package data'
-      }));
-
-      const packageResponse = await this.repositoryService.calculatePackageDetail().toPromise();
-
-      if (packageResponse?.packages) {
-        this.store.dispatch(StepperActions.initializeStep2State({
-          packages: packageResponse.packages || [],
-          availableProducts: packageResponse.remainingProducts || []
-        }));
-
-        this.store.dispatch(StepperActions.setStepLoading({
-          stepIndex: 1,
-          loading: false
-        }));
-
-        if (this.palletControlComponent) {
-          setTimeout(() => {
-            (this.palletControlComponent as any).updateComponentFromStore?.();
-          }, 100);
-        }
-      }
-    } catch (error) {
-      this.store.dispatch(StepperActions.setStepLoading({
-        stepIndex: 1,
-        loading: false
-      }));
+    if (orderId !== localOrderId) {
+      // Local storage var ama orderId farklıysa → edit mode
+      this.store.dispatch(StepperActions.enableEditMode({ orderId }));
+    } else {
+      // Local storage var ve orderId aynıysa → local storage'dan yükle
+      this.store.dispatch(StepperActions.getLocalStorageData());
     }
   }
 
@@ -481,15 +174,12 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
     this.uiStateManager.resetAllStates();
     this.localStorageService.clearStorage();
     this.resetStepperNavigation();
-    this.order_id = '';
-    this.clearStepCaches();
   }
 
   private resetStepperNavigation(): void {
     if (!this.stepper) return;
     this.stepper.linear = false;
     this.stepper.selectedIndex = 0;
-    this.selectedIndex = 0;
     setTimeout(() => {
       this.cdr.markForCheck();
     }, 500);
@@ -502,69 +192,5 @@ export class StepperComponent implements OnInit, OnDestroy, AfterViewInit {
     setTimeout(() => {
       window.location.reload();
     }, 2000);
-  }
-
-  private async initializeComponent(): Promise<void> {
-    this.cdr.markForCheck();
-  }
-
-  private configureChildComponents(): any {
-    // const step1data = this.localStorageService.restoreStep1Data();
-    // const step2data = this.localStorageService.restoreStep2Data();
-    // const step3data = this.localStorageService.restoreStep3Data();
-
-    // if(step1data){}
-
-    // 1. local storage kontrol et ve verileri oku
-    // 2. eger veri varsa drumu analiz et hangi durumdayiz
-    // durumlar: edit mode, yarim process, storage bos
-    // store verilerini yukle.
-    //
-    // edit mode da
-    // load order for edit ile order ve order deatillar getiriyoruz
-
-    //edit mode = yarim is = bos sayfa =
-    // bos sayfa senaryosu
-    // kaydet butonu kalkacak
-    // 2 senaryo var
-    // 1 maneul fatura acma
-    // 2 fatura yukleme
-    // 1.1 ileri butonu ile ekrandaki veriler backende kayit edilir.
-    // 1.2 eger kullanici 2 ye gectikten sonra geri doner ve tekrar 2 ye donerse
-    // ngrx store isdirty flag ile api istegi gerekliligi kontrol edilir.
-    // 2.1 fatura yukelemeden sonra database e kayitli olmayan order ve order detailar bulunmakta
-    // ileri butonu ile bunlar veri tabanina gider.
-    // yine ileri geri durumunda isdirty flag kontorl edilir
-    // local storage her zaman eventlarda duzenli olarak guncellenir
-    // her biri kendi verisinden kendi sorumlu kendi yazacak child component icin
-    // sayfa refresh durumu
-    // stepper component tum steplerin store larini local stage den doldurmakla sorumlu
-    // ============================================
-    // edit mode ve local bos
-    // edit mode ve local local dolu
-    // kaydedilmemis invoice sayfasi silinir. eger kullanici ileriye bastiysa veri tabani kaydi olusur
-    // tamamlanmamais siparisler bolumunde bulabilir.
-    // yarim siparisler zaman asimindan sonra kaldirilir.
-    // ============================================
-    // normal mode ve local storage
-    // bu senaryoda veriler local storage dan getirilir
-    // daha sonra bu kullanici yeni bir siparis acmak isterse
-    // ilgili butona basarak yeni siparise gecer.
-    // ileri butonuna 1 kere basildiysa eger bu tamamlanmamais siparise
-    // siparisler bolumunden bulup geri donebilir.
-    // ileri butonuna hic basmadiysa local storage temizlenir kullanici
-    // stepper i resetlemis olur
-    // normal mode ve local bos
-    // tertemiz bir stepper acilir`
-    // buton ismi dinamik olucak isdirty flagine gore "kaydet ve ilerle" veya "ilerle" olacak
-    // ============================================
-    // gorevler
-    // 1. localstorage dan veri cekme ve storu doldurma gorevi stepper componentte
-    // 2. veri tabanina kayit ve update islemi icin her component kendi verisinden sorumlu
-    // 3. islem sirasi icin sharedservice ve subject kullanilacak
-    // 4.
-
-
-
   }
 }

@@ -10,14 +10,10 @@ export const selectCurrentStep = createSelector(
   (state) => state.currentStep
 );
 
-export const selectCompletedSteps = createSelector(
-  selectStepperState,
-  (state) => state.completedSteps
-);
 
-export const selectAvailableSteps = createSelector(
+export const selectCompletedStep = createSelector(
   selectStepperState,
-  (state) => state.availableSteps
+  (state) => state.completedStep
 );
 
 export const selectStepValidations = createSelector(
@@ -31,10 +27,6 @@ export const selectIsEditMode = createSelector(
   (state) => state.isEditMode
 );
 
-export const selectEditOrderId = createSelector(
-  selectStepperState,
-  (state) => state.editOrderId
-);
 
 // Step Data selectors
 export const selectStepData = createSelector(
@@ -58,46 +50,25 @@ export const selectStepperError = createSelector(
   (state) => state.error
 );
 
-// Computed selectors
-export const selectIsStepCompleted = (stepIndex: number) => createSelector(
-  selectCompletedSteps,
-  (completedSteps) => completedSteps.includes(stepIndex)
-);
-
-export const selectIsStepAvailable = (stepIndex: number) => createSelector(
-  selectAvailableSteps,
-  (availableSteps) => availableSteps.includes(stepIndex)
-);
 
 export const selectIsStepValid = (stepIndex: number) => createSelector(
   selectStepValidations,
   (validations) => validations[stepIndex] || false
 );
 
-export const selectCanNavigateToStep = (stepIndex: number) => createSelector(
-  selectAvailableSteps,
-  selectIsEditMode,
-  (availableSteps, isEditMode) => {
-    // Edit mode'da tüm step'lere gidilebilir
-    if (isEditMode) return true;
-    // Normal mode'da sadece available step'lere gidilebilir
-    return availableSteps.includes(stepIndex);
-  }
-);
+
 
 // Complex selectors
 export const selectStepperSummary = createSelector(
   selectCurrentStep,
-  selectCompletedSteps,
+  selectCompletedStep,
   selectIsEditMode,
-  selectEditOrderId,
-  (currentStep, completedSteps, isEditMode, editOrderId) => ({
+  (currentStep, completedStep, isEditMode ) => ({
     currentStep,
-    completedSteps,
+    completedStep,
     isEditMode,
-    editOrderId,
     totalSteps: 3,
-    progressPercentage: Math.round((completedSteps.length / 3) * 100)
+    progressPercentage: Math.round((completedStep / 3) * 100)
   })
 );
 
@@ -238,10 +209,10 @@ export const selectStep1State = createSelector(
   (state) => state.step1State
 );
 
-export const selectStep1Order = createSelector(
-  selectStep1State,
-  (step1State) => step1State.order
-);
+export const selectOrder = createSelector(selectStepperState,(stepper)=> stepper.order)
+
+
+export const selectOrderId = createSelector(selectOrder, (order) => order.id)
 
 export const selectStep1OrderDetails = createSelector(
   selectStep1State,
@@ -250,7 +221,7 @@ export const selectStep1OrderDetails = createSelector(
 
 export const selectStep1Original = createSelector(
   selectStep1State,
-  (step1State) => step1State.original
+  (step1State) => step1State.originalOrderDetails
 );
 
 export const selectStep1Changes = createSelector(
@@ -288,9 +259,9 @@ export const selectStep2Packages = createSelector(
   (step2State) => step2State.packages
 );
 
-export const selectStep2AvailableProducts = createSelector(
+export const selectStep2RemainingProducts = createSelector(
   selectStep2State,
-  (step2State) => step2State.availableProducts
+  (step2State) => step2State.remainingProducts
 );
 
 export const selectStep2OriginalPackages = createSelector(
@@ -318,7 +289,7 @@ export const selectStep2PackageCount = createSelector(
 );
 
 export const selectStep2ProductCount = createSelector(
-  selectStep2AvailableProducts,
+  selectStep2RemainingProducts,
   (products) => products.length
 );
 

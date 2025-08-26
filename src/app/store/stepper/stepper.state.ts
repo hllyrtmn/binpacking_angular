@@ -1,13 +1,16 @@
 // src/app/store/stepper/stepper.state.ts
+// completed 0 iken hic bir step tamamlanmamis demektir
+// mat stepper current indexi gercek hayat ile uyumlu olmasi adina 1 den baslattik
+// mat stepper a verirken - 1 yapiyoruz. cunku ilk step 0 olarak tanimli api da
 
 export interface StepperState {
   // Mevcut properties...
+  order: any | null;
   currentStep: number;
-  completedSteps: number[];
-  availableSteps: number[];
+  completedStep: number;
+
 
   isEditMode: boolean;
-  editOrderId: string | null;
 
   stepValidations: {
     [stepNumber: number]: boolean;
@@ -53,9 +56,8 @@ export interface StepperState {
   };
 
   step1State: {
-    order: any | null;
     orderDetails: any[];
-    original: any[];
+    originalOrderDetails: any[];
     added: any[];
     modified: any[];
     deleted: any[];
@@ -66,7 +68,7 @@ export interface StepperState {
 
    step2State: {
     packages: any[];
-    availableProducts: any[];
+    remainingProducts: any[];
     originalPackages: any[];
     originalProducts: any[];
     addedPackages: any[];
@@ -93,17 +95,17 @@ export interface StepperState {
 
 export const initialStepperState: StepperState = {
   // Mevcut initial values...
-  currentStep: 0,
-  completedSteps: [],
-  availableSteps: [0],
+  order: null,
+  currentStep: 1,
+  completedStep:0,
+
 
   isEditMode: false,
-  editOrderId: null,
 
   stepValidations: {
-    0: false,
     1: false,
-    2: false
+    2: false,
+    3: false
   },
 
   stepData: {},
@@ -113,28 +115,27 @@ export const initialStepperState: StepperState = {
 
   // YENİ: Auto-Save Initial State
   autoSave: {
-    0: { status: 'idle', lastSaved: null, error: null, pendingChanges: false },
     1: { status: 'idle', lastSaved: null, error: null, pendingChanges: false },
-    2: { status: 'idle', lastSaved: null, error: null, pendingChanges: false }
+    2: { status: 'idle', lastSaved: null, error: null, pendingChanges: false },
+    3: { status: 'idle', lastSaved: null, error: null, pendingChanges: false }
   },
 
   globalError: null,
   retryAttempts: {
-    0: 0,
     1: 0,
-    2: 0
+    2: 0,
+    3: 0
   },
 
   stepLoading: {
-    0: { isLoading: false },
     1: { isLoading: false },
-    2: { isLoading: false }
+    2: { isLoading: false },
+    3: { isLoading: false }
   },
 
   step1State: {
-    order: null,
     orderDetails: [],
-    original: [],
+    originalOrderDetails: [],
     added: [],
     modified: [],
     deleted: [],
@@ -144,7 +145,7 @@ export const initialStepperState: StepperState = {
 
   step2State: {
     packages: [],
-    availableProducts: [],
+    remainingProducts: [],
     originalPackages: [],
     originalProducts: [],
     addedPackages: [],

@@ -35,7 +35,7 @@ import { AppState } from '../../../../../../store';
 import * as StepperSelectors from '../../../../../../store/stepper/stepper.selectors';
 import { map, shareReplay, skip, switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
-import { selectStep2Packages, selectStep2AvailableProducts, selectStep2IsDirty,
+import { selectStep2Packages, selectStep2RemainingProducts, selectStep2IsDirty,
          selectStep2Changes } from '../../../../../../store/stepper/stepper.selectors';
 import * as StepperActions from '../../../../../../store/stepper/stepper.actions';
 import { of, Subject } from 'rxjs';
@@ -70,17 +70,17 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
 
   // NgRx Step2 Migration Observables
   public step2Packages$ = this.store.select(selectStep2Packages);
-  public step2AvailableProducts$ = this.store.select(selectStep2AvailableProducts);
+  public step2RemainingProducts$ = this.store.select(selectStep2RemainingProducts);
   public step2IsDirty$ = this.store.select(selectStep2IsDirty);
   public step2Changes$ = this.store.select(selectStep2Changes);
 
   // NgRx Observables
   public isEditMode$ = this.store.select(StepperSelectors.selectIsEditMode);
-  public editOrderId$ = this.store.select(StepperSelectors.selectEditOrderId);
+  public editOrderId$ = this.store.select(StepperSelectors.selectOrderId);
   public autoSaveStatus$ = this.store.select(StepperSelectors.selectStepAutoSaveStatus(1));
   public autoSaveStatusText$ = this.store.select(StepperSelectors.selectAutoSaveStatusText(1));
   public hasPendingChanges$ = this.store.select(StepperSelectors.selectStepHasPendingChanges(1));
-  public order$ = this.store.select(StepperSelectors.selectStep1Order);
+  public order$ = this.store.select(StepperSelectors.selectOrder);
 
   // Form change tracking
   private lastPackageState: string = '';
@@ -302,7 +302,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
           this.order = this.packages()[0].order;
 
           // Available products'ı da yükle
-          return this.step2AvailableProducts$.pipe(
+          return this.step2RemainingProducts$.pipe(
             take(1),
             tap(storeProducts => {
               const uiProducts = storeProducts.map(product => new UiProduct(product));
@@ -349,7 +349,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
     });
 
     // Available products değiştiğinde güncelle
-    this.step2AvailableProducts$.pipe(
+    this.step2RemainingProducts$.pipe(
       skip(1),
       takeUntil(this.destroy$)
     ).subscribe(products => {
@@ -377,7 +377,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
 
       this.store.dispatch(StepperActions.initializeStep2State({
         packages: [],
-        availableProducts: []
+        remainingProducts: []
       }));
 
       this.order = null;
@@ -400,7 +400,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
       this.availablePallets.set([]);
       this.store.dispatch(StepperActions.initializeStep2State({
         packages: [],
-        availableProducts: []
+        remainingProducts: []
       }));
       this.order = null;
     }
@@ -509,7 +509,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
       ) {
         this.store.dispatch(StepperActions.initializeStep2State({
           packages: restoredPackages.packages || [],
-          availableProducts: restoredPackages.availableProducts || []
+          remainingProducts: restoredPackages.availableProducts || []
         }));
 
         this.toastService.info('LocalStorage\'dan NgRx\'e restore edildi');
@@ -540,7 +540,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
 
         this.store.dispatch(StepperActions.initializeStep2State({
           packages: response.packages || [],
-          availableProducts: response.remainingProducts || []
+          remainingProducts: response.remainingProducts || []
         }));
 
         if (
@@ -1221,7 +1221,7 @@ dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
 
     this.store.dispatch(StepperActions.initializeStep2State({
       packages: [],
-      availableProducts: consolidatedProducts
+      remainingProducts: consolidatedProducts
     }));
 
     this.addNewEmptyPackage();

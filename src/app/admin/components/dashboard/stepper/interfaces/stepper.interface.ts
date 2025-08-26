@@ -172,6 +172,13 @@ export enum StepStatus {
   ERROR = 'error'
 }
 
+export enum StepperOrchestratorStatus{
+  EDIT = 'edit-mode',
+  NEW = 'new-mode',
+  PENDING = 'pending-mode',
+  COMPLETED = 'completed-mode'
+}
+
 export enum ComponentType {
   INVOICE_UPLOAD = 'invoice-upload',
   PALLET_CONTROL = 'pallet-control',

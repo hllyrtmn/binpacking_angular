@@ -1,5 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { AppState } from './store';
+import { Store } from '@ngrx/store';
+import * as UserActions from './store/user/user.actions';
+
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -7,5 +12,12 @@ import { RouterOutlet } from '@angular/router';
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
+  store = inject(Store<AppState>);
+
+
+  ngOnInit(): void {
+    this.store.dispatch(UserActions.loadUserFromStorage())
+    
+  }
 }

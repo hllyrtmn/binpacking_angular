@@ -4,11 +4,20 @@ import { of } from 'rxjs';
 import { map, switchMap, catchError, tap } from 'rxjs/operators';
 import { UserService } from '../../services/user.service';
 import * as UserActions from './user.actions';
+import { filter } from 'rxjs/operators';
 
 @Injectable()
 export class UserEffects {
   private actions$ = inject(Actions);
   private userService = inject(UserService);
+
+  loadUserFromStorage$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(UserActions.loadUserFromStorage),
+      map(()=> localStorage.getItem('user')),
+      filter(user=> !!user),
+      map(user=> UserActions.loadUserSuccess({user:JSON.parse(user!)}))
+    ));
 
   loadUser$ = createEffect(() =>
     this.actions$.pipe(
@@ -40,6 +49,7 @@ export class UserEffects {
       })
     )
   );
+
 
   updateProfile$ = createEffect(() =>
     this.actions$.pipe(

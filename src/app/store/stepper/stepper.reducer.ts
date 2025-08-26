@@ -4,6 +4,34 @@ import * as StepperActions from './stepper.actions';
 
 export const stepperReducer = createReducer(
   initialStepperState,
+  on(StepperActions.setOrderDetails, (state, { orderDetails }) => ({
+    ...state,
+    step1State:{
+      ...state.step1State,
+      orderDetails: [...orderDetails],
+      originalOrderDetails: [...orderDetails],
+      isDirty: false
+    }
+  })),
+
+
+  //create setOrder
+  on(StepperActions.setOrder, (state, { order }) => ({
+    ...state,
+    order: order
+  })),
+
+  //create setPackageDetails
+  on(StepperActions.setPackages, (state, { packages }) => ({
+    ...state,
+    step2State: {
+      ...state.step2State,
+      packages: [...packages],
+      originalPackages: [...packages],
+      isDirty: false
+    }
+  })),
+  
 
   // Navigation
   on(StepperActions.navigateToStep, (state, { stepIndex }) => ({
@@ -12,23 +40,10 @@ export const stepperReducer = createReducer(
     error: null
   })),
 
-  on(StepperActions.setStepCompleted, (state, { stepIndex }) => {
-    const newCompletedSteps = state.completedSteps.includes(stepIndex)
-      ? state.completedSteps
-      : [...state.completedSteps, stepIndex];
-
-    const newAvailableSteps = [...state.availableSteps];
-    // Bir sonraki step'i available yap
-    if (stepIndex + 1 <= 2 && !newAvailableSteps.includes(stepIndex + 1)) {
-      newAvailableSteps.push(stepIndex + 1);
-    }
-
-    return {
-      ...state,
-      completedSteps: newCompletedSteps,
-      availableSteps: newAvailableSteps.sort()
-    };
-  }),
+  on(StepperActions.setStepCompleted, (state, { stepIndex }) => ({
+    ...state,
+    completedStep: stepIndex
+  })),
 
   on(StepperActions.setStepValidation, (state, { stepIndex, isValid }) => ({
     ...state,
@@ -41,11 +56,7 @@ export const stepperReducer = createReducer(
   // Edit Mode
   on(StepperActions.enableEditMode, (state, { orderId }) => ({
     ...state,
-    isEditMode: true,
-    editOrderId: orderId,
-    // Edit mode'da tüm step'ler available
-    availableSteps: [0, 1, 2],
-    completedSteps: [0, 1, 2] // Edit mode'da tüm step'ler completed sayılır
+    isEditMode: true
   })),
 
   on(StepperActions.disableEditMode, (state) => ({
@@ -265,9 +276,8 @@ export const stepperReducer = createReducer(
   on(StepperActions.initializeStep1State, (state, { order, orderDetails, hasFile, fileName }) => ({
     ...state,
     step1State: {
-      order,
       orderDetails: [...orderDetails],
-      original: [...orderDetails],
+      originalOrderDetails: [...orderDetails],
       added: [],
       modified: [],
       deleted: [],
@@ -294,7 +304,7 @@ export const stepperReducer = createReducer(
     step1State: {
       ...state.step1State,
       orderDetails: [...orderDetails],
-      original: [...orderDetails], // Yeni original data
+      originalOrderDetails: [...orderDetails], // Yeni original data
       added: [], // Temizle
       modified: [], // Temizle
       deleted: [], // Temizle
@@ -307,7 +317,7 @@ export const stepperReducer = createReducer(
     step1State: {
       order,
       orderDetails: [...orderDetails],
-      original: [], // File upload'da original yok
+      originalOrderDetails: [], // File upload'da original yok
       added: [...orderDetails], // File'dan gelen tüm data added
       modified: [],
       deleted: [],
@@ -346,7 +356,7 @@ export const stepperReducer = createReducer(
       detail.id === orderDetail.id ? orderDetail : detail
     );
 
-    const isOriginal = state.step1State.original.some(item => item.id === orderDetail.id);
+    const isOriginal = state.step1State.originalOrderDetails.some(item => item.id === orderDetail.id);
     const isAlreadyModified = state.step1State.modified.some(item => item.id === orderDetail.id);
 
     let modified = [...state.step1State.modified];
@@ -371,7 +381,7 @@ export const stepperReducer = createReducer(
     const itemToDelete = state.step1State.orderDetails.find(item => item.id === orderDetailId);
     const orderDetails = state.step1State.orderDetails.filter(item => item.id !== orderDetailId);
 
-    const isOriginal = state.step1State.original.some(item => item.id === orderDetailId);
+    const isOriginal = state.step1State.originalOrderDetails.some(item => item.id === orderDetailId);
     const deleted = isOriginal && itemToDelete ? [...state.step1State.deleted, itemToDelete] : state.step1State.deleted;
     const added = state.step1State.added.filter(item => item.id !== orderDetailId);
     const modified = state.step1State.modified.filter(item => item.id !== orderDetailId);
@@ -389,13 +399,13 @@ export const stepperReducer = createReducer(
     };
   }),
     // Step2 Migration Reducers
-  on(StepperActions.initializeStep2State, (state, { packages, availableProducts }) => ({
+  on(StepperActions.initializeStep2State, (state, { packages, remainingProducts }) => ({
     ...state,
     step2State: {
       packages: [...packages],
-      availableProducts: [...availableProducts],
+      remainingProducts: [...remainingProducts],
       originalPackages: [...packages],
-      originalProducts: [...availableProducts],
+      originalProducts: [...remainingProducts],
       addedPackages: [],
       modifiedPackages: [],
       deletedPackages: [],

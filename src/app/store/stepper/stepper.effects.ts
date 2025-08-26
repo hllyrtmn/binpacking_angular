@@ -1,14 +1,17 @@
 // src/app/store/stepper/stepper.effects.ts
 
+import { UIStateManager } from '../../admin/components/dashboard/stepper/components/invoice-upload/managers/ui-state.manager';
 import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
-import { map, tap, debounceTime, switchMap, catchError, withLatestFrom } from 'rxjs/operators';
-import { of, timer } from 'rxjs';
+import { map, tap, debounceTime, switchMap, catchError, withLatestFrom, mergeMap } from 'rxjs/operators';
+import { forkJoin, of, timer } from 'rxjs';
 import * as StepperActions from './stepper.actions';
 import { AppState } from '../index';
 import { ToastService } from '../../services/toast.service';
 import { LocalStorageService } from '../../admin/components/dashboard/stepper/services/local-storage.service';
+import { RepositoryService } from '../../admin/components/dashboard/stepper/services/repository.service';
+import { Action } from '@ngrx/store';
 
 @Injectable()
 export class StepperEffects {
@@ -16,6 +19,10 @@ export class StepperEffects {
   private store = inject(Store<AppState>);
   private localStorageService = inject(LocalStorageService);
   private toastService = inject(ToastService);
+  private repositoryService = inject(RepositoryService);
+  private uiStateManager = inject(UIStateManager);
+
+
 
   // Mevcut logging effect...
   logStepperActions$ = createEffect(
@@ -219,7 +226,7 @@ export class StepperEffects {
     { dispatch: false }
   );
 
-   // Retry Mechanism Effect
+  // Retry Mechanism Effect
   handleRetryWithLoading$ = createEffect(() =>
     this.actions$.pipe(
       ofType(StepperActions.retryOperation),
@@ -249,6 +256,67 @@ export class StepperEffects {
             this.toastService.success(`Step ${stepIndex + 1} başarıyla yeniden denendi`);
           })
         );
+      })
+    ),
+    { dispatch: false }
+  );
+
+  enableEditMode$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(StepperActions.enableEditMode),
+      mergeMap(action => {
+        this.uiStateManager.setLoading(true);
+        return forkJoin({
+          orderDetails: this.repositoryService.orderDetails(action.orderId),
+          step2Result: this.repositoryService.getPackageDetails(action.orderId)
+        }).pipe(
+          // Tüm API sonuçlarını tek bir objede alıyoruz
+          mergeMap(({ orderDetails, step2Result }) => {
+            // TOOD: 
+            // validationlari true olmali
+            // completed lari control edilip ona gore islenmeli
+            let actions: Action[] = [];
+
+            const order = orderDetails[0].order;
+            const packages = step2Result.packages;
+            const remainingProducts = step2Result.remainingProducts;
+
+            this.localStorageService.saveStep1Data(order, orderDetails, false);
+            this.localStorageService.saveStep2Data(packages, remainingProducts);
+
+            if (packages.length == 0) {
+              actions.push(StepperActions.setStepCompleted({ stepIndex: 1 }));
+            } else {
+              actions.push(StepperActions.setStepCompleted({ stepIndex: 2 }));
+            }
+
+            return of(
+              StepperActions.setOrder({ order: orderDetails[0].order }),
+              StepperActions.setOrderDetails({ orderDetails }),
+              StepperActions.setPackages({ packages: step2Result.packages }),
+              StepperActions.setRemainingProducts({ remainingProducts: step2Result.remainingProducts }),
+              ...actions
+            )
+          }
+          ),
+        )
+      }),
+      tap({
+        finalize: () => {
+          this.uiStateManager.setLoading(false);
+        }
+      })
+    )
+  );
+
+
+  // getLocalStorageData
+  getLocalStorageData$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(StepperActions.getLocalStorageData),
+      tap(() => {
+        const data = this.localStorageService.getStepperData();
+        console.log("getLocalStorageData$: ", data)
       })
     ),
     { dispatch: false }

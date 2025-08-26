@@ -66,8 +66,8 @@ interface EnhancedStep3Data {
 
 interface EnhancedStepperStorageData {
   // Step 1 verileri
+  order: Order | null,
   step1: {
-    order: Order | null;
     orderDetails: OrderDetail[];
     hasFile: boolean;
     fileName?: string;
@@ -77,7 +77,7 @@ interface EnhancedStepperStorageData {
   // Step 2 verileri
   step2: {
     packages: any[];
-    availableProducts: any[];
+    remainingProducts: any[];
     isCompleted: boolean;
   };
 
@@ -208,8 +208,8 @@ export class LocalStorageService {
       // Migration from v1.0.0 to v2.0.0
       if (oldData.version === '1.0.0') {
         const migratedData: EnhancedStepperStorageData = {
+          order: null,
           step1: oldData.step1 ?? {
-            order: null,
             orderDetails: [],
             hasFile: false,
             isCompleted: false
@@ -344,8 +344,8 @@ export class LocalStorageService {
    */
   saveStep1Data(order: Order | null, orderDetails: OrderDetail[], hasFile: boolean = false, fileName?: string): void {
     this.saveStepperData({
+      order: order,
       step1: {
-        order,
         orderDetails,
         hasFile,
         fileName,
@@ -358,7 +358,7 @@ export class LocalStorageService {
   /**
    * ✅ Enhanced Step 2 verilerini kaydet
    */
-  saveStep2Data(packages: UiPackage[], availableProducts: UiProduct[]): void {
+  saveStep2Data(packages: UiPackage[], remainingProducts: UiProduct[]): void {
     const serializedPackages = packages.map(pkg => ({
       id: pkg.id,
       name: pkg.name,
@@ -367,7 +367,7 @@ export class LocalStorageService {
       order: pkg.order
     }));
 
-    const serializedProducts = availableProducts.map(prd => ({
+    const serializedProducts = remainingProducts.map(prd => ({
       id: prd.id,
       name: prd.name,
       count: prd.count,
@@ -380,7 +380,7 @@ export class LocalStorageService {
     this.saveStepperData({
       step2: {
         packages: serializedPackages,
-        availableProducts: serializedProducts,
+        remainingProducts: serializedProducts,
         isCompleted: packages.length > 0
       },
       currentStep: 2
@@ -467,12 +467,11 @@ export class LocalStorageService {
   /**
    * ✅ Enhanced Data restore metodları
    */
-  restoreStep1Data(): { order: Order | null, orderDetails: OrderDetail[], hasFile: boolean, fileName?: string } | null {
+  restoreStep1Data(): {orderDetails: OrderDetail[], hasFile: boolean, fileName?: string } | null {
     const data = this.getStepperData();
 
     if (data.step1?.isCompleted) {
       return {
-        order: data.step1.order,
         orderDetails: data.step1.orderDetails,
         hasFile: data.step1.hasFile,
         fileName: data.step1.fileName
@@ -485,7 +484,7 @@ export class LocalStorageService {
     const data = this.getStepperData();
     return {
       packages: data.step2.packages || [],
-      availableProducts: data.step2.availableProducts || []
+      availableProducts: data.step2.remainingProducts || []
     };
 
   }
@@ -654,15 +653,15 @@ export class LocalStorageService {
 
   private getDefaultData(): EnhancedStepperStorageData {
     return {
+      order: null,
       step1: {
-        order: null,
         orderDetails: [],
         hasFile: false,
         isCompleted: false
       },
       step2: {
         packages: [],
-        availableProducts: [],
+        remainingProducts: [],
         isCompleted: false
       },
       step3: {

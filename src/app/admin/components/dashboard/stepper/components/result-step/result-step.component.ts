@@ -147,7 +147,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
 
   // NgRx Observables
   public isEditMode$ = this.store.select(StepperSelectors.selectIsEditMode);
-  public editOrderId$ = this.store.select(StepperSelectors.selectEditOrderId);
+  public editOrderId$ = this.store.select(StepperSelectors.selectOrderId);
   public stepperSummary$ = this.store.select(StepperSelectors.selectStepperSummary);
   public autoSaveStatus$ = this.store.select(StepperSelectors.selectStepAutoSaveStatus(2));
   public autoSaveStatusText$ = this.store.select(StepperSelectors.selectAutoSaveStatusText(2));

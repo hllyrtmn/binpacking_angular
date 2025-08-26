@@ -1,5 +1,36 @@
 import { createAction, props } from '@ngrx/store';
 
+
+// create getLocalStorageData
+export const getLocalStorageData = createAction(
+  '[Stepper] Get Local Storage Data'
+);
+
+
+export const setOrder = createAction(
+  '[Stepper] Set Order',
+  props<{ order: any }>()
+);
+
+
+export const setOrderDetails = createAction(
+  '[Stepper] Set Order Details',
+  props<{ orderDetails: any[] }>()
+);
+
+// create setPackageDetails
+export const setPackages = createAction(
+  '[Stepper] Set Package Details',
+  props<{ packages: any[] }>()
+);
+
+
+export const setRemainingProducts = createAction(
+  '[Stepper] Set Remaining Products',
+  props<{ remainingProducts: any[] }>()
+);
+
+
 // Navigation Actions
 export const navigateToStep = createAction(
   '[Stepper] Navigate To Step',
@@ -180,7 +211,7 @@ export const deleteOrderDetail = createAction(
 // Step2 (Pallet Control) Migration Actions
 export const initializeStep2State = createAction(
   '[Migration] Initialize Step2 State',
-  props<{ packages: any[]; availableProducts: any[] }>()
+  props<{ packages: any[]; remainingProducts: any[] }>()
 );
 
 export const updateStep2Packages = createAction(

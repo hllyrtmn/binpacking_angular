@@ -1,70 +1,43 @@
-<ng-container *ngIf="vm$ | async as vm">
-  <mat-stepper
-    #stepper
-    class="responsive-stepper"
-    [linear]="!vm.isEditMode"
-    [orientation]="(stepperOrientation | async)!"
-    [selectedIndex]="selectedIndex"
-    (selectionChange)="onStepChange($event)"
-  >
-    <app-loading></app-loading>
-
-    <mat-step [completed]="getStepCompleted(0)" [editable]="getStepEditable(0)">
-      <ng-template matStepLabel>
-        (ISB) İhracat Sipariş Bildirimi Yükleme @if (vm.isEditMode) {<span
-          class="edit-mode-badge"
-          >DÜZENLEME</span
-        >}
-           <mat-spinner *ngIf="step0Loading$ | async" diameter="16" class="step-spinner"></mat-spinner>
-      </ng-template>
-
-      @if (selectedIndex === 0 || vm.isEditMode) {
-      <app-invoice-upload
-        #invoiceUploadComponent
-        (invoiceUploaded)="invoiceUploaded()"
-        (configurePallet)="configureEditModeInPalletComponent()"
-      >
-      </app-invoice-upload>
-      }
-    </mat-step>
-
-    <mat-step [completed]="getStepCompleted(1)" [editable]="getStepEditable(1)">
-      <ng-template matStepLabel>
-        Palet Kontrolü @if (vm.isEditMode) {<span class="edit-mode-badge"
-          >DÜZENLEME</span
-        >}
-         <mat-spinner *ngIf="step1Loading$ | async" diameter="16" class="step-spinner"></mat-spinner>
-      </ng-template>
-
-      @if (selectedIndex === 1 || vm.isEditMode) {
-      <app-pallet-control #palletControlComponent> </app-pallet-control>
-      }
-    </mat-step>
-
-    <mat-step [completed]="getStepCompleted(2)" [editable]="getStepEditable(2)">
-      <ng-template matStepLabel>
-        Sonuç Ekranı @if (vm.isEditMode) {<span class="edit-mode-badge"
-          >DÜZENLEME</span
-        >}
-         <mat-spinner *ngIf="step2Loading$ | async" diameter="16" class="step-spinner"></mat-spinner>
-      </ng-template>
-
-      @if (selectedIndex === 2 || (vm.isEditMode && getStepCompleted(1))) {
-      <app-result-step
-        #resultStepComponent
-        (shipmentCompleted)="onShipmentCompleted()"
-      >
-      </app-result-step
-      >}
-    </mat-step>
-  </mat-stepper>
-</ng-container>
-
-@if (!(vm$ | async)) {
 <ng-container>
-  <div class="stepper-loading">
+
+  <mat-stepper #stepper class="responsive-stepper" [orientation]="(stepperOrientation | async)!"
+    [linear]="!isEditModeSignal()" [selectedIndex]="selectedIndexSignal() - 1"
+    (selectionChange)="onStepChange($event)">
     <app-loading></app-loading>
-    <p>Stepper hazırlanıyor...</p>
-  </div>
+
+    <mat-step [completed]="(completedStepsSignal() >= 1)" [editable]="true">
+      <ng-template matStepLabel>
+        (ISB) İhracat Sipariş Bildirimi Yükleme @if (isEditModeSignal()) {<span
+          class="edit-mode-badge">DÜZENLEME</span>}
+        @if (invoiceUploadLoadingSignal()) {
+        <mat-spinner diameter="16" class="step-spinner"></mat-spinner>
+        }
+      </ng-template>
+      <app-invoice-upload #invoiceUploadComponent>
+      </app-invoice-upload>
+    </mat-step>
+
+    <mat-step [completed]="(completedStepsSignal() >= 2)" [editable]="(completedStepsSignal() >= 2)">
+      <ng-template matStepLabel>
+        Palet Kontrolü @if (isEditModeSignal()) {<span class="edit-mode-badge">DÜZENLEME</span>}
+        @if(palletControlLoadingSignal()){
+        <mat-spinner diameter="16" class="step-spinner"></mat-spinner>
+        }
+      </ng-template>
+      <app-pallet-control #palletControlComponent> </app-pallet-control>
+    </mat-step>
+
+    <mat-step [completed]="completedStepsSignal() === 2" [editable]="completedStepsSignal() === 2">
+      <ng-template matStepLabel>
+        Sonuç Ekranı @if (isEditModeSignal()) {<span class="edit-mode-badge">DÜZENLEME</span>}
+        @if(resultControlLoadingSignal()){
+        <mat-spinner diameter="16" class="step-spinner"></mat-spinner>
+        }
+      </ng-template>
+      <app-result-step #resultStepComponent (shipmentCompleted)="onShipmentCompleted()">
+      </app-result-step>
+    </mat-step>
+
+  </mat-stepper>
+
 </ng-container>
-}

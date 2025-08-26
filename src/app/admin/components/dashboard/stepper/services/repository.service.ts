@@ -25,15 +25,8 @@ export class RepositoryService {
 
   constructor(private api: ApiService, private http: HttpClient) {}
 
-  private getOrderId(): string {
-    let orderId = '';
-    this.store.select(StepperSelectors.selectStep1Order)
-      .pipe(take(1))
-      .subscribe(order => {
-        orderId = order?.id || '';
-      });
-    return orderId;
-  }
+  private getOrderId = this.store.selectSignal(StepperSelectors.selectOrderId)
+
 
   orderDetails(id: string): Observable<any> {
     // api/orders/order-details/{id}/

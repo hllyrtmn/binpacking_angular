@@ -5,7 +5,7 @@ import { User, ChangePasswordRequest } from '../../models/user.interface';
 export const loadUser = createAction('[User] Load User');
 export const loadUserSuccess = createAction('[User] Load User Success', props<{ user: User }>());
 export const loadUserFailure = createAction('[User] Load User Failure', props<{ error: string }>());
-
+export const loadUserFromStorage = createAction('[User] Load User From Storage');
 // Update Profile
 export const updateProfile = createAction('[User] Update Profile', props<{ profileData: Partial<User> }>());
 export const updateProfileSuccess = createAction('[User] Update Profile Success', props<{ user: User }>());
@@ -23,3 +23,4 @@ export const changePasswordFailure = createAction('[User] Change Password Failur
 
 // Clear User (logout)
 export const clearUser = createAction('[User] Clear User');
+
