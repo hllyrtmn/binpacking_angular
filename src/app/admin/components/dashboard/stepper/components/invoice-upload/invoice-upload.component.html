@@ -13,7 +13,8 @@
   </div>
 
   <!-- Empty State Card -->
-  <div class="logistics-card" *ngIf="(!order || !order.id) && isLoading$ | async">
+  @if(!orderSignal() && isLoadingSignal() ){
+  <div class="logistics-card">
     <div class="empty-state">
       <div class="empty-icon">
         <mat-icon>description</mat-icon>
@@ -25,11 +26,7 @@
       </p>
 
       <div class="action-options">
-        <button
-          mat-raised-button
-          class="action-button"
-          (click)="createOrderDetail()"
-        >
+        <button mat-raised-button class="action-button" (click)="createOrderDetail()">
           <mat-icon>add</mat-icon>
           <span>Manuel Giriş</span>
         </button>
@@ -39,30 +36,15 @@
         </div>
 
         <div class="file-upload-container">
-          <button
-            mat-raised-button
-            class="action-button secondary"
-            (click)="fileInput.click()"
-            [disabled]="excelUpload"
-          >
+          <button mat-raised-button class="action-button secondary" (click)="fileInput.click()"
+            [disabled]="excelUpload">
             <mat-icon>file_upload</mat-icon>
             <span>{{ file?.name || "Excel Dosyası Seç" }}</span>
           </button>
-          <input
-            (change)="onFileSelected($event)"
-            #fileInput
-            type="file"
-            accept=".pdf,.xls,.xlsx"
-            hidden
-          />
+          <input (change)="onFileSelected($event)" #fileInput type="file" accept=".pdf,.xls,.xlsx" hidden />
 
-          <button
-            *ngIf="file"
-            mat-raised-button
-            class="upload-button"
-            [disabled]="!file || excelUpload"
-            (click)="uploadFile()"
-          >
+          <button *ngIf="file" mat-raised-button class="upload-button" [disabled]="!file || excelUpload"
+            (click)="uploadFile()">
             <mat-icon>cloud_upload</mat-icon>
             <span>İçeri Aktar</span>
           </button>
@@ -70,10 +52,10 @@
       </div>
     </div>
   </div>
-
+  }
   <!-- Loading Indicator -->
-   @if (!isLoading$ | async) {
-    <div class="loading-container">
+  @if (isLoadingSignal()) {
+  <div class="loading-container">
     <div class="loading-content">
       <div class="animated-icon">
         <mat-icon>local_shipping</mat-icon>
@@ -86,12 +68,12 @@
       <p>Sipariş verileri yükleniyor...</p>
     </div>
   </div>
-   }
+  }
 
 
   <!-- Order Details Dashboard -->
-   @if ((order && order.id) && isLoading$ | async) {
-    <div class="details-section">
+  @if (orderSignal() && !isLoadingSignal()) {
+  <div class="details-section">
     <!-- Order Summary -->
     <div class="dashboard-panel">
       <!-- Sipariş Tarihi -->
@@ -103,14 +85,8 @@
           <span class="dashboard-label">Sipariş Tarihi</span>
           <div class="dashboard-value-container">
             <mat-form-field class="edit-field" appearance="outline">
-              <input
-                matInput
-                [matDatepicker]="picker"
-                [value]="order?.date"
-                (dateChange)="onOrderFieldChange('date', $event.value)"
-                placeholder="Tarih seçin"
-                required
-              />
+              <input matInput [matDatepicker]="picker" [value]="order?.date"
+                (dateChange)="onOrderFieldChange('date', $event.value)" placeholder="Tarih seçin" required />
               <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
               <mat-datepicker #picker></mat-datepicker>
               <mat-error *ngIf="!order?.date">
@@ -121,90 +97,75 @@
         </div>
       </div>
 
-  <!-- Müşteri -->
-  <div class="dashboard-item">
-    <div class="dashboard-icon">
-      <mat-icon>business</mat-icon>
-    </div>
-    <div class="dashboard-info">
-      <span class="dashboard-label">Müşteri</span>
-      <div class="dashboard-value-container">
-        <mat-form-field class="edit-field" appearance="outline">
-          <mat-select
-            [value]="order?.company_relation"
-            (selectionChange)="onCompanyChange($event.value)"
-            placeholder="Müşteri seçin"
-            [compareWith]="compareCompanies"
-            required
-          >
-            <mat-option *ngFor="let company of targetCompanies; trackBy: trackByCompanyId" [value]="company">
-              {{ company.target_company_name }}
-            </mat-option>
-          </mat-select>
-          <mat-error *ngIf="!order?.company_relation">
-            Müşteri seçimi zorunludur
-          </mat-error>
-        </mat-form-field>
+      <!-- Müşteri -->
+      <div class="dashboard-item">
+        <div class="dashboard-icon">
+          <mat-icon>business</mat-icon>
+        </div>
+        <div class="dashboard-info">
+          <span class="dashboard-label">Müşteri</span>
+          <div class="dashboard-value-container">
+            <mat-form-field class="edit-field" appearance="outline">
+              <mat-select [value]="order?.company_relation" (selectionChange)="onCompanyChange($event.value)"
+                placeholder="Müşteri seçin" [compareWith]="compareCompanies" required>
+                <mat-option *ngFor="let company of targetCompanies; trackBy: trackByCompanyId" [value]="company">
+                  {{ company.target_company_name }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="!order?.company_relation">
+                Müşteri seçimi zorunludur
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <!-- Tır Bilgisi -->
-  <div class="dashboard-item">
-    <div class="dashboard-icon">
-      <mat-icon>local_shipping</mat-icon>
-    </div>
-    <div class="dashboard-info">
-      <span class="dashboard-label">Tır</span>
-      <div class="dashboard-value-container">
-        <mat-form-field class="edit-field" appearance="outline">
-          <mat-select
-            [value]="order?.truck"
-            (selectionChange)="onTruckChange($event.value)"
-            placeholder="Tır seçin"
-            [compareWith]="compareObjects"
-            required
-          >
-            <mat-option *ngFor="let truck of trucks; trackBy: trackByTruckId" [value]="truck">
-              {{ truck.name }}
-            </mat-option>
-          </mat-select>
-          <mat-error *ngIf="!order?.truck">
-            Tır seçimi zorunludur
-          </mat-error>
-        </mat-form-field>
+      <!-- Tır Bilgisi -->
+      <div class="dashboard-item">
+        <div class="dashboard-icon">
+          <mat-icon>local_shipping</mat-icon>
+        </div>
+        <div class="dashboard-info">
+          <span class="dashboard-label">Tır</span>
+          <div class="dashboard-value-container">
+            <mat-form-field class="edit-field" appearance="outline">
+              <mat-select [value]="order?.truck" (selectionChange)="onTruckChange($event.value)" placeholder="Tır seçin"
+                [compareWith]="compareObjects" required>
+                <mat-option *ngFor="let truck of trucks; trackBy: trackByTruckId" [value]="truck">
+                  {{ truck.name }}
+                </mat-option>
+              </mat-select>
+              <mat-error *ngIf="!order?.truck">
+                Tır seçimi zorunludur
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <!-- Ağırlık Tipi -->
-  <div class="dashboard-item">
-    <div class="dashboard-icon">
-      <mat-icon>category</mat-icon>
-    </div>
-    <div class="dashboard-info">
-      <span class="dashboard-label">Ağırlık Tipi</span>
-      <div class="dashboard-value-container">
-        <mat-form-field class="edit-field" appearance="outline">
-          <mat-select
-            [value]="order?.weight_type"
-            (selectionChange)="onWeightTypeChange($event.value)"
-            placeholder="Ağırlık tipi seçin"
-            [compareWith]="compareWeightTypes"
-            required
-          >
-            <mat-option value="eco">Eco</mat-option>
-            <mat-option value="std">Std</mat-option>
-            <mat-option value="pre">Pre</mat-option>
-          </mat-select>
-          <mat-error *ngIf="!order?.weight_type">
-            Ağırlık tipi seçimi zorunludur
-          </mat-error>
-        </mat-form-field>
+      <!-- Ağırlık Tipi -->
+      <div class="dashboard-item">
+        <div class="dashboard-icon">
+          <mat-icon>category</mat-icon>
+        </div>
+        <div class="dashboard-info">
+          <span class="dashboard-label">Ağırlık Tipi</span>
+          <div class="dashboard-value-container">
+            <mat-form-field class="edit-field" appearance="outline">
+              <mat-select [value]="order?.weight_type" (selectionChange)="onWeightTypeChange($event.value)"
+                placeholder="Ağırlık tipi seçin" [compareWith]="compareWeightTypes" required>
+                <mat-option value="eco">Eco</mat-option>
+                <mat-option value="std">Std</mat-option>
+                <mat-option value="pre">Pre</mat-option>
+              </mat-select>
+              <mat-error *ngIf="!order?.weight_type">
+                Ağırlık tipi seçimi zorunludur
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
 
 
     <!-- Order Details Table -->
@@ -217,29 +178,16 @@
       </div>
 
       <div class="table-container">
-        <app-generic-table
-          [externalData]="orderDetails"
-          [externalTotalCount]="orderDetails.length"
-          [displayedColumns]="displayedColumns"
-          [filterableColumns]="filterableColumns"
-          [nestedDisplayColumns]="nestedDisplayColumns"
-          [parentId]="order.id"
-          [useParentId]="true"
-          [parentIdFieldName]="'order_id'"
-          [title]="''"
-          [showRowNumbers]="true"
-          (addClick)="createOrderDetail()"
-          (externalDataUpdate)="updateOrderDetail($event)"
-          (externalDataDelete)="deleteOrderDetail($event)"
-          [excludeFields]="excludeFields"
-        >
+        <app-generic-table [externalData]="orderDetails" [externalTotalCount]="orderDetails.length"
+          [displayedColumns]="displayedColumns" [filterableColumns]="filterableColumns"
+          [nestedDisplayColumns]="nestedDisplayColumns" [parentId]="order.id" [useParentId]="true"
+          [parentIdFieldName]="'order_id'" [title]="''" [showRowNumbers]="true" (addClick)="createOrderDetail()"
+          (externalDataUpdate)="updateOrderDetail($event)" (externalDataDelete)="deleteOrderDetail($event)"
+          [excludeFields]="excludeFields">
         </app-generic-table>
       </div>
 
-      <div
-        class="summary-footer"
-        *ngIf="orderDetails && orderDetails.length > 0"
-      >
+      <div class="summary-footer" *ngIf="orderDetails && orderDetails.length > 0">
         <div class="summary-content">
           <div class="summary-metrics">
             <div class="metric">
@@ -251,15 +199,6 @@
               <span>{{ totalWeight.toFixed(2) }} kg</span>
             </div>
           </div>
-          <button
-            mat-raised-button
-            class="save-button"
-            [disabled]="!isFormValid() || isLoading$"
-            (click)="submit()"
-          >
-            <mat-icon>save</mat-icon>
-            <span>Kaydet</span>
-          </button>
           <div class="status-badge">
             <span class="status-dot active"></span>
             <span>Aktif</span>
@@ -268,18 +207,13 @@
       </div>
     </div>
   </div>
-   }
+  }
 
 
   <!-- Navigation Controls -->
   <div class="navigation-controls">
-    <button
-      mat-raised-button
-      class="next-button"
-      matStepperNext
-      [disabled]="!order || !isFormValid()"
-    >
-      <span>Sonraki Adım</span>
+    <button mat-raised-button class="next-button" matStepperNext [disabled]="!orderSignal() || !isFormValid()">
+      <span>{{"Sonraki adim"}}</span>
       <mat-icon>arrow_forward</mat-icon>
     </button>
   </div>

@@ -68,10 +68,8 @@ import { INVOICE_UPLOAD_CONSTANTS } from './constants/invoice-upload.constants';
 import { AppState } from '../../../../../../store';
 import { Store } from '@ngrx/store';
 
-import {
-  selectOrder, selectStep1OrderDetails, selectStep1IsDirty,
-  selectStep1HasFile, selectStep1FileName
-} from '../../../../../../store/stepper/stepper.selectors';
+import { selectOrder, selectStep1OrderDetails, selectStep1IsDirty,
+         selectStep1HasFile, selectStep1FileName } from '../../../../../../store/stepper/stepper.selectors';
 import { CompanyRelation } from '../../../../../../models/company-relation.interface';
 import { Truck } from '../../../../../../models/truck.interface';
 import { combineLatest } from 'rxjs';
@@ -123,7 +121,17 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
   private readonly store = inject(Store<AppState>);
   // NgRx Step1 Migration Observables
-  public order$ = this.store.select(selectOrder);
+  public orderSignal = this.store.selectSignal(selectOrder);
+  public orderDetailsSignal = this.store.selectSignal(selectStep1OrderDetails);
+  public isDirtySignal = this.store.selectSignal(selectStep1IsDirty);
+  public hasUploadFileSignal = this.store.selectSignal(selectStep1HasFile);
+  public fileNameSignal = this.store.selectSignal(selectStep1FileName);
+  public isLoadingSignal = this.store.selectSignal(StepperSelectors.selectIsStepLoading(1));
+  public isEditModeSignal = this.store.selectSignal(StepperSelectors.selectIsEditMode);
+
+
+
+
   public step1OrderDetails$ = this.store.select(selectStep1OrderDetails);
   public step1IsDirty$ = this.store.select(selectStep1IsDirty);
   public step1HasFile$ = this.store.select(selectStep1HasFile);
@@ -137,7 +145,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   uploadForm!: FormGroup;
   referenceData: ReferenceData = { targetCompanies: [], trucks: [] };
   totalWeight: number = 0;
-  processingLock: boolean = true;
+  processingLock:boolean = true;
 
   // Subscriptions
   private subscriptions: Subscription[] = [];
@@ -147,7 +155,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   // Expose constants for template
   readonly constants = INVOICE_UPLOAD_CONSTANTS;
 
-  public readonly orderSignal = this.store.selectSignal(selectOrder);
+  // Getters for template access
 
   get orderDetails(): OrderDetail[] {
     let currentOrderDetails: OrderDetail[] = [];
@@ -241,7 +249,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   private initializeComponent(): void {
-    this.uploadForm = this.orderSignal().FormManager.initializeForm();
+    this.uploadForm = this.orderFormManager.initializeForm();
     this.setupUIStateSubscription();
     this.loadReferenceData();
     this.restoreFromSession();
@@ -272,7 +280,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       });
 
       if (hasNgRxData) {
-        // this.configurePallet.emit();
         this.calculateTotals();
         this.toastService.info('NgRx store\'dan veriler yüklendi');
         return;
@@ -284,21 +291,21 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
         this.calculateTotals();
         this.toastService.info('LocalStorage\'dan NgRx\'e restore edildi');
       }
-      if (restoredStep2Data) {
+      if(restoredStep2Data){
         this.store.dispatch(StepperActions.initializeStep2State({
           packages: restoredStep2Data.packages,
           remainingProducts: restoredStep2Data.availableProducts
         }))
-        this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }))
+        this.store.dispatch(StepperActions.setStepCompleted({stepIndex:0}))
       }
-      if (restoredStep3Data) {
+      if(restoredStep3Data){
         this.store.dispatch(StepperActions.initializeStep3State({
-          optimizationResult: restoredStep3Data.optimizationResult,
-          reportFiles: restoredStep3Data.reportFiles,
-          algorithmStats: restoredStep3Data.algorithmStats,
-          loadingStats: restoredStep3Data.loadingStats
+          optimizationResult:restoredStep3Data.optimizationResult,
+          reportFiles:restoredStep3Data.reportFiles,
+          algorithmStats:restoredStep3Data.algorithmStats,
+          loadingStats:restoredStep3Data.loadingStats
         }))
-        this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 1 }))
+        this.store.dispatch(StepperActions.setStepCompleted({stepIndex:1}))
       }
     } catch (error) {
       this.toastService.warning('Önceki veriler yüklenirken hata oluştu');
@@ -319,29 +326,19 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   private checkForChangesAndAutoSave(): void {
     const currentState = this.getCurrentFormState();
 
-    if (currentState !== this.lastFormState && this.orderSignal() && this.orderSignal().Details.length > 0) {
+    if (currentState !== this.lastFormState && this.order && this.orderDetails.length > 0) {
       this.triggerAutoSave('user-action');
       this.lastFormState = currentState;
     }
   }
 
-  private getCurrentFormState(): string {
-    try {
-      return JSON.stringify({
-        order: this.orderSignal(),
-        orderDetails: this.orderSignal().Details,
-        hasFile: this.fileUploadManager.hasTempFile(),
-      });
-    } catch (error) {
-      return '';
-    }
-  }
+
 
   private triggerAutoSave(changeType: 'form' | 'user-action' | 'api-response' = 'user-action'): void {
-    if (this.orderSignal() && this.orderSignal().Details.length > 0) {
+    if (this.order && this.orderDetails.length > 0) {
       const autoSaveData = {
-        order: this.orderSignal(),
-        orderDetails: this.orderSignal().Details,
+        order: this.order,
+        orderDetails: this.orderDetails,
         hasFile: this.fileUploadManager.hasTempFile(),
         fileName: this.fileUploadManager.getFileName(),
       };
@@ -373,7 +370,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
             stepIndex: 0,
             loading: false
           }));
-        }))
+      }))
       .subscribe({
         next: (response) => {
           this.store.dispatch(StepperActions.initializeStep1StateFromUpload({
@@ -396,13 +393,13 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   onOrderFieldChange(field: string, value: any): void {
-    let currentOrder = this.orderSignal();
+    let currentOrder = this.order;
     if (currentOrder) {
       const updatedOrder = { ...currentOrder, [field]: value };
 
       this.store.dispatch(StepperActions.initializeStep1State({
         order: updatedOrder,
-        orderDetails: this.orderSignal().lDetails,
+        orderDetails: this.orderDetails,
         hasFile: this.step1HasFile$ ? true : false,
         fileName: this.step1FileName$ ? 'Updated' : undefined
       }));
@@ -413,13 +410,13 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   onCompanyChange(selectedCompany: any): void {
-    let currentOrder = this.orderSignal();
+    let currentOrder = this.order;
     if (currentOrder) {
       const updatedOrder = { ...currentOrder, company_relation: selectedCompany };
 
       this.store.dispatch(StepperActions.initializeStep1State({
         order: updatedOrder,
-        orderDetails: this.orderSignal().Details,
+        orderDetails: this.orderDetails,
         hasFile: this.step1HasFile$ ? true : false,
         fileName: this.step1FileName$ ? 'Company Updated' : undefined
       }));
@@ -430,13 +427,13 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   onTruckChange(selectedTruck: any): void {
-    let currentOrder = this.orderSignal();
+    let currentOrder = this.order;
     if (currentOrder) {
       const updatedOrder = { ...currentOrder, truck: selectedTruck };
 
       this.store.dispatch(StepperActions.initializeStep1State({
         order: updatedOrder,
-        orderDetails: this.orderSignal().Details,
+        orderDetails: this.orderDetails,
         hasFile: this.step1HasFile$ ? true : false,
         fileName: this.step1FileName$ ? 'Truck Updated' : undefined
       }));
@@ -447,13 +444,13 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   onWeightTypeChange(selectedWeightType: string): void {
-    let currentOrder = this.orderSignal();
+    let currentOrder = this.order;
     if (currentOrder) {
       const updatedOrder = { ...currentOrder, weight_type: selectedWeightType };
 
       this.store.dispatch(StepperActions.initializeStep1State({
         order: updatedOrder,
-        orderDetails: this.orderSignal().Details,
+        orderDetails: this.orderDetails,
         hasFile: this.step1HasFile$ ? true : false,
         fileName: this.step1FileName$ ? 'Weight Type Updated' : undefined
       }));
@@ -465,7 +462,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   createOrderDetail(): void {
-    let currentOrder = this.orderSignal();
+    let currentOrder = this.order;
     if (!currentOrder) {
 
       const now = new Date();
@@ -484,7 +481,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
       this.store.dispatch(StepperActions.initializeStep1State({
         order: newOrder,
-        orderDetails: this.orderSignal().Details,
+        orderDetails: this.orderDetails,
         hasFile: false,
         fileName: undefined
       }));
@@ -492,9 +489,9 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       currentOrder = newOrder;
     }
 
-    const dialogSub = this.orderSignal().DetailManager.openOrderDetailDialog(currentOrder!)
+    const dialogSub = this.orderDetailManager.openOrderDetailDialog(currentOrder!)
       .subscribe({
-        next: (newOrderDetail: any) => {
+        next: (newOrderDetail:any) => {
           if (newOrderDetail) {
             this.store.dispatch(StepperActions.addOrderDetail({
               orderDetail: newOrderDetail.orderDetail
@@ -534,13 +531,13 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   calculateTotals(): void {
-    if (!this.orderSignal()?.weight_type) {
+    if (!this.order?.weight_type) {
       this.totalWeight = 0;
       return;
     }
     const result = this.calculatorService.calculateTotalWeight(
-      this.orderSignal().Details,
-      this.orderSignal().weight_type as WeightType
+      this.orderDetails,
+      this.order.weight_type as WeightType
     );
     this.totalWeight = result.totalWeight;
   }
@@ -549,7 +546,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     let hasValidOrder = false;
     let hasValidOrderDetails = false;
 
-    this.orderSignal()$.pipe(take(1)).subscribe(order => {
+    this.order$.pipe(take(1)).subscribe(order => {
       hasValidOrder = !!(order?.date && order?.company_relation && order?.truck && order?.weight_type);
     });
 
@@ -565,7 +562,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (!this.orderSignal() || this.orderSignal()Details.length === 0) {
+    if (!this.order || this.orderDetails.length === 0) {
       this.toastService.warning(INVOICE_UPLOAD_CONSTANTS.MESSAGES.WARNING.MISSING_ORDER_DETAILS);
       return;
     }
@@ -591,11 +588,11 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     const submitSub = orderOperation
       .pipe(
         switchMap((orderResponse) => {
-          if (orderResponse?.id && this.orderSignal()) {
-            const updatedOrder = { ...this.orderSignal(), id: orderResponse.id };
+          if (orderResponse?.id && this.order) {
+            const updatedOrder = { ...this.order, id: orderResponse.id };
             this.store.dispatch(StepperActions.initializeStep1State({
               order: updatedOrder,
-              orderDetails: this.orderSignal().Details,
+              orderDetails: this.orderDetails,
               hasFile: this.step1HasFile$ ? true : false,
               fileName: this.step1FileName$ ? 'Order Saved' : undefined
             }));
@@ -605,14 +602,14 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
             return this.fileUploadManager.uploadFileToOrder(orderResponse.id)
               .pipe(
                 switchMap(() =>
-                  this.orderSignal()DetailManager.processOrderDetailChanges(
+                  this.orderDetailManager.processOrderDetailChanges(
                     orderDetailChanges,
                     orderResponse.id
                   )
                 )
               );
           } else {
-            return this.orderSignal()DetailManager.processOrderDetailChanges(
+            return this.orderDetailManager.processOrderDetailChanges(
               orderDetailChanges,
               orderResponse.id
             );
@@ -659,21 +656,21 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
   private getOrderOperation(): Observable<any> {
     const formattedOrder = {
-      id: this.orderSignal()!.id,
-      company_relation_id: this.orderSignal()!.company_relation?.id,
-      truck_id: this.orderSignal()!.truck?.id,
-      date: this.orderSignal()!.date,
-      weight_type: this.orderSignal()!.weight_type,
-      name: this.orderSignal()!.name,
+      id: this.order!.id,
+      company_relation_id: this.order!.company_relation?.id,
+      truck_id: this.order!.truck?.id,
+      date: this.order!.date,
+      weight_type: this.order!.weight_type,
+      name: this.order!.name,
     };
 
-    return this.orderSignal()Service.getById(this.orderSignal()!.id).pipe(
+    return this.orderService.getById(this.order!.id).pipe(
       switchMap((existingOrder) => {
-        return this.orderSignal()Service.update(this.orderSignal()!.id, formattedOrder);
+        return this.orderService.update(this.order!.id, formattedOrder);
       }),
       catchError((error) => {
         if (error.status === 404) {
-          return this.orderSignal()Service.create(formattedOrder);
+          return this.orderService.create(formattedOrder);
         }
         throw error;
       })
@@ -689,13 +686,13 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     if (result?.order_details && Array.isArray(result.order_details)) {
       this.syncComponentWithBackendData(result.order_details);
     } else {
-      // Backend'den order_details gelmezse mevcut state'i temizle
-      this.clearChangesAfterSubmit();
-    }
+    // Backend'den order_details gelmezse mevcut state'i temizle
+    this.clearChangesAfterSubmit();
+  }
 
     this.localService.saveStep1Data(
-      this.orderSignal()!,
-      this.orderSignal().Details,
+      this.order!,
+      this.orderDetails,
       this.fileUploadManager.hasTempFile(),
       this.fileUploadManager.getFileName()
     );
@@ -703,7 +700,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
   resetForm(): void {
     this.fileUploadManager.moveFileToTemp();
-    this.orderSignal()FormManager.resetForm();
+    this.orderFormManager.resetForm();
   }
 
   resetComponentState(): void {
@@ -726,10 +723,10 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   forceSaveStep1(): void {
-    if (this.orderSignal() && this.orderSignal()Details.length > 0) {
+    if (this.order && this.orderDetails.length > 0) {
       const autoSaveData = {
-        order: this.orderSignal(),
-        orderDetails: this.orderSignal()Details,
+        order: this.order,
+        orderDetails: this.orderDetails,
         hasFile: this.fileUploadManager.hasTempFile(),
         fileName: this.fileUploadManager.getFileName(),
       };
@@ -743,7 +740,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
   private updateTableData(): void {
     if (this.genericTable?.dataSource) {
-      this.genericTable.dataSource.data = [...this.orderSignal()Details];
+      this.genericTable.dataSource.data = [...this.orderDetails];
       this.genericTable.dataSource._updateChangeSubscription();
     }
   }
@@ -757,18 +754,18 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   getFormattedDate(date: string | Date | null | undefined): string {
-    return this.orderSignal().FormManager.getFormattedDate(date);
+    return this.orderFormManager.getFormattedDate(date);
   }
 
   compareObjects = (a: any, b: any): boolean => {
-    return this.orderSignal().FormManager.compareObjects(a, b);
+    return this.orderFormManager.compareObjects(a, b);
   }
 
   compareCompanies = (a: any, b: any): boolean => {
-    return this.orderSignal().FormManager.compareCompanies(a, b);
+    return this.orderFormManager.compareCompanies(a, b);
   }
 
   compareWeightTypes = (a: string, b: string): boolean => {
-    return this.orderSignal().FormManager.compareWeightTypes(a, b);
+    return this.orderFormManager.compareWeightTypes(a, b);
   }
 }
