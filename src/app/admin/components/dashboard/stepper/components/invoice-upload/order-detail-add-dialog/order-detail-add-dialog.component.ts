@@ -16,6 +16,7 @@ import { Product } from '../../../../../../../models/product.interface';
 import * as StepperSelectors from '../../../../../../../store/stepper/stepper.selectors';
 import { Store } from '@ngrx/store';
 import { AppState } from '../../../../../../../store';
+import { generateUUID } from 'three/src/math/MathUtils.js';
 
 @Component({
   selector: 'app-order-detail-add-dialog',
@@ -56,6 +57,7 @@ export class OrderDetailAddDialogComponent implements OnInit {
   ) {
     // Main order form
     this.orderDetailForm = this.fb.group({
+      id: generateUUID(),
       order: [this.orderSignal(), Validators.required], // Use data directly as the Order object
       product: [this.prod, Validators.required],
       count: [1, [Validators.required, Validators.min(1)]],

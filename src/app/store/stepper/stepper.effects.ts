@@ -316,7 +316,6 @@ export class StepperEffects {
       ofType(StepperActions.getLocalStorageData),
       tap(() => {
         const data = this.localStorageService.getStepperData();
-        console.log("getLocalStorageData$: ", data)
       })
     ),
     { dispatch: false }

@@ -2,10 +2,8 @@
 
 import {
   Component,
-  EventEmitter,
   inject,
   OnInit,
-  Output,
   ViewChild,
   OnDestroy,
   ChangeDetectionStrategy,
@@ -18,7 +16,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTableModule } from '@angular/material/table';
-import { CommonModule } from '@angular/common';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -32,18 +29,13 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
   Observable,
-  switchMap,
   finalize,
-  catchError,
   Subscription,
-  interval,
-  take
 } from 'rxjs';
 import { OrderService } from '../../../../services/order.service';
 import { ToastService } from '../../../../../../services/toast.service';
 import { LocalStorageService } from '../../services/local-storage.service';
 
-import { Order } from '../../../../../../models/order.interface';
 import { OrderDetail } from '../../../../../../models/order-detail.interface';
 import { GenericTableComponent } from '../../../../../../components/generic-table/generic-table.component';
 
@@ -57,7 +49,6 @@ import { InvoiceCalculatorService } from './services/invoice-calculator.service'
 
 import * as StepperSelectors from '../../../../../../store/stepper/stepper.selectors';
 import * as StepperActions from '../../../../../../store/stepper/stepper.actions';
-import { selectStep1Changes } from '../../../../../../store/stepper/stepper.selectors';
 // Types and constants
 import {
   OrderDetailUpdateEvent,
@@ -77,13 +68,11 @@ import { CompanyRelation } from '../../../../../../models/company-relation.inter
 import { Truck } from '../../../../../../models/truck.interface';
 import { combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { update } from 'lodash';
 
 @Component({
   selector: 'app-invoice-upload',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     ReactiveFormsModule,
     MatFormFieldModule,
@@ -119,9 +108,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   private readonly calculatorService = inject(InvoiceCalculatorService);
 
   // Original services still needed
-  private readonly orderService = inject(OrderService);
   private readonly toastService = inject(ToastService);
-  private readonly localService = inject(LocalStorageService);
 
   private readonly store = inject(Store<AppState>);
   // NgRx Step1 Migration Observables
@@ -206,22 +193,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     return INVOICE_UPLOAD_CONSTANTS.TABLE.EXCLUDE_FIELDS as string[];
   }
 
-  // Performance Optimization - TrackBy functions
-  trackByOrderDetailId = (index: number, item: any): any => {
-    return item?.id || index;
-  };
-
-  trackByCompanyId = (index: number, item: any): any => {
-    return item?.id || index;
-  };
-
-  trackByTruckId = (index: number, item: any): any => {
-    return item?.id || index;
-  };
-
-  trackByWeightType = (index: number, item: string): string => {
-    return item;
-  };
 
   ngOnInit(): void {
     this.initializeComponent();
@@ -240,10 +211,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     this.uploadForm = this.orderFormManager.initializeForm();
     this.setupUIStateSubscription();
     this.loadReferenceData();
-    // veriler store a yuklendikten sonra hesaplamalar hatali olabilir
-    // tekrar hesaplatma islemi yapmak gerekebilir 
-    // hesaplama degerlerini computed ile yapabiliriz
-    // 
   }
 
   private setupUIStateSubscription(): void {
@@ -378,6 +345,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   deleteOrderDetail(id: string): void {
+    console.log("delete order detail id invoice upload",id)
     this.store.dispatch(StepperActions.deleteOrderDetail({
       orderDetailId: id
     }));
@@ -388,11 +356,13 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     if (!this.orderSignal()?.weight_type) {
       return 0;
     }
+    console.log("total weight",this.orderSignal(),this.orderDetailsSignal())
     const total = this.calculatorService.calculateTotalWeight(
       this.orderDetailsSignal(),
       this.orderSignal()?.weight_type as WeightType
     )
-    return total;
+    console.log("total weight",total)
+    return total.totalWeight;
   })
 
 
