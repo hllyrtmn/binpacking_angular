@@ -307,7 +307,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     let currentOrder = this.orderSignal();
     if (currentOrder) {
       const updatedOrder = { ...currentOrder, [field]: value };
-      this.store.dispatch(StepperActions.setOrder({order:updatedOrder}));
+      this.store.dispatch(StepperActions.setOrder({ order: updatedOrder }));
     }
   }
 
@@ -315,7 +315,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     let currentOrder = this.orderSignal();
     if (currentOrder) {
       const updatedOrder = { ...currentOrder, company_relation: selectedCompany };
-      this.store.dispatch(StepperActions.setOrder({order:updatedOrder}));
+      this.store.dispatch(StepperActions.setOrder({ order: updatedOrder }));
     }
   }
 
@@ -323,7 +323,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     let currentOrder = this.orderSignal();
     if (currentOrder) {
       const updatedOrder = { ...currentOrder, truck: selectedTruck };
-      this.store.dispatch(StepperActions.setOrder({order:updatedOrder}));
+      this.store.dispatch(StepperActions.setOrder({ order: updatedOrder }));
     }
   }
 
@@ -331,7 +331,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     let currentOrder = this.orderSignal();
     if (currentOrder) {
       const updatedOrder = { ...currentOrder, weight_type: selectedWeightType };
-      this.store.dispatch(StepperActions.setOrder({order:updatedOrder}))
+      this.store.dispatch(StepperActions.setOrder({ order: updatedOrder }))
     }
   }
 
@@ -382,7 +382,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   public totalWeight = computed(() => {
-    if(!this.orderSignal()?.weight_type){
+    if (!this.orderSignal()?.weight_type) {
       return 0;
     }
     const total = this.calculatorService.calculateTotalWeight(
@@ -394,16 +394,8 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
 
   isFormValid(): boolean {
-    let hasValidOrder = false;
-    let hasValidOrderDetails = false;
-
-    this.order$.pipe(take(1)).subscribe(order => {
-      hasValidOrder = !!(order?.date && order?.company_relation && order?.truck && order?.weight_type);
-    });
-
-    this.step1OrderDetails$.pipe(take(1)).subscribe(details => {
-      hasValidOrderDetails = details.length > 0;
-    });
+    let hasValidOrderDetails = this.orderDetailsSignal().length > 0;
+    let hasValidOrder = !!(this.orderSignal()?.date && this.orderSignal()?.company_relation && this.orderSignal()?.truck && this.orderSignal()?.weight_type);
     return hasValidOrder && hasValidOrderDetails;
   }
 
@@ -510,48 +502,48 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   // bunun icin bir action yazilip effect kisminda islemi yapmaliyiz
-  private setOrderOperation(): Observable<any> {
-    // const formattedOrder = {
-    //   id: this.order!.id,
-    //   company_relation_id: this.order!.company_relation?.id,
-    //   truck_id: this.order!.truck?.id,
-    //   date: this.order!.date,
-    //   weight_type: this.order!.weight_type,
-    //   name: this.order!.name,
-    // };
+  // private setOrderOperation():{
+  // const formattedOrder = {
+  //   id: this.order!.id,
+  //   company_relation_id: this.order!.company_relation?.id,
+  //   truck_id: this.order!.truck?.id,
+  //   date: this.order!.date,
+  //   weight_type: this.order!.weight_type,
+  //   name: this.order!.name,
+  // };
 
-    // return this.orderService.getById(this.order!.id).pipe(
-    //   switchMap((existingOrder) => {
-    //     return this.orderService.update(this.order!.id, formattedOrder);
-    //   }),
-    //   catchError((error) => {
-    //     if (error.status === 404) {
-    //       return this.orderService.create(formattedOrder);
-    //     }
-    //     throw error;
-    //   })
-    // );
-  }
+  // return this.orderService.getById(this.order!.id).pipe(
+  //   switchMap((existingOrder) => {
+  //     return this.orderService.update(this.order!.id, formattedOrder);
+  //   }),
+  //   catchError((error) => {
+  //     if (error.status === 404) {
+  //       return this.orderService.create(formattedOrder);
+  //     }
+  //     throw error;
+  //   })
+  // );
+  // }
 
-  private handleSubmitSuccess(result: any): void {
-    // this.toastService.success(INVOICE_UPLOAD_CONSTANTS.MESSAGES.SUCCESS.CHANGES_SAVED);
-    // this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
-    // this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 0, isValid: true }));
-    // this.store.dispatch(StepperActions.clearAdded());
-    // if (result?.order_details && Array.isArray(result.order_details)) {
-    //   this.syncComponentWithBackendData(result.order_details);
-    // } else {
-    //   // Backend'den order_details gelmezse mevcut state'i temizle
-    //   this.clearChangesAfterSubmit();
-    // }
+  // private handleSubmitSuccess(): void {
+  // this.toastService.success(INVOICE_UPLOAD_CONSTANTS.MESSAGES.SUCCESS.CHANGES_SAVED);
+  // this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
+  // this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 0, isValid: true }));
+  // this.store.dispatch(StepperActions.clearAdded());
+  // if (result?.order_details && Array.isArray(result.order_details)) {
+  //   this.syncComponentWithBackendData(result.order_details);
+  // } else {
+  //   // Backend'den order_details gelmezse mevcut state'i temizle
+  //   this.clearChangesAfterSubmit();
+  // }
 
-    // this.localService.saveStep1Data(
-    //   this.order!,
-    //   this.orderDetails,
-    //   this.fileUploadManager.hasTempFile(),
-    //   this.fileUploadManager.getFileName()
-    // );
-  }
+  // this.localService.saveStep1Data(
+  //   this.order!,
+  //   this.orderDetails,
+  //   this.fileUploadManager.hasTempFile(),
+  //   this.fileUploadManager.getFileName()
+  // );
+  // }
 
   resetForm(): void {
     this.fileUploadManager.moveFileToTemp();
@@ -567,38 +559,21 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
         fileName: undefined
       }));
       this.fileUploadManager.resetAllFiles();
-      this.totalWeight = 0;
 
       this.uiStateManager.resetAllStates();
-      this.updateTableData();
     } catch (error) {
 
     }
   }
 
-  forceSaveStep1(): void {
-    if (this.order && this.orderDetails.length > 0) {
-      const autoSaveData = {
-        order: this.order,
-        orderDetails: this.orderDetails,
-        hasFile: this.fileUploadManager.hasTempFile(),
-        fileName: this.fileUploadManager.getFileName(),
-      };
 
-      this.store.dispatch(StepperActions.forceSave({
-        stepNumber: 0,
-        data: autoSaveData
-      }));
-    }
-  }
-
-updateTableData1 = computed(() => {
+  updateTableData1 = computed(() => {
     if (this.genericTable?.dataSource) {
       this.genericTable.dataSource.data = [...this.orderDetailsSignal()];
       this.genericTable.dataSource._updateChangeSubscription();
     }
-  return true
-})
+    return true
+  })
 
 
   private syncComponentWithBackendData(backendOrderDetails: OrderDetail[]): void {
