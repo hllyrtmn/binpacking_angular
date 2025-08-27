@@ -1,18 +1,17 @@
 import { Component, inject, Inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
+import {  MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { catchError, debounceTime, distinctUntilChanged, finalize, switchMap } from 'rxjs/operators';
-import { Observable, of } from 'rxjs';
+import {  of } from 'rxjs';
 import { ProductService } from '../../../../../services/product.service';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
-import { Order } from '../../../../../../../models/order.interface';
 import { Product } from '../../../../../../../models/product.interface';
 import * as StepperSelectors from '../../../../../../../store/stepper/stepper.selectors';
 import { Store } from '@ngrx/store';
@@ -170,6 +169,7 @@ export class OrderDetailAddDialogComponent implements OnInit {
         "order_id": this.orderDetailForm.value['order'],},
         orderDetail : this.orderDetailForm.value
       }
+      console.log(requestData.orderDetail)
       this.dialogRef.close(requestData);
     }
   }

@@ -36,64 +36,6 @@
             </mat-form-field>
           </div>
         </mat-tab>
-
-        <!-- Boyut Araması -->
-        <mat-tab label="Boyut Araması">
-          <div class="tab-content">
-            <form [formGroup]="dimensionSearchForm" class="dimension-form">
-              <mat-form-field appearance="fill">
-                <mat-label>Genişlik</mat-label>
-                <input type="number" matInput formControlName="width" placeholder="mm">
-              </mat-form-field>
-
-              <mat-form-field appearance="fill">
-                <mat-label>Yükseklik</mat-label>
-                <input type="number" matInput formControlName="height" placeholder="mm">
-              </mat-form-field>
-
-              <mat-form-field appearance="fill">
-                <mat-label>Derinlik</mat-label>
-                <input type="number" matInput formControlName="depth" placeholder="mm">
-              </mat-form-field>
-
-              <button mat-raised-button color="primary" type="button" (click)="searchByDimensions()">
-                <mat-icon>search</mat-icon> Boyutlara Göre Ara
-              </button>
-            </form>
-
-            <!-- Boyut Arama Sonuçları -->
-            <div class="search-results" *ngIf="filteredProducts.length > 0 || isLoading || hasError">
-              <mat-spinner *ngIf="isLoading" diameter="30" class="centered-spinner"></mat-spinner>
-
-              <div *ngIf="hasError" class="error-box">
-                <mat-icon color="warn">error</mat-icon>
-                <span>{{ errorMessage }}</span>
-              </div>
-
-              <div *ngIf="!isLoading && !hasError">
-                <p *ngIf="filteredProducts.length === 0" class="no-results">Eşleşen ürün bulunamadı</p>
-
-                <!-- TODO: burada product name kullanilabilir ama spanlar icin style verilmis-->
-                <div *ngIf="filteredProducts.length > 0" class="product-list">
-                  <div *ngFor="let product of filteredProducts" class="product-item" (click)="selectProduct(product)">
-                    <div class="product-info">
-                      <!-- <span class="product-code">{{ product.product_type?.code }}-{{ product.product_type?.type
-                        }}</span>
-                      <span class="product-dimensions">
-                        {{ product.dimension?.width }}x{{ product.dimension?.height }}x{{ product.dimension?.depth }} {{
-                        product.dimension?.unit }}
-                      </span> -->
-                      {{product.name}}
-                    </div>
-                    <button mat-icon-button color="primary">
-                      <mat-icon>add_circle</mat-icon>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </mat-tab>
       </mat-tab-group>
 
       <!-- Sipariş Detay Bilgileri -->
@@ -101,29 +43,21 @@
         <h3>Sipariş Bilgileri</h3>
 
         <!-- Miktar -->
-        <mat-form-field appearance="fill" class="half-width">
+        <mat-form-field appearance="fill" class="full-width">
           <mat-label>Miktar</mat-label>
           <input type="number" matInput formControlName="count" min="1">
-          <mat-error *ngIf="orderDetailForm.get('count')?.hasError('required')">
-            Miktar girilmesi zorunludur
-          </mat-error>
-          <mat-error *ngIf="orderDetailForm.get('count')?.hasError('min')">
-            Miktar en az 1 olmalıdır
-          </mat-error>
+          @if(orderDetailForm.get('count')?.hasError('required')){
+            <mat-error >
+              Miktar girilmesi zorunludur
+            </mat-error>
+          }
+          @if(orderDetailForm.get('count')?.hasError('min')){
+            <mat-error >
+              Miktar en az 1 olmalıdır
+            </mat-error>
+          }
         </mat-form-field>
 
-        <!-- Birim Fiyat -->
-        <mat-form-field appearance="fill" class="half-width">
-          <mat-label>Birim Fiyat</mat-label>
-          <input type="number" matInput formControlName="unit_price" step="0.01" min="0.01">
-          <span matSuffix>₺</span>
-          <mat-error *ngIf="orderDetailForm.get('unit_price')?.hasError('required')">
-            Birim fiyat girilmesi zorunludur
-          </mat-error>
-          <mat-error *ngIf="orderDetailForm.get('unit_price')?.hasError('min')">
-            Birim fiyat sıfırdan büyük olmalıdır
-          </mat-error>
-        </mat-form-field>
 
         <!-- Seçilen Ürün Bilgisi -->
         <div class="selected-product"

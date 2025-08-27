@@ -335,7 +335,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     }
   }
 
-  createOrderDetail(): void {
+  createOrder(): void {
     const now = new Date();
     const newOrder = {
       id: crypto.randomUUID(),
@@ -350,13 +350,16 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       is_deleted: false,
     };
     this.store.dispatch(StepperActions.setOrder({ order: newOrder }))
+    this.openOrderDetailAddDialog();
+  }
 
+  openOrderDetailAddDialog() {
     const dialogSub = this.orderDetailManager.openOrderDetailDialog()
       .subscribe({
-        next: (formData: any) => {
-          if (formData) {
+        next: (orderDetail: any) => {
+          if (orderDetail) {
             this.store.dispatch(StepperActions.addOrderDetail({
-              orderDetail: formData.orderDetail
+              orderDetail: orderDetail
             }));
 
           }
@@ -417,7 +420,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     // bu action sirasi ile islemleri yapip diger actionlara baglanarak
     // bir action chain olusturmali
 
-    this.store.dispatch(StepperActions.invoiceUploadSubmit({}))
+    this.store.dispatch(StepperActions.invoiceUploadSubmit())
 
     // this.store.dispatch(StepperActions.setStepLoading({
     //   stepIndex: 0,

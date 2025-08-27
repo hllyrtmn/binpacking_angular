@@ -7,7 +7,6 @@ import { OrderDetailAddDialogComponent } from '../order-detail-add-dialog/order-
 import { INVOICE_UPLOAD_CONSTANTS } from '../constants/invoice-upload.constants';
 import { ToastService } from '../../../../../../../services/toast.service';
 import { OrderDetail } from '../../../../../../../models/order-detail.interface';
-import { Order } from '../../../../../../../models/order.interface';
 
 @Injectable({
   providedIn: 'root'

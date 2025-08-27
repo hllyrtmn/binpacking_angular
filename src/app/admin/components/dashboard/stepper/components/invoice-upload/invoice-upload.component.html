@@ -26,7 +26,7 @@
       </p>
 
       <div class="action-options">
-        <button mat-raised-button class="action-button" (click)="createOrderDetail()">
+        <button mat-raised-button class="action-button" (click)="createOrder()">
           <mat-icon>add</mat-icon>
           <span>Manuel Giriş</span>
         </button>
@@ -178,15 +178,17 @@
         </div>
       </div>
 
+      @if(orderDetailsSignal().length > 0){
       <div class="table-container">
-        <app-generic-table [externalData]="orderDetails" [externalTotalCount]="orderDetails.length"
+        <app-generic-table [externalData]="orderDetailsSignal()" [externalTotalCount]="orderDetailsSignal().length"
           [displayedColumns]="displayedColumns" [filterableColumns]="filterableColumns"
-          [nestedDisplayColumns]="nestedDisplayColumns" [parentId]="order.id" [useParentId]="true"
-          [parentIdFieldName]="'order_id'" [title]="''" [showRowNumbers]="true" (addClick)="createOrderDetail()"
+          [nestedDisplayColumns]="nestedDisplayColumns" [parentId]="orderSignal().id" [useParentId]="true"
+          [parentIdFieldName]="'order_id'" [title]="''" [showRowNumbers]="true" (addClick)="openOrderDetailAddDialog()"
           (externalDataUpdate)="updateOrderDetail($event)" (externalDataDelete)="deleteOrderDetail($event)"
           [excludeFields]="excludeFields">
         </app-generic-table>
       </div>
+    }
 
       <div class="summary-footer" *ngIf="orderDetails && orderDetails.length > 0">
         <div class="summary-content">

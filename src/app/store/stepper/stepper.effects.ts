@@ -321,4 +321,12 @@ export class StepperEffects {
     ),
     { dispatch: false }
   );
+
+  invoiceUploadSubmit$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(StepperActions.invoiceUploadSubmit),
+      tap(() => {console.log("invoiceUploadSubmit$ tetiklendi")})
+    ),
+    { dispatch: false }
+  );
 }
