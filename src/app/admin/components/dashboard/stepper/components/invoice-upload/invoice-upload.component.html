@@ -13,7 +13,7 @@
   </div>
 
   <!-- Empty State Card -->
-  @if(!orderSignal() && isLoadingSignal() ){
+  @if(!orderSignal() && !isLoadingSignal() ){
   <div class="logistics-card">
     <div class="empty-state">
       <div class="empty-icon">
@@ -43,7 +43,8 @@
           </button>
           <input (change)="onFileSelected($event)" #fileInput type="file" accept=".pdf,.xls,.xlsx" hidden />
 
-          <button *ngIf="file" mat-raised-button class="upload-button" [disabled]="!file || excelUpload"
+
+          <button mat-raised-button class="upload-button" [disabled]="!file"
             (click)="uploadFile()">
             <mat-icon>cloud_upload</mat-icon>
             <span>İçeri Aktar</span>
@@ -196,7 +197,7 @@
             </div>
             <div class="metric">
               <mat-icon>scale</mat-icon>
-              <span>{{ totalWeight.toFixed(2) }} kg</span>
+              <span>{{ totalWeight().toFixed(2) }} kg</span>
             </div>
           </div>
           <div class="status-badge">
@@ -216,5 +217,3 @@
       <span>{{"Sonraki adim"}}</span>
       <mat-icon>arrow_forward</mat-icon>
     </button>
-  </div>
-</div>

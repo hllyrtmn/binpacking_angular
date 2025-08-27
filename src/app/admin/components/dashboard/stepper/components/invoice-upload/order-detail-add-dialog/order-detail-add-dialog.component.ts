@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, inject, Inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
@@ -14,6 +14,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Order } from '../../../../../../../models/order.interface';
 import { Product } from '../../../../../../../models/product.interface';
+import * as StepperSelectors from '../../../../../../../store/stepper/stepper.selectors';
+import { Store } from '@ngrx/store';
+import { AppState } from '../../../../../../../store';
 
 @Component({
   selector: 'app-order-detail-add-dialog',
@@ -44,15 +47,17 @@ export class OrderDetailAddDialogComponent implements OnInit {
   errorMessage = '';
   activeTab = 0;
 
+  private store = inject(Store<AppState>)
+  public orderSignal = this.store.selectSignal(StepperSelectors.selectOrder)
+
   constructor(
     private fb: FormBuilder,
     private dialogRef: MatDialogRef<OrderDetailAddDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: Order, // Changed from { order: Order } to Order
     private productService: ProductService
   ) {
     // Main order form
     this.orderDetailForm = this.fb.group({
-      order: [this.data, Validators.required], // Use data directly as the Order object
+      order: [this.orderSignal(), Validators.required], // Use data directly as the Order object
       product: [this.prod, Validators.required],
       count: [1, [Validators.required, Validators.min(1)]],
       unit_price: [0, [Validators.required, Validators.min(0.01)]]

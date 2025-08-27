@@ -28,10 +28,9 @@ export class OrderDetailManager {
   }
 
 
-  openOrderDetailDialog(order: Order): Observable<OrderDetail | null> {
+  openOrderDetailDialog(): Observable<OrderDetail | null> {
     const dialogRef = this.dialog.open(OrderDetailAddDialogComponent, {
       width: '600px',
-      data: order,
       disableClose: true,
     });
 
@@ -39,10 +38,8 @@ export class OrderDetailManager {
       dialogRef.afterClosed().subscribe({
         next: (result) => {
           if (result && result.orderDetail) {
-            const newOrderDetail = result.orderDetail;
-            this.addOrderDetail(newOrderDetail);
             this.toastService.success(INVOICE_UPLOAD_CONSTANTS.MESSAGES.SUCCESS.ORDER_DETAIL_ADDED);
-            observer.next(newOrderDetail);
+            observer.next(result.orderDetail);
           } else {
             observer.next(null);
           }
