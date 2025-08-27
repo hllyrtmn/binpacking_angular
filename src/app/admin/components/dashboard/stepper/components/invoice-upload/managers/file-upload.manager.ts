@@ -10,6 +10,10 @@ import { ToastService } from '../../../../../../../services/toast.service';
   providedIn: 'root'
 })
 export class FileUploadManager {
+  // TODO:
+  // burasi tasinacak
+  // butun projedeki file upload islemleri icin kullanilacak
+  // helper gorevi gorecek
   private readonly repositoryService = inject(RepositoryService);
   private readonly toastService = inject(ToastService);
 

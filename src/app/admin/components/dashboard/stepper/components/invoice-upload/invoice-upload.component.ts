@@ -37,7 +37,7 @@ import { ToastService } from '../../../../../../services/toast.service';
 import { LocalStorageService } from '../../services/local-storage.service';
 
 import { OrderDetail } from '../../../../../../models/order-detail.interface';
-import { GenericTableComponent } from '../../../../../../components/generic-table/generic-table.component';
+import { ExternalDataParams, GenericTableComponent } from '../../../../../../components/generic-table/generic-table.component';
 
 // Refactored managers and services
 import { FileUploadManager } from './managers/file-upload.manager';
@@ -232,42 +232,16 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
   onFileSelected(event: Event): void {
     this.fileUploadManager.selectFile(event);
+    this.uploadFile();
   }
 
   uploadFile(): void {
-    this.uiStateManager.startFileUpload();
     this.store.dispatch(StepperActions.setStepLoading({
       stepIndex: 0,
       loading: true,
       operation: 'File upload'
     }));
-    const uploadSub = this.fileUploadManager.uploadFile()
-      .pipe(
-        finalize(() => {
-          this.uiStateManager.finishFileUpload();
-          // NgRx store loading'i de bitir
-          this.store.dispatch(StepperActions.setStepLoading({
-            stepIndex: 0,
-            loading: false
-          }));
-        }))
-      .subscribe({
-        next: (response) => {
-          this.store.dispatch(StepperActions.initializeStep1StateFromUpload({
-            order: response.order,
-            orderDetails: response.orderDetail,
-            hasFile: true,
-            fileName: 'File Upload Result'
-          }));
-          this.toastService.success(INVOICE_UPLOAD_CONSTANTS.MESSAGES.SUCCESS.FILE_PROCESSED);
-          this.resetForm();
-
-        },
-        error: (error) => {
-          this.toastService.error(INVOICE_UPLOAD_CONSTANTS.MESSAGES.ERROR.FILE_PROCESSING, error);
-        },
-      });
-    this.subscriptions.push(uploadSub);
+    this.store.dispatch(StepperActions.uploadInvoiceFile())
   }
 
   onOrderFieldChange(field: string, value: any): void {
@@ -301,6 +275,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       this.store.dispatch(StepperActions.setOrder({ order: updatedOrder }))
     }
   }
+
 
   createOrder(): void {
     const now = new Date();

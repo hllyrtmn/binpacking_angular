@@ -314,8 +314,8 @@ export const stepperReducer = createReducer(
 
   on(StepperActions.initializeStep1StateFromUpload, (state, { order, orderDetails, hasFile, fileName }) => ({
     ...state,
+    order,
     step1State: {
-      order,
       orderDetails: [...orderDetails],
       originalOrderDetails: [], // File upload'da original yok
       added: [...orderDetails], // File'dan gelen tüm data added

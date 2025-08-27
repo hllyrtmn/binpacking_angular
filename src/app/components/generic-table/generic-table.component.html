@@ -4,47 +4,57 @@
     <div class="spacer"></div>
 
     <!-- Aktif filtreleri temizleme butonu -->
-    <button mat-button color="primary" *ngIf="hasActiveFilters()" (click)="clearAllFilters()">
-      <mat-icon>filter_list_off</mat-icon>
-      Filtreleri Temizle
-    </button>
+    @if (hasActiveFilters()) {
+      <button mat-button color="primary" (click)="clearAllFilters()">
+        <mat-icon>filter_list_off</mat-icon>
+        Filtreleri Temizle
+      </button>
+    }
   </div>
 
   <!-- Loading indicator -->
-  <div class="loading-shade" *ngIf="isLoading">
-    <mat-spinner></mat-spinner>
-  </div>
+  @if (isLoading) {
+    <div class="loading-shade">
+      <mat-spinner></mat-spinner>
+    </div>
+  }
 
   <!-- Aktif filtreler -->
-  <div class="active-filters" *ngIf="hasActiveFilters()">
-    <div class="chip-list">
-      <span class="filter-label">Aktif Filtreler:</span>
+  @if (hasActiveFilters()) {
+    <div class="active-filters">
+      <div class="chip-list">
+        <span class="filter-label">Aktif Filtreler:</span>
 
-      <!-- Her aktif filtre için çip -->
-      <div *ngFor="let column of filterableColumns">
-        <ng-container *ngIf="isFilterActive(column)">
-          <div class="filter-chip">
-            <span class="chip-label">{{ getColumnDisplayName(column) }}: {{ filterValues[column] }}</span>
-            <button mat-icon-button class="chip-remove" (click)="filterValues[column] = ''; loadData()">
-              <mat-icon>close</mat-icon>
-            </button>
-          </div>
-        </ng-container>
+        <!-- Her aktif filtre için çip -->
+        @for (column of filterableColumns; track column) {
+          @if (isFilterActive(column)) {
+            <div class="filter-chip">
+              <span class="chip-label">
+                {{ getColumnDisplayName(column) }}: {{ filterValues[column] }}
+              </span>
+              <button mat-icon-button class="chip-remove" (click)="filterValues[column] = ''; loadData()">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          }
+        }
       </div>
     </div>
-  </div>
+  }
 
   <!-- Table -->
   <table mat-table [dataSource]="dataSource" matSort matSortDisableClear>
 
     <ng-container matColumnDef="rowNumber">
       <th mat-header-cell *matHeaderCellDef class="text-center">
-        <button *ngIf="showAddButton"
-          mat-icon-button
-          (click)="onAddButtonClick($event)"
-          matTooltip="Yeni Ekle">
-          <mat-icon>add_circle</mat-icon>
-        </button>
+        @if (showAddButton) {
+          <button
+            mat-icon-button
+            (click)="onAddButtonClick($event)"
+            matTooltip="Yeni Ekle">
+            <mat-icon>add_circle</mat-icon>
+          </button>
+        }
       </th>
       <td mat-cell *matCellDef="let row; let i = index" class="row-number-cell">
         {{ getRowNumber(i) }}
@@ -52,59 +62,77 @@
     </ng-container>
 
     <!-- Dynamic Columns -->
-    <ng-container *ngFor="let column of displayedColumns" [matColumnDef]="column">
-      <th mat-header-cell *matHeaderCellDef mat-sort-header>
-        <div class="header-content">
-          {{ getColumnDisplayName(column) }}
+    @for (column of displayedColumns; track column) {
+      <ng-container [matColumnDef]="column">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>
+          <div class="header-content">
+            {{ getColumnDisplayName(column) }}
 
-          <!-- Filtre ikonu - eğer filtre uygulanabilir bir sütunsa -->
-          <button
-            mat-icon-button
-            *ngIf="filterableColumns.includes(column)"
-            class="filter-icon"
-            [class.active-filter]="isFilterActive(column)"
-            (click)="openFilterDialog(column, $event)"
-            [matTooltip]="isFilterActive(column) ? 'Filtreyi Düzenle' : 'Filtrele'">
-            <mat-icon>filter_alt</mat-icon>
-          </button>
-        </div>
-      </th>
-      <td mat-cell *matCellDef="let row" [class.numeric-cell]="isNumeric(getNestedPropertyValue(row, column))">
-        <!-- Display nested property values -->
-        <span>{{ getNestedPropertyValue(row, column) }}</span>
-      </td>
-    </ng-container>
+            <!-- Filtre ikonu -->
+            @if (filterableColumns.includes(column)) {
+              <button
+                mat-icon-button
+                class="filter-icon"
+                [class.active-filter]="isFilterActive(column)"
+                (click)="openFilterDialog(column, $event)"
+                [matTooltip]="isFilterActive(column) ? 'Filtreyi Düzenle' : 'Filtrele'">
+                <mat-icon>filter_alt</mat-icon>
+              </button>
+            }
+          </div>
+        </th>
+        <td mat-cell *matCellDef="let row" [class.numeric-cell]="isNumeric(getNestedPropertyValue(row, column))">
+          <span>{{ getNestedPropertyValue(row, column) }}</span>
+        </td>
+      </ng-container>
+    }
 
     <!-- Actions Column -->
     <ng-container matColumnDef="actions">
       <th mat-header-cell *matHeaderCellDef>İşlemler</th>
       <td mat-cell *matCellDef="let row">
         <div class="action-buttons">
-          <button class="btn" mat-icon-button color="warn" (click)="confirmDelete(row.id); $event.stopPropagation();" matTooltip="Sil">
+          <button
+            class="btn"
+            mat-icon-button
+            color="warn"
+            (click)="confirmDelete(row.id); $event.stopPropagation();"
+            matTooltip="Sil">
             <mat-icon>delete</mat-icon>
           </button>
-          <button class="btn" mat-icon-button  (click)="openAddOrUpdateDialog(row); $event.stopPropagation();" matTooltip="Güncelle">
+          <button
+            class="btn"
+            mat-icon-button
+            (click)="openAddOrUpdateDialog(row); $event.stopPropagation();"
+            matTooltip="Güncelle">
             <mat-icon>update</mat-icon>
           </button>
         </div>
-
       </td>
     </ng-container>
 
     <tr mat-header-row *matHeaderRowDef="getDisplayColumnWithActions()"></tr>
-    <tr mat-row *matRowDef="let row; columns: getDisplayColumnWithActions();"
-        (click)="onRowClick(row)"></tr>
+    <tr
+      mat-row
+      *matRowDef="let row; columns: getDisplayColumnWithActions();"
+      (click)="onRowClick(row)">
+    </tr>
   </table>
 
   <!-- Empty state -->
-  <div class="empty-state" *ngIf="dataSource.data.length === 0 && !isLoading">
-    <mat-icon>info</mat-icon>
-    <p>Hiç kayıt bulunamadı.</p>
-    <div *ngIf="hasActiveFilters()">
-      <p>Aktif filtreleri temizlemeyi deneyin.</p>
-      <button mat-raised-button color="primary" (click)="clearAllFilters()">Filtreleri Temizle</button>
+  @if (dataSource.data.length === 0 && !isLoading) {
+    <div class="empty-state">
+      <mat-icon>info</mat-icon>
+      <p>Hiç kayıt bulunamadı.</p>
+
+      @if (hasActiveFilters()) {
+        <p>Aktif filtreleri temizlemeyi deneyin.</p>
+        <button mat-raised-button color="primary" (click)="clearAllFilters()">
+          Filtreleri Temizle
+        </button>
+      }
     </div>
-  </div>
+  }
 
   <!-- Paginator -->
   <mat-paginator

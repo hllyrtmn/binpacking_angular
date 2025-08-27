@@ -1,5 +1,13 @@
 import { createAction, props } from '@ngrx/store';
 
+
+// create uploadInvoiceFile
+export const uploadInvoiceFile = createAction(
+  '[Invoice Upload] Upload Invoice File',
+);
+
+
+
 export const invoiceUploadSubmit = createAction(
   '[Invoice Upload] Submit'
 );

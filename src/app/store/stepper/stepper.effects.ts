@@ -12,6 +12,8 @@ import { ToastService } from '../../services/toast.service';
 import { LocalStorageService } from '../../admin/components/dashboard/stepper/services/local-storage.service';
 import { RepositoryService } from '../../admin/components/dashboard/stepper/services/repository.service';
 import { Action } from '@ngrx/store';
+import { FileUploadManager } from '../../admin/components/dashboard/stepper/components/invoice-upload/managers/file-upload.manager';
+import { INVOICE_UPLOAD_CONSTANTS } from '../../admin/components/dashboard/stepper/components/invoice-upload/constants/invoice-upload.constants';
 
 @Injectable()
 export class StepperEffects {
@@ -21,6 +23,9 @@ export class StepperEffects {
   private toastService = inject(ToastService);
   private repositoryService = inject(RepositoryService);
   private uiStateManager = inject(UIStateManager);
+  private fileUploadManager = inject(FileUploadManager);
+
+
 
 
 
@@ -52,150 +57,8 @@ export class StepperEffects {
     )
   );
 
-  // YENİ: Perform auto-save effect
-  performAutoSave$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(StepperActions.performAutoSave),
-      switchMap(({ stepNumber, data }) => {
-
-
-
-        return timer(100).pipe(
-          switchMap(() => {
-            try {
-
-
-              // Step'e göre save işlemi
-              this.saveStepData(stepNumber, data);
-
-
-
-              return of(StepperActions.autoSaveSuccess({
-                stepNumber,
-                timestamp: new Date()
-              }));
-            } catch (error) {
-
-              return of(StepperActions.autoSaveFailure({
-                stepNumber,
-                error: error instanceof Error ? error.message : 'Auto-save failed'
-              }));
-            }
-          }),
-          catchError((error) => {
-
-            return of(StepperActions.autoSaveFailure({
-              stepNumber,
-              error: error.message || 'Auto-save failed'
-            }));
-          })
-        );
-      })
-    )
-  );
-
-  // YENİ: Force save effect (immediate, no debounce)
-  forceSave$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(StepperActions.forceSave),
-      switchMap(({ stepNumber, data }) => {
-
-
-        try {
-          this.saveStepData(stepNumber, data);
-
-          return of(StepperActions.autoSaveSuccess({
-            stepNumber,
-            timestamp: new Date()
-          }));
-        } catch (error) {
-          return of(StepperActions.autoSaveFailure({
-            stepNumber,
-            error: error instanceof Error ? error.message : 'Force save failed'
-          }));
-        }
-      })
-    )
-  );
-
-  // YENİ: Auto-save success notification
-  autoSaveSuccess$ = createEffect(
-    () =>
-      this.actions$.pipe(
-        ofType(StepperActions.autoSaveSuccess),
-        tap(({ stepNumber, timestamp }) => {
-
-          // Optional: Show toast notification
-          // this.toastService.info(`Step ${stepNumber + 1} kaydedildi`);
-        })
-      ),
-    { dispatch: false }
-  );
-
-  // YENİ: Auto-save error notification
-  autoSaveError$ = createEffect(
-    () =>
-      this.actions$.pipe(
-        ofType(StepperActions.autoSaveFailure),
-        tap(({ stepNumber, error }) => {
-
-          this.toastService.warning(`Step ${stepNumber + 1} kaydedilemedi: ${error}`);
-        })
-      ),
-    { dispatch: false }
-  );
 
   // Private helper method
-  private saveStepData(stepNumber: number, data: any): void {
-
-    try {
-      switch (stepNumber) {
-        case 0: // Step 1
-
-          if (data.order && data.orderDetails) {
-            this.localStorageService.saveStep1Data(
-              data.order,
-              data.orderDetails,
-              data.hasFile || false,
-              data.fileName
-            );
-
-          } else {
-
-          }
-          break;
-
-        case 1: // Step 2
-
-          if (data.packages) {
-            this.localStorageService.saveStep2Data(data.packages, data.availableProducts || []);
-
-          } else {
-
-          }
-          break;
-
-        case 2: // Step 3
-
-          if (data.optimizationResult || data.reportFiles) {
-            this.localStorageService.saveStep3Data(
-              data.optimizationResult,
-              data.reportFiles || []
-            );
-
-          } else {
-
-          }
-          break;
-
-        default:
-          throw new Error(`Invalid step number: ${stepNumber}`);
-      }
-    } catch (error) {
-
-      throw error; // Re-throw to be caught by effect
-    }
-  }
   // Global Error Effects
   globalErrorLogging$ = createEffect(
     () =>
@@ -324,8 +187,38 @@ export class StepperEffects {
   invoiceUploadSubmit$ = createEffect(() =>
     this.actions$.pipe(
       ofType(StepperActions.invoiceUploadSubmit),
-      tap(() => {console.log("invoiceUploadSubmit$ tetiklendi")})
+      tap(() => { console.log("invoiceUploadSubmit$ tetiklendi") })
     ),
     { dispatch: false }
   );
+
+  invoiceUploadFileUpload$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(StepperActions.uploadInvoiceFile),
+      switchMap(() =>
+        this.fileUploadManager.uploadFile()
+      ),
+      mergeMap(response => {
+        return of(
+          StepperActions.initializeStep1StateFromUpload({
+            order: response.order,
+            orderDetails: response.orderDetail,
+            hasFile: true,
+            fileName: 'File Upload Result'}
+          ),
+          StepperActions.setStepLoading({ 
+            stepIndex: 0,
+            loading: false,
+            operation: "file upload completed" }
+          )
+        )
+      }
+      ),
+      catchError(error => {
+        this.toastService.error(INVOICE_UPLOAD_CONSTANTS.MESSAGES.ERROR.FILE_PROCESSING, error);
+        return of(StepperActions.setStepperError({ error: error.message }))
+      })
+    )
+  )
+
 }
