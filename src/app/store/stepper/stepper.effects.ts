@@ -5,7 +5,7 @@ import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { map, tap, debounceTime, switchMap, catchError, withLatestFrom, mergeMap, concatMap } from 'rxjs/operators';
-import { EMPTY, forkJoin, from, of, timer } from 'rxjs';
+import { concat, EMPTY, forkJoin, from, of, timer } from 'rxjs';
 import * as StepperActions from './stepper.actions';
 import { AppState, selectOrder, selectOrderId, selectStep1Changes, selectStep1OrderDetails } from '../index';
 import { ToastService } from '../../services/toast.service';
@@ -236,11 +236,11 @@ export class StepperEffects {
       withLatestFrom(this.store.select(selectOrderId)),
       tap(([action, orderId]) => console.log("invoice upload:",orderId)),
       concatMap(([action, orderId]) => 
-         from([
-          StepperActions.getOrCreateOrder({ orderId }),
-          StepperActions.createOrderDetails(),
-          StepperActions.uploadInvoiceFile()
-        ])
+        concat(
+          of(StepperActions.getOrCreateOrder({ orderId })),
+          of(StepperActions.createOrderDetails()),
+          of(StepperActions.uploadInvoiceFile())
+      )
       )
     )
   )

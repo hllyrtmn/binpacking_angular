@@ -31,6 +31,8 @@ import {
   Observable,
   finalize,
   Subscription,
+  concat,
+  of,
 } from 'rxjs';
 import { OrderService } from '../../../../services/order.service';
 import { ToastService } from '../../../../../../services/toast.service';
@@ -322,7 +324,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   deleteOrderDetail(id: string): void {
-    console.log("delete order detail id invoice upload",id)
+    console.log("delete order detail id invoice upload", id)
     this.store.dispatch(StepperActions.deleteOrderDetail({
       orderDetailId: id
     }));
@@ -333,12 +335,12 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     if (!this.orderSignal()?.weight_type) {
       return 0;
     }
-    console.log("total weight",this.orderSignal(),this.orderDetailsSignal())
+    console.log("total weight", this.orderSignal(), this.orderDetailsSignal())
     const total = this.calculatorService.calculateTotalWeight(
       this.orderDetailsSignal(),
       this.orderSignal()?.weight_type as WeightType
     )
-    console.log("total weight",total)
+    console.log("total weight", total)
     return total.totalWeight;
   })
 
@@ -360,133 +362,18 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       return;
     }
 
-
-
-    // 1 ivoiceUploadSubmit action olmasi lazim
-    // bu action sirasi ile islemleri yapip diger actionlara baglanarak
-    // bir action chain olusturmali
-
-    this.store.dispatch(StepperActions.invoiceUploadSubmit())
-
-    // this.store.dispatch(StepperActions.setStepLoading({
-    //   stepIndex: 0,
-    //   loading: true,
-    //   operation: 'Submitting order data'
-    // }));
-    // this.toastService.info(INVOICE_UPLOAD_CONSTANTS.MESSAGES.INFO.OPERATION_IN_PROGRESS);
-
-    // let orderDetailChanges: any;
-    // this.store.select(selectStep1Changes).pipe(take(1)).subscribe(changes => {
-    //   orderDetailChanges = {
-    //     added: changes.added,
-    //     modified: changes.modified,
-    //     deleted: changes.deleted.map(detail => detail.id || detail)
-    //   };
-    // });
-    // const orderOperation = this.setOrderOperation();
-
-    // const submitSub = orderOperation
-    //   .pipe(
-    //     switchMap((orderResponse) => {
-    //       if (orderResponse?.id && this.orderSignal()) {
-    //         const updatedOrder = { ...this.order, id: orderResponse.id };
-    //         this.store.dispatch(StepperActions.initializeStep1State({
-    //           order: updatedOrder,
-    //           orderDetails: this.orderDetails,
-    //           hasFile: this.step1HasFile$ ? true : false,
-    //           fileName: this.step1FileName$ ? 'Order Saved' : undefined
-    //         }));
-    //       }
-
-    //       if (this.fileUploadManager.hasTempFile()) {
-    //         // eger dosya servicede varsa
-    //         // 
-    //         return this.fileUploadManager.uploadFileToOrder(orderResponse.id)
-    //           .pipe(
-    //             switchMap(() =>
-    //               this.orderDetailManager.processOrderDetailChanges(
-    //                 orderDetailChanges,
-    //                 orderResponse.id
-    //               )
-    //             )
-    //           );
-    //       } else {
-    //         return this.orderDetailManager.processOrderDetailChanges(
-    //           orderDetailChanges,
-    //           orderResponse.id
-    //         );
-    //       }
-    //     }),
-    //     finalize(() => {
-    //       this.processingLock = false;
-    //       this.uiStateManager.finishSubmit();
-    //       this.store.dispatch(StepperActions.setStepLoading({
-    //         stepIndex: 0,
-    //         loading: false
-    //       }));
-    //     }))
-    //   .subscribe({
-    //     next: (result) => {
-    //       this.handleSubmitSuccess(result);
-    //     },
-    //     error: (error) => {
-    //       this.store.dispatch(StepperActions.setGlobalError({
-    //         error: {
-    //           message: INVOICE_UPLOAD_CONSTANTS.MESSAGES.ERROR.OPERATION_ERROR + (error.message || error),
-    //           code: error.status?.toString(),
-    //           stepIndex: 0
-    //         }
-    //       }));
-
-    //       this.toastService.error(
-    //         INVOICE_UPLOAD_CONSTANTS.MESSAGES.ERROR.OPERATION_ERROR + (error.message || error)
-    //       );
-    //     },
-    //   });
-
-    // this.subscriptions.push(submitSub);
+    console.log("submitttt")
+    this.store.dispatch(StepperActions.getOrCreateOrder({
+      orderId: this.orderSignal()?.id
+    }
+    ))
+    setTimeout(() => {
+    this.store.dispatch(StepperActions.createOrderDetails())
+    }, 5000);
+    setTimeout(() => {
+     this.store.dispatch(StepperActions.uploadInvoiceFile())
+    }, 4000);
   }
-
-  private clearChangesAfterSubmit(): void {
-    // Added, modified, deleted'ları temizle ve isDirty'yi false yap
-    this.store.dispatch(StepperActions.resetStep1Changes());
-  }
-
-  // bunun icin bir action yazilip effect kisminda islemi yapmaliyiz
-  // private setOrderOperation():{
-
-  // return this.orderService.getById(this.order!.id).pipe(
-  //   switchMap((existingOrder) => {
-  //     return this.orderService.update(this.order!.id, formattedOrder);
-  //   }),
-  //   catchError((error) => {
-  //     if (error.status === 404) {
-  //       return this.orderService.create(formattedOrder);
-  //     }
-  //     throw error;
-  //   })
-  // );
-  // }
-
-  // private handleSubmitSuccess(): void {
-  // this.toastService.success(INVOICE_UPLOAD_CONSTANTS.MESSAGES.SUCCESS.CHANGES_SAVED);
-  // this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 0 }));
-  // this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 0, isValid: true }));
-  // this.store.dispatch(StepperActions.clearAdded());
-  // if (result?.order_details && Array.isArray(result.order_details)) {
-  //   this.syncComponentWithBackendData(result.order_details);
-  // } else {
-  //   // Backend'den order_details gelmezse mevcut state'i temizle
-  //   this.clearChangesAfterSubmit();
-  // }
-
-  // this.localService.saveStep1Data(
-  //   this.order!,
-  //   this.orderDetails,
-  //   this.fileUploadManager.hasTempFile(),
-  //   this.fileUploadManager.getFileName()
-  // );
-  // }
 
   resetForm(): void {
     this.fileUploadManager.moveFileToTemp();
