@@ -241,7 +241,9 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       loading: true,
       operation: 'File upload'
     }));
-    this.store.dispatch(StepperActions.uploadInvoiceFile())
+    this.store.dispatch(StepperActions.uploadInvoiceFile());
+    this.resetForm();
+
   }
 
   onOrderFieldChange(field: string, value: any): void {
@@ -360,7 +362,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
 
 
-    this.uiStateManager.startSubmit();
     // 1 ivoiceUploadSubmit action olmasi lazim
     // bu action sirasi ile islemleri yapip diger actionlara baglanarak
     // bir action chain olusturmali
@@ -398,6 +399,8 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     //       }
 
     //       if (this.fileUploadManager.hasTempFile()) {
+    //         // eger dosya servicede varsa
+    //         // 
     //         return this.fileUploadManager.uploadFileToOrder(orderResponse.id)
     //           .pipe(
     //             switchMap(() =>
@@ -451,14 +454,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
 
   // bunun icin bir action yazilip effect kisminda islemi yapmaliyiz
   // private setOrderOperation():{
-  // const formattedOrder = {
-  //   id: this.order!.id,
-  //   company_relation_id: this.order!.company_relation?.id,
-  //   truck_id: this.order!.truck?.id,
-  //   date: this.order!.date,
-  //   weight_type: this.order!.weight_type,
-  //   name: this.order!.name,
-  // };
 
   // return this.orderService.getById(this.order!.id).pipe(
   //   switchMap((existingOrder) => {

@@ -212,7 +212,7 @@ export const selectStep1State = createSelector(
 export const selectOrder = createSelector(selectStepperState,(stepper)=> stepper.order)
 
 
-export const selectOrderId = createSelector(selectOrder, (order) => order.id)
+export const selectOrderId = createSelector(selectOrder, (order):string => order.id )
 
 export const selectStep1OrderDetails = createSelector(
   selectStep1State,

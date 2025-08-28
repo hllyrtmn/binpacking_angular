@@ -4,16 +4,19 @@ import { UIStateManager } from '../../admin/components/dashboard/stepper/compone
 import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
-import { map, tap, debounceTime, switchMap, catchError, withLatestFrom, mergeMap } from 'rxjs/operators';
-import { forkJoin, of, timer } from 'rxjs';
+import { map, tap, debounceTime, switchMap, catchError, withLatestFrom, mergeMap, concatMap } from 'rxjs/operators';
+import { EMPTY, forkJoin, from, of, timer } from 'rxjs';
 import * as StepperActions from './stepper.actions';
-import { AppState } from '../index';
+import { AppState, selectOrder, selectOrderId, selectStep1Changes, selectStep1OrderDetails } from '../index';
 import { ToastService } from '../../services/toast.service';
 import { LocalStorageService } from '../../admin/components/dashboard/stepper/services/local-storage.service';
 import { RepositoryService } from '../../admin/components/dashboard/stepper/services/repository.service';
 import { Action } from '@ngrx/store';
 import { FileUploadManager } from '../../admin/components/dashboard/stepper/components/invoice-upload/managers/file-upload.manager';
 import { INVOICE_UPLOAD_CONSTANTS } from '../../admin/components/dashboard/stepper/components/invoice-upload/constants/invoice-upload.constants';
+import { OrderService } from '../../admin/components/services/order.service';
+import { dispatch } from 'd3';
+import { create } from 'lodash';
 
 @Injectable()
 export class StepperEffects {
@@ -24,6 +27,7 @@ export class StepperEffects {
   private repositoryService = inject(RepositoryService);
   private uiStateManager = inject(UIStateManager);
   private fileUploadManager = inject(FileUploadManager);
+  private orderService = inject(OrderService)
 
 
 
@@ -184,13 +188,62 @@ export class StepperEffects {
     { dispatch: false }
   );
 
+  getOrCreateOrder$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(StepperActions.getOrCreateOrder),
+      withLatestFrom(this.store.select(selectOrder)),
+      switchMap(([action, order]) => {
+        return this.orderService.updateOrCreate(order).pipe(
+          map(result => StepperActions.setOrder({ order: result.order })),
+          catchError((error) => of(StepperActions.setStepperError({ error: error.message })))
+        )
+      }
+      )
+    )
+  )
+
+  createOrderDetails$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(StepperActions.createOrderDetails),
+      withLatestFrom(this.store.select(selectStep1Changes)),
+      switchMap(([action, changes]) =>
+        this.repositoryService.bulkUpdateOrderDetails(changes).pipe(
+          map((orderDetails) =>
+            StepperActions.setOrderDetails({ orderDetails })
+          ),
+          catchError((error) => of(StepperActions.setStepperError({ error: error.message })))
+        )
+      )
+    )
+  )
+
+  uploadInvoiceFile$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(StepperActions.uploadInvoiceFile),
+      withLatestFrom(this.store.select(selectOrderId)),
+      switchMap(([action, orderId]) =>
+        this.fileUploadManager.uploadFileToOrder(orderId)
+      ), catchError((error) => {
+        this.toastService.error(error.message)
+        return EMPTY;
+      })
+    ), { dispatch: false }
+  )
+
   invoiceUploadSubmit$ = createEffect(() =>
     this.actions$.pipe(
       ofType(StepperActions.invoiceUploadSubmit),
-      tap(() => { console.log("invoiceUploadSubmit$ tetiklendi") })
-    ),
-    { dispatch: false }
-  );
+      withLatestFrom(this.store.select(selectOrderId)),
+      tap(([action, orderId]) => console.log("invoice upload:",orderId)),
+      concatMap(([action, orderId]) => 
+         from([
+          StepperActions.getOrCreateOrder({ orderId }),
+          StepperActions.createOrderDetails(),
+          StepperActions.uploadInvoiceFile()
+        ])
+      )
+    )
+  )
 
   invoiceUploadFileUpload$ = createEffect(() =>
     this.actions$.pipe(
@@ -204,12 +257,14 @@ export class StepperEffects {
             order: response.order,
             orderDetails: response.orderDetail,
             hasFile: true,
-            fileName: 'File Upload Result'}
+            fileName: 'File Upload Result'
+          }
           ),
-          StepperActions.setStepLoading({ 
+          StepperActions.setStepLoading({
             stepIndex: 0,
             loading: false,
-            operation: "file upload completed" }
+            operation: "file upload completed"
+          }
           )
         )
       }
@@ -220,5 +275,6 @@ export class StepperEffects {
       })
     )
   )
+
 
 }

@@ -1,9 +1,27 @@
 import { createAction, props } from '@ngrx/store';
 
+// create getOrCreateOrder
+export const getOrCreateOrder = createAction(
+  '[Invoice Upload] Get or Create Order',
+  props<{ orderId: string }>()
+);
+
+export const createOrderDetails = createAction(
+  '[Invoice Upload] Create Order Details'
+);
+
+
 
 // create uploadInvoiceFile
 export const uploadInvoiceFile = createAction(
   '[Invoice Upload] Upload Invoice File',
+);
+
+
+export const invoiceUploadSubmitSuccess = createAction(
+  '[Invoice Upload] Submit Success',
+  props<{orderDetails: any[]}>
+
 );
 
 
@@ -78,7 +96,7 @@ export const setStepData = createAction(
 
 export const clearStepData = createAction(
   '[Stepper] Clear Step Data',
-  props<{ stepNumber?: number }>() // stepNumber yoksa tümünü temizle
+  props<{ stepNumber?: number }>() // stepNumber yoksa tümünü temizle/
 );
 
 // Reset Actions
