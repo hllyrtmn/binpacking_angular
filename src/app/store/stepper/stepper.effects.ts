@@ -4,7 +4,7 @@ import { UIStateManager } from '../../admin/components/dashboard/stepper/compone
 import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
-import { map, tap, debounceTime, switchMap, catchError, withLatestFrom, mergeMap, concatMap } from 'rxjs/operators';
+import { map, tap, debounceTime, switchMap, catchError, withLatestFrom, mergeMap, concatMap, take } from 'rxjs/operators';
 import { concat, EMPTY, forkJoin, from, of, timer } from 'rxjs';
 import * as StepperActions from './stepper.actions';
 import { AppState, selectOrder, selectOrderId, selectStep1Changes, selectStep1OrderDetails } from '../index';
@@ -16,7 +16,7 @@ import { FileUploadManager } from '../../admin/components/dashboard/stepper/comp
 import { INVOICE_UPLOAD_CONSTANTS } from '../../admin/components/dashboard/stepper/components/invoice-upload/constants/invoice-upload.constants';
 import { OrderService } from '../../admin/components/services/order.service';
 import { dispatch } from 'd3';
-import { create } from 'lodash';
+import { create, filter } from 'lodash';
 
 @Injectable()
 export class StepperEffects {
@@ -188,13 +188,14 @@ export class StepperEffects {
     { dispatch: false }
   );
 
-  getOrCreateOrder$ = createEffect(() =>
+  /// burada update or create actionindan gelen context degerini update or create order success actionina gecmeye calisiyorum hata var coz
+  updateOrCreateOrder$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(StepperActions.getOrCreateOrder),
+      ofType(StepperActions.updateOrCreateOrder),
       withLatestFrom(this.store.select(selectOrder)),
       switchMap(([action, order]) => {
         return this.orderService.updateOrCreate(order).pipe(
-          map(result => StepperActions.setOrder({ order: result.order })),
+          map(result => StepperActions.updateOrCreateOrderSuccess({ order: result.order, context: action.context })),
           catchError((error) => of(StepperActions.setStepperError({ error: error.message })))
         )
       }
@@ -209,13 +210,45 @@ export class StepperEffects {
       switchMap(([action, changes]) =>
         this.repositoryService.bulkUpdateOrderDetails(changes).pipe(
           map((orderDetails) =>
-            StepperActions.setOrderDetails({ orderDetails })
+            StepperActions.createOrderDetailsSuccess({ orderDetails: orderDetails, context: action.context})
           ),
           catchError((error) => of(StepperActions.setStepperError({ error: error.message })))
         )
       )
     )
   )
+
+  invoiceUploadSubmitFlow$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(StepperActions.invoiceUploadSubmitFlow),
+      switchMap((action) =>
+        of(StepperActions.updateOrCreateOrder({ context: "invoiceUploadSubmitFlow" }))
+      )
+    )
+  )
+
+
+
+  updateOrCreateOrderInvoiceUploadSubmitFlow$ = createEffect(() => {
+  return this.actions$.pipe(
+    ofType(StepperActions.updateOrCreateOrderSuccess),
+    switchMap((action) => {
+      // Context kontrolü
+      if (action.context === "invoiceUploadSubmitFlow") {
+        return of(StepperActions.createOrderDetails({ 
+          context: "invoiceUploadSubmitFlow" 
+        }));
+      }
+      return EMPTY; // Context uygun değilse hiçbir şey yapma
+    }),
+    catchError((error) => {
+      console.error('Effect error:', error);
+      return of(StepperActions.setStepperError({ 
+        error: error.message || 'Unknown error' 
+      }));
+    })
+  );
+});
 
   uploadInvoiceFile$ = createEffect(() =>
     this.actions$.pipe(
@@ -228,21 +261,6 @@ export class StepperEffects {
         return EMPTY;
       })
     ), { dispatch: false }
-  )
-
-  invoiceUploadSubmit$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(StepperActions.invoiceUploadSubmit),
-      withLatestFrom(this.store.select(selectOrderId)),
-      tap(([action, orderId]) => console.log("invoice upload:",orderId)),
-      concatMap(([action, orderId]) => 
-        concat(
-          of(StepperActions.getOrCreateOrder({ orderId })),
-          of(StepperActions.createOrderDetails()),
-          of(StepperActions.uploadInvoiceFile())
-      )
-      )
-    )
   )
 
   invoiceUploadFileUpload$ = createEffect(() =>

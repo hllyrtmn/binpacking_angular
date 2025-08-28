@@ -1,14 +1,27 @@
 import { createAction, props } from '@ngrx/store';
+import { create } from 'lodash';
 
-// create getOrCreateOrder
-export const getOrCreateOrder = createAction(
-  '[Invoice Upload] Get or Create Order',
-  props<{ orderId: string }>()
+// create updateOrcreateOrder
+export const updateOrCreateOrder = createAction(
+  '[Invoice Upload] update or create order',
+  props<{ context: string}>()
+);
+
+export const updateOrCreateOrderSuccess = createAction(
+  '[Invoice Upload] update or create order success',
+  props<{ order: any, context: string  }>()
 );
 
 export const createOrderDetails = createAction(
-  '[Invoice Upload] Create Order Details'
+  '[Invoice Upload] Create Order Details',
+  props<{ context:string}>()
 );
+
+export const createOrderDetailsSuccess = createAction(
+  '[Invoice Upload] Create Order Details Success',
+  props<{ orderDetails: any[], context:string}>()
+);
+
 
 
 
@@ -20,15 +33,16 @@ export const uploadInvoiceFile = createAction(
 
 export const invoiceUploadSubmitSuccess = createAction(
   '[Invoice Upload] Submit Success',
-  props<{orderDetails: any[]}>
+  props<{orderDetails: any[]}>()
 
 );
 
 
-
-export const invoiceUploadSubmit = createAction(
-  '[Invoice Upload] Submit'
+export const invoiceUploadSubmitFlow = createAction(
+  '[Invoice Upload] Submit Flow',
 );
+
+
 
 
 

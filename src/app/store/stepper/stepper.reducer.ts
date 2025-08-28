@@ -14,12 +14,31 @@ export const stepperReducer = createReducer(
     }
   })),
 
+  on(StepperActions.createOrderDetailsSuccess, (state, { orderDetails, context }) => ({
+    ...state,
+    step1State: {
+      ...state.step1State,
+      orderDetails: [...orderDetails],
+      originalOrderDetails: [...orderDetails],
+      added: [],
+      isDirty: state.step1State.modified.length > 0 || state.step1State.deleted.length > 0,
+    }
+  })),
+
+  
 
   //create setOrder
   on(StepperActions.setOrder, (state, { order }) => ({
     ...state,
     order: order
   })),
+  
+
+  on(StepperActions.updateOrCreateOrderSuccess, (state, { order }) => ({
+    ...state,
+    order: order
+  })),
+
 
   //create setPackageDetails
   on(StepperActions.setPackages, (state, { packages }) => ({
