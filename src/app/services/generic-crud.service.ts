@@ -2,8 +2,6 @@ import { inject, Inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { tap, map } from 'rxjs/operators';
-import { BaseModel } from '../models/base-model.interface';
-import { environment } from '../../environments/environment';
 import { ApiService } from './api.service';
 
 export interface Page<T> {
@@ -17,19 +15,22 @@ export interface Page<T> {
   providedIn: 'root'
 })
 export class GenericCrudService<T> {
-  protected apiUrl: string;
+  protected apiUrl: string = '';
   api = inject(ApiService);
 
   constructor(
     protected http: HttpClient,
     @Inject('ENDPOINT') protected endpoint: string
   ) {
-    // Ensure the endpoint ends with a trailing slash to properly form the URL
-    const formattedEndpoint = endpoint.endsWith('/') ? endpoint : `${endpoint}/`;
-    this.apiUrl = `${this.api.getApiUrl()}/${formattedEndpoint}`;
-
   }
-
+  private ensureApiUrl(): void {
+    // Eğer apiUrl daha önce set edilmemişse ve settings mevcutsa
+    if (!this.apiUrl && this.api.getApiUrl()) {
+      const formattedEndpoint = this.endpoint.endsWith('/') ? this.endpoint : `${this.endpoint}/`;
+      this.apiUrl = `${this.api.getApiUrl()}/${formattedEndpoint}`;
+      console.log(this.apiUrl)
+    }
+  }
   /**
    * Tüm kayıtları getiren metod, filtreleme ve sıralama destekler
    * @param params Filtre ve sıralama parametreleri
@@ -37,6 +38,7 @@ export class GenericCrudService<T> {
    */
   getAll(params?: any): Observable<Page<T>> {
 
+    this.ensureApiUrl();
 
 
     let httpParams = new HttpParams();
@@ -75,7 +77,7 @@ export class GenericCrudService<T> {
    * @returns Kaydın detayları
    */
   getById(id: number | string): Observable<T> {
-
+    this.ensureApiUrl();
     return this.http.get<T>(`${this.apiUrl}${id}/`).pipe(
       // Veriyi formatla
       map(response => this.formatSingleItem(response)),
@@ -91,7 +93,7 @@ export class GenericCrudService<T> {
    * @returns Oluşturulan kayıt
    */
   create(item: Partial<T>): Observable<T> {
-
+    this.ensureApiUrl();
     return this.http.post<T>(this.apiUrl, item).pipe(
       // Veriyi formatla
       map(response => this.formatSingleItem(response)),
@@ -109,6 +111,7 @@ export class GenericCrudService<T> {
    */
   update(id: number | string, item: Partial<T>): Observable<T> {
 
+    this.ensureApiUrl();
     return this.http.put<T>(`${this.apiUrl}${id}/`, item).pipe(
       // Veriyi formatla
       map(response => this.formatSingleItem(response)),
@@ -126,6 +129,7 @@ export class GenericCrudService<T> {
    */
   partialUpdate(id: number | string, item: Partial<T>): Observable<T> {
 
+    this.ensureApiUrl();
     return this.http.patch<T>(`${this.apiUrl}${id}/`, item).pipe(
       // Veriyi formatla
       map(response => this.formatSingleItem(response)),
@@ -141,6 +145,7 @@ export class GenericCrudService<T> {
    * @returns Silme işlemi sonucu
    */
   delete(id: number | string): Observable<any> {
+    this.ensureApiUrl();
 
     return this.http.delete(`${this.apiUrl}${id}/`).pipe(
       tap(response => {
@@ -157,7 +162,7 @@ export class GenericCrudService<T> {
   protected formatNumber(value: any): any {
     // Değer yoksa veya sayı değilse olduğu gibi döndür
     if (value === null || value === undefined || value === '' ||
-        (typeof value !== 'number' && (typeof value === 'string' && isNaN(Number(value))))) {
+      (typeof value !== 'number' && (typeof value === 'string' && isNaN(Number(value))))) {
       return value;
     }
 

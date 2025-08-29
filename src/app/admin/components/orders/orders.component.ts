@@ -15,6 +15,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { FileService } from '../services/file.service';
 import { Router } from '@angular/router';
 import { OrderService } from '../services/order.service';
+import { ApiService } from '../../../services/api.service';
 
 @Component({
   selector: 'app-orders',
@@ -37,6 +38,7 @@ import { OrderService } from '../services/order.service';
 })
 export class OrdersComponent implements OnInit {
   orderService = inject(OrderService);
+  apiService = inject(ApiService)
   orderDetailService = inject(OrderDetailService);
   packageDetailService = inject(PackageDetailService);
   fileService = inject(FileService)
@@ -121,7 +123,7 @@ export class OrdersComponent implements OnInit {
 
       },
       error: (error) => {
-
+        console.error(error.message)
       }
     });
   }

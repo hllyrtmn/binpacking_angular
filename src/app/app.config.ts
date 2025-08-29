@@ -23,12 +23,9 @@ import { UserEffects } from './store/user/user.effects';
 
 export function appInitialization() {
   const configService = inject(ConfigService);
-  const permissionService = inject(PermissionService);
 
   // Directly return the promise chain
-  return configService.load().then(() => {
-    // return permissionService.loadPermissions();
-  });
+  return configService.load();
 }
 
 export const appConfig: ApplicationConfig = {

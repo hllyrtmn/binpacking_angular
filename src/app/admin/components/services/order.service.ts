@@ -1,8 +1,7 @@
-import { inject, Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { GenericCrudService } from '../../../services/generic-crud.service';
 import { HttpClient } from '@angular/common/http';
 import { Order } from '../../../models/order.interface';
-import { map, tap } from 'rxjs';
 import { ApiService } from '../../../services/api.service';
 
 @Injectable({
@@ -13,10 +12,12 @@ export class OrderService extends GenericCrudService<Order> {
     super(http, 'orders/orders');
   }
   createOrder(){
+  console.log(this.apiUrl)
     return this.http.post<any>(this.apiUrl,{})
   }
 
   updateOrCreate(order: any){
+  console.log(this.apiUrl)
     
   const formattedOrder = {
     id: order!.id,
@@ -26,7 +27,7 @@ export class OrderService extends GenericCrudService<Order> {
     weight_type: order!.weight_type,
     name: order!.name,
   };
-    return this.http.post<{order:Order,created:boolean}>(`${this.api.getApiUrl()}/orders/orders/update-or-create/`,formattedOrder)
+    return this.http.post<{order:Order,created:boolean}>(`${this.apiUrl}update-or-create/`,formattedOrder)
   }
 
 
