@@ -22,12 +22,22 @@ export const createOrderDetailsSuccess = createAction(
   props<{ orderDetails: any[], context:string}>()
 );
 
-
-
+export const uploadFileToOrder = createAction(
+  '[Invoice Upload] Upload file to Order',
+)
 
 // create uploadInvoiceFile
-export const uploadInvoiceFile = createAction(
-  '[Invoice Upload] Upload Invoice File',
+export const uploadInvoiceProcessFile = createAction(
+  '[Invoice Upload] Upload Invoice Process File',
+);
+
+export const uploadFileToOrderSuccess = createAction(
+  '[Invoice Upload] Upload file to Order Success',
+)
+
+// create uploadInvoiceFile
+export const uploadInvoiceProcessFileSuccess = createAction(
+  '[Invoice Upload] Upload Invoice Process File Success',
 );
 
 

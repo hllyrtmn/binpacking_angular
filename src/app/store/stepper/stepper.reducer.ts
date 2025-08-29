@@ -14,7 +14,7 @@ export const stepperReducer = createReducer(
     }
   })),
 
-  on(StepperActions.createOrderDetailsSuccess, (state, { orderDetails, context }) => ({
+  on(StepperActions.createOrderDetailsSuccess, (state, { orderDetails }) => ({
     ...state,
     step1State: {
       ...state.step1State,
@@ -25,14 +25,14 @@ export const stepperReducer = createReducer(
     }
   })),
 
-  
+
 
   //create setOrder
   on(StepperActions.setOrder, (state, { order }) => ({
     ...state,
     order: order
   })),
-  
+
 
   on(StepperActions.updateOrCreateOrderSuccess, (state, { order }) => ({
     ...state,
@@ -50,7 +50,7 @@ export const stepperReducer = createReducer(
       isDirty: false
     }
   })),
-  
+
 
   // Navigation
   on(StepperActions.navigateToStep, (state, { stepIndex }) => ({
@@ -355,11 +355,6 @@ export const stepperReducer = createReducer(
     }
   })),
 
-  on(StepperActions.clearAdded, (state) => ({
-    ...state,
-    added: []
-  })),
-
   on(StepperActions.addOrderDetail, (state, { orderDetail }) => ({
     ...state,
     step1State: {
@@ -399,7 +394,7 @@ export const stepperReducer = createReducer(
   on(StepperActions.deleteOrderDetail, (state, { orderDetailId }) => {
     const itemToDelete = state.step1State.orderDetails.find(item => item.id === orderDetailId);
     const orderDetails = state.step1State.orderDetails.filter(item => item.id !== orderDetailId);
-    
+
 
     const isOriginal = state.step1State.originalOrderDetails.some(item => item.id === orderDetailId);
     const deleted = isOriginal && itemToDelete ? [...state.step1State.deleted, itemToDelete] : state.step1State.deleted;

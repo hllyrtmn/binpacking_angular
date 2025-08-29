@@ -243,7 +243,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       loading: true,
       operation: 'File upload'
     }));
-    this.store.dispatch(StepperActions.uploadInvoiceFile());
+    this.store.dispatch(StepperActions.uploadInvoiceProcessFile());
     this.resetForm();
 
   }
