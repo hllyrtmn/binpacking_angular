@@ -12,12 +12,12 @@ export class OrderService extends GenericCrudService<Order> {
     super(http, 'orders/orders');
   }
   createOrder(){
-  console.log(this.apiUrl)
+    this.ensureApiUrl();
     return this.http.post<any>(this.apiUrl,{})
   }
 
   updateOrCreate(order: any){
-  console.log(this.apiUrl)
+    this.ensureApiUrl();
     
   const formattedOrder = {
     id: order!.id,
@@ -29,6 +29,4 @@ export class OrderService extends GenericCrudService<Order> {
   };
     return this.http.post<{order:Order,created:boolean}>(`${this.apiUrl}update-or-create/`,formattedOrder)
   }
-
-
 }

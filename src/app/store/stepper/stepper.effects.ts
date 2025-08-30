@@ -18,6 +18,7 @@ import {
   selectOrder,
   selectOrderId,
   selectStep1Changes,
+  selectStepperState,
 } from '../index';
 import { ToastService } from '../../services/toast.service';
 import { LocalStorageService } from '../../admin/components/dashboard/stepper/services/local-storage.service';
@@ -46,7 +47,7 @@ export class StepperEffects {
           StepperActions.enableEditMode,
           StepperActions.setStepCompleted
         ),
-        tap((action) => {})
+        tap((action) => { })
       ),
     { dispatch: false }
   );
@@ -152,8 +153,7 @@ export class StepperEffects {
             const packages = step2Result.packages;
             const remainingProducts = step2Result.remainingProducts;
 
-            this.localStorageService.saveStep1Data(order, orderDetails, false);
-            this.localStorageService.saveStep2Data(packages, remainingProducts);
+
 
             if (packages.length == 0) {
               actions.push(StepperActions.setStepCompleted({ stepIndex: 1 }));
@@ -181,16 +181,28 @@ export class StepperEffects {
     )
   );
 
-  // getLocalStorageData
-  getLocalStorageData$ = createEffect(
+  autoSave$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(StepperActions.stepperStepUpdated),
+      withLatestFrom(this.store.select(selectStepperState)),
+      tap(([action, stepperState]) => {
+        this.localStorageService.saveStepperData(stepperState);
+      })
+    ), { dispatch: false }
+  );
+
+  restoreLocalStorageData$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(StepperActions.getLocalStorageData),
+        ofType(StepperActions.restoreLocalStorageData),
         tap(() => {
+            console.log("getLoacalStorageData$ effect:", "hasExistingData", true)
+        }),
+        map(() => {
           const data = this.localStorageService.getStepperData();
-        })
-      ),
-    { dispatch: false }
+          return StepperActions.setStepperData({data:data});
+        }),
+      )
   );
 
   /// burada update or create actionindan gelen context degerini update or create order success actionina gecmeye calisiyorum hata var coz
@@ -250,7 +262,7 @@ export class StepperEffects {
   createOrderDetailsInvoiceUploadSubmitFlow$ = createEffect(() => {
     return this.actions$.pipe(
       ofType(StepperActions.createOrderDetailsSuccess),
-      map(()=> StepperActions.uploadFileToOrder())
+      map(() => StepperActions.uploadFileToOrder())
     );
   });
 
@@ -279,40 +291,57 @@ export class StepperEffects {
   });
 
 
-uploadInvoiceFile$ = createEffect(() =>
-   this.actions$.pipe(
-    ofType(StepperActions.uploadFileToOrder),
-    withLatestFrom(this.store.select(selectOrder)),
-    switchMap(([action,order])=>this.fileUploadManager.uploadFileToOrder(order.id).pipe(
-      map(()=>StepperActions.uploadFileToOrderSuccess()),
-      catchError((error)=>of(StepperActions.setGlobalError({error:error.message})))
-    ))
+  uploadInvoiceFile$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(StepperActions.uploadFileToOrder),
+      withLatestFrom(this.store.select(selectOrder)),
+      switchMap(([action, order]) => this.fileUploadManager.uploadFileToOrder(order.id).pipe(
+        map(() => StepperActions.uploadFileToOrderSuccess()),
+        catchError((error) => of(StepperActions.setGlobalError({ error: error.message })))
+      ))
+    )
+  );
+
+
+  triggerStepperStepUploaded$ =  createEffect(() => 
+    this.actions$.pipe(
+      ofType(
+        StepperActions.invoiceUploadSubmitSuccess,
+        StepperActions.setOrder,
+        StepperActions.uploadInvoiceProcessFileSuccess,
+        StepperActions.addOrderDetail,
+        StepperActions.updateOrderDetail,
+        StepperActions.deleteOrderDetail,
+
+      ),
+      map(() => StepperActions.stepperStepUpdated())
+    )
   )
-);
 
   uploadInvoiceProcessFile$ = createEffect(() =>
     this.actions$.pipe(
       ofType(StepperActions.uploadInvoiceProcessFile),
       switchMap(() => this.fileUploadManager.uploadFile().pipe(
         mergeMap(response => {
-        return of(
-          StepperActions.initializeStep1StateFromUpload({
-            order: response.order,
-            orderDetails: response.orderDetail,
-            hasFile: true,
-            fileName: 'File Upload Result'
-          }
-          ),
-          StepperActions.setStepLoading({
-            stepIndex: 0,
-            loading: false,
-            operation: "file upload completed"
-          }
-          ),
-        )
-      }
-      ),
-        catchError((error)=>of(StepperActions.setGlobalError({error:error.message})))
+          return of(
+            StepperActions.initializeStep1StateFromUpload({
+              order: response.order,
+              orderDetails: response.orderDetail,
+              hasFile: true,
+              fileName: 'File Upload Result'
+            }
+            ),
+            StepperActions.setStepLoading({
+              stepIndex: 0,
+              loading: false,
+              operation: "file upload completed"
+            }
+            ),
+            StepperActions.uploadInvoiceProcessFileSuccess()
+          )
+        }
+        ),
+        catchError((error) => of(StepperActions.setGlobalError({ error: error.message })))
       ))
     )
   );

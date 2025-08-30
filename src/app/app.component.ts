@@ -3,6 +3,8 @@ import { RouterOutlet } from '@angular/router';
 import { AppState } from './store';
 import { Store } from '@ngrx/store';
 import * as UserActions from './store/user/user.actions';
+import * as StepperActions from './store/stepper/stepper.actions';
+
 
 
 @Component({
@@ -18,6 +20,7 @@ export class AppComponent implements OnInit {
 
   ngOnInit(): void {
     this.store.dispatch(UserActions.loadUserFromStorage())
+    this.store.dispatch(StepperActions.restoreLocalStorageData())
     
   }
 }

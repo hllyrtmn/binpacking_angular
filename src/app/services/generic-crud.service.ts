@@ -23,7 +23,7 @@ export class GenericCrudService<T> {
     @Inject('ENDPOINT') protected endpoint: string
   ) {
   }
-  private ensureApiUrl(): void {
+  protected ensureApiUrl(): void {
     // Eğer apiUrl daha önce set edilmemişse ve settings mevcutsa
     if (!this.apiUrl && this.api.getApiUrl()) {
       const formattedEndpoint = this.endpoint.endsWith('/') ? this.endpoint : `${this.endpoint}/`;

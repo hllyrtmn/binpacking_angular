@@ -147,11 +147,15 @@ export class StepperComponent implements OnInit{
   ngOnInit(): void {
     const orderId = this.route.snapshot.queryParamMap.get('orderId');
     const localData = this.localStorageService.getStepperData();
-    const localOrderId = localData?.order?.id;
-
+    // TODO:
+    // local storage ve store un veri yapisini ayni hale getir
+    // localdan okuyup store a yazama islemini tamamla
+    // storedan okuyum local e yazma islemini tamamla
+    // edit mode senaryolarini dene
+    const localOrderId = localData?.order?.id ;
     if (!orderId) {
       // Query paramda orderId yoksa → local storage'dan yükle
-      this.store.dispatch(StepperActions.getLocalStorageData());
+      this.store.dispatch(StepperActions.restoreLocalStorageData());
       return;
     }
 
@@ -166,7 +170,7 @@ export class StepperComponent implements OnInit{
       this.store.dispatch(StepperActions.enableEditMode({ orderId }));
     } else {
       // Local storage var ve orderId aynıysa → local storage'dan yükle
-      this.store.dispatch(StepperActions.getLocalStorageData());
+      this.store.dispatch(StepperActions.restoreLocalStorageData());
     }
   }
 

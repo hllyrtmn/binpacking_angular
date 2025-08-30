@@ -289,42 +289,41 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   ngOnInit(): void {
-    this.loadPallets();
+    // this.loadPallets();
 
-    // Store'dan veri yükleme işlemi
-    this.step2Packages$.pipe(
-      take(1),
-      switchMap(storePackages => {
-        if (storePackages.length > 0) {
-          // Store'da data var, signal'ları initialize et
-          const uiPackages = storePackages.map(pkg => new UiPackage(pkg));
-          this.packages.set(uiPackages);
-          this.order = this.packages()[0].order;
+    // // Store'dan veri yükleme işlemi
+    // this.step2Packages$.pipe(
+    //   take(1),
+    //   switchMap(storePackages => {
+    //     if (storePackages.length > 0) {
+    //       // Store'da data var, signal'ları initialize et
+    //       const uiPackages = storePackages.map(pkg => new UiPackage(pkg));
+    //       this.packages.set(uiPackages);
+    //       this.order = this.packages()[0].order;
 
-          // Available products'ı da yükle
-          return this.step2RemainingProducts$.pipe(
-            take(1),
-            tap(storeProducts => {
-              const uiProducts = storeProducts.map(product => new UiProduct(product));
-              this.availableProducts.set(uiProducts);
-            })
-          );
-        } else {
-          // Store'da data yok
-          this.restoreFromSession();
-          this.configureComponent();
-          return of(null);
-        }
-      })
-    ).subscribe(() => {
-      this.restoreFromSession();
-      this.setupStoreSubscriptions();
-      this.setupAutoSaveListeners();
-    });
+    //       // Available products'ı da yükle
+    //       return this.step2RemainingProducts$.pipe(
+    //         take(1),
+    //         tap(storeProducts => {
+    //           const uiProducts = storeProducts.map(product => new UiProduct(product));
+    //           this.availableProducts.set(uiProducts);
+    //         })
+    //       );
+    //     } else {
+    //       // Store'da data yok
+    //       this.restoreFromSession();
+    //       this.configureComponent();
+    //       return of(null);
+    //     }
+    //   })
+    // ).subscribe(() => {
+    //   this.restoreFromSession();
+    //   this.setupStoreSubscriptions();
+    //   this.setupAutoSaveListeners();
+    // });
   }
 
   ngAfterViewInit(): void {
-    this.saveCurrentStateToSession();
   }
 
   ngOnDestroy(): void {
@@ -359,13 +358,6 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
     });
   }
 
-  private checkPrerequisites(): boolean {
-    if (!this.localStorageService.isStepCompleted(1)) {
-      this.toastService.warning('Önce sipariş bilgilerini tamamlayın');
-      return false;
-    }
-    return true;
-  }
 
   resetComponentState(): void {
     try {
@@ -487,48 +479,9 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
     }
   }
 
-  private restoreFromSession(): void {
-    try {
-      let hasNgRxData = false;
-      this.step2Packages$.pipe(take(1)).subscribe(packages => {
-        hasNgRxData = packages.length > 0;
-      });
+ 
 
-      if (hasNgRxData) {
-        this.toastService.info('NgRx store\'dan paket verileri yüklendi');
-        this.cdr.detectChanges();
-        return;
-      }
 
-      const restoredPackages = this.localStorageService.restoreStep2Data();
-      if (
-        restoredPackages &&
-        ((restoredPackages.availableProducts &&
-          restoredPackages.availableProducts.length > 0) ||
-          (restoredPackages.packages && restoredPackages.packages.length > 0))
-      ) {
-        this.store.dispatch(StepperActions.initializeStep2State({
-          packages: restoredPackages.packages || [],
-          remainingProducts: restoredPackages.availableProducts || []
-        }));
-
-        this.toastService.info('LocalStorage\'dan NgRx\'e restore edildi');
-      } else {
-        this.configureComponent();
-      }
-    } catch (error) {
-      this.configureComponent();
-    }
-  }
-
-  private saveCurrentStateToSession(): void {
-    try {
-      this.localStorageService.saveStep2Data(
-        this.packages(),
-        this.availableProducts()
-      );
-    } catch (error) {}
-  }
 
   configureComponent(): void {
     this.repository.calculatePackageDetail().subscribe({
@@ -1347,7 +1300,6 @@ dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
           changeType: 'api-response'
         }));
 
-        this.saveCurrentStateToSession();
       },
       error: (error) => {
         this.store.dispatch(StepperActions.setGlobalError({

@@ -408,12 +408,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   })
 
 
-  private syncComponentWithBackendData(backendOrderDetails: OrderDetail[]): void {
-    this.store.dispatch(StepperActions.syncStep1WithBackend({
-      orderDetails: backendOrderDetails
-    }));
-  }
-
   getFormattedDate(date: string | Date | null | undefined): string {
     return this.orderFormManager.getFormattedDate(date);
   }

@@ -19,7 +19,6 @@ import { CommonModule } from '@angular/common';
 import { ToastService } from '../../../../../../services/toast.service';
 import { switchMap, takeUntil, catchError, finalize, tap } from 'rxjs/operators';
 import { Subject, EMPTY, of } from 'rxjs';
-import { AutoSaveService } from '../../services/auto-save.service';
 import { LocalStorageService } from '../../services/local-storage.service';
 import { ThreeJSTruckVisualizationComponent } from '../../../../../../components/threejs-truck-visualization/threejs-truck-visualization.component';
 import { OrderResultService } from '../../../../services/order-result.service';
@@ -135,7 +134,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   private popupWindow: Window | null = null;
   private progressInterval: any = null;
 
-  private readonly autoSaveService = inject(AutoSaveService);
   private readonly localStorageService = inject(LocalStorageService);
   repositoryService = inject(RepositoryService);
   sanitizer = inject(DomSanitizer);
@@ -167,10 +165,7 @@ export class ResultStepComponent implements OnInit, OnDestroy {
   };
 
   ngOnInit(): void {
-    if (!this.checkPrerequisites()) {
-      return;
-    }
-    this.restoreFromSession();
+
     this.setupAutoSaveListeners();
     this.performanceMetrics.startTime = performance.now();
   }
@@ -248,57 +243,19 @@ export class ResultStepComponent implements OnInit, OnDestroy {
     }
   }
 
-  private checkPrerequisites(): boolean {
-    const step1Completed = this.localStorageService.isStepCompleted(1);
-    const step2Completed = this.localStorageService.isStepCompleted(2);
+  // private checkPrerequisites(): boolean {
+  //   const step1Completed = this.localStorageService.isStepCompleted(1);
+  //   const step2Completed = this.localStorageService.isStepCompleted(2);
 
-    if (!step1Completed || !step2Completed) {
-      let message = 'Önceki adımları tamamlayın: ';
-      if (!step1Completed) message += 'Step 1 ';
-      if (!step2Completed) message += 'Step 2 ';
-      this.toastService.warning(message);
-      return false;
-    }
-    return true;
-  }
-
-  private restoreFromSession(): void {
-    try {
-      const restoredData = this.localStorageService.restoreStep3Data();
-      if (restoredData) {
-        this.hasResults = true;
-        this.showVisualization = true;
-        this.isLoading = false;
-        this.hasThreeJSError = false;
-        if (restoredData.optimizationResult) {
-          this.piecesData = restoredData.optimizationResult;
-          this.safeProcessOptimizationResult({
-            data: restoredData.optimizationResult,
-          });
-        }
-        if (restoredData.reportFiles) {
-          this.reportFiles = restoredData.reportFiles;
-        }
-
-        if (restoredData.loadingStats) {
-          this.loadingStats = { ...this.loadingStats, ...restoredData.loadingStats };
-        }
-
-        if (restoredData.algorithmStats) {
-          this.algorithmStats = { ...this.algorithmStats, ...restoredData.algorithmStats };
-        }
-
-        if (restoredData.currentViewType) {
-          this.currentViewType = restoredData.currentViewType;
-        }
-
-        this.toastService.info('Optimizasyon sonuçları restore edildi');
-      }
-    } catch (error) {
-      this.toastService.warning('Önceki sonuçlar yüklenirken hata oluştu');
-    }
-  }
-
+  //   if (!step1Completed || !step2Completed) {
+  //     let message = 'Önceki adımları tamamlayın: ';
+  //     if (!step1Completed) message += 'Step 1 ';
+  //     if (!step2Completed) message += 'Step 2 ';
+  //     this.toastService.warning(message);
+  //     return false;
+  //   }
+  //   return true;
+  // }
   private saveResultsToSession(): void {
     try {
       const SaveData = {
@@ -320,7 +277,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
         version: '3.0'
       };
 
-      this.localStorageService.saveStep3Data(this.piecesData, this.reportFiles, SaveData);
       this.hasUnsavedChanges = false;
       this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 2 }));
     } catch (error) {
@@ -1868,7 +1824,6 @@ export class ResultStepComponent implements OnInit, OnDestroy {
 
     try {
       this.saveResultsToSession();
-      this.autoSaveService.clearHistory();
       this.localStorageService.clearStorage();
       this.store.dispatch(StepperActions.resetStepper());
       this.resetComponentState();

@@ -1,5 +1,21 @@
 import { createAction, props } from '@ngrx/store';
-import { create } from 'lodash';
+
+
+export const stepperStepUpdated = createAction(
+  '[Stepper] Stepper Step Updated'
+);
+
+export const setStepperData = createAction(
+  '[Stepper] Set Stepper Data',
+  props<{ data: any }>()
+);
+
+export const setInvoiceUploadData = createAction(
+  '[Invoice Upload] Set Invoice Upload Data',
+  // burada invoice upload ile ilgili tum fealdlar olmali
+  props<{ order:any, orderDetails: any[] }>()
+);
+
 
 // create updateOrcreateOrder
 export const updateOrCreateOrder = createAction(
@@ -57,8 +73,8 @@ export const invoiceUploadSubmitFlow = createAction(
 
 
 // create getLocalStorageData
-export const getLocalStorageData = createAction(
-  '[Stepper] Get Local Storage Data'
+export const restoreLocalStorageData = createAction(
+  '[Stepper] Restore Local Storage Data'
 );
 
 

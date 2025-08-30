@@ -14,6 +14,9 @@ export const stepperReducer = createReducer(
     }
   })),
 
+  on(StepperActions.setStepperData, (state, { data }) => ({
+    ...data
+  })),
   on(StepperActions.createOrderDetailsSuccess, (state, { orderDetails }) => ({
     ...state,
     step1State: {
