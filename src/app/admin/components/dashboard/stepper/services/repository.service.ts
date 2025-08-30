@@ -23,7 +23,7 @@ import { take } from 'rxjs/operators';
 export class RepositoryService {
   private store = inject(Store<AppState>);
 
-  constructor(private api: ApiService, private http: HttpClient) {}
+  constructor(private api: ApiService, private http: HttpClient) { }
 
   private getOrderId = this.store.selectSignal(StepperSelectors.selectOrderId)
 
@@ -33,23 +33,23 @@ export class RepositoryService {
     // get order detail by order id.
     return this.http
       .get<any>(`${this.api.getApiUrl()}/orders/order-details/?order_id=${id}`)
-      .pipe(map((response) => mapToOrderDetailDtoList(response.results)));
+      .pipe(map((response) => { console.log(response); return mapToOrderDetailDtoList(response.results) }));
   }
 
   orderDetailsOriginal(id: string): Observable<any> {
     // api/orders/order-details/{id}/
     // get order detail by order id.
     return this.http
-      .get<any>(`${this.api.getApiUrl()}/orders/order-details/?order_id=${id}`).pipe(map((response)=>response.results));
+      .get<any>(`${this.api.getApiUrl()}/orders/order-details/?order_id=${id}`).pipe(map((response) => response.results));
   }
 
-  getPackageDetails(order_id: string = this.getOrderId()): Observable<{packages: any[], remainingProducts: any[]}> {
+  getPackageDetails(order_id: string = this.getOrderId()): Observable<{ packages: any[], remainingProducts: any[] }> {
     return this.http
       .get<any>(`${this.api.getApiUrl()}/logistics/package-details/?orderId=${order_id}/`)
-      .pipe(map((response) =>({
+      .pipe(map((response) => ({
         packages: mapPackageDetailToPackage(response.results),
         remainingProducts: mapOrderDetailsToUiProductsSafe(response.remaining_order_details)
-      }) ));
+      })));
   }
 
   pallets(): Observable<any> {
@@ -109,13 +109,13 @@ export class RepositoryService {
     }>(`${this.api.getApiUrl()}/orders/process-file/`, formData);
   }
 
-  calculatePackageDetail(order_id: string = this.getOrderId()): Observable<{packages: any[], remainingProducts: any[]}> {
+  calculatePackageDetail(order_id: string = this.getOrderId()): Observable<{ packages: any[], remainingProducts: any[] }> {
     return this.http
       .get<any>(`${this.api.getApiUrl()}/logistics/calculate-box/${order_id}/`)
-      .pipe(map((response) =>({
+      .pipe(map((response) => ({
         packages: mapPackageDetailToPackage(response.data),
         remainingProducts: mapOrderDetailsToUiProductsSafe(response.remaining_order_details)
-      }) ));
+      })));
   }
 
   bulkCreatePackageDetail(
@@ -181,17 +181,17 @@ export class RepositoryService {
     );
   }
 
-  createTruckPlacementReport(order_id: string = this.getOrderId()){
+  createTruckPlacementReport(order_id: string = this.getOrderId()) {
     return this.http.get<any>(
       `${this.api.getApiUrl()}/logistics/create-truck-placement-report/${order_id}/`
     )
   }
 
-  partialUpdateOrderResult(piecesData:any,order_result_id: string = this.getOrderId()){
+  partialUpdateOrderResult(piecesData: any, order_result_id: string = this.getOrderId()) {
     const resultString = JSON.stringify(piecesData);
     const updateData = {
-        result: resultString
+      result: resultString
     };
-    return this.http.patch<any>(`${this.api.getApiUrl()}/orders/order-results/${order_result_id}/`,updateData)
+    return this.http.patch<any>(`${this.api.getApiUrl()}/orders/order-results/${order_result_id}/`, updateData)
   }
 }

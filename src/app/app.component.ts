@@ -20,7 +20,8 @@ export class AppComponent implements OnInit {
 
   ngOnInit(): void {
     this.store.dispatch(UserActions.loadUserFromStorage())
+    console.log('app component restore local storage data tetikledi')
     this.store.dispatch(StepperActions.restoreLocalStorageData())
-    
+
   }
 }

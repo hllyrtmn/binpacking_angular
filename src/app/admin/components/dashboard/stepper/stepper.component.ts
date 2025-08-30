@@ -1,5 +1,5 @@
 import {
-  Component, inject, ViewChild,  OnInit,
+  Component, inject, ViewChild, OnInit,
   ChangeDetectionStrategy, ChangeDetectorRef,
 } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -45,7 +45,7 @@ import { UIStateManager } from './components/invoice-upload/managers/ui-state.ma
   styleUrl: './stepper.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class StepperComponent implements OnInit{
+export class StepperComponent implements OnInit {
 
   // View References
   @ViewChild('stepper') stepper!: MatStepper;
@@ -145,33 +145,36 @@ export class StepperComponent implements OnInit{
   }
 
   ngOnInit(): void {
-    const orderId = this.route.snapshot.queryParamMap.get('orderId');
-    const localData = this.localStorageService.getStepperData();
     // TODO:
-    // local storage ve store un veri yapisini ayni hale getir
     // localdan okuyup store a yazama islemini tamamla
-    // storedan okuyum local e yazma islemini tamamla
     // edit mode senaryolarini dene
-    const localOrderId = localData?.order?.id ;
-    if (!orderId) {
-      // Query paramda orderId yoksa → local storage'dan yükle
-      this.store.dispatch(StepperActions.restoreLocalStorageData());
+    // app component restore yapti ve busayfa acildi
+    // eger edit mode dan geldiyse store u ezmesi gerekiyor.
+    // eger edit mode dan geldiyse ve mevcut local data da bulunan step veri tabanina gimediyse ilk invoice upload component verisi varsa sadece
+    // bu veri silinir ve uzerine edit mode dan gelen veriler yazilir.
+    // eger kullanici ilerle ve kaydet demisse zaten ilgili isleme geri donmek icin duzenle butonunu 
+    // siparis sayfasindan tiklayarak gelebilir.
+    // eger edit mode dan geldiyse ve store daki order id ayni ise  backende gitmeden devam etmesi lazim
+    // bu durumda ekranda kullaniciya bu durumu bildirmek gerekir
+    // bu zaten en  son yarim kalan siparisiniz demesi lazim bunun gibi bir bildirim cikmasi lazim
+    // eger edit mode dan gelmediyse zaten app component her turlu store doldurmus oluyor herhangi bir problem yok
+
+
+    const editModeOrderId = this.route.snapshot.queryParamMap.get('orderId');
+    const localData = this.localStorageService.getStepperData();
+    const localOrderId = localData?.order?.id;
+    if (!editModeOrderId) {
+      console.log("edit mode bos oldugu icin direk devam edildi")
       return;
+    } else if (editModeOrderId && editModeOrderId === localOrderId) {
+      console.log("editmode order id ve local order id ayni")
+      this.legacyToastService.info("duzenlemek istediginiz siparis yarim kalan siparisinizdi", "edit mode ve local ayni")
+      return;
+    } else if (editModeOrderId) {
+      console.log('orderid ve local order id farkli edit mode aktif edildi')
+      this.store.dispatch(StepperActions.enableEditMode({ orderId: editModeOrderId }));
     }
 
-    if (!this.localStorageService.hasExistingData()) {
-      // Local storage boşsa → edit mode başlat
-      this.store.dispatch(StepperActions.enableEditMode({ orderId }));
-      return;
-    }
-
-    if (orderId !== localOrderId) {
-      // Local storage var ama orderId farklıysa → edit mode
-      this.store.dispatch(StepperActions.enableEditMode({ orderId }));
-    } else {
-      // Local storage var ve orderId aynıysa → local storage'dan yükle
-      this.store.dispatch(StepperActions.restoreLocalStorageData());
-    }
   }
 
   private performFullReset(): void {

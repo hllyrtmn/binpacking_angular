@@ -10,6 +10,7 @@ import {
   catchError,
   withLatestFrom,
   mergeMap,
+  filter,
 } from 'rxjs/operators';
 import { EMPTY, forkJoin, of, timer } from 'rxjs';
 import * as StepperActions from './stepper.actions';
@@ -38,19 +39,6 @@ export class StepperEffects {
   private fileUploadManager = inject(FileUploadManager);
   private orderService = inject(OrderService);
 
-  // Mevcut logging effect...
-  logStepperActions$ = createEffect(
-    () =>
-      this.actions$.pipe(
-        ofType(
-          StepperActions.navigateToStep,
-          StepperActions.enableEditMode,
-          StepperActions.setStepCompleted
-        ),
-        tap((action) => { })
-      ),
-    { dispatch: false }
-  );
 
   // YENİ: Auto-save trigger effect (debounced)
   triggerAutoSave$ = createEffect(() =>
@@ -139,7 +127,7 @@ export class StepperEffects {
       mergeMap((action) => {
         this.uiStateManager.setLoading(true);
         return forkJoin({
-          orderDetails: this.repositoryService.orderDetails(action.orderId),
+          orderDetails: this.repositoryService.orderDetailsOriginal(action.orderId),
           step2Result: this.repositoryService.getPackageDetails(action.orderId),
         }).pipe(
           // Tüm API sonuçlarını tek bir objede alıyoruz
@@ -148,10 +136,7 @@ export class StepperEffects {
             // validationlari true olmali
             // completed lari control edilip ona gore islenmeli
             let actions: Action[] = [];
-
-            const order = orderDetails[0].order;
             const packages = step2Result.packages;
-            const remainingProducts = step2Result.remainingProducts;
 
 
 
@@ -164,7 +149,7 @@ export class StepperEffects {
             return of(
               StepperActions.setOrder({ order: orderDetails[0].order }),
               StepperActions.setOrderDetails({ orderDetails }),
-              StepperActions.setPackages({ packages: step2Result.packages }),
+              StepperActions.setPackages({ packages: packages }),
               StepperActions.setRemainingProducts({
                 remainingProducts: step2Result.remainingProducts,
               }),
@@ -195,12 +180,13 @@ export class StepperEffects {
     () =>
       this.actions$.pipe(
         ofType(StepperActions.restoreLocalStorageData),
+        filter(() => this.localStorageService.hasExistingData()),
         tap(() => {
-            console.log("getLoacalStorageData$ effect:", "hasExistingData", true)
+          console.log("getLoacalStorageData$ effect:", this.localStorageService.hasExistingData())
         }),
         map(() => {
           const data = this.localStorageService.getStepperData();
-          return StepperActions.setStepperData({data:data});
+          return StepperActions.setStepperData({ data: data });
         }),
       )
   );
@@ -303,7 +289,7 @@ export class StepperEffects {
   );
 
 
-  triggerStepperStepUploaded$ =  createEffect(() => 
+  triggerStepperStepUploaded$ = createEffect(() =>
     this.actions$.pipe(
       ofType(
         StepperActions.invoiceUploadSubmitSuccess,
