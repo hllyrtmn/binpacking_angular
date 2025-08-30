@@ -127,33 +127,24 @@ export class StepperEffects {
       mergeMap((action) => {
         this.uiStateManager.setLoading(true);
         return forkJoin({
-          orderDetails: this.repositoryService.orderDetailsOriginal(action.orderId),
-          step2Result: this.repositoryService.getPackageDetails(action.orderId),
+          order: this.orderService.getById(action.orderId),
+          orderDetails: this.repositoryService.orderDetails(action.orderId),
+          packagesAndRemainingProducts: this.repositoryService.getPackageDetails(action.orderId),
         }).pipe(
+          tap(({ order, orderDetails, packagesAndRemainingProducts }) => {
+            console.log(order);
+            console.log(orderDetails);
+            console.log(packagesAndRemainingProducts);
+          }),
           // Tüm API sonuçlarını tek bir objede alıyoruz
-          mergeMap(({ orderDetails, step2Result }) => {
-            // TOOD:
-            // validationlari true olmali
-            // completed lari control edilip ona gore islenmeli
-            let actions: Action[] = [];
-            const packages = step2Result.packages;
-
-
-
-            if (packages.length == 0) {
-              actions.push(StepperActions.setStepCompleted({ stepIndex: 1 }));
-            } else {
-              actions.push(StepperActions.setStepCompleted({ stepIndex: 2 }));
-            }
-
+          mergeMap(({ order, orderDetails, packagesAndRemainingProducts }) => {
             return of(
-              StepperActions.setOrder({ order: orderDetails[0].order }),
-              StepperActions.setOrderDetails({ orderDetails }),
-              StepperActions.setPackages({ packages: packages }),
+              StepperActions.setOrder({ order: order }),
+              StepperActions.setOrderDetails({ orderDetails: orderDetails.result }),
+              StepperActions.setPackages({ packages: packagesAndRemainingProducts.packages }),
               StepperActions.setRemainingProducts({
-                remainingProducts: step2Result.remainingProducts,
+                remainingProducts: packagesAndRemainingProducts.remainingProducts
               }),
-              ...actions
             );
           })
         );
