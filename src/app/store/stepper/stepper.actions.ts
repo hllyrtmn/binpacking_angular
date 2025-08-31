@@ -1,5 +1,9 @@
 import { createAction, props } from '@ngrx/store';
 
+export const remainingProductMoveProduct = createAction(
+  '[Stepper] Remaining Product Move Product',
+ props<{previousIndex:number, currentIndex:number}>() 
+);
 
 export const stepperStepUpdated = createAction(
   '[Stepper] Stepper Step Updated'

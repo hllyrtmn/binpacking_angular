@@ -352,6 +352,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
   submit(): void {
+    if(!this.isDirtySignal()) return;
     if (!this.isFormValid()) {
       this.toastService.warning(INVOICE_UPLOAD_CONSTANTS.MESSAGES.WARNING.FILL_REQUIRED_FIELDS);
       return;

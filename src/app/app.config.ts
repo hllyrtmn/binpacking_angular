@@ -16,7 +16,7 @@ import { PermissionService } from './services/permission.service';
 
 import { provideStore } from '@ngrx/store';
 import { provideEffects } from '@ngrx/effects';
-import { provideStoreDevtools } from '@ngrx/store-devtools';
+import { provideStoreDevtools, StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { reducers } from './store';
 import { StepperEffects } from './store/stepper/stepper.effects';
 import { UserEffects } from './store/user/user.effects';
@@ -57,7 +57,9 @@ export const appConfig: ApplicationConfig = {
     provideEffects([StepperEffects,UserEffects]),
     provideStoreDevtools({
       maxAge: 25,
-      logOnly: false
-    })
+      logOnly: false,
+      trace: true, // <-- SET THIS TO TRUE FOR TRACING
+      traceLimit: 75, // The maximum number of stack frames to be stored (default: 10)
+    }),
   ]
 };

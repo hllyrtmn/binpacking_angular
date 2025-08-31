@@ -1,12 +1,13 @@
 import { createReducer, on } from '@ngrx/store';
 import { StepperState, initialStepperState } from './stepper.state';
 import * as StepperActions from './stepper.actions';
+import { update } from 'lodash';
 
 export const stepperReducer = createReducer(
   initialStepperState,
   on(StepperActions.setOrderDetails, (state, { orderDetails }) => ({
     ...state,
-    step1State:{
+    step1State: {
       ...state.step1State,
       orderDetails: [...orderDetails],
       originalOrderDetails: [...orderDetails],
@@ -14,9 +15,23 @@ export const stepperReducer = createReducer(
     }
   })),
 
+  on(StepperActions.remainingProductMoveProduct, (state, { previousIndex, currentIndex }) => {
+    const updatedRemainingProducts = [...state.step2State.remainingProducts]
+    const [removed] = updatedRemainingProducts.splice(previousIndex, 1);
+    updatedRemainingProducts.splice(currentIndex, 0, removed);
+    return {
+      ...state,
+      step2State: {
+        ...state.step2State,
+        remainingProducts: updatedRemainingProducts
+      }
+    }
+  }),
   on(StepperActions.setStepperData, (state, { data }) => ({
+    ...state,
     ...data
   })),
+
   on(StepperActions.createOrderDetailsSuccess, (state, { orderDetails }) => ({
     ...state,
     step1State: {
@@ -28,22 +43,16 @@ export const stepperReducer = createReducer(
     }
   })),
 
-
-
-  //create setOrder
   on(StepperActions.setOrder, (state, { order }) => ({
     ...state,
     order: order
   })),
-
 
   on(StepperActions.updateOrCreateOrderSuccess, (state, { order }) => ({
     ...state,
     order: order
   })),
 
-
-  //create setPackageDetails
   on(StepperActions.setPackages, (state, { packages }) => ({
     ...state,
     step2State: {
@@ -54,8 +63,6 @@ export const stepperReducer = createReducer(
     }
   })),
 
-
-  // Navigation
   on(StepperActions.navigateToStep, (state, { stepIndex }) => ({
     ...state,
     currentStep: stepIndex,
@@ -75,7 +82,6 @@ export const stepperReducer = createReducer(
     }
   })),
 
-  // Edit Mode
   on(StepperActions.enableEditMode, (state, { orderId }) => ({
     ...state,
     isEditMode: true
@@ -87,7 +93,6 @@ export const stepperReducer = createReducer(
     editOrderId: null
   })),
 
-  // Step Data
   on(StepperActions.setStepData, (state, { stepNumber, data }) => ({
     ...state,
     stepData: {
@@ -105,7 +110,6 @@ export const stepperReducer = createReducer(
         stepData: newStepData
       };
     }
-
     // Tüm step data'yı temizle
     return {
       ...state,
@@ -113,7 +117,6 @@ export const stepperReducer = createReducer(
     };
   }),
 
-  // Reset & Initialize
   on(StepperActions.resetStepper, () => ({
     ...initialStepperState
   })),
@@ -127,7 +130,6 @@ export const stepperReducer = createReducer(
     error: null
   })),
 
-  // Loading & Error
   on(StepperActions.setStepperLoading, (state, { loading }) => ({
     ...state,
     loading
@@ -139,7 +141,6 @@ export const stepperReducer = createReducer(
     loading: false
   })),
 
-  // Auto-save trigger - status'u saving yap
   on(StepperActions.triggerAutoSave, (state, { stepNumber }) => ({
     ...state,
     autoSave: {
@@ -153,7 +154,6 @@ export const stepperReducer = createReducer(
     }
   })),
 
-  // Auto-save perform - actual save işlemi başladı
   on(StepperActions.performAutoSave, (state, { stepNumber }) => ({
     ...state,
     autoSave: {
@@ -165,7 +165,6 @@ export const stepperReducer = createReducer(
     }
   })),
 
-  // Auto-save success
   on(StepperActions.autoSaveSuccess, (state, { stepNumber, timestamp }) => ({
     ...state,
     autoSave: {
@@ -180,7 +179,6 @@ export const stepperReducer = createReducer(
     }
   })),
 
-  // Auto-save failure
   on(StepperActions.autoSaveFailure, (state, { stepNumber, error }) => ({
     ...state,
     autoSave: {
@@ -194,7 +192,6 @@ export const stepperReducer = createReducer(
     }
   })),
 
-  // Set auto-save status (manuel status güncelleme)
   on(StepperActions.setAutoSaveStatus, (state, { stepNumber, status }) => ({
     ...state,
     autoSave: {
@@ -206,7 +203,6 @@ export const stepperReducer = createReducer(
     }
   })),
 
-  // Clear auto-save status
   on(StepperActions.clearAutoSaveStatus, (state, { stepNumber }) => ({
     ...state,
     autoSave: {
@@ -220,7 +216,6 @@ export const stepperReducer = createReducer(
     }
   })),
 
-  // Force save - immediate save trigger
   on(StepperActions.forceSave, (state, { stepNumber }) => ({
     ...state,
     autoSave: {
@@ -232,7 +227,7 @@ export const stepperReducer = createReducer(
       }
     }
   })),
-  // Global Error Management Reducers
+
   on(StepperActions.setGlobalError, (state, { error }) => ({
     ...state,
     globalError: {
@@ -255,7 +250,6 @@ export const stepperReducer = createReducer(
     globalError: null // Retry'da error'ı temizle
   })),
 
-    // Step Loading Reducers (error reducers'ların altına ekle)
   on(StepperActions.setStepLoading, (state, { stepIndex, loading, operation }) => ({
     ...state,
     stepLoading: {
@@ -294,7 +288,6 @@ export const stepperReducer = createReducer(
     }
   })),
 
-  // Step1 Migration Reducers
   on(StepperActions.initializeStep1State, (state, { order, orderDetails, hasFile, fileName }) => ({
     ...state,
     step1State: {
@@ -320,7 +313,6 @@ export const stepperReducer = createReducer(
     }
   })),
 
-  // Backend ile sync
   on(StepperActions.syncStep1WithBackend, (state, { orderDetails }) => ({
     ...state,
     step1State: {
@@ -397,13 +389,10 @@ export const stepperReducer = createReducer(
   on(StepperActions.deleteOrderDetail, (state, { orderDetailId }) => {
     const itemToDelete = state.step1State.orderDetails.find(item => item.id === orderDetailId);
     const orderDetails = state.step1State.orderDetails.filter(item => item.id !== orderDetailId);
-
-
     const isOriginal = state.step1State.originalOrderDetails.some(item => item.id === orderDetailId);
     const deleted = isOriginal && itemToDelete ? [...state.step1State.deleted, itemToDelete] : state.step1State.deleted;
     const added = state.step1State.added.filter(item => item.id !== orderDetailId);
     const modified = state.step1State.modified.filter(item => item.id !== orderDetailId);
-
     return {
       ...state,
       step1State: {
@@ -416,7 +405,7 @@ export const stepperReducer = createReducer(
       }
     };
   }),
-    // Step2 Migration Reducers
+
   on(StepperActions.initializeStep2State, (state, { packages, remainingProducts }) => ({
     ...state,
     step2State: {
@@ -507,7 +496,6 @@ export const stepperReducer = createReducer(
     }
   })),
 
-  // Step3 Migration Reducers
   on(StepperActions.initializeStep3State, (state, { optimizationResult, reportFiles, loadingStats, algorithmStats }) => ({
     ...state,
     step3State: {
@@ -570,7 +558,7 @@ export const stepperReducer = createReducer(
       isDirty: true
     }
   })),
-  // Step3 Enhanced Reducers (son Step3 reducer'dan sonra ekle)
+
   on(StepperActions.updateStep3DataChangeHistory, (state, { changes }) => ({
     ...state,
     step3State: {

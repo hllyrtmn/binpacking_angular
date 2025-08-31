@@ -22,6 +22,7 @@ export class ProductService extends GenericCrudService<Product> {
    */
     searchProducts(query: string, limit: number = 10): Observable<any[]> {
       // Çok kısa sorgular için boş sonuç döndür (backend'i meşgul etmemek için)
+      this.ensureApiUrl();
       if (!query || query.length < 3) {
         return new Observable(observer => {
           observer.next([]);
@@ -56,6 +57,7 @@ export class ProductService extends GenericCrudService<Product> {
      * @param limit Maksimum sonuç sayısı
      */
     searchByVolume(volume: number, limit: number = 10): Observable<any[]> {
+      this.ensureApiUrl();
       let params = new HttpParams()
         .set('volume', volume.toString())
         .set('limit', limit.toString());
@@ -75,6 +77,7 @@ export class ProductService extends GenericCrudService<Product> {
      * Boyutlara göre ürün arama (genişlik, yükseklik, derinlik)
      */
     searchByDimensions(width?: number, height?: number, depth?: number, limit: number = 10): Observable<any[]> {
+      this.ensureApiUrl()
       let params = new HttpParams().set('limit', limit.toString());
 
       if (width) {

@@ -27,6 +27,7 @@ import { RepositoryService } from '../../admin/components/dashboard/stepper/serv
 import { Action } from '@ngrx/store';
 import { FileUploadManager } from '../../admin/components/dashboard/stepper/components/invoice-upload/managers/file-upload.manager';
 import { OrderService } from '../../admin/components/services/order.service';
+import { OrderDetailService } from '../../admin/components/services/order-detail.service';
 
 @Injectable()
 export class StepperEffects {
@@ -38,18 +39,10 @@ export class StepperEffects {
   private uiStateManager = inject(UIStateManager);
   private fileUploadManager = inject(FileUploadManager);
   private orderService = inject(OrderService);
+  private orderDetailService = inject(OrderDetailService);
 
+  
 
-  // YENİ: Auto-save trigger effect (debounced)
-  triggerAutoSave$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(StepperActions.triggerAutoSave),
-      debounceTime(1500), // 1.5 saniye debounce
-      map(({ stepNumber, data, changeType }) => {
-        return StepperActions.performAutoSave({ stepNumber, data });
-      })
-    )
-  );
 
   // Private helper method
   // Global Error Effects
@@ -128,7 +121,7 @@ export class StepperEffects {
         this.uiStateManager.setLoading(true);
         return forkJoin({
           order: this.orderService.getById(action.orderId),
-          orderDetails: this.repositoryService.orderDetails(action.orderId),
+          orderDetails: this.orderDetailService.getByOrderId(action.orderId),
           packagesAndRemainingProducts: this.repositoryService.getPackageDetails(action.orderId),
         }).pipe(
           tap(({ order, orderDetails, packagesAndRemainingProducts }) => {
@@ -140,7 +133,7 @@ export class StepperEffects {
           mergeMap(({ order, orderDetails, packagesAndRemainingProducts }) => {
             return of(
               StepperActions.setOrder({ order: order }),
-              StepperActions.setOrderDetails({ orderDetails: orderDetails.result }),
+              StepperActions.setOrderDetails({ orderDetails: orderDetails }),
               StepperActions.setPackages({ packages: packagesAndRemainingProducts.packages }),
               StepperActions.setRemainingProducts({
                 remainingProducts: packagesAndRemainingProducts.remainingProducts
@@ -289,6 +282,10 @@ export class StepperEffects {
         StepperActions.addOrderDetail,
         StepperActions.updateOrderDetail,
         StepperActions.deleteOrderDetail,
+        StepperActions.uploadFileToOrderSuccess,
+        StepperActions.createOrderDetailsSuccess,
+        StepperActions.updateOrCreateOrderSuccess,
+
 
       ),
       map(() => StepperActions.stepperStepUpdated())
