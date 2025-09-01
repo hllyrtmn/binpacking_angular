@@ -89,7 +89,7 @@ export class StepperComponent implements OnInit , AfterViewInit{
 
   onStepChange = (event: StepperSelectionEvent): void => {
     const currentStep = event.selectedIndex;
-    this.store.dispatch(StepperActions.navigateToStep({ stepIndex: currentStep }));
+    this.store.dispatch(StepperActions.navigateToStep({ stepIndex: currentStep + 1}));
   };
 
 
@@ -154,7 +154,7 @@ export class StepperComponent implements OnInit , AfterViewInit{
     // eger edit mode dan geldiyse store u ezmesi gerekiyor.
     // eger edit mode dan geldiyse ve mevcut local data da bulunan step veri tabanina gimediyse ilk invoice upload component verisi varsa sadece
     // bu veri silinir ve uzerine edit mode dan gelen veriler yazilir.
-    // eger kullanici ilerle ve kaydet demisse zaten ilgili isleme geri donmek icin duzenle butonunu 
+    // eger kullanici ilerle ve kaydet demisse zaten ilgili isleme geri donmek icin duzenle butonunu
     // siparis sayfasindan tiklayarak gelebilir.
     // eger edit mode dan geldiyse ve store daki order id ayni ise  backende gitmeden devam etmesi lazim
     // bu durumda ekranda kullaniciya bu durumu bildirmek gerekir

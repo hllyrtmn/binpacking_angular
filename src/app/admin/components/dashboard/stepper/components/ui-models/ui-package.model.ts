@@ -22,6 +22,18 @@ export class UiPackage implements IUiPackage {
   isSavedInDb: boolean;
   products: IUiProduct[];
 
+  constructor(init: Partial<IUiPackage>) {
+    this.pallet = init.pallet || null;
+    this.order = init.order!;
+    this.company = init.company;
+    this.id = init.id!;
+    this.name = init.name!;
+    this.isSavedInDb = init.isSavedInDb || false;
+    this.products = init.products || [];
+    // Initialize products signal
+    this._products = signal(init.products || []);
+  }
+
   // Signal-based reactive state
   private _products: WritableSignal<IUiProduct[]> = signal([]);
 
@@ -76,17 +88,5 @@ export class UiPackage implements IUiPackage {
     );
   }
 
-  constructor(init: Partial<IUiPackage>) {
-    this.pallet = init.pallet || null;
-    this.order = init.order!;
-    this.company = init.company;
-    this.id = init.id!;
-    this.name = init.name!;
-    this.isSavedInDb = init.isSavedInDb || false;
-    this.products = init.products || [];
-    // Initialize products signal
-    if (init.products) {
-      this._products.set(init.products);
-    }
-  }
+
 }

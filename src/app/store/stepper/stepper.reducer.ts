@@ -17,8 +17,11 @@ export const stepperReducer = createReducer(
 
   on(StepperActions.calculatePackageDetailSuccess,(state, {packageDetails,remainingOrderDetails}) => (
     {...state,
-      packageDetails: [...packageDetails],
-      remainingOrderDetails: [...remainingOrderDetails]
+      step2State: {
+        ...state.step2State,
+        packages: [...packageDetails],
+        remainingProducts: [...remainingOrderDetails]
+      }
     }
   )),
 

@@ -6,8 +6,8 @@ import { mapPackageDetailToPackage } from '../../models/mappers/package-detail.m
 // Feature selector
 export const selectStepperState = createFeatureSelector<StepperState>('stepper');
 
-export const SelectUiPackages = createSelector(selectStepperState, (state) => 
-  mapPackageDetailToPackage(state.packageDetails)
+export const selectUiPackages = createSelector(selectStepperState, (state) =>
+  mapPackageDetailToPackage(state.step2State.packages)
 )
 
 

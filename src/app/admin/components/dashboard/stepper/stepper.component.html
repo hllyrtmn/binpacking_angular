@@ -27,7 +27,7 @@
       <app-pallet-control #palletControlComponent> </app-pallet-control>
     </mat-step>
 
-    <mat-step [completed]="completedStepsSignal() === 2" [editable]="completedStepsSignal() === 2">
+    <mat-step [completed]="completedStepsSignal() >= 3" [editable]="completedStepsSignal() >= 2">
       <ng-template matStepLabel>
         Sonuç Ekranı @if (isEditModeSignal()) {<span class="edit-mode-badge">DÜZENLEME</span>}
         @if(resultControlLoadingSignal()){

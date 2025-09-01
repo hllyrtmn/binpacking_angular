@@ -69,7 +69,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   private readonly store = inject(Store<AppState>);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  packagesSignal = this.store.selectSignal(StepperSelectors.SelectUiPackages,{
+  packagesSignal = this.store.selectSignal(StepperSelectors.selectUiPackages,{
     equal: (a, b) => {
       if (a.length !== b.length) return false;
       return a.every((pkg, i) =>
@@ -289,13 +289,13 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
     // bu verinin selectordan gelmesi lazim
     // bunun icinde veri tabanindan donen verinin store a kayit edilmeis lazim
     /// ilk olarak donen verinin tam tipine bakip
-    // store u guncelleyelim 
+    // store u guncelleyelim
     // gelen veriyi oraya kayit edelim
     // daha sonra selector ile package detail mapper kullanalim
-    // veriyi ekranda gostermeye calisalim 
+    // veriyi ekranda gostermeye calisalim
     // daha sonra draggable methodlarini reducer ile calisacak sekilde ayarlayalim
     // en son submit methodunu yazalim
-    // bu arada localhostu guncelleyecek actionlari da 
+    // bu arada localhostu guncelleyecek actionlari da
     // auto save effectine ekleyelim
 
     // this.loadPallets();
