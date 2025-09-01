@@ -1,8 +1,15 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { StepperState } from './stepper.state';
+import { mapPackageDetailToPackage } from '../../models/mappers/package-detail.mapper';
+
 
 // Feature selector
 export const selectStepperState = createFeatureSelector<StepperState>('stepper');
+
+export const SelectUiPackages = createSelector(selectStepperState, (state) => 
+  mapPackageDetailToPackage(state.packageDetails)
+)
+
 
 // Basic selectors
 export const selectCurrentStep = createSelector(

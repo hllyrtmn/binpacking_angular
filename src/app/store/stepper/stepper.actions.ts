@@ -1,8 +1,17 @@
 import { createAction, props } from '@ngrx/store';
 
+export const calculatePackageDetail = createAction(
+  '[Stepper] Calculate Package Detail'
+);
+
+export const calculatePackageDetailSuccess = createAction(
+  '[Stepper] Calculate Package Detail Success',
+  props<{packageDetails: any[], remainingOrderDetails: any[]}>()
+);
+
 export const remainingProductMoveProduct = createAction(
   '[Stepper] Remaining Product Move Product',
- props<{previousIndex:number, currentIndex:number}>() 
+  props<{ previousIndex: number, currentIndex: number }>()
 );
 
 export const stepperStepUpdated = createAction(
@@ -17,29 +26,29 @@ export const setStepperData = createAction(
 export const setInvoiceUploadData = createAction(
   '[Invoice Upload] Set Invoice Upload Data',
   // burada invoice upload ile ilgili tum fealdlar olmali
-  props<{ order:any, orderDetails: any[] }>()
+  props<{ order: any, orderDetails: any[] }>()
 );
 
 
 // create updateOrcreateOrder
 export const updateOrCreateOrder = createAction(
   '[Invoice Upload] update or create order',
-  props<{ context: string}>()
+  props<{ context: string }>()
 );
 
 export const updateOrCreateOrderSuccess = createAction(
   '[Invoice Upload] update or create order success',
-  props<{ order: any, context: string  }>()
+  props<{ order: any, context: string }>()
 );
 
 export const createOrderDetails = createAction(
   '[Invoice Upload] Create Order Details',
-  props<{ context:string}>()
+  props<{ context: string }>()
 );
 
 export const createOrderDetailsSuccess = createAction(
   '[Invoice Upload] Create Order Details Success',
-  props<{ orderDetails: any[], context:string}>()
+  props<{ orderDetails: any[], context: string }>()
 );
 
 export const uploadFileToOrder = createAction(
@@ -63,7 +72,7 @@ export const uploadInvoiceProcessFileSuccess = createAction(
 
 export const invoiceUploadSubmitSuccess = createAction(
   '[Invoice Upload] Submit Success',
-  props<{orderDetails: any[]}>()
+  props<{ orderDetails: any[] }>()
 
 );
 
@@ -72,6 +81,10 @@ export const invoiceUploadSubmitFlow = createAction(
   '[Invoice Upload] Submit Flow',
 );
 
+
+export const invoiceUploadSubmitFlowSuccess = createAction(
+  '[Invoice Upload] Submit Flow Success',
+);
 
 
 
@@ -170,7 +183,7 @@ export const initializeStepper = createAction(
 // Auto-save trigger actions
 export const triggerAutoSave = createAction(
   '[Auto-Save] Trigger Auto Save',
-  props<{ stepNumber: number; data: any; changeType:  'emergency' | 'data-change' |'drag-drop' | 'form' | 'user-action' | 'api-response' | 'form-change' }>()
+  props<{ stepNumber: number; data: any; changeType: 'emergency' | 'data-change' | 'drag-drop' | 'form' | 'user-action' | 'api-response' | 'form-change' }>()
 );
 
 export const performAutoSave = createAction(
@@ -263,7 +276,7 @@ export const updateStep1OrderDetails = createAction(
 
 export const initializeAddOrderDetails = createAction(
   '[Migration] Add Order Details',
-  props<{added:any[]}>()
+  props<{ added: any[] }>()
 )
 
 export const addOrderDetail = createAction(

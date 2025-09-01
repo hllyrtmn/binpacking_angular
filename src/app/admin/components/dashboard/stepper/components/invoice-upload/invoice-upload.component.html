@@ -212,7 +212,7 @@
 
   <!-- Navigation Controls -->
   <div class="navigation-controls">
-    <button mat-raised-button class="next-button" (click)="submit()" matStepperNext [disabled]="!orderSignal() || !isFormValid()">
+    <button mat-raised-button class="next-button"  matStepperNext (click)="submit()" [disabled]="!orderSignal() || !isFormValid()">
       <span>{{isDirtySignal() ? "kaydet ve ilerle" : "ileri"}}</span>
       <mat-icon>arrow_forward</mat-icon>
     </button>

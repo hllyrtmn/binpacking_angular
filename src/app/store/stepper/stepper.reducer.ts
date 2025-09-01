@@ -15,6 +15,13 @@ export const stepperReducer = createReducer(
     }
   })),
 
+  on(StepperActions.calculatePackageDetailSuccess,(state, {packageDetails,remainingOrderDetails}) => (
+    {...state,
+      packageDetails: [...packageDetails],
+      remainingOrderDetails: [...remainingOrderDetails]
+    }
+  )),
+
   on(StepperActions.remainingProductMoveProduct, (state, { previousIndex, currentIndex }) => {
     const updatedRemainingProducts = [...state.step2State.remainingProducts]
     const [removed] = updatedRemainingProducts.splice(previousIndex, 1);

@@ -17,7 +17,7 @@
       </app-invoice-upload>
     </mat-step>
 
-    <mat-step [completed]="(completedStepsSignal() >= 2)" [editable]="(completedStepsSignal() >= 2)">
+    <mat-step [completed]="(completedStepsSignal() >= 2)" [editable]="(completedStepsSignal() >= 1)">
       <ng-template matStepLabel>
         Palet Kontrolü @if (isEditModeSignal()) {<span class="edit-mode-badge">DÜZENLEME</span>}
         @if(palletControlLoadingSignal()){

@@ -1,6 +1,8 @@
 import {
   Component, inject, ViewChild, OnInit,
   ChangeDetectionStrategy, ChangeDetectorRef,
+  AfterViewChecked,
+  AfterViewInit,
 } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BreakpointObserver } from '@angular/cdk/layout';
@@ -45,7 +47,7 @@ import { UIStateManager } from './components/invoice-upload/managers/ui-state.ma
   styleUrl: './stepper.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class StepperComponent implements OnInit {
+export class StepperComponent implements OnInit , AfterViewInit{
 
   // View References
   @ViewChild('stepper') stepper!: MatStepper;
@@ -199,5 +201,11 @@ export class StepperComponent implements OnInit {
     setTimeout(() => {
       window.location.reload();
     }, 2000);
+  }
+
+  ngAfterViewInit(): void {
+   const index = this.selectedIndexSignal();
+   const selectedIndex: number = index;
+   this.stepper.selectedIndex = selectedIndex;
   }
 }

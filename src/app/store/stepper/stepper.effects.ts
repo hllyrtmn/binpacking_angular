@@ -41,7 +41,7 @@ export class StepperEffects {
   private orderService = inject(OrderService);
   private orderDetailService = inject(OrderDetailService);
 
-  
+
 
 
   // Private helper method
@@ -260,13 +260,33 @@ export class StepperEffects {
     );
   });
 
+  calculatePackageDetail$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(StepperActions.invoiceUploadSubmitFlowSuccess),
+      switchMap(() => this.repositoryService.calculatePackageDetail().pipe(
+        tap(console.log),
+        map((response) => StepperActions.calculatePackageDetailSuccess({
+          packageDetails: response.packageDetails,
+          remainingOrderDetails: response.remainingOrderDetails
+        })
+        )
+      ))
+    ));
+
+
+  invoiceUploadCompleted$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(StepperActions.calculatePackageDetailSuccess),
+      map(() => StepperActions.setStepCompleted({ stepIndex: 1 }))
+    )
+  );
 
   uploadInvoiceFile$ = createEffect(() =>
     this.actions$.pipe(
       ofType(StepperActions.uploadFileToOrder),
       withLatestFrom(this.store.select(selectOrder)),
       switchMap(([action, order]) => this.fileUploadManager.uploadFileToOrder(order.id).pipe(
-        map(() => StepperActions.uploadFileToOrderSuccess()),
+        map(() => StepperActions.invoiceUploadSubmitFlowSuccess()),
         catchError((error) => of(StepperActions.setGlobalError({ error: error.message })))
       ))
     )
@@ -276,7 +296,6 @@ export class StepperEffects {
   triggerStepperStepUploaded$ = createEffect(() =>
     this.actions$.pipe(
       ofType(
-        StepperActions.invoiceUploadSubmitSuccess,
         StepperActions.setOrder,
         StepperActions.uploadInvoiceProcessFileSuccess,
         StepperActions.addOrderDetail,
@@ -285,7 +304,7 @@ export class StepperEffects {
         StepperActions.uploadFileToOrderSuccess,
         StepperActions.createOrderDetailsSuccess,
         StepperActions.updateOrCreateOrderSuccess,
-
+        StepperActions.calculatePackageDetailSuccess,
 
       ),
       map(() => StepperActions.stepperStepUpdated())

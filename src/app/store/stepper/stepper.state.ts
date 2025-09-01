@@ -8,6 +8,8 @@ export interface StepperState {
   order: any | null;
   currentStep: number;
   completedStep: number;
+  packageDetails: any[];
+  remainingOrderDetails: any[];
 
 
 
@@ -99,6 +101,8 @@ export const initialStepperState: StepperState = {
   order: null,
   currentStep: 1,
   completedStep:0,
+  packageDetails: [],
+  remainingOrderDetails:[],
 
 
   isEditMode: false,

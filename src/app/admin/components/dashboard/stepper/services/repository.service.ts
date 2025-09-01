@@ -109,12 +109,12 @@ export class RepositoryService {
     }>(`${this.api.getApiUrl()}/orders/process-file/`, formData);
   }
 
-  calculatePackageDetail(order_id: string = this.getOrderId()): Observable<{ packages: any[], remainingProducts: any[] }> {
+  calculatePackageDetail(order_id: string = this.getOrderId()): Observable<{ packageDetails: any[], remainingOrderDetails: any[] }> {
     return this.http
       .get<any>(`${this.api.getApiUrl()}/logistics/calculate-box/${order_id}/`)
       .pipe(map((response) => ({
-        packages: mapPackageDetailToPackage(response.data),
-        remainingProducts: mapOrderDetailsToUiProductsSafe(response.remaining_order_details)
+        packageDetails: response.data,
+        remainingOrderDetails: response.remaining_order_details
       })));
   }
 

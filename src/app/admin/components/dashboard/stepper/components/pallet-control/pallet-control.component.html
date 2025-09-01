@@ -63,14 +63,14 @@
         cdkDropList
         #productsList="cdkDropList"
         id="productsList"
-        [cdkDropListData]="availableProducts()"
+        [cdkDropListData]="remainingProductsSignal()"
         [cdkDropListConnectedTo]="palletDropListIds()"
         class="inventory-list"
         (cdkDropListDropped)="dropProductToPallet($event)">
 
         <div
           class="product-item"
-          *ngFor="let product of availableProducts(); trackBy: trackByProductId"
+          *ngFor="let product of remainingProductsSignal(); trackBy: trackByProductId"
           cdkDrag
           (cdkDragStarted)="dragStarted($event)"
           (cdkDragEnded)="dragEnded()"
@@ -103,7 +103,7 @@
           </div>
         </div>
 
-        <div class="empty-state" *ngIf="availableProducts().length === 0">
+        <div class="empty-state" *ngIf="remainingProductsSignal().length === 0">
           <mat-icon>done_all</mat-icon>
           <p>Tüm ürünler paletlere yerleştirildi.</p>
         </div>
