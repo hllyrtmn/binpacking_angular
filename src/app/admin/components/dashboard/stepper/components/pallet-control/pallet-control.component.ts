@@ -69,10 +69,10 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   private readonly store = inject(Store<AppState>);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  
+
   uiPackages:WritableSignal<any[]> = signal([]);
   remainingProducts:WritableSignal<any[]> = signal([]);
-  
+
   // NgRx Step2 Migration Observables
   public step2Packages$ = this.store.select(selectStep2Packages);
   public step2RemainingProducts$ = this.store.select(selectStep2RemainingProducts);
@@ -244,10 +244,10 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
     this.secondFormGroup = this._formBuilder.group({
       secondCtrl: ['', Validators.required],
     });
+    effect(()=>{
+      this.uiPackages.set(this.store.selectSignal(StepperSelectors.selectUiPackages)())
+    })
 
-      this.uiPackages.set(this.store.selectSignal(selectStep2Packages)())
-
-      this.remainingProducts.set(this.store.selectSignal(selectStep2RemainingProducts)())
   }
 
   // Track by functions
@@ -716,12 +716,10 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
     if (event.container.id === 'productsList') {
       console.log("palletten remaining products a alma")
         const sourceProducts = [...event.previousContainer.data];
-        const targetProducts = [...this.remainingProducts()];
 
         const removedProduct = sourceProducts.splice(event.previousIndex, 1)[0];
-        targetProducts.push(removedProduct);
 
-        this.remainingProducts.set(targetProducts);
+        this.remainingProducts.update((value) => [...value, removedProduct]);
 
         const currentPackages = this.uiPackages();
         const sourcePackage = currentPackages.find(pkg =>

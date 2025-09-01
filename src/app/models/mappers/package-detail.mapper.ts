@@ -100,8 +100,23 @@ export function mapPackageToPackageDetailReadSerializer(uiPackageList: UiPackage
 
   uiPackageList.forEach((uiPackage) => {
     // For each product in the UiPackage, create a PackageDetail
+    if(uiPackage.products.length == 0 && uiPackage.pallet){
+      const packageDetail:PackageDetail = {
+        count: 0,
+        priority: 0,
+        id: Guid(),
+        package: {
+          id: uiPackage.id || Guid(), // Eğer ID yoksa yeni bir ID oluştur
+          name: uiPackage.name,
+          order: uiPackage.order,
+          pallet: uiPackage.pallet
+        }
+      }
+      packageDetailList.push(packageDetail);
+    }
     uiPackage.products.forEach((uiProduct) => {
       const product: Product = {
+        name: uiProduct.name,
         product_type: uiProduct.product_type,
         dimension: uiProduct.dimension,
         weight_type: uiProduct.weight_type,
@@ -111,7 +126,7 @@ export function mapPackageToPackageDetailReadSerializer(uiPackageList: UiPackage
         id: Guid(), // Unique ID for the package detail
         count: uiProduct.count,
         priority: uiProduct.priority,
-        product: product,
+        product: product
       };
 
       // Check if package is already saved in DB
@@ -128,14 +143,14 @@ export function mapPackageToPackageDetailReadSerializer(uiPackageList: UiPackage
           id: uiPackage.id || Guid(), // Eğer ID yoksa yeni bir ID oluştur
           name: uiPackage.name,
           order: uiPackage.order,
-          pallet: uiPackage.pallet
+          pallet: {
+            id: uiPackage.pallet?.id,
+            dimension:uiPackage.pallet?.dimension,
+            weight:uiPackage.pallet?.weight,
+          }
         };
 
       }
-
-      // Product için ID referansı kullan
-      packageDetail.product_id = uiProduct.id;
-
       packageDetailList.push(packageDetail);
     });
   });
