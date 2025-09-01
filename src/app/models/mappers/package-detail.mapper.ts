@@ -3,6 +3,7 @@ import { UiPallet } from '../../admin/components/dashboard/stepper/components/ui
 import { UiProduct } from '../../admin/components/dashboard/stepper/components/ui-models/ui-product.model';
 import { PackageDetail } from '../package-detail.interface';
 import { v4 as Guid } from 'uuid';
+import { Product } from '../product.interface';
 export function mapPackageDetailToPackage(packageDetailList: PackageDetail[]): UiPackage[] {
   const uniquePackageIds = new Set<string>();
   packageDetailList.forEach((detail) => {
@@ -77,6 +78,7 @@ export function mapPackageDetailToPackage(packageDetailList: PackageDetail[]): U
         return new UiProduct({
           ...productData,
           count: detail.count,
+          priority: detail.priority
         });
       });
 
@@ -93,15 +95,23 @@ export function mapPackageDetailToPackage(packageDetailList: PackageDetail[]): U
   return packageList;
 }
 
-export function mapPackageToPackageDetail(uiPackageList: UiPackage[]): PackageDetail[] {
-  const packageDetailList: PackageDetail[] = [];
+export function mapPackageToPackageDetailReadSerializer(uiPackageList: UiPackage[]): PackageDetail[] {
+  const packageDetailList: PackageDetail[] = []
 
   uiPackageList.forEach((uiPackage) => {
     // For each product in the UiPackage, create a PackageDetail
     uiPackage.products.forEach((uiProduct) => {
+      const product: Product = {
+        product_type: uiProduct.product_type,
+        dimension: uiProduct.dimension,
+        weight_type: uiProduct.weight_type,
+        id: uiProduct.id
+      }
       const packageDetail: PackageDetail = {
         id: Guid(), // Unique ID for the package detail
-        count: uiProduct.count
+        count: uiProduct.count,
+        priority: uiProduct.priority,
+        product: product,
       };
 
       // Check if package is already saved in DB
@@ -116,7 +126,51 @@ export function mapPackageToPackageDetail(uiPackageList: UiPackage[]): PackageDe
         // Veritabanında olmayan, hesaplanmış package için tam nesne gönder
         packageDetail.package = {
           id: uiPackage.id || Guid(), // Eğer ID yoksa yeni bir ID oluştur
-          name: uiPackage.name
+          name: uiPackage.name,
+          order: uiPackage.order,
+          pallet: uiPackage.pallet
+        };
+
+      }
+
+      // Product için ID referansı kullan
+      packageDetail.product_id = uiProduct.id;
+
+      packageDetailList.push(packageDetail);
+    });
+  });
+
+  return packageDetailList;
+}
+
+
+export function mapPackageToPackageDetailWriteSerializer(uiPackageList: UiPackage[]): PackageDetail[] {
+  const packageDetailList: PackageDetail[] = [];
+
+  uiPackageList.forEach((uiPackage) => {
+    // For each product in the UiPackage, create a PackageDetail
+    uiPackage.products.forEach((uiProduct) => {
+      const packageDetail: PackageDetail = {
+        id: Guid(), // Unique ID for the package detail
+        count: uiProduct.count,
+        priority: uiProduct.priority
+      };
+
+      // Check if package is already saved in DB
+      // Normally you would check this from a backend response flag or some other indicator
+      // For this example, let's assume there's a property like 'isSavedInDb' in uiPackage
+      // This might be set based on a response from your backend
+      if (uiPackage.isSavedInDb === true) {
+        // Mevcut bir package için ID referansı kullan
+        packageDetail.package_id = uiPackage.id;
+      } else {
+        // Yeni bir package oluşturmak için tüm detayları içeren nesne kullan
+        // Veritabanında olmayan, hesaplanmış package için tam nesne gönder
+        packageDetail.package = {
+          id: uiPackage.id || Guid(), // Eğer ID yoksa yeni bir ID oluştur
+          name: uiPackage.name,
+          pallet:uiPackage.pallet,
+          order:uiPackage.order
         };
 
         // Pallet için ID referansı kullan (eğer varsa)

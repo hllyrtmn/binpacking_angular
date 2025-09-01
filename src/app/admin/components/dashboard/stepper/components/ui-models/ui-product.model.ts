@@ -7,6 +7,26 @@ import { IUiProduct } from '../../interfaces/ui-interfaces/ui-product.interface'
 
 export class UiProduct implements IUiProduct {
 
+  name?: string;
+  count: number;
+  product_type: ProductType;
+  dimension: Dimension;
+  weight_type: WeightType;
+  company?: Company | undefined;
+  id: string;
+  priority: number;
+
+  constructor(init: Partial<IUiProduct>) {
+    this.name = init.name!;
+    this.count = init.count!;
+    this.id = init.id!;
+    this.product_type = init.product_type!;
+    this.dimension = init.dimension!;
+    this.weight_type = init.weight_type!;
+    this.company = init.company;
+    this.priority = init.priority!;
+  }
+  
   split(perItem?: number | null): UiProduct[] {
     if (this.count <= 1) {
       return [this];
@@ -26,31 +46,16 @@ export class UiProduct implements IUiProduct {
       ...this,
       count: firstCount,
       id: this.id + '/1',
+      priority: this.priority
     });
 
     const secondProduct = new UiProduct({
       ...this,
       count: secondCount,
       id: this.id + '/2',
+      priority:this.priority
     });
     return [firstProduct, secondProduct];
   }
 
-  name?: string;
-  count: number;
-  product_type: ProductType;
-  dimension: Dimension;
-  weight_type: WeightType;
-  company?: Company | undefined;
-  id: string;
-
-  constructor(init: Partial<IUiProduct>) {
-    this.name = init.name!;
-    this.count = init.count!;
-    this.id = init.id!;
-    this.product_type = init.product_type!;
-    this.dimension = init.dimension!;
-    this.weight_type = init.weight_type!;
-    this.company = init.company;
-  }
 }

@@ -12,4 +12,5 @@ export interface PackageDetail extends BaseModel {
   product_id?: string;
 
   count: number;
+  priority:number;
 }

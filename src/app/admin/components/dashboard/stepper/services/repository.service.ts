@@ -4,7 +4,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable, tap } from 'rxjs';
 import { FileResponse } from '../interfaces/file-response.interface';
 import { mapOrderDetailsToUiProductsSafe, mapToOrderDetailDtoList } from '../../../../../models/mappers/order-detail.mapper';
-import { mapPackageDetailToPackage } from '../../../../../models/mappers/package-detail.mapper';
+import { mapPackageDetailToPackage, mapPackageToPackageDetailWriteSerializer } from '../../../../../models/mappers/package-detail.mapper';
 import { UiPallet } from '../components/ui-models/ui-pallet.model';
 import { PackageDetail } from '../../../../../models/package-detail.interface';
 import { OrderDetail } from '../../../../../models/order-detail.interface';
@@ -16,6 +16,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '../../../../../store';
 import * as StepperSelectors from '../../../../../store/stepper/stepper.selectors';
 import { take } from 'rxjs/operators';
+import { UiPackage } from '../components/ui-models/ui-package.model';
 
 @Injectable({
   providedIn: 'root',
@@ -119,11 +120,11 @@ export class RepositoryService {
   }
 
   bulkCreatePackageDetail(
-    packageDetailList: PackageDetail[],
+    uiPackages: UiPackage[],
     order_id: string = this.getOrderId()
   ) {
     const payload = {
-      packageDetails: packageDetailList,
+      packageDetails: mapPackageToPackageDetailWriteSerializer(uiPackages),
     };
     return this.http.post<any>(
       `${this.api.getApiUrl()}/logistics/create-package-detail/${order_id}/`,

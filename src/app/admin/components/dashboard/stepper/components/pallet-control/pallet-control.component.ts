@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, computed, signal, effect, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, computed, signal, effect, AfterViewInit, OnDestroy, WritableSignal } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -27,7 +27,7 @@ import { UiProduct } from '../ui-models/ui-product.model';
 import { UiPallet } from '../ui-models/ui-pallet.model';
 import { UiPackage } from '../ui-models/ui-package.model';
 import { ToastService } from '../../../../../../services/toast.service';
-import { mapPackageToPackageDetail } from '../../../../../../models/mappers/package-detail.mapper';
+import { mapPackageToPackageDetailReadSerializer, mapPackageToPackageDetailWriteSerializer } from '../../../../../../models/mappers/package-detail.mapper';
 import { LocalStorageService } from '../../services/local-storage.service';
 import { Store } from '@ngrx/store';
 import { AppState } from '../../../../../../store';
@@ -69,29 +69,16 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   private readonly store = inject(Store<AppState>);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  packagesSignal = this.store.selectSignal(StepperSelectors.selectUiPackages,{
-    equal: (a, b) => {
-      if (a.length !== b.length) return false;
-      return a.every((pkg, i) =>
-        pkg.id === b[i]?.id &&
-        pkg.products.length === b[i]?.products.length &&
-        pkg.pallet?.id === b[i]?.pallet?.id  // bu satırı ekle
-      );
-    }
-  });
-
+  
+  uiPackages:WritableSignal<any[]> = signal([]);
+  remainingProducts:WritableSignal<any[]> = signal([]);
+  
   // NgRx Step2 Migration Observables
   public step2Packages$ = this.store.select(selectStep2Packages);
   public step2RemainingProducts$ = this.store.select(selectStep2RemainingProducts);
   public step2IsDirty$ = this.store.select(selectStep2IsDirty);
   public step2Changes$ = this.store.select(selectStep2Changes);
 
-  public remainingProductsSignal = this.store.selectSignal(selectStep2RemainingProducts, {
-    equal: (a, b) => {
-      if (a.length !== b.length) return false;
-      return a.every((prod, i) => prod.id === b[i]?.id && prod.count === b[i]?.count);
-    }
-  })
   public isDirtySignal = this.store.selectSignal(selectStep2IsDirty);
   public orderSignal = this.store.selectSignal(StepperSelectors.selectOrder);
 
@@ -108,10 +95,10 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   public selectedPallets = signal<UiPallet[]>([]);
 
   // Computed signals for performance
-  public packageCount = computed(() => this.packagesSignal().length);
-  public availableProductCount = computed(() => this.remainingProductsSignal().length);
-  public hasPackages = computed(() => this.packagesSignal().length > 0);
-  public hasAvailableProducts = computed(() => this.remainingProductsSignal().length > 0);
+  public packageCount = computed(() => this.uiPackages().length);
+  public availableProductCount = computed(() => this.remainingProducts().length);
+  public hasPackages = computed(() => this.uiPackages().length > 0);
+  public hasAvailableProducts = computed(() => this.remainingProducts().length > 0);
   public availablePalletCount = computed(() => this.availablePallets().length);
   public selectedPalletCount = computed(() => this.selectedPallets().length);
   public hasAvailablePallets = computed(() => this.availablePallets().length > 0);
@@ -122,12 +109,12 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
     const ids = ['productsList', 'availablePalletsList'];
 
     // Package container'ları ekle (boş paketler için)
-    this.packagesSignal()
+    this.uiPackages()
       .filter(pkg => pkg.pallet === null)
       .forEach(pkg => ids.push(pkg.id));
 
     // Pallet container'ları ekle
-    this.packagesSignal()
+    this.uiPackages()
       .filter(pkg => pkg.pallet !== null)
       .forEach(pkg => {
         if (pkg.pallet) {
@@ -139,7 +126,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   });
 
   public packageDropListIds = computed(() => {
-    return this.packagesSignal()
+    return this.uiPackages()
       .filter(pkg => pkg.pallet === null)
       .map(pkg => pkg.id);
   });
@@ -147,7 +134,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   public palletDropListIds = computed(() => {
     const ids = ['productsList'];
 
-    this.packagesSignal()
+    this.uiPackages()
       .filter(pkg => pkg.pallet !== null)
       .forEach(pkg => {
         if (pkg.pallet) {
@@ -164,7 +151,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
 
   // Weight and dimension calculations
   public totalWeight = computed(() => {
-    const packages = this.packagesSignal();
+    const packages = this.uiPackages();
     if (packages.length === 0) return 0;
 
     return packages.reduce((total, pkg) => {
@@ -193,7 +180,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   });
 
   public totalMeter = computed(() => {
-    const packages = this.packagesSignal();
+    const packages = this.uiPackages();
     return packages.reduce((total, pkg) => {
       if (pkg.products.length === 0) return total;
 
@@ -207,7 +194,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   });
 
   public remainingArea = computed(() => {
-    const packages = this.packagesSignal();
+    const packages = this.uiPackages();
     const totalArea = packages.reduce((total, pkg) => {
       const palletArea = Math.floor(
         (pkg.pallet?.dimension.width ?? 0) * (pkg.pallet?.dimension.depth ?? 0)
@@ -225,7 +212,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
 
   // Pallet weight analytics
   public activePalletWeights = computed(() => {
-    const packages = this.packagesSignal();
+    const packages = this.uiPackages();
     return packages
       .filter(pkg => pkg.pallet && pkg.products?.length > 0)
       .map(pkg => this.packageTotalWeight(pkg));
@@ -257,18 +244,10 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
     this.secondFormGroup = this._formBuilder.group({
       secondCtrl: ['', Validators.required],
     });
-    effect(() => {
-      const currentPackages = this.packagesSignal();
-      const emptyPackages = currentPackages.filter(p => p.pallet === null);
 
-      // Eğer hiç boş package yoksa ve component initialize olduysa
-      if (emptyPackages.length === 0 && currentPackages.length >= 0) {
-        // Async olarak boş package ekle (infinite loop önlemek için)
-        setTimeout(() => {
-          this.addNewEmptyPackage();
-        }, 0);
-      }
-    });
+      this.uiPackages.set(this.store.selectSignal(selectStep2Packages)())
+
+      this.remainingProducts.set(this.store.selectSignal(selectStep2RemainingProducts)())
   }
 
   // Track by functions
@@ -285,6 +264,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   ngOnInit(): void {
+    this.loadPallets();
     // invoice upload success oldugunda donen  verini burada gosterilmeesi gerek
     // bu verinin selectordan gelmesi lazim
     // bunun icinde veri tabanindan donen verinin store a kayit edilmeis lazim
@@ -298,7 +278,6 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
     // bu arada localhostu guncelleyecek actionlari da
     // auto save effectine ekleyelim
 
-    // this.loadPallets();
 
     // // Store'dan veri yükleme işlemi
     // this.step2Packages$.pipe(
@@ -333,6 +312,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   ngAfterViewInit(): void {
+
   }
 
   ngOnDestroy(): void {
@@ -406,7 +386,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   // }
   private getCurrentPackageState(): string {
     try {
-      const currentPackages = this.packagesSignal();
+      const currentPackages = this.uiPackages();
       const packageSummary = currentPackages.map((pkg) => ({
         id: pkg.id,
         palletId: pkg.pallet?.id,
@@ -471,8 +451,8 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
 
   forceSaveStep2(): void {
     const autoSaveData = {
-      packages: this.packagesSignal(),
-      availableProducts: this.remainingProductsSignal(),
+      packages: this.uiPackages(),
+      availableProducts: this.remainingProducts(),
       totalWeight: this.totalWeight(),
       totalMeter: this.totalMeter(),
       remainingArea: this.remainingArea(),
@@ -660,37 +640,11 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
     return Math.floor(remainingVolume / singleProductVolume);
   }
 
-  // Helper methods for UI models
-  private ensureUiProduct(product: any): UiProduct {
-    return product instanceof UiProduct ? product : new UiProduct(product);
-  }
-
-  private ensureUiProducts(products: any[]): UiProduct[] {
-    return products.map((product) => this.ensureUiProduct(product));
-  }
-
-  private ensureUiProductInstance(product: any): any {
-    // if (!(product instanceof UiProduct)) {
-    //   const uiProduct = new UiProduct(product);
-    //   const currentProducts = this.remainingProductsSignal();
-    //   const index = currentProducts.indexOf(product);
-
-    //   if (index !== -1) {
-    //     const updatedProducts = [...currentProducts];
-    //     updatedProducts[index] = uiProduct;
-    //     this.remainingProductsSignal.set(updatedProducts);
-    //   }
-
-    //   return uiProduct;
-    // }
-    // return product;
-  }
-
   consolidateProducts(products: UiProduct[]): UiProduct[] {
     const consolidatedMap = new Map<string, UiProduct>();
 
     for (const product of products) {
-      const uiProduct = this.ensureUiProduct(product);
+      const uiProduct = product
       const mainId = uiProduct.id.split('/')[0];
 
       const existing = consolidatedMap.get(mainId);
@@ -722,120 +676,123 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
 
   // Drag & Drop Event Handlers
   dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
+    console.log(event);
     // // Aynı container içinde taşıma - pozisyon değiştirme
-    // if (event.previousContainer === event.container) {
-    //   if (event.container.id === 'productsList') {
-    //     this.store.dispatch(StepperActions.remainingProductMoveProduct({
-    //       previousIndex: event.previousIndex,
-    //       currentIndex: event.currentIndex
-    //     }));
-    //   } else {
-    //     // Palet içinde sıralama değişikliği
-    //     const currentPackages = this.packagesSignal();
-    //     const targetPackage = currentPackages.find(pkg =>
-    //       pkg.pallet && pkg.pallet.id === event.container.id
-    //     );
+    if (event.previousContainer === event.container) {
+      if (event.container.id === 'productsList') {
+        console.log("remaining products icerisinde yer degistirme")
+        this.store.dispatch(StepperActions.remainingProductMoveProduct({
+          previousIndex: event.previousIndex,
+          currentIndex: event.currentIndex
+        }));
+      } else {
+        console.log("ayni package icerisinde yer degistirme")
+        const currentPackages = this.uiPackages();
+        const targetPackage = currentPackages.find(pkg =>
+          pkg.pallet && pkg.pallet.id === event.container.id
+        );
 
-    //     if (targetPackage) {
-    //       const reorderedProducts = [...targetPackage.products];
-    //       moveItemInArray(reorderedProducts, event.previousIndex, event.currentIndex);
+        if (targetPackage) {
+          const reorderedProducts = [...targetPackage.products];
+          moveItemInArray(reorderedProducts, event.previousIndex, event.currentIndex);
+          reorderedProducts.map((product) => product.priority = reorderedProducts.findIndex(p => p.id === product.id))
 
-    //       const updatedPackage = { ...targetPackage, products: reorderedProducts };
-    //       const updatedPackages = currentPackages.map(pkg =>
-    //         pkg.id === updatedPackage.id ? updatedPackage : pkg
-    //       ) as UiPackage[];
-    //       this.packagesSignal.set(updatedPackages);
+          const updatedPackage = { ...targetPackage, products: reorderedProducts };
+          const updatedPackages = currentPackages.map(pkg =>
+            pkg.id === updatedPackage.id ? updatedPackage : pkg
+          ) as UiPackage[];
+          this.uiPackages.set(updatedPackages);
 
-    //       this.store.dispatch(StepperActions.updatePackage({ package: updatedPackage }));
-    //     }
-    //   }
+          this.store.dispatch(StepperActions.setPackageDetails({ packageDetails: mapPackageToPackageDetailReadSerializer(this.uiPackages()) }));
+        }
+      }
 
-    //   return;
-    // }
+      //   return;
+    }
 
     // const product = event.previousContainer.data[event.previousIndex];
 
     // // Paletten available products'a geri alma
-    // if (event.container.id === 'productsList') {
-    //   const sourceProducts = [...event.previousContainer.data];
-    //   const targetProducts = [...this.remainingProductsSignal()];
+    if (event.container.id === 'productsList') {
+      console.log("palletten remaining products a alma")
+        const sourceProducts = [...event.previousContainer.data];
+        const targetProducts = [...this.remainingProducts()];
 
-    //   const removedProduct = sourceProducts.splice(event.previousIndex, 1)[0];
-    //   targetProducts.push(removedProduct);
+        const removedProduct = sourceProducts.splice(event.previousIndex, 1)[0];
+        targetProducts.push(removedProduct);
 
-    //   this.remainingProductsSignal.set(targetProducts);
+        this.remainingProducts.set(targetProducts);
 
-    //   const currentPackages = this.packagesSignal();
-    //   const sourcePackage = currentPackages.find(pkg =>
-    //     pkg.pallet && pkg.pallet.id === event.previousContainer.id
-    //   );
+        const currentPackages = this.uiPackages();
+        const sourcePackage = currentPackages.find(pkg =>
+          pkg.pallet && pkg.pallet.id === event.previousContainer.id
+        );
 
-    //   if (sourcePackage) {
-    //     const updatedPackages = currentPackages.map(pkg =>
-    //       pkg.id === sourcePackage.id ? { ...pkg, products: sourceProducts } : pkg
-    //     ) as UiPackage[];
-    //     this.packagesSignal.set(updatedPackages);
+        if (sourcePackage) {
+          const updatedPackages = currentPackages.map(pkg =>
+            pkg.id === sourcePackage.id ? { ...pkg, products: sourceProducts } : pkg
+          ) as UiPackage[];
+          this.uiPackages.set(updatedPackages);
+        }
 
-    //     this.store.dispatch(StepperActions.updatePackage({ package: { ...sourcePackage, products: sourceProducts } }));
-    //   }
-
-    //   this.store.dispatch(StepperActions.updateAvailableProducts({
-    //     availableProducts: targetProducts
-    //   }));
-
-    //   return;
-    // }
+        this.store.dispatch(StepperActions.setPackageDetails({ packageDetails: mapPackageToPackageDetailReadSerializer(this.uiPackages()) }));
+        return;
+    }
 
     // // Hedef palet bulma
-    // const targetPalletId = event.container.id;
-    // const currentPackages = this.packagesSignal();
-    // const targetPackage = currentPackages.find(p => p.pallet && p.pallet.id === targetPalletId);
+    const targetPalletId = event.container.id;
+    const currentPackages = this.uiPackages();
+    const targetPackage = currentPackages.find(p => p.pallet && p.pallet.id === targetPalletId);
 
-    // if (!targetPackage) return;
+    if (!targetPackage) {
+      console.error('target package bulma hatasi')
+      return;
+    };
 
     // // Source container'ın palet mi yoksa productsList mi olduğunu kontrol et
-    // const isSourceFromPallet = event.previousContainer.id !== 'productsList';
+    const isSourceFromPallet = event.previousContainer.id !== 'productsList';
 
-    // if (isSourceFromPallet) {
-    //   // Palet-to-palet transfer
-    //   const sourcePackage = currentPackages.find(pkg =>
-    //     pkg.pallet && pkg.pallet.id === event.previousContainer.id
-    //   );
+    if (isSourceFromPallet) {
+      console.log("product in kaynagi package ise")
+      //   // Palet-to-palet transfer
+      //   const sourcePackage = currentPackages.find(pkg =>
+      //     pkg.pallet && pkg.pallet.id === event.previousContainer.id
+      //   );
 
-    //   if (sourcePackage) {
-    //     // Sığma kontrolü
-    //     if (targetPackage.pallet) {
-    //       const canFit = this.canFitProductToPallet(product, targetPackage.pallet, targetPackage.products);
-    //       if (!canFit) {
-    //         const fillPercentage = this.getPalletFillPercentage(targetPackage.pallet, targetPackage.products);
-    //         this.toastService.error(`Ürün bu palete sığmıyor. Palet doluluk: %${fillPercentage}`, 'Boyut Hatası');
-    //         return;
-    //       }
-    //     }
+      //   if (sourcePackage) {
+      //     // Sığma kontrolü
+      //     if (targetPackage.pallet) {
+      //       const canFit = this.canFitProductToPallet(product, targetPackage.pallet, targetPackage.products);
+      //       if (!canFit) {
+      //         const fillPercentage = this.getPalletFillPercentage(targetPackage.pallet, targetPackage.products);
+      //         this.toastService.error(`Ürün bu palete sığmıyor. Palet doluluk: %${fillPercentage}`, 'Boyut Hatası');
+      //         return;
+      //       }
+      //     }
 
-    //     const sourceProducts = [...sourcePackage.products];
-    //     const targetProducts = [...targetPackage.products];
+      //     const sourceProducts = [...sourcePackage.products];
+      //     const targetProducts = [...targetPackage.products];
 
-    //     const removedProduct = sourceProducts.splice(event.previousIndex, 1)[0];
-    //     targetProducts.push(removedProduct);
+      //     const removedProduct = sourceProducts.splice(event.previousIndex, 1)[0];
+      //     targetProducts.push(removedProduct);
 
-    //     const updatedPackages = currentPackages.map(pkg => {
-    //       if (pkg.id === sourcePackage.id) return { ...pkg, products: sourceProducts };
-    //       if (pkg.id === targetPackage.id) return { ...pkg, products: targetProducts };
-    //       return pkg;
-    //     }) as UiPackage[];
+      //     const updatedPackages = currentPackages.map(pkg => {
+      //       if (pkg.id === sourcePackage.id) return { ...pkg, products: sourceProducts };
+      //       if (pkg.id === targetPackage.id) return { ...pkg, products: targetProducts };
+      //       return pkg;
+      //     }) as UiPackage[];
 
-    //     this.packagesSignal.set(updatedPackages);
+      //     this.packagesSignal.set(updatedPackages);
 
-    //     this.store.dispatch(StepperActions.updatePackage({ package: { ...sourcePackage, products: sourceProducts } }));
-    //     this.store.dispatch(StepperActions.updatePackage({ package: { ...targetPackage, products: targetProducts } }));
+      //     this.store.dispatch(StepperActions.updatePackage({ package: { ...sourcePackage, products: sourceProducts } }));
+      //     this.store.dispatch(StepperActions.updatePackage({ package: { ...targetPackage, products: targetProducts } }));
 
-    //     this.toastService.success(`${removedProduct.name} başka palete taşındı`);
-    //     return;
-    //   }
-    // }
+      //     this.toastService.success(`${removedProduct.name} başka palete taşındı`);
+      //     return;
+      //   }
+    }
 
-    // // Available products'tan palete transfer
+    // Available products'tan palete transfer
     // if (targetPackage.pallet) {
     //   const canFit = this.canFitProductToPallet(product, targetPackage.pallet, targetPackage.products);
     //   if (!canFit) {
@@ -916,7 +873,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
       return;
     }
 
-    this.packagesSignal().forEach((pkg, index) => {
+    this.uiPackages().forEach((pkg, index) => {
       if (pkg.pallet) {
         const palletElement = document.getElementById(pkg.pallet.id);
         if (palletElement) {
@@ -925,7 +882,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
       }
     });
 
-    this.packagesSignal().forEach((pkg, index) => {
+    this.uiPackages().forEach((pkg, index) => {
       if (pkg.pallet) {
         const canFit = this.canFitProductToPallet(
           product,
@@ -1183,62 +1140,40 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
     // }));
   }
 
-  addNewEmptyPackage(): void {
-    // const currentPackages = this.packagesSignal();
-    // const emptyPackages = currentPackages.filter(p => p.pallet === null);
-
-    // if (emptyPackages.length < 2) {
-    //   const newPackage = new UiPackage({
-    //     id: Guid(),
-    //     pallet: null,
-    //     products: [],
-    //     order: this.orderSignal(),
-    //     name: (currentPackages.length + 1).toString()
-    //   });
-
-    //   const updatedPackages = [...currentPackages, newPackage];
-    //   this.packagesSignal.set(updatedPackages);
-
-    //   this.store.dispatch(StepperActions.addPackage({ package: newPackage }));
-    // }
-  }
-
-  getPackageData(): any {
-    return mapPackageToPackageDetail(this.packagesSignal());
-  }
 
   submitForm(): void {
-    const currentPackages = this.packagesSignal();
-    const packageData = mapPackageToPackageDetail(currentPackages);
+    //   const currentPackages = this.uiPackages();
+    //   const packageData = mapPackageToPackageDetail(currentPackages);
 
-    this.repository.bulkCreatePackageDetail(packageData).subscribe({
-      next: (response) => {
-        this.toastService.success('Kaydedildi', 'Başarılı');
+      // this.repository.bulkCreatePackageDetail(packageData).subscribe({
+    //     next: (response) => {
+    //       this.toastService.success('Kaydedildi', 'Başarılı');
 
-        this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 1 }));
-        this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 1, isValid: true }));
+    //       this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 1 }));
+    //       this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 1, isValid: true }));
 
-        this.store.dispatch(StepperActions.triggerAutoSave({
-          stepNumber: 1,
-          data: {
-            packages: currentPackages,
-            availableProducts: this.remainingProductsSignal()
-          },
-          changeType: 'api-response'
-        }));
+    //       this.store.dispatch(StepperActions.triggerAutoSave({
+    //         stepNumber: 1,
+    //         data: {
+    //           packages: currentPackages,
+    //           availableProducts: this.remainingProductsSignal()
+    //         },
+    //         changeType: 'api-response'
+    //       }));
 
-      },
-      error: (error) => {
-        this.store.dispatch(StepperActions.setGlobalError({
-          error: {
-            message: 'Paket verileri kaydedilirken hata oluştu: ' + (error.message || error),
-            code: error.status?.toString(),
-            stepIndex: 1
-          }
-        }));
+    //     },
+    //     error: (error) => {
+    //       this.store.dispatch(StepperActions.setGlobalError({
+    //         error: {
+    //           message: 'Paket verileri kaydedilirken hata oluştu: ' + (error.message || error),
+    //           code: error.status?.toString(),
+    //           stepIndex: 1
+    //         }
+    //       }));
 
-        this.toastService.error('Paket verileri kaydedilemedi');
-      }
-    });
+    //       this.toastService.error('Paket verileri kaydedilemedi');
+    //     }
+    //   });
+    // }
   }
 }

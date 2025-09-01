@@ -1,13 +1,28 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { StepperState } from './stepper.state';
 import { mapPackageDetailToPackage } from '../../models/mappers/package-detail.mapper';
-
+import { UiPackage } from '../../admin/components/dashboard/stepper/components/ui-models/ui-package.model';
+import { v4 as Guid } from 'uuid';
 
 // Feature selector
 export const selectStepperState = createFeatureSelector<StepperState>('stepper');
 
 export const selectUiPackages = createSelector(selectStepperState, (state) =>
-  mapPackageDetailToPackage(state.step2State.packages)
+{
+  const uiPackages = mapPackageDetailToPackage(state.step2State.packageDetils)
+  const emptyPackages = uiPackages.filter(f=> f.pallet == null);
+  if(uiPackages.length > 0 && emptyPackages.length == 0){
+      const newPackage = new UiPackage({
+        id: Guid(),
+        pallet: null,
+        products: [],
+        order: state.order,
+        name: (uiPackages.length + 1).toString()
+      });
+    uiPackages.push(newPackage);
+  }
+  return uiPackages;
+}
 )
 
 
@@ -263,7 +278,7 @@ export const selectStep2State = createSelector(
 
 export const selectStep2Packages = createSelector(
   selectStep2State,
-  (step2State) => step2State.packages
+  (step2State) => step2State.packageDetils
 );
 
 export const selectStep2RemainingProducts = createSelector(
@@ -273,15 +288,15 @@ export const selectStep2RemainingProducts = createSelector(
 
 export const selectStep2OriginalPackages = createSelector(
   selectStep2State,
-  (step2State) => step2State.originalPackages
+  (step2State) => step2State.originalPackageDetails
 );
 
 export const selectStep2Changes = createSelector(
   selectStep2State,
   (step2State) => ({
-    added: step2State.addedPackages,
-    modified: step2State.modifiedPackages,
-    deleted: step2State.deletedPackages
+    added: step2State.addedPackageDetails,
+    modified: step2State.modifiedPackageDetails,
+    deleted: step2State.deletedPackageDetails
   })
 );
 

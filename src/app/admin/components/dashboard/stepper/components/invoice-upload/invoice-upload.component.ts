@@ -29,16 +29,10 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
   Observable,
-  finalize,
   Subscription,
-  concat,
-  of,
 } from 'rxjs';
-import { OrderService } from '../../../../services/order.service';
 import { ToastService } from '../../../../../../services/toast.service';
-import { LocalStorageService } from '../../services/local-storage.service';
 
-import { OrderDetail } from '../../../../../../models/order-detail.interface';
 import { ExternalDataParams, GenericTableComponent } from '../../../../../../components/generic-table/generic-table.component';
 
 // Refactored managers and services
@@ -92,7 +86,7 @@ import { map } from 'rxjs/operators';
     GenericTableComponent,
     MatSelectModule,
     MatDatepickerModule,
-    MatNativeDateModule,
+    MatNativeDateModule
   ],
   templateUrl: './invoice-upload.component.html',
   styleUrl: './invoice-upload.component.scss',

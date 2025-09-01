@@ -122,21 +122,15 @@ export class StepperEffects {
         return forkJoin({
           order: this.orderService.getById(action.orderId),
           orderDetails: this.orderDetailService.getByOrderId(action.orderId),
-          packagesAndRemainingProducts: this.repositoryService.getPackageDetails(action.orderId),
+          packageDetailsAndRemainingProducts: this.repositoryService.getPackageDetails(action.orderId),
         }).pipe(
-          tap(({ order, orderDetails, packagesAndRemainingProducts }) => {
-            console.log(order);
-            console.log(orderDetails);
-            console.log(packagesAndRemainingProducts);
-          }),
-          // Tüm API sonuçlarını tek bir objede alıyoruz
-          mergeMap(({ order, orderDetails, packagesAndRemainingProducts }) => {
+          mergeMap(({ order, orderDetails, packageDetailsAndRemainingProducts }) => {
             return of(
               StepperActions.setOrder({ order: order }),
               StepperActions.setOrderDetails({ orderDetails: orderDetails }),
-              StepperActions.setPackages({ packages: packagesAndRemainingProducts.packages }),
+              StepperActions.setPackageDetails({ packageDetails: packageDetailsAndRemainingProducts.packages }),
               StepperActions.setRemainingProducts({
-                remainingProducts: packagesAndRemainingProducts.remainingProducts
+                remainingProducts: packageDetailsAndRemainingProducts.remainingProducts
               }),
             );
           })

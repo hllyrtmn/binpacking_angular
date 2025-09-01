@@ -107,11 +107,14 @@ export const setOrderDetails = createAction(
 );
 
 // create setPackageDetails
-export const setPackages = createAction(
+export const setPackageDetails = createAction(
   '[Stepper] Set Package Details',
-  props<{ packages: any[] }>()
+  props<{ packageDetails: any[] }>()
 );
 
+export const setPackageDetialsSuccess = createAction(
+  '[Stepper] Set Package Detials Success'
+);
 
 export const setRemainingProducts = createAction(
   '[Stepper] Set Remaining Products',
