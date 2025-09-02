@@ -640,27 +640,16 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
     return Array.from(consolidatedMap.values());
   }
 
-  // Refresh drop lists after signal changes
-  private refreshDropLists(): void {
-    this.cdr.detectChanges();
-
-    // DOM'un güncellenmesi için kısa bir delay
-    setTimeout(() => {
-      this.cdr.detectChanges();
-    }, 0);
-  }
-
   // Drag & Drop Event Handlers
   dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
+
     if (event.previousContainer === event.container) {
       if (event.container.id === 'productsList') {
-        console.log("remaining products icerisinde yer degistirme")
         this.store.dispatch(StepperActions.remainingProductMoveProduct({
           previousIndex: event.previousIndex,
           currentIndex: event.currentIndex
         }));
       } else {
-        console.log("ayni package icerisinde yer degistirme")
         this.store.dispatch(StepperActions.moveUiProductInSamePackage({
           currentIndex: event.currentIndex,
           previousIndex: event.previousIndex,
@@ -676,7 +665,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
         uiProducts:event.previousContainer.data,
         previousIndex:event.previousIndex,
         previousContainerId:event.previousContainer.id}))
-        return;
+      return;
     }
 
     // Hedef palet bulma
@@ -689,114 +678,59 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
       return;
     };
 
-    // // Source container'ın palet mi yoksa productsList mi olduğunu kontrol et
+    // Source container'ın palet mi yoksa productsList mi olduğunu kontrol et
     const isSourceFromPallet = event.previousContainer.id !== 'productsList';
+    const product = event.previousContainer.data[event.previousIndex];
 
     if (isSourceFromPallet) {
-      console.log("product in kaynagi package ise")
-      //   // Palet-to-palet transfer
-      //   const sourcePackage = currentPackages.find(pkg =>
-      //     pkg.pallet && pkg.pallet.id === event.previousContainer.id
-      //   );
+         // Palet-to-palet transfer
+        const sourcePackage = currentPackages.find(pkg =>
+          pkg.pallet && pkg.pallet.id === event.previousContainer.id
+        );
 
-      //   if (sourcePackage) {
-      //     // Sığma kontrolü
-      //     if (targetPackage.pallet) {
-      //       const canFit = this.canFitProductToPallet(product, targetPackage.pallet, targetPackage.products);
-      //       if (!canFit) {
-      //         const fillPercentage = this.getPalletFillPercentage(targetPackage.pallet, targetPackage.products);
-      //         this.toastService.error(`Ürün bu palete sığmıyor. Palet doluluk: %${fillPercentage}`, 'Boyut Hatası');
-      //         return;
-      //       }
-      //     }
-
-      //     const sourceProducts = [...sourcePackage.products];
-      //     const targetProducts = [...targetPackage.products];
-
-      //     const removedProduct = sourceProducts.splice(event.previousIndex, 1)[0];
-      //     targetProducts.push(removedProduct);
-
-      //     const updatedPackages = currentPackages.map(pkg => {
-      //       if (pkg.id === sourcePackage.id) return { ...pkg, products: sourceProducts };
-      //       if (pkg.id === targetPackage.id) return { ...pkg, products: targetProducts };
-      //       return pkg;
-      //     }) as UiPackage[];
-
-      //     this.packagesSignal.set(updatedPackages);
-
-      //     this.store.dispatch(StepperActions.updatePackage({ package: { ...sourcePackage, products: sourceProducts } }));
-      //     this.store.dispatch(StepperActions.updatePackage({ package: { ...targetPackage, products: targetProducts } }));
-
-      //     this.toastService.success(`${removedProduct.name} başka palete taşındı`);
-      //     return;
-      //   }
+         if (sourcePackage) {
+          // Sığma kontrolü
+          if (targetPackage.pallet) {
+            const canFit = this.canFitProductToPallet(product, targetPackage.pallet, targetPackage.products);
+            if (!canFit) {
+              const fillPercentage = this.getPalletFillPercentage(targetPackage.pallet, targetPackage.products);
+              this.toastService.error(`Ürün bu palete sığmıyor. Palet doluluk: %${fillPercentage}`, 'Boyut Hatası');
+              return;
+            }
+          }
+          this.store.dispatch(StepperActions.moveUiProductInPackageToPackage({
+            sourcePackage: sourcePackage,
+            targetPackage: targetPackage,
+            previousIndex: event.previousIndex
+          }))
+          return;
+         }
     }
 
     // Available products'tan palete transfer
-    // if (targetPackage.pallet) {
-    //   const canFit = this.canFitProductToPallet(product, targetPackage.pallet, targetPackage.products);
-    //   if (!canFit) {
-    //     const fillPercentage = this.getPalletFillPercentage(targetPackage.pallet, targetPackage.products);
-    //     this.toastService.error(`Ürün bu palete sığmıyor. Palet doluluk: %${fillPercentage}`, 'Boyut Hatası');
-    //     return;
-    //   }
-    // }
-
-    // const sourceProducts = [...this.remainingProductsSignal()];
-    // const targetProducts = [...targetPackage.products];
-
-    // const removedProduct = sourceProducts.splice(event.previousIndex, 1)[0];
-    // targetProducts.push(removedProduct);
-
-    // this.remainingProductsSignal.set(sourceProducts);
-
-    // const updatedPackage = { ...targetPackage, products: targetProducts };
-    // const updatedPackages = currentPackages.map(pkg =>
-    //   pkg.id === updatedPackage.id ? updatedPackage : pkg
-    // ) as UiPackage[];
-    // this.packagesSignal.set(updatedPackages);
-
-    // this.store.dispatch(StepperActions.updatePackage({ package: updatedPackage }));
-    // this.store.dispatch(StepperActions.updateAvailableProducts({ availableProducts: sourceProducts }));
-
-    // this.toastService.success(`${removedProduct.name} palete eklendi`);
+    if (targetPackage.pallet) {
+      const canFit = this.canFitProductToPallet(product, targetPackage.pallet, targetPackage.products);
+      if (!canFit) {
+        const fillPercentage = this.getPalletFillPercentage(targetPackage.pallet, targetPackage.products);
+        this.toastService.error(`Ürün bu palete sığmıyor. Palet doluluk: %${fillPercentage}`, 'Boyut Hatası');
+        return;
+      }
+    }
+    this.store.dispatch(StepperActions.moveRemainingProductFromPackage({
+      targetPackage:targetPackage,
+      previousIndex:event.previousIndex
+    }));
+    return
   }
 
   dropPalletToPackage(event: CdkDragDrop<any>): void {
-    // if (event.previousContainer === event.container) return;
+    if (event.previousContainer === event.container) return;
+    this.store.dispatch(StepperActions.movePalletToPackage({
+      containerId:event.container.id,
+      previousIndex: event.previousIndex,
+      previousContainerData: event.previousContainer.data
+    }))
 
-    // const currentPackages = this.packagesSignal();
-    // const targetPackage = currentPackages.find(p => p.id === event.container.id);
-
-    // if (!targetPackage) return;
-
-    // if (targetPackage.pallet !== null) {
-    //   this.toastService.warning('Bu pakette zaten bir palet var');
-    //   return;
-    // }
-
-    // const originalPallet = event.previousContainer.data[event.previousIndex];
-    // const palletClone = new UiPallet({
-    //   ...originalPallet,
-    //   id: originalPallet.id + '/' + this.cloneCount++,
-    // });
-
-    // const updatedPackages = currentPackages.map(pkg =>
-    //   pkg.id === targetPackage.id ? { ...targetPackage, pallet: palletClone } : pkg
-    // ) as UiPackage[];
-
-    // this.packagesSignal.set(updatedPackages);
-
-    // const currentSelectedPallets = this.selectedPallets();
-    // this.selectedPallets.set([...currentSelectedPallets, palletClone]);
-
-    // this.store.dispatch(StepperActions.updatePackage({
-    //   package: { ...targetPackage, pallet: palletClone }
-    // }));
-
-    // this.addNewEmptyPackage();
-
-    // this.toastService.success(`${palletClone.name} paleti eklendi`);
   }
 
   dragStarted(event: CdkDragStart): void {

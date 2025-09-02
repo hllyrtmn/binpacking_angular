@@ -4,6 +4,7 @@ import * as StepperActions from './stepper.actions';
 import { update } from 'lodash';
 import { UiPackage } from '../../admin/components/dashboard/stepper/components/ui-models/ui-package.model';
 import { v4 as Guid } from 'uuid';
+import { UiPallet } from '../../admin/components/dashboard/stepper/components/ui-models/ui-pallet.model';
 
 export const stepperReducer = createReducer(
   initialStepperState,
@@ -33,6 +34,7 @@ export const stepperReducer = createReducer(
       step2State: {
         ...state.step2State,
         packages: [...packages],
+        originalPackages:[...packages],
         remainingProducts: [...remainingOrderDetails]
       }
     }
@@ -115,6 +117,139 @@ export const stepperReducer = createReducer(
       isDirty: false
     }
   })),
+
+  on(StepperActions.moveRemainingProductFromPackage, (state, {  targetPackage,previousIndex }) => {
+
+    const sourceProducts = [...state.step2State.remainingProducts];
+    const targetProducts = [...targetPackage.products];
+
+    const removedProduct = sourceProducts.splice(previousIndex, 1)[0];
+    targetProducts.push(removedProduct);
+
+    const updatedPackage = { ...targetPackage, products: targetProducts };
+    const updatedPackages = state.step2State.packages.map(pkg =>
+      pkg.id === updatedPackage.id ? updatedPackage : pkg
+    ) as UiPackage[];
+
+    const isOriginal = state.step2State.originalPackages.some(item => item.id === updatedPackage.id);
+    const isAlreadyModified = state.step2State.modifiedPackages.some(item => item.id === updatedPackage.id);
+
+    let modified = [...state.step2State.modifiedPackages];
+    if (isOriginal && !isAlreadyModified) {
+      modified.push(updatedPackage);
+    } else if (isAlreadyModified) {
+      modified = modified.map(item => item.id === updatedPackage.id ? updatedPackage : item);
+    }
+
+    return {
+    ...state,
+    step2State: {
+      ...state.step2State,
+      packages: [...updatedPackages],
+      remainingProducts: [...sourceProducts],
+      modifiedPackages: [...modified],
+      isDirty: true
+    }}
+  }),
+
+  on(StepperActions.movePalletToPackage, (state, {  containerId,previousIndex,previousContainerData }) => {
+
+    const currentPackages = state.step2State.packages;
+    const targetPackage = currentPackages.find(p => p.id === containerId);
+
+    if (!targetPackage) return;
+
+    const originalPallet = previousContainerData[previousIndex];
+    const palletClone = new UiPallet({
+      ...originalPallet,
+      id: originalPallet.id + '/' + this.cloneCount++,
+    });
+
+    const updatedPackages = currentPackages.map(pkg =>
+      pkg.id === targetPackage.id ? { ...targetPackage, pallet: palletClone } : pkg
+    ) as UiPackage[];
+
+    this.packagesSignal.set(updatedPackages);
+
+    const currentSelectedPallets = this.selectedPallets();
+    this.selectedPallets.set([...currentSelectedPallets, palletClone]);
+
+    this.store.dispatch(StepperActions.updatePackage({
+      package: { ...targetPackage, pallet: palletClone }
+    }));
+
+    this.addNewEmptyPackage();
+
+    this.toastService.success(`${palletClone.name} paleti eklendi`);
+
+    return {
+    ...state,
+    step2State: {
+      ...state.step2State,
+      packages: [...updatedPackages],
+      remainingProducts: [...sourceProducts],
+      modifiedPackages: [...modified],
+      isDirty: true
+    }}
+  }),
+
+
+  on(StepperActions.moveUiProductInPackageToPackage, (state, {  sourcePackage,targetPackage,previousIndex }) => {
+
+    if (sourcePackage.id === targetPackage.id) {
+      return state;
+    }
+
+    const sourceProducts = [...sourcePackage.products];
+    const targetProducts = [...targetPackage.products];
+    const [removedProduct] = sourceProducts.splice(previousIndex, 1);
+
+    targetProducts.push(removedProduct);
+
+    const updatedSourcePackage = { ...sourcePackage, products: sourceProducts };
+    const updatedTargetPackage = { ...targetPackage, products: targetProducts };
+
+    const updatedPackages = state.step2State.packages.map(pkg => {
+      if (pkg.id === sourcePackage.id) return updatedSourcePackage;
+      if (pkg.id === targetPackage.id) return updatedTargetPackage;
+      return pkg;
+    }) as UiPackage[];
+
+    let modifiedPackages = [...state.step2State.modifiedPackages];
+
+    const isSourceOriginal = state.step2State.originalPackages.some(item => item.id === updatedSourcePackage.id);
+    const isSourceAlreadyModified = modifiedPackages.some(item => item.id === updatedSourcePackage.id);
+
+    if (isSourceOriginal && !isSourceAlreadyModified) {
+      modifiedPackages.push(updatedSourcePackage);
+    } else if (isSourceAlreadyModified) {
+      modifiedPackages = modifiedPackages.map(item =>
+        item.id === updatedSourcePackage.id ? updatedSourcePackage : item
+      );
+    }
+
+    const isTargetOriginal = state.step2State.originalPackages.some(item => item.id === updatedTargetPackage.id);
+    const isTargetAlreadyModified = modifiedPackages.some(item => item.id === updatedTargetPackage.id);
+
+    if (isTargetOriginal && !isTargetAlreadyModified) {
+      modifiedPackages.push(updatedTargetPackage);
+    } else if (isTargetAlreadyModified) {
+      modifiedPackages = modifiedPackages.map(item =>
+        item.id === updatedTargetPackage.id ? updatedTargetPackage : item
+      );
+    }
+
+    return {
+    ...state,
+    step2State: {
+      ...state.step2State,
+      packages: updatedPackages,
+      modifiedPackages: modifiedPackages,
+      isDirty: true
+    }}
+  }),
+
+
 
   on(StepperActions.moveUiProductInSamePackage, (state, { containerId,currentIndex,previousIndex }) => {
     const currentPackages = state.step2State.packages;
@@ -535,32 +670,6 @@ export const stepperReducer = createReducer(
     }
   })),
 
-  on(StepperActions.updatePackage, (state, { package: updatedPackage }) => {
-    const packages = state.step2State.packages.map(pkg =>
-      pkg.id === updatedPackage.id ? updatedPackage : pkg
-    );
-
-    const isOriginal = state.step2State.originalPackages.some(item => item.id === updatedPackage.id);
-    const isAlreadyModified = state.step2State.modifiedPackages.some(item => item.id === updatedPackage.id);
-
-    let modified = [...state.step2State.modifiedPackages];
-    if (isOriginal && !isAlreadyModified) {
-      modified.push(updatedPackage);
-    } else if (isAlreadyModified) {
-      modified = modified.map(item => item.id === updatedPackage.id ? updatedPackage : item);
-    }
-
-    return {
-      ...state,
-      step2State: {
-        ...state.step2State,
-        packages: packages,
-        modifiedPackages: modified,
-        isDirty: true
-      }
-    };
-  }),
-
   on(StepperActions.deletePackage, (state, { packageId }) => {
     const itemToDelete = state.step2State.packages.find(item => item.id === packageId);
     const packages = state.step2State.packages.filter(item => item.id !== packageId);
@@ -583,14 +692,6 @@ export const stepperReducer = createReducer(
     };
   }),
 
-  on(StepperActions.updateAvailableProducts, (state, { availableProducts }) => ({
-    ...state,
-    step2State: {
-      ...state.step2State,
-      availableProducts: [...availableProducts],
-      isDirty: true
-    }
-  })),
 
   on(StepperActions.initializeStep3State, (state, { optimizationResult, reportFiles, loadingStats, algorithmStats }) => ({
     ...state,
