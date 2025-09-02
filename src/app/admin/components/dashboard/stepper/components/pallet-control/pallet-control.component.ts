@@ -261,7 +261,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   ngOnInit(): void {
-    this.loadPallets();
+    // this.loadPallets()
     // invoice upload success oldugunda donen  verini burada gosterilmeesi gerek
     // bu verinin selectordan gelmesi lazim
     // bunun icinde veri tabanindan donen verinin store a kayit edilmeis lazim
@@ -684,30 +684,12 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
         }));
       } else {
         console.log("ayni package icerisinde yer degistirme")
-        const currentPackages = this.uiPackages();
-        const targetPackage = currentPackages.find(pkg =>
-          pkg.pallet && pkg.pallet.id === event.container.id
-        );
-
-        if (targetPackage) {
-          const reorderedProducts = [...targetPackage.products];
-          moveItemInArray(reorderedProducts, event.previousIndex, event.currentIndex);
-          const productsWithUpdatedPriority = reorderedProducts.map((product, index) => ({
-            ...product,
-            priority: index
-          }));
-
-          const updatedPackage = new UiPackage({
-            ...targetPackage,
-            products: productsWithUpdatedPriority
-          });
-          const updatedPackages = currentPackages.map(pkg =>
-            pkg.id === updatedPackage.id ? updatedPackage : pkg
-          ) as UiPackage[];
-
-          this.store.dispatch(StepperActions.setPackageDetails({ packages: updatedPackages }));
+        this.store.dispatch(StepperActions.moveUiProductInSamePackage({
+          currentIndex: event.currentIndex,
+          previousIndex: event.previousIndex,
+          containerId: event.container.id,
+        }))
         }
-      }
 
       return;
     }
@@ -737,7 +719,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
           const updatedPackages = currentPackages.map(pkg =>
             pkg.id === sourcePackage.id ? { ...pkg, products: sourceProducts } : pkg
           ) as UiPackage[];
-          this.store.dispatch(StepperActions.setPackageDetails({ packages: updatedPackages }));
+          this.store.dispatch(StepperActions.setUiPackages({ packages: updatedPackages }));
         }
         return;
     }

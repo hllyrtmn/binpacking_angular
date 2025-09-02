@@ -2,6 +2,8 @@ import { createReducer, on } from '@ngrx/store';
 import { StepperState, initialStepperState } from './stepper.state';
 import * as StepperActions from './stepper.actions';
 import { update } from 'lodash';
+import { UiPackage } from '../../admin/components/dashboard/stepper/components/ui-models/ui-package.model';
+import { v4 as Guid } from 'uuid';
 
 export const stepperReducer = createReducer(
   initialStepperState,
@@ -16,8 +18,9 @@ export const stepperReducer = createReducer(
   })),
 
 
-  on(StepperActions.calculatePackageDetailSuccess,(state, {packages,remainingOrderDetails}) => (
-    {...state,
+  on(StepperActions.calculatePackageDetailSuccess, (state, { packages, remainingOrderDetails }) => (
+    {
+      ...state,
       step2State: {
         ...state.step2State,
         packages: [...packages],
@@ -64,7 +67,7 @@ export const stepperReducer = createReducer(
     order: order
   })),
 
-  on(StepperActions.setPackageDetails, (state, {  packages }) => ({
+  on(StepperActions.setUiPackages, (state, {  packages }) => ({
     ...state,
     step2State: {
       ...state.step2State,
@@ -73,6 +76,49 @@ export const stepperReducer = createReducer(
       isDirty: false
     }
   })),
+
+  on(StepperActions.moveUiProductInSamePackage, (state, { containerId,currentIndex,previousIndex }) => {
+    const currentPackages = state.step2State.packages;
+    const targetPackageIndex = currentPackages.findIndex(pkg =>
+      pkg.pallet && pkg.pallet.id === containerId
+    );
+
+    if (targetPackageIndex !== -1) {
+      // 1. Orijinal paketler dizisinin bir kopyasını oluşturun.
+      const updatedPackages = [...currentPackages];
+
+      // 2. Hedef paketin bir kopyasını oluşturun.
+      const targetPackage = { ...updatedPackages[targetPackageIndex] };
+
+      // 3. Ürünler dizisinin bir kopyasını oluşturun ve değişiklikleri bu kopya üzerinde yapın.
+      const updatedProducts = [...targetPackage.products];
+      const [removed] = updatedProducts.splice(previousIndex, 1);
+      updatedProducts.splice(currentIndex, 0, removed);
+
+      // 4. Güncellenmiş önceliklerle yeni bir ürünler dizisi oluşturun.
+      const productsWithUpdatedPriority = updatedProducts.map((product: any, index: number) => ({
+        ...product,
+        priority: index
+      }));
+
+      // 5. Kopyalanan paketteki ürünler dizisini yeni diziyle değiştirin.
+      targetPackage.products = productsWithUpdatedPriority;
+
+      // 6. Kopyalanan paketler dizisinde ilgili paketi güncelleyin.
+      updatedPackages[targetPackageIndex] = targetPackage;
+
+      // 7. Yalnızca yeni state objesini döndürün.
+      return {
+        ...state,
+        step2State: {
+          ...state.step2State,
+          packages: updatedPackages
+        }
+      };
+    }
+
+    return state;
+  }),
 
   on(StepperActions.navigateToStep, (state, { stepIndex }) => ({
     ...state,

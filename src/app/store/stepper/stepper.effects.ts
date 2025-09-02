@@ -129,7 +129,7 @@ export class StepperEffects {
             return of(
               StepperActions.setOrder({ order: order }),
               StepperActions.setOrderDetails({ orderDetails: orderDetails }),
-              StepperActions.setPackageDetails({ packages: packagesAndRemainingProducts.packages }),
+              StepperActions.setUiPackages({ packages: packagesAndRemainingProducts.packages }),
               StepperActions.setRemainingProducts({
                 remainingProducts: packagesAndRemainingProducts.remainingProducts
               }),
@@ -261,7 +261,7 @@ export class StepperEffects {
       switchMap(() => this.repositoryService.calculatePackageDetail().pipe(
         tap(console.log),
         map((response) => StepperActions.calculatePackageDetailSuccess({
-          packages: mapPackageDetailToPackage( response.packageDetails),
+          packages:  response.packageDetails,
           remainingOrderDetails: response.remainingOrderDetails
         })
         )
@@ -287,6 +287,16 @@ export class StepperEffects {
     )
   );
 
+  triggerAutoSaveForUiPackageChanges$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(
+        StepperActions.moveUiProductInSamePackage,
+        StepperActions.remainingProductMoveProduct
+      ),
+      map(()=> StepperActions.stepperStepUpdated())
+    )
+  )
+
 
   triggerStepperStepUploaded$ = createEffect(() =>
     this.actions$.pipe(
@@ -300,6 +310,8 @@ export class StepperEffects {
         StepperActions.createOrderDetailsSuccess,
         StepperActions.updateOrCreateOrderSuccess,
         StepperActions.calculatePackageDetailSuccess,
+        StepperActions.setUiPackages
+
 
       ),
       map(() => StepperActions.stepperStepUpdated())

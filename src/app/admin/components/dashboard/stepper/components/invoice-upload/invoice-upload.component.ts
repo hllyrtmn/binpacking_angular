@@ -401,7 +401,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       this.genericTable.dataSource.data = [...this.orderDetailsSignal()];
       this.genericTable.dataSource._updateChangeSubscription();
     }
-    return true
+    return true;
   })
 
 

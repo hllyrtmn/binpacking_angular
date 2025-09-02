@@ -8,22 +8,8 @@ import { v4 as Guid } from 'uuid';
 export const selectStepperState = createFeatureSelector<StepperState>('stepper');
 
 export const selectUiPackages = createSelector(selectStepperState, (state) =>
-{
-  const uiPackages = state.step2State.packages
-  const emptyPackages = uiPackages.filter(f=> f.pallet == null);
-  if(uiPackages.length > 0 && emptyPackages.length == 0){
-      const newPackage = new UiPackage({
-        id: Guid(),
-        pallet: null,
-        products: [],
-        order: state.order,
-        name: (uiPackages.length + 1).toString()
-      });
-    return [...uiPackages, newPackage];
-  }
-  return uiPackages;
-}
-)
+  state.step2State.packages.map((uiPackage: any) => new UiPackage({...uiPackage}))
+);
 
 
 // Basic selectors
@@ -85,7 +71,7 @@ export const selectStepperSummary = createSelector(
   selectCurrentStep,
   selectCompletedStep,
   selectIsEditMode,
-  (currentStep, completedStep, isEditMode ) => ({
+  (currentStep, completedStep, isEditMode) => ({
     currentStep,
     completedStep,
     isEditMode,
@@ -231,10 +217,10 @@ export const selectStep1State = createSelector(
   (state) => state.step1State
 );
 
-export const selectOrder = createSelector(selectStepperState,(stepper)=> stepper.order)
+export const selectOrder = createSelector(selectStepperState, (stepper) => stepper.order)
 
 
-export const selectOrderId = createSelector(selectOrder, (order) => order.id )
+export const selectOrderId = createSelector(selectOrder, (order) => order.id)
 
 export const selectStep1OrderDetails = createSelector(
   selectStep1State,

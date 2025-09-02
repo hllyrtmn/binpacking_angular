@@ -114,8 +114,8 @@ export class RepositoryService {
     return this.http
       .get<any>(`${this.api.getApiUrl()}/logistics/calculate-box/${order_id}/`)
       .pipe(map((response) => ({
-        packageDetails: response.data,
-        remainingOrderDetails: response.remaining_order_details
+        packageDetails:mapPackageDetailToPackage( response.data),
+        remainingOrderDetails: mapOrderDetailsToUiProductsSafe(response.remaining_order_details)
       })));
   }
 

@@ -1,22 +1,7 @@
 import { Injectable } from '@angular/core';
-import { Order } from '../../../../../models/order.interface';
-import { OrderDetail } from '../../../../../models/order-detail.interface';
-import { UiPackage } from '../components/ui-models/ui-package.model';
-import { UiProduct } from '../components/ui-models/ui-product.model';
 import { StepperState } from '../../../../../store';
 import { initialStepperState } from '../../../../../store/stepper/stepper.state';
 
-
-interface EnhancedPerformanceMetrics {
-  startTime: number;
-  endTime: number;
-  memoryUsage: number;
-  renderTime: number;
-  frameRate?: number;
-  triangleCount?: number;
-  drawCalls?: number;
-  gpuMemoryUsage?: number;
-}
 
 @Injectable({
   providedIn: 'root'
