@@ -17,6 +17,15 @@ export const stepperReducer = createReducer(
     }
   })),
 
+  on(StepperActions.setRemainingProducts,(state,{remainingProducts})=>(
+    {
+      ...state,
+      step2State:{
+        ...state.step2State,
+        remainingProducts:[...remainingProducts]
+      }
+    }
+  )),
 
   on(StepperActions.calculatePackageDetailSuccess, (state, { packages, remainingOrderDetails }) => (
     {
@@ -41,6 +50,35 @@ export const stepperReducer = createReducer(
       }
     }
   }),
+
+  on(StepperActions.moveProductToRemainingProducts, (state, { uiProducts,previousIndex,previousContainerId }) => {
+    const sourceProducts = [...uiProducts];
+    const removedProduct = sourceProducts.splice(previousIndex, 1)[0];
+
+    const currentRemainingProducts = state.step2State.remainingProducts; // Store'dan mevcut array'i al
+    const updatedRemainingProducts = [...currentRemainingProducts, removedProduct];
+
+    const currentPackages = state.step2State.packages;
+    const sourcePackage = currentPackages.find(pkg =>
+      pkg.pallet && pkg.pallet.id === previousContainerId
+    );
+
+    if (sourcePackage) {
+      const updatedPackages = currentPackages.map(pkg =>
+        pkg.id === sourcePackage.id ? { ...pkg, products: sourceProducts } : pkg
+    ) as UiPackage[];
+
+    return {
+      ...state,
+      step2State: {
+        ...state.step2State,
+        remainingProducts: updatedRemainingProducts,
+        packages: updatedPackages
+      }}
+    }
+    return state
+  }),
+
   on(StepperActions.setStepperData, (state, { data }) => ({
     ...state,
     ...data
@@ -66,6 +104,7 @@ export const stepperReducer = createReducer(
     ...state,
     order: order
   })),
+
 
   on(StepperActions.setUiPackages, (state, {  packages }) => ({
     ...state,

@@ -133,6 +133,10 @@ export const setRemainingProducts = createAction(
   props<{ remainingProducts: any[] }>()
 );
 
+export const moveProductToRemainingProducts = createAction(
+  '[Pallet Control] Move Product To Remaining Products',
+  props<{uiProducts:any, previousIndex:number, previousContainerId:string}>()
+)
 
 // Navigation Actions
 export const navigateToStep = createAction(

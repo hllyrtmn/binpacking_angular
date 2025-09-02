@@ -261,7 +261,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   ngOnInit(): void {
-    // this.loadPallets()
+    this.loadPallets()
     // invoice upload success oldugunda donen  verini burada gosterilmeesi gerek
     // bu verinin selectordan gelmesi lazim
     // bunun icinde veri tabanindan donen verinin store a kayit edilmeis lazim
@@ -381,27 +381,6 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   //     }));
   //   }
   // }
-  private getCurrentPackageState(): string {
-    try {
-      const currentPackages = this.uiPackages();
-      const packageSummary = currentPackages.map((pkg) => ({
-        id: pkg.id,
-        palletId: pkg.pallet?.id,
-        productCount: pkg.products.length
-      }));
-
-      return JSON.stringify({
-        packages: packageSummary,
-        totalPackages: currentPackages.length,
-        totalWeight: this.totalWeight(),
-        remainingArea: this.remainingArea(),
-      });
-    } catch (error) {
-      return '';
-    }
-  }
-
-
 
 
   // configureComponent(): void {
@@ -673,8 +652,6 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
 
   // Drag & Drop Event Handlers
   dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
-    console.log(event);
-    // // Aynı container içinde taşıma - pozisyon değiştirme
     if (event.previousContainer === event.container) {
       if (event.container.id === 'productsList') {
         console.log("remaining products icerisinde yer degistirme")
@@ -689,42 +666,20 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
           previousIndex: event.previousIndex,
           containerId: event.container.id,
         }))
-        }
-
+      }
       return;
     }
 
-    // const product = event.previousContainer.data[event.previousIndex];
-
-    // // Paletten available products'a geri alma
+    // Paletten available products'a geri alma
     if (event.container.id === 'productsList') {
-      console.log("palletten remaining products a alma")
-        const sourceProducts = [...event.previousContainer.data];
-
-        const removedProduct = sourceProducts.splice(event.previousIndex, 1)[0];
-
-        const currentRemainingProducts = this.remainingProducts(); // Store'dan mevcut array'i al
-        const updatedRemainingProducts = [...currentRemainingProducts, removedProduct];
-
-        this.store.dispatch(StepperActions.setRemainingProducts({
-          remainingProducts:updatedRemainingProducts
-        }));
-
-        const currentPackages = this.uiPackages();
-        const sourcePackage = currentPackages.find(pkg =>
-          pkg.pallet && pkg.pallet.id === event.previousContainer.id
-        );
-
-        if (sourcePackage) {
-          const updatedPackages = currentPackages.map(pkg =>
-            pkg.id === sourcePackage.id ? { ...pkg, products: sourceProducts } : pkg
-          ) as UiPackage[];
-          this.store.dispatch(StepperActions.setUiPackages({ packages: updatedPackages }));
-        }
+      this.store.dispatch(StepperActions.moveProductToRemainingProducts({
+        uiProducts:event.previousContainer.data,
+        previousIndex:event.previousIndex,
+        previousContainerId:event.previousContainer.id}))
         return;
     }
 
-    // // Hedef palet bulma
+    // Hedef palet bulma
     const targetPalletId = event.container.id;
     const currentPackages = this.uiPackages();
     const targetPackage = currentPackages.find(p => p.pallet && p.pallet.id === targetPalletId);
