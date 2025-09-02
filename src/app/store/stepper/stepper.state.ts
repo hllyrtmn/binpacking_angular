@@ -68,13 +68,13 @@ export interface StepperState {
   };
 
    step2State: {
-    packageDetils: any[];
+    packages: any[];
     remainingProducts: any[];
-    originalPackageDetails: any[];
+    originalPackages: any[];
     originalRemainingProducts: any[];
-    addedPackageDetails: any[];
-    modifiedPackageDetails: any[];
-    deletedPackageDetails: any[];
+    addedPackages: any[];
+    modifiedPackages: any[];
+    deletedPackages: any[];
     isDirty: boolean;
   };
 
@@ -145,13 +145,13 @@ export const initialStepperState: StepperState = {
   },
 
   step2State: {
-    packageDetils: [],
+    packages: [],
     remainingProducts: [],
-    originalPackageDetails: [],
+    originalPackages: [],
     originalRemainingProducts: [],
-    addedPackageDetails: [],
-    modifiedPackageDetails: [],
-    deletedPackageDetails: [],
+    addedPackages: [],
+    modifiedPackages: [],
+    deletedPackages: [],
     isDirty: false
   },
 

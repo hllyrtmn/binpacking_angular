@@ -28,6 +28,7 @@ import { Action } from '@ngrx/store';
 import { FileUploadManager } from '../../admin/components/dashboard/stepper/components/invoice-upload/managers/file-upload.manager';
 import { OrderService } from '../../admin/components/services/order.service';
 import { OrderDetailService } from '../../admin/components/services/order-detail.service';
+import { mapPackageDetailToPackage } from '../../models/mappers/package-detail.mapper';
 
 @Injectable()
 export class StepperEffects {
@@ -122,15 +123,15 @@ export class StepperEffects {
         return forkJoin({
           order: this.orderService.getById(action.orderId),
           orderDetails: this.orderDetailService.getByOrderId(action.orderId),
-          packageDetailsAndRemainingProducts: this.repositoryService.getPackageDetails(action.orderId),
+          packagesAndRemainingProducts: this.repositoryService.getPackageDetails(action.orderId),
         }).pipe(
-          mergeMap(({ order, orderDetails, packageDetailsAndRemainingProducts }) => {
+          mergeMap(({ order, orderDetails, packagesAndRemainingProducts }) => {
             return of(
               StepperActions.setOrder({ order: order }),
               StepperActions.setOrderDetails({ orderDetails: orderDetails }),
-              StepperActions.setPackageDetails({ packageDetails: packageDetailsAndRemainingProducts.packages }),
+              StepperActions.setPackageDetails({ packages: packagesAndRemainingProducts.packages }),
               StepperActions.setRemainingProducts({
-                remainingProducts: packageDetailsAndRemainingProducts.remainingProducts
+                remainingProducts: packagesAndRemainingProducts.remainingProducts
               }),
             );
           })
@@ -260,7 +261,7 @@ export class StepperEffects {
       switchMap(() => this.repositoryService.calculatePackageDetail().pipe(
         tap(console.log),
         map((response) => StepperActions.calculatePackageDetailSuccess({
-          packageDetails: response.packageDetails,
+          packages: mapPackageDetailToPackage( response.packageDetails),
           remainingOrderDetails: response.remainingOrderDetails
         })
         )

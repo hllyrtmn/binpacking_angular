@@ -16,11 +16,11 @@ export const stepperReducer = createReducer(
   })),
 
 
-  on(StepperActions.calculatePackageDetailSuccess,(state, {packageDetails,remainingOrderDetails}) => (
+  on(StepperActions.calculatePackageDetailSuccess,(state, {packages,remainingOrderDetails}) => (
     {...state,
       step2State: {
         ...state.step2State,
-        packageDetils: [...packageDetails],
+        packages: [...packages],
         remainingProducts: [...remainingOrderDetails]
       }
     }
@@ -64,12 +64,12 @@ export const stepperReducer = createReducer(
     order: order
   })),
 
-  on(StepperActions.setPackageDetails, (state, {  packageDetails }) => ({
+  on(StepperActions.setPackageDetails, (state, {  packages }) => ({
     ...state,
     step2State: {
       ...state.step2State,
-      packageDetils: [...packageDetails],
-      originalPackageDetails: [...packageDetails],
+      packages: [...packages],
+      originalPackages: [...packages],
       isDirty: false
     }
   })),
@@ -420,13 +420,13 @@ export const stepperReducer = createReducer(
   on(StepperActions.initializeStep2State, (state, { packages, remainingProducts }) => ({
     ...state,
     step2State: {
-      packageDetils: [...packages],
+      packages: [...packages],
       remainingProducts: [...remainingProducts],
-      originalPackageDetails: [...packages],
+      originalPackages: [...packages],
       originalRemainingProducts: [...remainingProducts],
-      addedPackageDetails: [],
-      modifiedPackageDetails: [],
-      deletedPackageDetails: [],
+      addedPackages: [],
+      modifiedPackages: [],
+      deletedPackages: [],
       isDirty: false
     }
   })),
@@ -444,21 +444,21 @@ export const stepperReducer = createReducer(
     ...state,
     step2State: {
       ...state.step2State,
-      packageDetils: [...state.step2State.packageDetils, newPackage],
-      addedPackageDetails: [...state.step2State.addedPackageDetails, newPackage],
+      packages: [...state.step2State.packages, newPackage],
+      addedPackages: [...state.step2State.addedPackages, newPackage],
       isDirty: true
     }
   })),
 
   on(StepperActions.updatePackage, (state, { package: updatedPackage }) => {
-    const packages = state.step2State.packageDetils.map(pkg =>
+    const packages = state.step2State.packages.map(pkg =>
       pkg.id === updatedPackage.id ? updatedPackage : pkg
     );
 
-    const isOriginal = state.step2State.originalPackageDetails.some(item => item.id === updatedPackage.id);
-    const isAlreadyModified = state.step2State.modifiedPackageDetails.some(item => item.id === updatedPackage.id);
+    const isOriginal = state.step2State.originalPackages.some(item => item.id === updatedPackage.id);
+    const isAlreadyModified = state.step2State.modifiedPackages.some(item => item.id === updatedPackage.id);
 
-    let modified = [...state.step2State.modifiedPackageDetails];
+    let modified = [...state.step2State.modifiedPackages];
     if (isOriginal && !isAlreadyModified) {
       modified.push(updatedPackage);
     } else if (isAlreadyModified) {
@@ -469,30 +469,30 @@ export const stepperReducer = createReducer(
       ...state,
       step2State: {
         ...state.step2State,
-        packageDetils: packages,
-        modifiedPackageDetails: modified,
+        packages: packages,
+        modifiedPackages: modified,
         isDirty: true
       }
     };
   }),
 
   on(StepperActions.deletePackage, (state, { packageId }) => {
-    const itemToDelete = state.step2State.packageDetils.find(item => item.id === packageId);
-    const packages = state.step2State.packageDetils.filter(item => item.id !== packageId);
+    const itemToDelete = state.step2State.packages.find(item => item.id === packageId);
+    const packages = state.step2State.packages.filter(item => item.id !== packageId);
 
-    const isOriginal = state.step2State.originalPackageDetails.some(item => item.id === packageId);
-    const deleted = isOriginal && itemToDelete ? [...state.step2State.deletedPackageDetails, itemToDelete] : state.step2State.deletedPackageDetails;
-    const added = state.step2State.addedPackageDetails.filter(item => item.id !== packageId);
-    const modified = state.step2State.modifiedPackageDetails.filter(item => item.id !== packageId);
+    const isOriginal = state.step2State.originalPackages.some(item => item.id === packageId);
+    const deleted = isOriginal && itemToDelete ? [...state.step2State.deletedPackages, itemToDelete] : state.step2State.deletedPackages;
+    const added = state.step2State.addedPackages.filter(item => item.id !== packageId);
+    const modified = state.step2State.modifiedPackages.filter(item => item.id !== packageId);
 
     return {
       ...state,
       step2State: {
         ...state.step2State,
-        packageDetils: packages,
-        addedPackageDetails: added,
-        modifiedPackageDetails: modified,
-        deletedPackageDetails: deleted,
+        packages: packages,
+        addedPackages: added,
+        modifiedPackages: modified,
+        deletedPackages: deleted,
         isDirty: true
       }
     };

@@ -6,7 +6,7 @@ export const calculatePackageDetail = createAction(
 
 export const calculatePackageDetailSuccess = createAction(
   '[Stepper] Calculate Package Detail Success',
-  props<{packageDetails: any[], remainingOrderDetails: any[]}>()
+  props<{packages: any[], remainingOrderDetails: any[]}>()
 );
 
 export const remainingProductMoveProduct = createAction(
@@ -109,7 +109,7 @@ export const setOrderDetails = createAction(
 // create setPackageDetails
 export const setPackageDetails = createAction(
   '[Stepper] Set Package Details',
-  props<{ packageDetails: any[] }>()
+  props<{ packages: any[] }>()
 );
 
 export const setPackageDetialsSuccess = createAction(

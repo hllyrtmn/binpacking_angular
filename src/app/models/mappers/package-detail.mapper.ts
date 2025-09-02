@@ -3,7 +3,8 @@ import { UiPallet } from '../../admin/components/dashboard/stepper/components/ui
 import { UiProduct } from '../../admin/components/dashboard/stepper/components/ui-models/ui-product.model';
 import { PackageDetail } from '../package-detail.interface';
 import { v4 as Guid } from 'uuid';
-import { Product } from '../product.interface';
+
+
 export function mapPackageDetailToPackage(packageDetailList: PackageDetail[]): UiPackage[] {
   const uniquePackageIds = new Set<string>();
   packageDetailList.forEach((detail) => {
@@ -95,71 +96,7 @@ export function mapPackageDetailToPackage(packageDetailList: PackageDetail[]): U
   return packageList;
 }
 
-export function mapPackageToPackageDetailReadSerializer(uiPackageList: UiPackage[]): PackageDetail[] {
-  const packageDetailList: PackageDetail[] = []
-
-  uiPackageList.forEach((uiPackage) => {
-    // For each product in the UiPackage, create a PackageDetail
-    if(uiPackage.products.length == 0 && uiPackage.pallet){
-      const packageDetail:PackageDetail = {
-        count: 0,
-        priority: 0,
-        id: Guid(),
-        package: {
-          id: uiPackage.id || Guid(), // Eğer ID yoksa yeni bir ID oluştur
-          name: uiPackage.name,
-          order: uiPackage.order,
-          pallet: uiPackage.pallet
-        }
-      }
-      packageDetailList.push(packageDetail);
-    }
-    uiPackage.products.forEach((uiProduct) => {
-      const product: Product = {
-        name: uiProduct.name,
-        product_type: uiProduct.product_type,
-        dimension: uiProduct.dimension,
-        weight_type: uiProduct.weight_type,
-        id: uiProduct.id
-      }
-      const packageDetail: PackageDetail = {
-        id: Guid(), // Unique ID for the package detail
-        count: uiProduct.count,
-        priority: uiProduct.priority,
-        product: product
-      };
-
-      // Check if package is already saved in DB
-      // Normally you would check this from a backend response flag or some other indicator
-      // For this example, let's assume there's a property like 'isSavedInDb' in uiPackage
-      // This might be set based on a response from your backend
-      if (uiPackage.isSavedInDb === true) {
-        // Mevcut bir package için ID referansı kullan
-        packageDetail.package_id = uiPackage.id;
-      } else {
-        // Yeni bir package oluşturmak için tüm detayları içeren nesne kullan
-        // Veritabanında olmayan, hesaplanmış package için tam nesne gönder
-        packageDetail.package = {
-          id: uiPackage.id || Guid(), // Eğer ID yoksa yeni bir ID oluştur
-          name: uiPackage.name,
-          order: uiPackage.order,
-          pallet: {
-            id: uiPackage.pallet?.id,
-            dimension:uiPackage.pallet?.dimension,
-            weight:uiPackage.pallet?.weight,
-          }
-        };
-
-      }
-      packageDetailList.push(packageDetail);
-    });
-  });
-
-  return packageDetailList;
-}
-
-
-export function mapPackageToPackageDetailWriteSerializer(uiPackageList: UiPackage[]): PackageDetail[] {
+export function mapPackageToPackageDetail(uiPackageList: UiPackage[]): PackageDetail[] {
   const packageDetailList: PackageDetail[] = [];
 
   uiPackageList.forEach((uiPackage) => {

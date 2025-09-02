@@ -27,7 +27,7 @@ import { UiProduct } from '../ui-models/ui-product.model';
 import { UiPallet } from '../ui-models/ui-pallet.model';
 import { UiPackage } from '../ui-models/ui-package.model';
 import { ToastService } from '../../../../../../services/toast.service';
-import { mapPackageToPackageDetailReadSerializer, mapPackageToPackageDetailWriteSerializer } from '../../../../../../models/mappers/package-detail.mapper';
+import { mapPackageToPackageDetail } from '../../../../../../models/mappers/package-detail.mapper';
 import { LocalStorageService } from '../../services/local-storage.service';
 import { Store } from '@ngrx/store';
 import { AppState } from '../../../../../../store';
@@ -70,8 +70,8 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   private readonly cdr = inject(ChangeDetectorRef);
 
 
-  uiPackages:WritableSignal<any[]> = signal([]);
-  remainingProducts:WritableSignal<any[]> = signal([]);
+  uiPackages = this.store.selectSignal(StepperSelectors.selectUiPackages)
+  remainingProducts=this.store.selectSignal(StepperSelectors.selectStep2RemainingProducts)
 
   // NgRx Step2 Migration Observables
   public step2Packages$ = this.store.select(selectStep2Packages);
@@ -244,9 +244,6 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
     this.secondFormGroup = this._formBuilder.group({
       secondCtrl: ['', Validators.required],
     });
-    effect(()=>{
-      this.uiPackages.set(this.store.selectSignal(StepperSelectors.selectUiPackages)())
-    })
 
   }
 
@@ -695,19 +692,24 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
         if (targetPackage) {
           const reorderedProducts = [...targetPackage.products];
           moveItemInArray(reorderedProducts, event.previousIndex, event.currentIndex);
-          reorderedProducts.map((product) => product.priority = reorderedProducts.findIndex(p => p.id === product.id))
+          const productsWithUpdatedPriority = reorderedProducts.map((product, index) => ({
+            ...product,
+            priority: index
+          }));
 
-          const updatedPackage = { ...targetPackage, products: reorderedProducts };
+          const updatedPackage = new UiPackage({
+            ...targetPackage,
+            products: productsWithUpdatedPriority
+          });
           const updatedPackages = currentPackages.map(pkg =>
             pkg.id === updatedPackage.id ? updatedPackage : pkg
           ) as UiPackage[];
-          this.uiPackages.set(updatedPackages);
 
-          this.store.dispatch(StepperActions.setPackageDetails({ packageDetails: mapPackageToPackageDetailReadSerializer(this.uiPackages()) }));
+          this.store.dispatch(StepperActions.setPackageDetails({ packages: updatedPackages }));
         }
       }
 
-      //   return;
+      return;
     }
 
     // const product = event.previousContainer.data[event.previousIndex];
@@ -719,7 +721,12 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
 
         const removedProduct = sourceProducts.splice(event.previousIndex, 1)[0];
 
-        this.remainingProducts.update((value) => [...value, removedProduct]);
+        const currentRemainingProducts = this.remainingProducts(); // Store'dan mevcut array'i al
+        const updatedRemainingProducts = [...currentRemainingProducts, removedProduct];
+
+        this.store.dispatch(StepperActions.setRemainingProducts({
+          remainingProducts:updatedRemainingProducts
+        }));
 
         const currentPackages = this.uiPackages();
         const sourcePackage = currentPackages.find(pkg =>
@@ -730,10 +737,8 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
           const updatedPackages = currentPackages.map(pkg =>
             pkg.id === sourcePackage.id ? { ...pkg, products: sourceProducts } : pkg
           ) as UiPackage[];
-          this.uiPackages.set(updatedPackages);
+          this.store.dispatch(StepperActions.setPackageDetails({ packages: updatedPackages }));
         }
-
-        this.store.dispatch(StepperActions.setPackageDetails({ packageDetails: mapPackageToPackageDetailReadSerializer(this.uiPackages()) }));
         return;
     }
 
