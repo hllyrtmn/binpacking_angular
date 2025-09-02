@@ -59,21 +59,11 @@
         <h2>Envanter</h2>
       </div>
 
-      <div
-        cdkDropList
-        #productsList="cdkDropList"
-        id="productsList"
-        [cdkDropListData]="remainingProducts()"
-        [cdkDropListConnectedTo]="palletDropListIds()"
-        class="inventory-list"
+      <div cdkDropList #productsList="cdkDropList" id="productsList" [cdkDropListData]="remainingProducts()"
+        [cdkDropListConnectedTo]="palletDropListIds()" class="inventory-list"
         (cdkDropListDropped)="dropProductToPallet($event)">
-
-        <div
-          class="product-item"
-          *ngFor="let product of remainingProducts(); trackBy: trackByProductId"
-          cdkDrag
-          (cdkDragStarted)="dragStarted($event)"
-          (cdkDragEnded)="dragEnded()"
+        @for(product of remainingProducts(); track product.id){
+        <div class="product-item" cdkDrag (cdkDragStarted)="dragStarted($event)" (cdkDragEnded)="dragEnded()"
           [cdkDragData]="product">
 
           <div class="product-icon"></div>
@@ -83,30 +73,24 @@
           </div>
 
           <div class="split-product-container">
-            <input
-              class="mini-split-input"
-              type="number"
-              min="1"
-              [max]="product.count - 1"
-              placeholder="1"
-              #splitInput
+            <input class="mini-split-input" type="number" min="1" [max]="product.count - 1" placeholder="1" #splitInput
               (keydown.enter)="splitProduct(product, splitInput.value ? +splitInput.value : null); splitInput.value = ''"
               matTooltip="Kaç adet ayırmak istiyorsunuz?">
 
-            <button
-              mat-icon-button
-              class="action-button split-button"
+            <button mat-icon-button class="action-button split-button"
               (click)="splitProduct(product, splitInput.value ? +splitInput.value : null); splitInput.value = ''"
               matTooltip="Ürünü böl">
               <mat-icon>content_cut</mat-icon>
             </button>
           </div>
         </div>
-
-        <div class="empty-state" *ngIf="remainingProducts().length === 0">
+        }
+        @if(!hasRemainingProduct()){
+        <div class="empty-state">
           <mat-icon>done_all</mat-icon>
           <p>Tüm ürünler paletlere yerleştirildi.</p>
         </div>
+        }
       </div>
     </div>
 
@@ -147,18 +131,15 @@
           </div>
         </div>
 
-        <button
-          mat-button
-          class="clear-button"
-          (click)="removeAllPackage()"
-          matTooltip="Tüm paketleri temizle">
+        <button mat-button class="clear-button" (click)="removeAllPackage()" matTooltip="Tüm paketleri temizle">
           <mat-icon>delete_sweep</mat-icon>
           <span>Temizle</span>
         </button>
       </div>
 
       <div class="packages-grid">
-        <div class="package-card" *ngFor="let package of uiPackages(); trackBy: trackByPackageId">
+        @for(package of uiPackages(); track package.id){
+        <div class="package-card">
           <div class="package-header">
             <div class="package-title">
               <mat-icon>inbox</mat-icon>
@@ -172,66 +153,49 @@
           </div>
 
           <!-- Paket içeriği -->
-          <div
-            cdkDropList
-            [id]="package.id"
-            [cdkDropListData]="[]"
-            [cdkDropListConnectedTo]="['availablePalletsList']"
-            class="package-dropzone"
-            (cdkDropListDropped)="dropPalletToPackage($event)">
+          <div cdkDropList [id]="package.id" [cdkDropListData]="[]" [cdkDropListConnectedTo]="['availablePalletsList']"
+            class="package-dropzone" (cdkDropListDropped)="dropPalletToPackage($event)">
 
             <!-- Eğer paket içinde palet varsa göster -->
-            <div class="pallet-container" *ngIf="package.pallet">
+            @if(package.pallet){
+            <div class="pallet-container">
               <div class="pallet-header">
                 <div class="pallet-title">
                   <div class="pallet-icon"></div>
                   <span>{{ package.pallet.name }}</span>
                 </div>
-                <button
-                  mat-icon-button
-                  class="small-action"
-                  (click)="removePalletFromPackage(package)"
+                <button mat-icon-button class="small-action" (click)="removePalletFromPackage(package)"
                   matTooltip="Paleti çıkar">
                   <mat-icon>close</mat-icon>
                 </button>
               </div>
 
               <!-- Palet içindeki ürünler -->
-              <div
-                cdkDropList
-                [id]="package.pallet.id"
-                [cdkDropListData]="package.products"
-                [cdkDropListConnectedTo]="palletDropListIds()"
-                class="pallet-content"
+              <div cdkDropList [id]="package.pallet.id" [cdkDropListData]="package.products"
+                [cdkDropListConnectedTo]="palletDropListIds()" class="pallet-content"
                 (cdkDropListDropped)="dropProductToPallet($event)">
 
-                <div
-                  class="pallet-item"
-                  *ngFor="let product of package.products; let j = index"
-                  cdkDrag
-                  [cdkDragData]="product"
-                  (cdkDragStarted)="dragStarted($event)"
-                  (cdkDragEnded)="dragEnded()">
+                <div class="pallet-item" *ngFor="let product of package.products; let j = index" cdkDrag
+                  [cdkDragData]="product" (cdkDragStarted)="dragStarted($event)" (cdkDragEnded)="dragEnded()">
 
                   <div class="product-icon small"></div>
                   <div class="product-info">
                     <span class="product-name">{{ product.name }}</span>
                     <span class="product-count">{{ product.count }} Adet</span>
                   </div>
-                  <button
-                    mat-icon-button
-                    class="action-button"
-                    (click)="removeProductFromPackage(package, j)"
+                  <button mat-icon-button class="action-button" (click)="removeProductFromPackage(package, j)"
                     matTooltip="Ürünü çıkar">
                     <mat-icon>close</mat-icon>
                   </button>
                 </div>
 
                 <!-- Boş palet mesajı -->
-                <div class="empty-state" *ngIf="package.products.length === 0">
+                @if(package.products.length === 0){
+                <div class="empty-state">
                   <mat-icon>drag_indicator</mat-icon>
                   <p>Bu palete ürün sürükleyin</p>
                 </div>
+                }
               </div>
 
               <div class="pallet-footer">
@@ -247,13 +211,14 @@
                   <div class="metric efficiency-metric">
                     <mat-icon>analytics</mat-icon>
                     <div class="efficiency-container">
-                      <span class="efficiency-value">{{ getPalletFillPercentage(package.pallet, package.products) }}%</span>
+                      <span class="efficiency-value">{{ getPalletFillPercentage(package.pallet, package.products)
+                        }}%</span>
                       <div class="efficiency-bar">
                         <div class="efficiency-fill"
-                             [style.width.%]="getPalletFillPercentage(package.pallet, package.products)"
-                             [class.high-efficiency]="getPalletFillPercentage(package.pallet, package.products) >= 80"
-                             [class.medium-efficiency]="getPalletFillPercentage(package.pallet, package.products) >= 50 && getPalletFillPercentage(package.pallet, package.products) < 80"
-                             [class.low-efficiency]="getPalletFillPercentage(package.pallet, package.products) < 50">
+                          [style.width.%]="getPalletFillPercentage(package.pallet, package.products)"
+                          [class.high-efficiency]="getPalletFillPercentage(package.pallet, package.products) >= 80"
+                          [class.medium-efficiency]="getPalletFillPercentage(package.pallet, package.products) >= 50 && getPalletFillPercentage(package.pallet, package.products) < 80"
+                          [class.low-efficiency]="getPalletFillPercentage(package.pallet, package.products) < 50">
                         </div>
                       </div>
                     </div>
@@ -261,14 +226,17 @@
                 </div>
               </div>
             </div>
-
+            }
             <!-- Boş paket mesajı -->
-            <div class="empty-state" *ngIf="!package.pallet">
+            @if(!package.pallet){
+            <div class="empty-state">
               <mat-icon>add_box</mat-icon>
               <p>Palet sürükleyin</p>
             </div>
+            }
           </div>
         </div>
+        }
       </div>
     </div>
 
@@ -279,24 +247,22 @@
         <h2>Palet Tipleri</h2>
       </div>
 
-      <div
-        cdkDropList
-        #palletsList="cdkDropList"
-        id="availablePalletsList"
-        [cdkDropListData]="availablePallets()"
-        [cdkDropListConnectedTo]="packageDropListIds()"
-        class="pallets-list"
+      <div cdkDropList #palletsList="cdkDropList" id="availablePalletsList" [cdkDropListData]="availablePallets()"
+        [cdkDropListConnectedTo]="packageDropListIds()" class="pallets-list"
         (cdkDropListDropped)="dropPalletToPackage($event)">
-
-        <div class="pallet-item" *ngFor="let pallet of availablePallets(); trackBy: trackByPalletId" cdkDrag>
+        @for(pallet of availablePallets(); track pallet.id){
+        <div class="pallet-item" cdkDrag>
           <div class="pallet-base-icon"></div>
           <span class="pallet-name">{{ pallet.name }}</span>
         </div>
+        }
 
-        <div class="empty-state" *ngIf="availablePallets().length === 0">
+        @if(availablePallets().length === 0){
+        <div class="empty-state">
           <mat-icon>info</mat-icon>
           <p>Henüz palet bulunmamaktadır.</p>
         </div>
+        }
       </div>
     </div>
   </div>

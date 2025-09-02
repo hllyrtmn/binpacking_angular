@@ -7,10 +7,65 @@ import { v4 as Guid } from 'uuid';
 // Feature selector
 export const selectStepperState = createFeatureSelector<StepperState>('stepper');
 
-export const selectUiPackages = createSelector(selectStepperState, (state) =>
-  state.step2State.packages.map((uiPackage: any) => new UiPackage({...uiPackage}))
+// Step1 Migration Selectors
+export const selectStep1State = createSelector(
+  selectStepperState,
+  (state) => state.step1State
 );
 
+
+// Step2 Migration Selectors
+export const selectStep2State = createSelector(
+  selectStepperState,
+  (state) => state.step2State
+);
+
+
+export const selectUiPackages = createSelector(selectStepperState, (state) =>
+  state.step2State.packages.map((uiPackage: any) => new UiPackage({ ...uiPackage }))
+);
+
+export const hasRemainingProduct = createSelector(selectStep2State, (state) => state.remainingProducts.length > 0)
+export const uiPackageCount = createSelector(selectStep2State, (state) => state.packages.length)
+export const hasPackage = createSelector(selectStep2State, (state) => state.packages.length > 0)
+export const remainingProductCount = createSelector(selectStep2State, (state) => state.remainingProducts.length)
+
+export const allDropListIds = createSelector(selectStep2State, (state) => {
+  const ids = ['productsList', 'availablePalletsList'];
+
+  // Package container'ları ekle (boş paketler için)
+  state.packages
+    .filter(pkg => pkg.pallet === null)
+    .forEach(pkg => ids.push(pkg.id));
+
+  // Pallet container'ları ekle
+  state.packages
+    .filter(pkg => pkg.pallet !== null)
+    .forEach(pkg => {
+      if (pkg.pallet) {
+        ids.push(pkg.pallet.id);
+      }
+    });
+  return ids;
+});
+
+export const packageDropListIds = createSelector(selectStep2State, (state) => {
+  return state.packages
+    .filter(pkg => pkg.pallet === null)
+    .map(pkg => pkg.id);
+});
+
+export const palletDropListIds = createSelector(selectStep2State, (state) => {
+  const ids = ['productsList'];
+  state.packages
+    .filter(pkg => pkg.pallet !== null)
+    .forEach(pkg => {
+      if (pkg.pallet) {
+        ids.push(pkg.pallet.id);
+      }
+    });
+  return ids;
+});
 
 // Basic selectors
 export const selectCurrentStep = createSelector(
@@ -211,11 +266,6 @@ export const selectAnyStepLoading = createSelector(
   (stepLoading) => Object.values(stepLoading).some(step => step.isLoading)
 );
 
-// Step1 Migration Selectors
-export const selectStep1State = createSelector(
-  selectStepperState,
-  (state) => state.step1State
-);
 
 export const selectOrder = createSelector(selectStepperState, (stepper) => stepper.order)
 
@@ -256,11 +306,6 @@ export const selectStep1FileName = createSelector(
   (step1State) => step1State.fileName
 );
 
-// Step2 Migration Selectors
-export const selectStep2State = createSelector(
-  selectStepperState,
-  (state) => state.step2State
-);
 
 export const selectStep2Packages = createSelector(
   selectStep2State,

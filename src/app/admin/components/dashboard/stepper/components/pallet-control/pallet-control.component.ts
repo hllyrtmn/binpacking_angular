@@ -71,7 +71,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
 
 
   uiPackages = this.store.selectSignal(StepperSelectors.selectUiPackages)
-  remainingProducts=this.store.selectSignal(StepperSelectors.selectStep2RemainingProducts)
+  remainingProducts = this.store.selectSignal(StepperSelectors.selectStep2RemainingProducts)
 
   // NgRx Step2 Migration Observables
   public step2Packages$ = this.store.select(selectStep2Packages);
@@ -82,67 +82,31 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   public isDirtySignal = this.store.selectSignal(selectStep2IsDirty);
   public orderSignal = this.store.selectSignal(StepperSelectors.selectOrder);
 
-
-  // Form change tracking
   private lastPackageState: string = '';
   private autoSaveTimeout: any;
   private isDragInProgress: boolean = false;
   private destroy$ = new Subject<void>();
 
-
-
   public availablePallets = signal<UiPallet[]>([]);
   public selectedPallets = signal<UiPallet[]>([]);
 
-  // Computed signals for performance
-  public packageCount = computed(() => this.uiPackages().length);
+  public hasPackage = this.store.selectSignal(StepperSelectors.hasPackage);
+  public uiPackageCount = this.store.selectSignal(StepperSelectors.uiPackageCount);
+  public hasRemainingProduct = this.store.selectSignal(StepperSelectors.hasRemainingProduct);
+  public remainingProductCount = this.store.selectSignal(StepperSelectors.remainingProductCount);
+
   public availableProductCount = computed(() => this.remainingProducts().length);
-  public hasPackages = computed(() => this.uiPackages().length > 0);
-  public hasAvailableProducts = computed(() => this.remainingProducts().length > 0);
+  // Computed signals for performance
   public availablePalletCount = computed(() => this.availablePallets().length);
   public selectedPalletCount = computed(() => this.selectedPallets().length);
   public hasAvailablePallets = computed(() => this.availablePallets().length > 0);
   public hasSelectedPallets = computed(() => this.selectedPallets().length > 0);
 
   // Drag-Drop computed signals
-  public allDropListIds = computed(() => {
-    const ids = ['productsList', 'availablePalletsList'];
+  public allDropListIds = this.store.selectSignal(StepperSelectors.allDropListIds);
+  public packageDropListIds = this.store.selectSignal(StepperSelectors.packageDropListIds);
 
-    // Package container'ları ekle (boş paketler için)
-    this.uiPackages()
-      .filter(pkg => pkg.pallet === null)
-      .forEach(pkg => ids.push(pkg.id));
-
-    // Pallet container'ları ekle
-    this.uiPackages()
-      .filter(pkg => pkg.pallet !== null)
-      .forEach(pkg => {
-        if (pkg.pallet) {
-          ids.push(pkg.pallet.id);
-        }
-      });
-
-    return ids;
-  });
-
-  public packageDropListIds = computed(() => {
-    return this.uiPackages()
-      .filter(pkg => pkg.pallet === null)
-      .map(pkg => pkg.id);
-  });
-
-  public palletDropListIds = computed(() => {
-    const ids = ['productsList'];
-
-    this.uiPackages()
-      .filter(pkg => pkg.pallet !== null)
-      .forEach(pkg => {
-        if (pkg.pallet) {
-          ids.push(pkg.pallet.id);
-        }
-      });
-    return ids;
-  });
+  public palletDropListIds = this.store.selectSignal(StepperSelectors.palletDropListIds);
 
   // Form and other properties
   secondFormGroup: FormGroup;
@@ -247,65 +211,9 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
 
   }
 
-  // Track by functions
-  trackByPackageId(index: number, item: UiPackage): string {
-    return item.id;
-  }
-
-  trackByProductId(index: number, item: UiProduct): string {
-    return item.id;
-  }
-
-  trackByPalletId(index: number, item: UiPallet): string {
-    return item.id;
-  }
 
   ngOnInit(): void {
     this.loadPallets()
-    // invoice upload success oldugunda donen  verini burada gosterilmeesi gerek
-    // bu verinin selectordan gelmesi lazim
-    // bunun icinde veri tabanindan donen verinin store a kayit edilmeis lazim
-    /// ilk olarak donen verinin tam tipine bakip
-    // store u guncelleyelim
-    // gelen veriyi oraya kayit edelim
-    // daha sonra selector ile package detail mapper kullanalim
-    // veriyi ekranda gostermeye calisalim
-    // daha sonra draggable methodlarini reducer ile calisacak sekilde ayarlayalim
-    // en son submit methodunu yazalim
-    // bu arada localhostu guncelleyecek actionlari da
-    // auto save effectine ekleyelim
-
-
-    // // Store'dan veri yükleme işlemi
-    // this.step2Packages$.pipe(
-    //   take(1),
-    //   switchMap(storePackages => {
-    //     if (storePackages.length > 0) {
-    //       // Store'da data var, signal'ları initialize et
-    //       const uiPackages = storePackages.map(pkg => new UiPackage(pkg));
-    //       this.packages.set(uiPackages);
-    //       this.order = this.packages()[0].order;
-
-    //       // Available products'ı da yükle
-    //       return this.step2RemainingProducts$.pipe(
-    //         take(1),
-    //         tap(storeProducts => {
-    //           const uiProducts = storeProducts.map(product => new UiProduct(product));
-    //           this.availableProducts.set(uiProducts);
-    //         })
-    //       );
-    //     } else {
-    //       // Store'da data yok
-    //       this.restoreFromSession();
-    //       this.configureComponent();
-    //       return of(null);
-    //     }
-    //   })
-    // ).subscribe(() => {
-    //   this.restoreFromSession();
-    //   this.setupStoreSubscriptions();
-    //   this.setupAutoSaveListeners();
-    // });
   }
 
   ngAfterViewInit(): void {
@@ -320,102 +228,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
     }
   }
 
-  // private setupStoreSubscriptions(): void {
-  //   // Packages değiştiğinde component'i güncelle
-  //   this.step2Packages$.pipe(
-  //     skip(1),
-  //     takeUntil(this.destroy$)
-  //   ).subscribe(packages => {
-  //     if (packages.length > 0) {
-  //       const uiPackages = packages.map(pkg => new UiPackage(pkg));
-  //       this.packagesSignal.set(uiPackages);
-  //       this.refreshDropLists();
-  //     }
-  //   });
 
-  //   // Available products değiştiğinde güncelle
-  //   this.step2RemainingProducts$.pipe(
-  //     skip(1),
-  //     takeUntil(this.destroy$)
-  //   ).subscribe(products => {
-  //     const uiProducts = products.map(product => new UiProduct(product));
-  //     this.availableProducts.set(uiProducts);
-  //     this.refreshDropLists();
-  //   });
-  // }
-
-
-  // resetComponentState(): void {
-  //   try {
-  //     // Tüm signal'ları temizle
-  //     this.packagesSignal.set([]);
-  //     this.availableProducts.set([]);
-  //     this.selectedPallets.set([]);
-  //     this.availablePallets.set([]);
-
-  //     this.store.dispatch(StepperActions.initializeStep2State({
-  //       packages: [],
-  //       remainingProducts: []
-  //     }));
-
-  //     this.currentDraggedProduct = null;
-  //     this.isDragInProgress = false;
-  //     this.secondFormGroup.reset();
-  //     this.lastPackageState = '';
-
-  //     if (this.autoSaveTimeout) {
-  //       clearTimeout(this.autoSaveTimeout);
-  //       this.autoSaveTimeout = null;
-  //     }
-
-  //     this.cloneCount = 1;
-  //   } catch (error) {
-  //     // Fallback
-  //     this.packagesSignal.set([]);
-  //     this.availableProducts.set([]);
-  //     this.selectedPallets.set([]);
-  //     this.availablePallets.set([]);
-  //     this.store.dispatch(StepperActions.initializeStep2State({
-  //       packages: [],
-  //       remainingProducts: []
-  //     }));
-  //   }
-  // }
-
-
-  // configureComponent(): void {
-  //   this.repository.calculatePackageDetail().subscribe({
-  //     next: (response) => {
-  //       if (response.packages.length === 0) {
-  //         this.addNewEmptyPackage();
-  //         return;
-  //       }
-
-  //       this.store.dispatch(StepperActions.initializeStep2State({
-  //         packages: response.packages || [],
-  //         remainingProducts: response.remainingProducts || []
-  //       }));
-
-  //       if (
-  //         this.packages().length > 0 &&
-  //         this.packages()[0] &&
-  //         this.packages()[0].order
-  //       ) {
-  //         this.order = this.packages()[0].order;
-  //       } else {
-  //         this.order = null;
-  //       }
-
-  //       this.addNewEmptyPackage();
-  //       this.triggerAutoSave('api-response');
-  //     },
-  //     error: (error) => {
-  //       this.toastService.error('Paket hesaplaması sırasında hata oluştu');
-  //       this.order = null;
-  //       this.addNewEmptyPackage();
-  //     },
-  //   });
-  // }
 
   loadPallets(): void {
     this.repository.pallets().subscribe({
@@ -673,10 +486,11 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
     // Paletten available products'a geri alma
     if (event.container.id === 'productsList') {
       this.store.dispatch(StepperActions.moveProductToRemainingProducts({
-        uiProducts:event.previousContainer.data,
-        previousIndex:event.previousIndex,
-        previousContainerId:event.previousContainer.id}))
-        return;
+        uiProducts: event.previousContainer.data,
+        previousIndex: event.previousIndex,
+        previousContainerId: event.previousContainer.id
+      }))
+      return;
     }
 
     // Hedef palet bulma
@@ -1085,7 +899,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
     //   const currentPackages = this.uiPackages();
     //   const packageData = mapPackageToPackageDetail(currentPackages);
 
-      // this.repository.bulkCreatePackageDetail(packageData).subscribe({
+    // this.repository.bulkCreatePackageDetail(packageData).subscribe({
     //     next: (response) => {
     //       this.toastService.success('Kaydedildi', 'Başarılı');
 
