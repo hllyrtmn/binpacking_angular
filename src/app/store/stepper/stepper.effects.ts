@@ -294,7 +294,8 @@ export class StepperEffects {
         StepperActions.remainingProductMoveProduct,
         StepperActions.moveProductToRemainingProducts,
         StepperActions.moveUiProductInPackageToPackage,
-        StepperActions.moveRemainingProductFromPackage
+        StepperActions.moveRemainingProductFromPackage,
+        StepperActions.movePalletToPackage
 
       ),
       map(()=> StepperActions.stepperStepUpdated())

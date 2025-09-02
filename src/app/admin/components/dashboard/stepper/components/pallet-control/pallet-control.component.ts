@@ -94,24 +94,13 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   public uiPackageCount = this.store.selectSignal(StepperSelectors.uiPackageCount);
   public hasRemainingProduct = this.store.selectSignal(StepperSelectors.hasRemainingProduct);
   public remainingProductCount = this.store.selectSignal(StepperSelectors.remainingProductCount);
-
-  public availableProductCount = computed(() => this.remainingProducts().length);
-  // Computed signals for performance
-  public availablePalletCount = computed(() => this.availablePallets().length);
-  public selectedPalletCount = computed(() => this.selectedPallets().length);
-  public hasAvailablePallets = computed(() => this.availablePallets().length > 0);
-  public hasSelectedPallets = computed(() => this.selectedPallets().length > 0);
-
-  // Drag-Drop computed signals
   public allDropListIds = this.store.selectSignal(StepperSelectors.allDropListIds);
   public packageDropListIds = this.store.selectSignal(StepperSelectors.packageDropListIds);
-
   public palletDropListIds = this.store.selectSignal(StepperSelectors.palletDropListIds);
 
   // Form and other properties
   secondFormGroup: FormGroup;
   currentDraggedProduct: UiProduct | null = null;
-  private cloneCount = 1;
 
   // Weight and dimension calculations
   public totalWeight = computed(() => {

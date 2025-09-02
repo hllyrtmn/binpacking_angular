@@ -9,7 +9,7 @@ export const calculatePackageDetail = createAction(
 
 export const movePalletToPackage = createAction(
   '[Stepper] Move Pallet To Package',
-  props<{containerId:string,previousIndex:number,previousContainerData:any}>()
+  props<{containerId:string, previousIndex:number, previousContainerData:any}>()
 )
 
 export const moveRemainingProductFromPackage = createAction(

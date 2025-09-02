@@ -6,6 +6,8 @@ import { UiPackage } from '../../admin/components/dashboard/stepper/components/u
 import { v4 as Guid } from 'uuid';
 import { UiPallet } from '../../admin/components/dashboard/stepper/components/ui-models/ui-pallet.model';
 
+export let cloneCount = 1;
+
 export const stepperReducer = createReducer(
   initialStepperState,
   on(StepperActions.setOrderDetails, (state, { orderDetails }) => ({
@@ -152,42 +154,41 @@ export const stepperReducer = createReducer(
     }}
   }),
 
-  on(StepperActions.movePalletToPackage, (state, {  containerId,previousIndex,previousContainerData }) => {
-
+  on(StepperActions.movePalletToPackage, (state,{containerId,previousIndex,previousContainerData}) => {
     const currentPackages = state.step2State.packages;
     const targetPackage = currentPackages.find(p => p.id === containerId);
-
-    if (!targetPackage) return;
+    if (!targetPackage) return state;
 
     const originalPallet = previousContainerData[previousIndex];
     const palletClone = new UiPallet({
       ...originalPallet,
-      id: originalPallet.id + '/' + this.cloneCount++,
+      id: originalPallet.id + '/' + cloneCount++,
     });
 
     const updatedPackages = currentPackages.map(pkg =>
       pkg.id === targetPackage.id ? { ...targetPackage, pallet: palletClone } : pkg
     ) as UiPackage[];
 
-    this.packagesSignal.set(updatedPackages);
+    const updatedPackage = {
+      ...targetPackage,
+      pallet: palletClone
+    }
 
-    const currentSelectedPallets = this.selectedPallets();
-    this.selectedPallets.set([...currentSelectedPallets, palletClone]);
+    const isOriginal = state.step2State.originalPackages.some(item => item.id === updatedPackage.id);
+    const isAlreadyModified = state.step2State.modifiedPackages.some(item => item.id === updatedPackage.id);
 
-    this.store.dispatch(StepperActions.updatePackage({
-      package: { ...targetPackage, pallet: palletClone }
-    }));
-
-    this.addNewEmptyPackage();
-
-    this.toastService.success(`${palletClone.name} paleti eklendi`);
+    let modified = [...state.step2State.modifiedPackages];
+    if (isOriginal && !isAlreadyModified) {
+      modified.push(updatedPackage);
+    } else if (isAlreadyModified) {
+      modified = modified.map(item => item.id === updatedPackage.id ? updatedPackage : item);
+    }
 
     return {
     ...state,
     step2State: {
       ...state.step2State,
       packages: [...updatedPackages],
-      remainingProducts: [...sourceProducts],
       modifiedPackages: [...modified],
       isDirty: true
     }}
