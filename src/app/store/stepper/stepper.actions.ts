@@ -1,16 +1,30 @@
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { createAction, props } from '@ngrx/store';
 import { UiProduct } from '../../admin/components/dashboard/stepper/components/ui-models/ui-product.model';
+import { UiPackage } from '../../admin/components/dashboard/stepper/components/ui-models/ui-package.model';
 
 export const calculatePackageDetail = createAction(
   '[Stepper] Calculate Package Detail'
 );
 
+export const movePalletToPackage = createAction(
+  '[Stepper] Move Pallet To Package',
+  props<{containerId:string,previousIndex:number,previousContainerData:any}>()
+)
+
+export const moveRemainingProductFromPackage = createAction(
+  '[Stepper] Move Remaining Product From Package',
+  props<{targetPackage:UiPackage,previousIndex:number}>()
+)
 export const moveUiProductInSamePackage = createAction(
   '[Stepper] Move Ui Product In Same Package',
   props<{containerId:string,currentIndex:number,previousIndex:number}>()
 );
 
+export const moveUiProductInPackageToPackage = createAction(
+  '[Stepper] Move Ui Product In Package To Package',
+  props<{sourcePackage:UiPackage,targetPackage:UiPackage,previousIndex:number}>()
+)
 
 export const moveUiProductInSamePackageSuccess = createAction(
   '[Stepper] Move Ui Product In Same Package Success'

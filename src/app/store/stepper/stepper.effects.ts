@@ -291,7 +291,11 @@ export class StepperEffects {
     this.actions$.pipe(
       ofType(
         StepperActions.moveUiProductInSamePackage,
-        StepperActions.remainingProductMoveProduct
+        StepperActions.remainingProductMoveProduct,
+        StepperActions.moveProductToRemainingProducts,
+        StepperActions.moveUiProductInPackageToPackage,
+        StepperActions.moveRemainingProductFromPackage
+
       ),
       map(()=> StepperActions.stepperStepUpdated())
     )
