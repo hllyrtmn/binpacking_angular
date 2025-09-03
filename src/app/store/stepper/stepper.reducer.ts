@@ -251,6 +251,37 @@ export const stepperReducer = createReducer(
     };
   }),
 
+  on(StepperActions.removePackage, (state, { packageToRemove }) => {
+    const currentPackages = state.step2State.packages;
+    const packageIndex = currentPackages.findIndex(
+      (pkg) => pkg.id === packageToRemove.id
+    );
+
+    if (packageIndex === -1) {
+      return state;
+    }
+
+    const packageToDelete = currentPackages[packageIndex];
+    const updatedPackages = currentPackages.filter((_, index) => index !== packageIndex);
+
+    let remainingProducts = state.step2State.remainingProducts;
+
+    if (packageToDelete.products?.length > 0) {
+      const allProducts = [...remainingProducts, ...packageToDelete.products];
+      remainingProducts = consolidateProducts(allProducts);
+    }
+
+    return {
+      ...state,
+      step2State: {
+        ...state.step2State,
+        packages: updatedPackages,
+        remainingProducts,
+        isDirty: true
+      }
+    };
+  }),
+
   on(StepperActions.splitProduct, (state, { product, splitCount }) => {
 
     if (!(product instanceof UiProduct)) {
@@ -961,3 +992,5 @@ const consolidateProducts = (products: UiProduct[]): UiProduct[] => {
 
   return Array.from(consolidatedMap.values());
 };
+
+
