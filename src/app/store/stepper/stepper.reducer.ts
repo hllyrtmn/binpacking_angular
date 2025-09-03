@@ -7,6 +7,7 @@ import { v4 as Guid } from 'uuid';
 import { UiPallet } from '../../admin/components/dashboard/stepper/components/ui-models/ui-pallet.model';
 import { UiProduct } from '../../admin/components/dashboard/stepper/components/ui-models/ui-product.model';
 import { IUiProduct } from '../../admin/components/dashboard/stepper/interfaces/ui-interfaces/ui-product.interface';
+import { mapPackageDetailToPackage } from '../../models/mappers/package-detail.mapper';
 
 export let cloneCount = 1;
 
@@ -44,6 +45,7 @@ export const stepperReducer = createReducer(
       }
     }
   )),
+
   on(StepperActions.removePalletFromPackage, (state, { pkg}) => {
 
     if (!pkg.pallet) return state;
@@ -66,10 +68,26 @@ export const stepperReducer = createReducer(
         ...state.step2State,
         remainingProducts: updatedRemainingProducts || state.step2State.remainingProducts,
         packages: updatedPackages
-      
+
       }
     }
   }),
+
+  // on(StepperActions.palletControlSubmitSuccess, (state, { packageDetails}) => {
+
+  //   const uiPackages = mapPackageDetailToPackage(packageDetails)
+
+  //   return {
+  //     ...state,
+  //     completedStep:2,
+  //     currentStep:3,
+  //     step2State:{
+  //       ...state.step2State,
+  //       packages: uiPackages,
+  //       originalPackages: uiPackages
+  //     }
+  //   }
+  // }),
 
   on(StepperActions.remainingProductMoveProduct, (state, { previousIndex, currentIndex }) => {
     const updatedRemainingProducts = [...state.step2State.remainingProducts]

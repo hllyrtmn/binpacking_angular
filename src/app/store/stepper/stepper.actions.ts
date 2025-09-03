@@ -37,7 +37,6 @@ export const removePalletFromPackage = createAction(
   props<{pkg:UiPackage}>()
 );
 
-
 export const removeAllPackage = createAction(
   '[Stepper] Remove All Package'
 );
@@ -54,6 +53,14 @@ export const moveUiProductInPackageToPackage = createAction(
 
 export const moveUiProductInSamePackageSuccess = createAction(
   '[Stepper] Move Ui Product In Same Package Success'
+);
+
+export const palletControlSubmit = createAction(
+  '[Stepper] Calculate Package Detail Success'
+);
+export const palletControlSubmitSuccess = createAction(
+  '[Stepper] Calculate Package Detail Success',
+  props<{packageDetails:any}>()
 );
 
 export const calculatePackageDetailSuccess = createAction(

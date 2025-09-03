@@ -360,18 +360,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     }
 
     this.store.dispatch(StepperActions.invoiceUploadSubmitFlow())
-
-
-    // this.store.dispatch(StepperActions.updateOrCreateOrder({
-    //   orderId: this.orderSignal()?.id
-    // }
-    // ))
-    // setTimeout(() => {
-    // this.store.dispatch(StepperActions.createOrderDetails())
-    // }, 5000);
-    // setTimeout(() => {
-    //  this.store.dispatch(StepperActions.uploadInvoiceFile())
-    // }, 4000);
   }
 
   resetForm(): void {

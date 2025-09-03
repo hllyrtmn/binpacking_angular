@@ -532,6 +532,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
 
 
   submitForm(): void {
+    // this.store.dispatch(StepperActions.palletControlSubmit())
     //   const currentPackages = this.uiPackages();
     //   const packageData = mapPackageToPackageDetail(currentPackages);
 

@@ -20,6 +20,7 @@ import {
   selectOrderId,
   selectStep1Changes,
   selectStepperState,
+  selectUiPackages,
 } from '../index';
 import { ToastService } from '../../services/toast.service';
 import { LocalStorageService } from '../../admin/components/dashboard/stepper/services/local-storage.service';
@@ -355,4 +356,14 @@ export class StepperEffects {
       ))
     )
   );
+
+  // createPackageDetails$ = createEffect(()=>
+  //   this.actions$.pipe(
+  //     ofType(StepperActions.palletControlSubmit),
+  //     withLatestFrom(this.store.select(selectUiPackages)),
+  //     switchMap(([action,uiPackage])=>this.repositoryService.bulkCreatePackageDetail(uiPackage).pipe(
+  //       map((result)=>StepperActions.palletControlSubmitSuccess(result.package_details)),
+  //       catchError((error) => of(StepperActions.setGlobalError({error:error.message})))
+  //     ))
+  //   ))
 }
