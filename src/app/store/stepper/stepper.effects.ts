@@ -1,4 +1,4 @@
-import { UIStateManager } from '../../admin/components/dashboard/stepper/components/invoice-upload/managers/ui-state.manager';
+
 import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
@@ -23,13 +23,12 @@ import {
   selectUiPackages,
 } from '../index';
 import { ToastService } from '../../services/toast.service';
-import { LocalStorageService } from '../../admin/components/dashboard/stepper/services/local-storage.service';
-import { RepositoryService } from '../../admin/components/dashboard/stepper/services/repository.service';
-import { Action } from '@ngrx/store';
-import { FileUploadManager } from '../../admin/components/dashboard/stepper/components/invoice-upload/managers/file-upload.manager';
 import { OrderService } from '../../admin/components/services/order.service';
 import { OrderDetailService } from '../../admin/components/services/order-detail.service';
-import { mapPackageDetailToPackage } from '../../models/mappers/package-detail.mapper';
+import { FileUploadManager } from '../../admin/components/stepper/components/invoice-upload/managers/file-upload.manager';
+import { LocalStorageService } from '../../admin/components/stepper/services/local-storage.service';
+import { RepositoryService } from '../../admin/components/stepper/services/repository.service';
+import { UIStateManager } from '../../admin/components/stepper/components/invoice-upload/managers/ui-state.manager';
 
 @Injectable()
 export class StepperEffects {

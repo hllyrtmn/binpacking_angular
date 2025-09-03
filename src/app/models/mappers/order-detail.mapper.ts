@@ -1,4 +1,4 @@
-import { UiProduct } from "../../admin/components/dashboard/stepper/components/ui-models/ui-product.model";
+import { UiProduct } from "../../admin/components/stepper/components/ui-models/ui-product.model";
 import { IInvoiceOrderDetail } from "../component-models/invoice-order-detail.interface";
 import { OrderDetail } from "../order-detail.interface";
 

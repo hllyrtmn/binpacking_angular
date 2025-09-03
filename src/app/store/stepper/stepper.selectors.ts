@@ -1,7 +1,7 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { StepperState } from './stepper.state';
-import { UiPackage } from '../../admin/components/dashboard/stepper/components/ui-models/ui-package.model';
 import { Order } from '../../models/order.interface';
+import { UiPackage } from '../../admin/components/stepper/components/ui-models/ui-package.model';
 
 // Feature selector
 export const selectStepperState = createFeatureSelector<StepperState>('stepper');

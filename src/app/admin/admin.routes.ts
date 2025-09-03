@@ -5,7 +5,7 @@ import { LogisticsComponent } from './components/logistics/logistics.component';
 import { OrdersComponent } from './components/orders/orders.component';
 import { ProductsComponent } from './components/products/products.component';
 import { ProfileComponent } from './components/profile/profile.component';
-import { StepperComponent } from './components/dashboard/stepper/stepper.component';
+import { StepperComponent } from './components/stepper/stepper.component';
 
 const ADMIN_ROUTES: Routes = [
   {

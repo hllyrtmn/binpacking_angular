@@ -1,6 +1,6 @@
-import { UiPackage } from '../../admin/components/dashboard/stepper/components/ui-models/ui-package.model';
-import { UiPallet } from '../../admin/components/dashboard/stepper/components/ui-models/ui-pallet.model';
-import { UiProduct } from '../../admin/components/dashboard/stepper/components/ui-models/ui-product.model';
+import { UiPackage } from '../../admin/components/stepper/components/ui-models/ui-package.model';
+import { UiPallet } from '../../admin/components/stepper/components/ui-models/ui-pallet.model';
+import { UiProduct } from '../../admin/components/stepper/components/ui-models/ui-product.model';
 import { PackageDetail } from '../package-detail.interface';
 import { v4 as Guid } from 'uuid';
 

@@ -1,6 +1,6 @@
 import { createAction, props } from '@ngrx/store';
-import { UiProduct } from '../../admin/components/dashboard/stepper/components/ui-models/ui-product.model';
-import { UiPackage } from '../../admin/components/dashboard/stepper/components/ui-models/ui-package.model';
+import { UiProduct } from '../../admin/components/stepper/components/ui-models/ui-product.model';
+import { UiPackage } from '../../admin/components/stepper/components/ui-models/ui-package.model';
 
 export const calculatePackageDetail = createAction(
   '[Stepper] Calculate Package Detail'
