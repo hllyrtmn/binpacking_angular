@@ -258,7 +258,7 @@ export class StepperEffects {
 
   calculatePackageDetail$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(StepperActions.invoiceUploadSubmitFlowSuccess),
+      ofType(StepperActions.invoiceUploadSubmitFlowSuccess,StepperActions.uploadFileToOrder),
       switchMap(() => this.repositoryService.calculatePackageDetail().pipe(
         tap(console.log),
         map((response) => StepperActions.calculatePackageDetailSuccess({

@@ -15,7 +15,7 @@ export class OrderDetailService extends GenericCrudService<OrderDetail> {
    * Belirli bir order'a ait tüm OrderDetail'leri getir
    */
   getByOrderId(orderId: string): Observable<OrderDetail[]> {
-    return this.getAll({ order_id: orderId }).pipe(
+    return this.getAll({ order_id: orderId, limit:100 }).pipe(
       map((response: any) => response.results || [])
     );
   }

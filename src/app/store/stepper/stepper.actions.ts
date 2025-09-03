@@ -56,10 +56,10 @@ export const moveUiProductInSamePackageSuccess = createAction(
 );
 
 export const palletControlSubmit = createAction(
-  '[Stepper] Calculate Package Detail Success'
+  '[Stepper] Pallet Control Submit'
 );
 export const palletControlSubmitSuccess = createAction(
-  '[Stepper] Calculate Package Detail Success',
+  '[Stepper] Pallet Control Submit Success',
   props<{packageDetails:any}>()
 );
 

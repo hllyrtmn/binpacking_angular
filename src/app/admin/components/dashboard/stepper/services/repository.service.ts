@@ -33,7 +33,7 @@ export class RepositoryService {
     // api/orders/order-details/{id}/
     // get order detail by order id.
     return this.http
-      .get<any>(`${this.api.getApiUrl()}/orders/order-details/?order_id=${id}`)
+      .get<any>(`${this.api.getApiUrl()}/orders/order-details/?order_id=${id}&limit=100`)
       .pipe(map((response) => { console.log(response); return mapToOrderDetailDtoList(response.results) }));
   }
 
@@ -46,7 +46,7 @@ export class RepositoryService {
 
   getPackageDetails(order_id: string = this.getOrderId()): Observable<{ packages: any[], remainingProducts: any[] }> {
     return this.http
-      .get<any>(`${this.api.getApiUrl()}/logistics/package-details/?orderId=${order_id}/`)
+      .get<any>(`${this.api.getApiUrl()}/logistics/package-details/?orderId=${order_id}&limit=100`)
       .pipe(map((response) => ({
         packages: mapPackageDetailToPackage(response.results),
         remainingProducts: mapOrderDetailsToUiProductsSafe(response.remaining_order_details)
