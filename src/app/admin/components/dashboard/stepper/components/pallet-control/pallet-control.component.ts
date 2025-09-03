@@ -103,96 +103,19 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   currentDraggedProduct: UiProduct | null = null;
 
   // Weight and dimension calculations
-  public totalWeight = computed(() => {
-    const packages = this.uiPackages();
-    if (packages.length === 0) return 0;
+  public totalWeight = this.store.selectSignal(StepperSelectors.selectTotalWeight);
 
-    return packages.reduce((total, pkg) => {
-      const palletWeight = Math.floor(pkg.pallet?.weight ?? 0);
-      const productsWeight = pkg.products.reduce((pTotal: any, product: any) => {
-        let weight = 0;
-        if (this.orderSignal()?.weight_type === 'eco') {
-          weight = product.weight_type.eco;
-        } else if (this.orderSignal()?.weight_type === 'std') {
-          weight = product.weight_type.std;
-        } else if (this.orderSignal()?.weight_type === 'pre') {
-          weight = product.weight_type.pre;
-        }
-        return pTotal + Math.floor(weight * product.count);
-      }, 0);
-      return total + palletWeight + productsWeight;
-    }, 0);
-  });
 
-  public remainingWeight = computed(() => {
-    if (this.orderSignal()) {
-      const trailerWeightLimit = this.orderSignal().truck?.weight_limit ?? 0;
-      return Math.floor(trailerWeightLimit - this.totalWeight());
-    }
-    return 0;
-  });
+  public remainingWeight = this.store.selectSignal(StepperSelectors.selectRemainingWeight);
+  public totalMeter = this.store.selectSignal(StepperSelectors.selectTotalMeter);
+  public remainingArea = this.store.selectSignal(StepperSelectors.selectRemainingArea);
 
-  public totalMeter = computed(() => {
-    const packages = this.uiPackages();
-    return packages.reduce((total, pkg) => {
-      if (pkg.products.length === 0) return total;
+  public heaviestPalletWeight = this.store.selectSignal(StepperSelectors.selectHeaviestPalletWeight);
+  public lightestPalletWeight = this.store.selectSignal(StepperSelectors.selectLightestPalletWeight);
+  public averagePalletWeight = this.store.selectSignal(StepperSelectors.selectAveragePalletWeight);
 
-      const packageMeter = pkg.products.reduce((pTotal: any, product: any) => {
-        const productDepth = product.dimension?.depth ?? 0;
-        return pTotal + Math.round(Math.floor(product.count * Math.floor(productDepth)));
-      }, 0);
-
-      return total + packageMeter;
-    }, 0) / 1000;
-  });
-
-  public remainingArea = computed(() => {
-    const packages = this.uiPackages();
-    const totalArea = packages.reduce((total, pkg) => {
-      const palletArea = Math.floor(
-        (pkg.pallet?.dimension.width ?? 0) * (pkg.pallet?.dimension.depth ?? 0)
-      );
-      return total + palletArea;
-    }, 0);
-
-    let trailerArea = 0;
-    if (this.orderSignal()) {
-      trailerArea = (this.orderSignal().truck?.dimension?.width ?? 0) * (this.orderSignal().truck?.dimension?.depth ?? 0);
-    }
-
-    return Math.floor((trailerArea - totalArea) / 1000000);
-  });
 
   // Pallet weight analytics
-  public activePalletWeights = computed(() => {
-    const packages = this.uiPackages();
-    return packages
-      .filter(pkg => pkg.pallet && pkg.products?.length > 0)
-      .map(pkg => this.packageTotalWeight(pkg));
-  });
-
-  public heaviestPalletWeight = computed(() => {
-    const weights = this.activePalletWeights();
-    return weights.length > 0 ? Math.max(...weights) : 0;
-  });
-
-  public lightestPalletWeight = computed(() => {
-    const weights = this.activePalletWeights();
-    return weights.length > 0 ? Math.min(...weights) : 0;
-  });
-
-  public averagePalletWeight = computed(() => {
-    const weights = this.activePalletWeights();
-    if (weights.length === 0) return 0;
-    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
-    return Math.round((totalWeight / weights.length) * 100) / 100;
-  });
-
-  public activePalletCount = computed(() => this.activePalletWeights().length);
-  public totalPalletWeight = computed(() =>
-    this.activePalletWeights().reduce((sum, weight) => sum + weight, 0)
-  );
-
   constructor(private _formBuilder: FormBuilder) {
     this.secondFormGroup = this._formBuilder.group({
       secondCtrl: ['', Validators.required],
@@ -243,25 +166,6 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
     }));
   }
 
-  packageTotalWeight(pkg: UiPackage): number {
-    const palletWeight = Math.floor(pkg.pallet?.weight ?? 0);
-    const productsWeight = pkg.products.reduce(
-      (total, product) => {
-        if (!this.orderSignal()) { return 0; }
-        if (this.orderSignal().weight_type == 'std') {
-          return total + Math.floor(product.weight_type.std * product.count);
-        }
-        else if (this.orderSignal().weight_type == 'eco') {
-          return total + Math.floor(product.weight_type.eco * product.count);
-        }
-        else {
-          return total + Math.floor(product.weight_type.pre * product.count);
-        }
-      }, 0
-    );
-
-    return palletWeight + productsWeight;
-  }
 
   // Dimension and fit checking methods
   canFitProductToPallet(
