@@ -43,6 +43,32 @@ export const stepperReducer = createReducer(
       }
     }
   )),
+  on(StepperActions.removePalletFromPackage, (state, { pkg}) => {
+
+    if (!pkg.pallet) return state;
+
+    let updatedRemainingProducts;
+    if (pkg.products?.length > 0) {
+      const uiProducts = pkg.products;
+      const currentRemainingProducts = state.step2State.remainingProducts;
+      updatedRemainingProducts = [...currentRemainingProducts, ...uiProducts];
+    }
+
+    const currentPackages = state.step2State.packages;
+    const updatedPackages = currentPackages.map(pkg =>
+      pkg.id === pkg.id ? { ...pkg, pallet: null, products: [] } : pkg
+    ) as UiPackage[];
+
+    return {
+      ...state,
+      step2State:{
+        ...state.step2State,
+        remainingProducts: updatedRemainingProducts || state.step2State.remainingProducts,
+        packages: updatedPackages
+      
+      }
+    }
+  }),
 
   on(StepperActions.remainingProductMoveProduct, (state, { previousIndex, currentIndex }) => {
     const updatedRemainingProducts = [...state.step2State.remainingProducts]

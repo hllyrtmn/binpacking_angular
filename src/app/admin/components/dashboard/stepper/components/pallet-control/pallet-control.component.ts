@@ -563,32 +563,9 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   removePalletFromPackage(packageItem: UiPackage): void {
-    // if (!packageItem.pallet) return;
-
-    // if (packageItem.products?.length > 0) {
-    //   const uiProducts = this.ensureUiProducts(packageItem.products);
-    //   const currentAvailableProducts = this.remainingProductsSignal();
-    //   const updatedProducts = [...currentAvailableProducts, ...uiProducts];
-    //   this.remainingProductsSignal.set(updatedProducts);
-    // }
-
-    // const currentSelectedPallets = this.selectedPallets();
-    // const palletIndex = currentSelectedPallets.findIndex(p => p.id === packageItem.pallet?.id);
-    // if (palletIndex !== -1) {
-    //   const updatedSelectedPallets = [...currentSelectedPallets];
-    //   updatedSelectedPallets.splice(palletIndex, 1);
-    //   this.selectedPallets.set(updatedSelectedPallets);
-    // }
-
-    // const currentPackages = this.packagesSignal();
-    // const updatedPackages = currentPackages.map(pkg =>
-    //   pkg.id === packageItem.id ? { ...pkg, pallet: null, products: [] } : pkg
-    // ) as UiPackage[];
-    // this.packagesSignal.set(updatedPackages);
-
-    // this.store.dispatch(StepperActions.updatePackage({
-    //   package: { ...packageItem, pallet: null, products: [] }
-    // }));
+    this.store.dispatch(StepperActions.removePalletFromPackage({
+      pkg:packageItem
+    }))
   }
 
 

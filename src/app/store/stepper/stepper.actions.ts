@@ -32,6 +32,12 @@ export const removeProductFromPackage = createAction(
   props<{pkg:UiPackage,productIndex:number}>()
 );
 
+export const removePalletFromPackage = createAction(
+  '[Stepper] Remove Pallet From Package',
+  props<{pkg:UiPackage}>()
+);
+
+
 export const removeAllPackage = createAction(
   '[Stepper] Remove All Package'
 );
