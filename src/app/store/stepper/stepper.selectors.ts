@@ -1,11 +1,7 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { StepperState } from './stepper.state';
-import { mapPackageDetailToPackage } from '../../models/mappers/package-detail.mapper';
 import { UiPackage } from '../../admin/components/dashboard/stepper/components/ui-models/ui-package.model';
-import { v4 as Guid } from 'uuid';
-import { OrderDetail } from '../../models/order-detail.interface';
 import { Order } from '../../models/order.interface';
-import { create } from 'lodash';
 
 // Feature selector
 export const selectStepperState = createFeatureSelector<StepperState>('stepper');

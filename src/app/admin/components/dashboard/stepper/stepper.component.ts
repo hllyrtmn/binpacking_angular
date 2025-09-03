@@ -1,14 +1,13 @@
 import {
   Component, inject, ViewChild, OnInit,
   ChangeDetectionStrategy, ChangeDetectorRef,
-  AfterViewChecked,
   AfterViewInit,
 } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { StepperOrientation, MatStepperModule, MatStepper } from '@angular/material/stepper';
-import { Observable, Subject, combineLatest } from 'rxjs';
-import { map, take, takeUntil, distinctUntilChanged, timeout, filter } from 'rxjs/operators';
+import { Observable, Subject } from 'rxjs';
+import { map, take, takeUntil, distinctUntilChanged } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';

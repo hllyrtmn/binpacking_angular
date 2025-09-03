@@ -13,10 +13,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTableModule } from '@angular/material/table';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { v4 as Guid } from 'uuid';
 import {
   CdkDragDrop,
-  moveItemInArray,
   CdkDrag,
   CdkDropList,
   CdkDragStart,
@@ -27,19 +25,17 @@ import { UiProduct } from '../ui-models/ui-product.model';
 import { UiPallet } from '../ui-models/ui-pallet.model';
 import { UiPackage } from '../ui-models/ui-package.model';
 import { ToastService } from '../../../../../../services/toast.service';
-import { mapPackageToPackageDetail } from '../../../../../../models/mappers/package-detail.mapper';
 import { LocalStorageService } from '../../services/local-storage.service';
 import { Store } from '@ngrx/store';
 import { AppState } from '../../../../../../store';
 import * as StepperSelectors from '../../../../../../store/stepper/stepper.selectors';
-import { skip, takeUntil } from 'rxjs/operators';
 
 import {
   selectStep2Packages, selectStep2RemainingProducts, selectStep2IsDirty,
   selectStep2Changes
 } from '../../../../../../store/stepper/stepper.selectors';
 import * as StepperActions from '../../../../../../store/stepper/stepper.actions';
-import { of, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 
 @Component({
   selector: 'app-pallet-control',

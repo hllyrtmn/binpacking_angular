@@ -1,12 +1,10 @@
 import { createReducer, on } from '@ngrx/store';
-import { StepperState, initialStepperState } from './stepper.state';
+import { initialStepperState } from './stepper.state';
 import * as StepperActions from './stepper.actions';
-import { update } from 'lodash';
 import { UiPackage } from '../../admin/components/dashboard/stepper/components/ui-models/ui-package.model';
 import { v4 as Guid } from 'uuid';
 import { UiPallet } from '../../admin/components/dashboard/stepper/components/ui-models/ui-pallet.model';
 import { UiProduct } from '../../admin/components/dashboard/stepper/components/ui-models/ui-product.model';
-import { IUiProduct } from '../../admin/components/dashboard/stepper/interfaces/ui-interfaces/ui-product.interface';
 import { mapPackageDetailToPackage } from '../../models/mappers/package-detail.mapper';
 
 export let cloneCount = 1;
@@ -534,36 +532,6 @@ export const stepperReducer = createReducer(
     isEditMode: true
   })),
 
-  on(StepperActions.disableEditMode, (state) => ({
-    ...state,
-    isEditMode: false,
-    editOrderId: null
-  })),
-
-  on(StepperActions.setStepData, (state, { stepNumber, data }) => ({
-    ...state,
-    stepData: {
-      ...state.stepData,
-      [`step${stepNumber + 1}`]: data
-    }
-  })),
-
-  on(StepperActions.clearStepData, (state, { stepNumber }) => {
-    if (stepNumber !== undefined) {
-      const newStepData = { ...state.stepData };
-      delete newStepData[`step${stepNumber + 1}` as keyof typeof newStepData];
-      return {
-        ...state,
-        stepData: newStepData
-      };
-    }
-    // Tüm step data'yı temizle
-    return {
-      ...state,
-      stepData: {}
-    };
-  }),
-
   on(StepperActions.resetStepper, () => ({
     ...initialStepperState
   })),
@@ -575,11 +543,6 @@ export const stepperReducer = createReducer(
     availableSteps: editMode ? [0, 1, 2] : [0],
     completedSteps: editMode ? [0, 1, 2] : [],
     error: null
-  })),
-
-  on(StepperActions.setStepperLoading, (state, { loading }) => ({
-    ...state,
-    loading
   })),
 
   on(StepperActions.setStepperError, (state, { error }) => ({
@@ -597,68 +560,6 @@ export const stepperReducer = createReducer(
         status: 'saving' as const,
         pendingChanges: true,
         error: null
-      }
-    }
-  })),
-
-  on(StepperActions.performAutoSave, (state, { stepNumber }) => ({
-    ...state,
-    autoSave: {
-      ...state.autoSave,
-      [stepNumber]: {
-        ...state.autoSave[stepNumber],
-        status: 'saving' as const
-      }
-    }
-  })),
-
-  on(StepperActions.autoSaveSuccess, (state, { stepNumber, timestamp }) => ({
-    ...state,
-    autoSave: {
-      ...state.autoSave,
-      [stepNumber]: {
-        ...state.autoSave[stepNumber],
-        status: 'saved' as const,
-        lastSaved: timestamp,
-        pendingChanges: false,
-        error: null
-      }
-    }
-  })),
-
-  on(StepperActions.autoSaveFailure, (state, { stepNumber, error }) => ({
-    ...state,
-    autoSave: {
-      ...state.autoSave,
-      [stepNumber]: {
-        ...state.autoSave[stepNumber],
-        status: 'error' as const,
-        error: error,
-        pendingChanges: true
-      }
-    }
-  })),
-
-  on(StepperActions.setAutoSaveStatus, (state, { stepNumber, status }) => ({
-    ...state,
-    autoSave: {
-      ...state.autoSave,
-      [stepNumber]: {
-        ...state.autoSave[stepNumber],
-        status: status
-      }
-    }
-  })),
-
-  on(StepperActions.clearAutoSaveStatus, (state, { stepNumber }) => ({
-    ...state,
-    autoSave: {
-      ...state.autoSave,
-      [stepNumber]: {
-        status: 'idle' as const,
-        lastSaved: null,
-        error: null,
-        pendingChanges: false
       }
     }
   })),
@@ -681,11 +582,6 @@ export const stepperReducer = createReducer(
       ...error,
       timestamp: new Date()
     }
-  })),
-
-  on(StepperActions.clearGlobalError, (state) => ({
-    ...state,
-    globalError: null
   })),
 
   on(StepperActions.retryOperation, (state, { stepIndex }) => ({
@@ -711,30 +607,6 @@ export const stepperReducer = createReducer(
     }
   })),
 
-  on(StepperActions.setStepProgress, (state, { stepIndex, progress, message }) => ({
-    ...state,
-    stepLoading: {
-      ...state.stepLoading,
-      [stepIndex]: {
-        ...state.stepLoading[stepIndex],
-        progress,
-        message
-      }
-    }
-  })),
-
-  on(StepperActions.clearStepProgress, (state, { stepIndex }) => ({
-    ...state,
-    stepLoading: {
-      ...state.stepLoading,
-      [stepIndex]: {
-        ...state.stepLoading[stepIndex],
-        progress: undefined,
-        message: undefined
-      }
-    }
-  })),
-
   on(StepperActions.initializeStep1State, (state, { order, orderDetails, hasFile, fileName }) => ({
     ...state,
     step1State: {
@@ -746,30 +618,6 @@ export const stepperReducer = createReducer(
       hasFile,
       fileName,
       isDirty: false
-    }
-  })),
-
-  on(StepperActions.resetStep1Changes, (state) => ({
-    ...state,
-    step1State: {
-      ...state.step1State,
-      added: [],
-      modified: [],
-      deleted: [],
-      isDirty: false
-    }
-  })),
-
-  on(StepperActions.syncStep1WithBackend, (state, { orderDetails }) => ({
-    ...state,
-    step1State: {
-      ...state.step1State,
-      orderDetails: [...orderDetails],
-      originalOrderDetails: [...orderDetails], // Yeni original data
-      added: [], // Temizle
-      modified: [], // Temizle
-      deleted: [], // Temizle
-      isDirty: false // Clean state
     }
   })),
 
@@ -785,15 +633,6 @@ export const stepperReducer = createReducer(
       hasFile,
       fileName,
       isDirty: true // File upload'ta dirty true
-    }
-  })),
-
-  on(StepperActions.updateStep1OrderDetails, (state, { orderDetails }) => ({
-    ...state,
-    step1State: {
-      ...state.step1State,
-      orderDetails: [...orderDetails],
-      isDirty: true
     }
   })),
 
@@ -853,76 +692,6 @@ export const stepperReducer = createReducer(
     };
   }),
 
-  on(StepperActions.initializeStep2State, (state, { packages, remainingProducts }) => ({
-    ...state,
-    step2State: {
-      packages: [...packages],
-      remainingProducts: [...remainingProducts],
-      originalPackages: [...packages],
-      originalRemainingProducts: [...remainingProducts],
-      addedPackages: [],
-      modifiedPackages: [],
-      deletedPackages: [],
-      isDirty: false
-    }
-  })),
-
-  on(StepperActions.updateStep2Packages, (state, { packages }) => ({
-    ...state,
-    step2State: {
-      ...state.step2State,
-      packageDetils: [...packages],
-      isDirty: true
-    }
-  })),
-
-  on(StepperActions.addPackage, (state, { package: newPackage }) => ({
-    ...state,
-    step2State: {
-      ...state.step2State,
-      packages: [...state.step2State.packages, newPackage],
-      addedPackages: [...state.step2State.addedPackages, newPackage],
-      isDirty: true
-    }
-  })),
-
-  on(StepperActions.deletePackage, (state, { packageId }) => {
-    const itemToDelete = state.step2State.packages.find(item => item.id === packageId);
-    const packages = state.step2State.packages.filter(item => item.id !== packageId);
-
-    const isOriginal = state.step2State.originalPackages.some(item => item.id === packageId);
-    const deleted = isOriginal && itemToDelete ? [...state.step2State.deletedPackages, itemToDelete] : state.step2State.deletedPackages;
-    const added = state.step2State.addedPackages.filter(item => item.id !== packageId);
-    const modified = state.step2State.modifiedPackages.filter(item => item.id !== packageId);
-
-    return {
-      ...state,
-      step2State: {
-        ...state.step2State,
-        packages: packages,
-        addedPackages: added,
-        modifiedPackages: modified,
-        deletedPackages: deleted,
-        isDirty: true
-      }
-    };
-  }),
-
-
-  on(StepperActions.initializeStep3State, (state, { optimizationResult, reportFiles, loadingStats, algorithmStats }) => ({
-    ...state,
-    step3State: {
-      ...state.step3State,
-      optimizationResult: [...optimizationResult],
-      reportFiles: [...reportFiles],
-      loadingStats: loadingStats || state.step3State.loadingStats,
-      algorithmStats: algorithmStats || state.step3State.algorithmStats,
-      hasResults: optimizationResult.length > 0 || reportFiles.length > 0,
-      showVisualization: optimizationResult.length > 0,
-      isDirty: false
-    }
-  })),
-
   on(StepperActions.updateStep3OptimizationResult, (state, { optimizationResult }) => ({
     ...state,
     step3State: {
@@ -935,93 +704,6 @@ export const stepperReducer = createReducer(
     }
   })),
 
-  on(StepperActions.updateStep3ReportFiles, (state, { reportFiles }) => ({
-    ...state,
-    step3State: {
-      ...state.step3State,
-      reportFiles: [...reportFiles],
-      isDirty: true
-    }
-  })),
-
-  on(StepperActions.updateStep3LoadingStats, (state, { loadingStats }) => ({
-    ...state,
-    step3State: {
-      ...state.step3State,
-      loadingStats: loadingStats,
-      isDirty: true
-    }
-  })),
-
-  on(StepperActions.updateStep3AlgorithmStats, (state, { algorithmStats }) => ({
-    ...state,
-    step3State: {
-      ...state.step3State,
-      algorithmStats: algorithmStats,
-      isDirty: true
-    }
-  })),
-
-  on(StepperActions.setStep3HasResults, (state, { hasResults }) => ({
-    ...state,
-    step3State: {
-      ...state.step3State,
-      hasResults: hasResults,
-      showVisualization: hasResults,
-      isDirty: true
-    }
-  })),
-
-  on(StepperActions.updateStep3DataChangeHistory, (state, { changes }) => ({
-    ...state,
-    step3State: {
-      ...state.step3State,
-      dataChangeHistory: [...changes],
-      isDirty: true
-    }
-  })),
-
-  on(StepperActions.setStep3ThreeJSError, (state, { hasError, errorMessage }) => ({
-    ...state,
-    step3State: {
-      ...state.step3State,
-      hasThreeJSError: hasError,
-      showVisualization: !hasError,
-      isDirty: true
-    },
-    globalError: hasError ? {
-      message: errorMessage || 'ThreeJS visualization error',
-      stepIndex: 2,
-      timestamp: new Date()
-    } : state.globalError
-  })),
-
-  on(StepperActions.setStep3ViewType, (state, { viewType }) => ({
-    ...state,
-    step3State: {
-      ...state.step3State,
-      currentViewType: viewType,
-      isDirty: true
-    }
-  })),
-
-  on(StepperActions.setStep3UnsavedChanges, (state, { hasUnsavedChanges }) => ({
-    ...state,
-    step3State: {
-      ...state.step3State,
-      hasUnsavedChanges: hasUnsavedChanges,
-      isDirty: hasUnsavedChanges
-    }
-  })),
-
-  on(StepperActions.updateStep3ProcessedPackages, (state, { processedPackages }) => ({
-    ...state,
-    step3State: {
-      ...state.step3State,
-      processedPackages: [...processedPackages],
-      isDirty: true
-    }
-  })),
 
 
 );

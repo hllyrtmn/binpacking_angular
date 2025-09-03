@@ -1,4 +1,3 @@
-import { User } from '../../../../../../auth/models/user.model';
 import { Company } from '../../../../../../models/company.interface';
 import { Dimension } from '../../../../../../models/dimension.interface';
 import { IUiPallet } from '../../interfaces/ui-interfaces/ui-pallet.interface';

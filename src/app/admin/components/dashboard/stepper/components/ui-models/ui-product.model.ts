@@ -1,4 +1,3 @@
-import { User } from '../../../../../../auth/models/user.model';
 import { Company } from '../../../../../../models/company.interface';
 import { Dimension } from '../../../../../../models/dimension.interface';
 import { ProductType } from '../../../../../../models/product-type.interface';
@@ -26,7 +25,7 @@ export class UiProduct implements IUiProduct {
     this.company = init.company;
     this.priority = init.priority!;
   }
-  
+
   split(perItem?: number | null): UiProduct[] {
     if (this.count <= 1) {
       return [this];

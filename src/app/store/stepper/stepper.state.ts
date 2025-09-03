@@ -1,4 +1,3 @@
-// src/app/store/stepper/stepper.state.ts
 // completed 0 iken hic bir step tamamlanmamis demektir
 // mat stepper current indexi gercek hayat ile uyumlu olmasi adina 1 den baslattik
 // mat stepper a verirken - 1 yapiyoruz. cunku ilk step 0 olarak tanimli api da

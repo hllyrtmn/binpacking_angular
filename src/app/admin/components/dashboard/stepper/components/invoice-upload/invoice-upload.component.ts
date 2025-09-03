@@ -1,5 +1,3 @@
-// invoice-upload.component.ts (Refactored)
-
 import {
   Component,
   inject,
@@ -33,7 +31,7 @@ import {
 } from 'rxjs';
 import { ToastService } from '../../../../../../services/toast.service';
 
-import { ExternalDataParams, GenericTableComponent } from '../../../../../../components/generic-table/generic-table.component';
+import { GenericTableComponent } from '../../../../../../components/generic-table/generic-table.component';
 
 // Refactored managers and services
 import { FileUploadManager } from './managers/file-upload.manager';
