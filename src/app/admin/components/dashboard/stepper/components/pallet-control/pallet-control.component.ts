@@ -503,13 +503,13 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
 
   // Product manipulation methods
   splitProduct(product: UiProduct, splitCount?: number | null): void {
-    this.store.dispatch(StepperActions.splitProduct({product: product,splitCount:splitCount ?? null}))
+    this.store.dispatch(StepperActions.splitProduct({ product: product, splitCount: splitCount ?? null }))
   }
 
   removeProductFromPackage(pkg: UiPackage, productIndex: number): void {
     this.store.dispatch(StepperActions.removeProductFromPackage({
-      pkg:pkg,
-      productIndex:productIndex
+      pkg: pkg,
+      productIndex: productIndex
     }))
   }
 
@@ -521,50 +521,17 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   removePackage(packageToRemove: any): void {
-    this.store.dispatch(StepperActions.removePackage({packageToRemove:packageToRemove}))
+    this.store.dispatch(StepperActions.removePackage({ packageToRemove: packageToRemove }))
   }
 
   removePalletFromPackage(packageItem: UiPackage): void {
     this.store.dispatch(StepperActions.removePalletFromPackage({
-      pkg:packageItem
+      pkg: packageItem
     }))
   }
 
 
   submitForm(): void {
-    // this.store.dispatch(StepperActions.palletControlSubmit())
-    //   const currentPackages = this.uiPackages();
-    //   const packageData = mapPackageToPackageDetail(currentPackages);
-
-    // this.repository.bulkCreatePackageDetail(packageData).subscribe({
-    //     next: (response) => {
-    //       this.toastService.success('Kaydedildi', 'Başarılı');
-
-    //       this.store.dispatch(StepperActions.setStepCompleted({ stepIndex: 1 }));
-    //       this.store.dispatch(StepperActions.setStepValidation({ stepIndex: 1, isValid: true }));
-
-    //       this.store.dispatch(StepperActions.triggerAutoSave({
-    //         stepNumber: 1,
-    //         data: {
-    //           packages: currentPackages,
-    //           availableProducts: this.remainingProductsSignal()
-    //         },
-    //         changeType: 'api-response'
-    //       }));
-
-    //     },
-    //     error: (error) => {
-    //       this.store.dispatch(StepperActions.setGlobalError({
-    //         error: {
-    //           message: 'Paket verileri kaydedilirken hata oluştu: ' + (error.message || error),
-    //           code: error.status?.toString(),
-    //           stepIndex: 1
-    //         }
-    //       }));
-
-    //       this.toastService.error('Paket verileri kaydedilemedi');
-    //     }
-    //   });
-    // }
+    this.store.dispatch(StepperActions.palletControlSubmit())
   }
 }

@@ -24,12 +24,12 @@ export const stepperReducer = createReducer(
     }
   })),
 
-  on(StepperActions.setRemainingProducts,(state,{remainingProducts})=>(
+  on(StepperActions.setRemainingProducts, (state, { remainingProducts }) => (
     {
       ...state,
-      step2State:{
+      step2State: {
         ...state.step2State,
-        remainingProducts:[...remainingProducts]
+        remainingProducts: [...remainingProducts]
       }
     }
   )),
@@ -39,14 +39,14 @@ export const stepperReducer = createReducer(
       ...state,
       step2State: {
         ...state.step2State,
-        packages: ensureEmptyPackageAdded(packages,state.order),
-        originalPackages:[...packages],
+        packages: ensureEmptyPackageAdded(packages, state.order),
+        originalPackages: [...packages],
         remainingProducts: [...remainingOrderDetails]
       }
     }
   )),
 
-  on(StepperActions.removePalletFromPackage, (state, { pkg}) => {
+  on(StepperActions.removePalletFromPackage, (state, { pkg }) => {
 
     if (!pkg.pallet) return state;
 
@@ -64,7 +64,7 @@ export const stepperReducer = createReducer(
 
     return {
       ...state,
-      step2State:{
+      step2State: {
         ...state.step2State,
         remainingProducts: updatedRemainingProducts || state.step2State.remainingProducts,
         packages: updatedPackages
@@ -73,21 +73,24 @@ export const stepperReducer = createReducer(
     }
   }),
 
-  // on(StepperActions.palletControlSubmitSuccess, (state, { packageDetails}) => {
+  on(StepperActions.palletControlSubmitSuccess, (state, { packageDetails }) => {
+    const uiPackages = mapPackageDetailToPackage(packageDetails);
+    return {
+      ...state,
+      completedStep: 2,
+      currentStep: 3,
+      step2State: {
+        ...state.step2State,
+        packgages: uiPackages,
+        originalPackages: uiPackages,
+        addedPackages: [],
+        modifiedPackages: [],
+        deletedPackages: [],
+        isDirty: false,
+      }
+    }
+  }),
 
-  //   const uiPackages = mapPackageDetailToPackage(packageDetails)
-
-  //   return {
-  //     ...state,
-  //     completedStep:2,
-  //     currentStep:3,
-  //     step2State:{
-  //       ...state.step2State,
-  //       packages: uiPackages,
-  //       originalPackages: uiPackages
-  //     }
-  //   }
-  // }),
 
   on(StepperActions.remainingProductMoveProduct, (state, { previousIndex, currentIndex }) => {
     const updatedRemainingProducts = [...state.step2State.remainingProducts]
@@ -102,7 +105,7 @@ export const stepperReducer = createReducer(
     }
   }),
 
-  on(StepperActions.moveProductToRemainingProducts, (state, { uiProducts,previousIndex,previousContainerId }) => {
+  on(StepperActions.moveProductToRemainingProducts, (state, { uiProducts, previousIndex, previousContainerId }) => {
     const sourceProducts = [...uiProducts];
     const removedProduct = sourceProducts.splice(previousIndex, 1)[0];
 
@@ -117,15 +120,16 @@ export const stepperReducer = createReducer(
     if (sourcePackage) {
       const updatedPackages = currentPackages.map(pkg =>
         pkg.id === sourcePackage.id ? { ...pkg, products: sourceProducts } : pkg
-    ) as UiPackage[];
+      ) as UiPackage[];
 
-    return {
-      ...state,
-      step2State: {
-        ...state.step2State,
-        remainingProducts: updatedRemainingProducts,
-        packages: updatedPackages
-      }}
+      return {
+        ...state,
+        step2State: {
+          ...state.step2State,
+          remainingProducts: updatedRemainingProducts,
+          packages: updatedPackages
+        }
+      }
     }
     return state
   }),
@@ -157,18 +161,20 @@ export const stepperReducer = createReducer(
   })),
 
 
-  on(StepperActions.setUiPackages, (state, {  packages }) => {
+  on(StepperActions.setUiPackages, (state, { packages }) => {
 
-   return { ...state,
-    step2State: {
-      ...state.step2State,
-      packages: ensureEmptyPackageAdded(packages,state.order),
-      originalPackages: [...packages],
-      isDirty: false
+    return {
+      ...state,
+      step2State: {
+        ...state.step2State,
+        packages: ensureEmptyPackageAdded(packages, state.order),
+        originalPackages: [...packages],
+        isDirty: false
+      }
     }
-  }}),
+  }),
 
-  on(StepperActions.moveRemainingProductToPackage, (state, {  targetPackage,previousIndex }) => {
+  on(StepperActions.moveRemainingProductToPackage, (state, { targetPackage, previousIndex }) => {
 
     const sourceProducts = [...state.step2State.remainingProducts];
     const targetProducts = [...targetPackage.products];
@@ -192,17 +198,18 @@ export const stepperReducer = createReducer(
     }
 
     return {
-    ...state,
-    step2State: {
-      ...state.step2State,
-      packages: ensureEmptyPackageAdded([...updatedPackages],state.order),
-      remainingProducts: [...sourceProducts],
-      modifiedPackages: [...modified],
-      isDirty: true
-    }}
+      ...state,
+      step2State: {
+        ...state.step2State,
+        packages: ensureEmptyPackageAdded([...updatedPackages], state.order),
+        remainingProducts: [...sourceProducts],
+        modifiedPackages: [...modified],
+        isDirty: true
+      }
+    }
   }),
 
-  on(StepperActions.movePalletToPackage, (state,{containerId,previousIndex,previousContainerData}) => {
+  on(StepperActions.movePalletToPackage, (state, { containerId, previousIndex, previousContainerData }) => {
     const currentPackages = state.step2State.packages;
     const targetPackage = currentPackages.find(p => p.id === containerId);
     if (!targetPackage) return state;
@@ -233,16 +240,17 @@ export const stepperReducer = createReducer(
     }
 
     return {
-    ...state,
-    step2State: {
-      ...state.step2State,
-      packages: [...updatedPackages],
-      modifiedPackages: [...modified],
-      isDirty: true
-    }}
+      ...state,
+      step2State: {
+        ...state.step2State,
+        packages: [...updatedPackages],
+        modifiedPackages: [...modified],
+        isDirty: true
+      }
+    }
   }),
 
-  on(StepperActions.removeProductFromPackage, (state,{pkg,productIndex}) => {
+  on(StepperActions.removeProductFromPackage, (state, { pkg, productIndex }) => {
     const currentPackages = state.step2State.packages;
     const currentRemainingProducts = state.step2State.remainingProducts;
 
@@ -260,13 +268,14 @@ export const stepperReducer = createReducer(
     const updatedRemainingProducts = [...currentRemainingProducts, removedProduct];
 
     return {
-    ...state,
-    step2State: {
-      ...state.step2State,
-      packages: [...updatedPackages],
-      remainingProducts: [...updatedRemainingProducts],
-      isDirty: true
-    }}
+      ...state,
+      step2State: {
+        ...state.step2State,
+        packages: [...updatedPackages],
+        remainingProducts: [...updatedRemainingProducts],
+        isDirty: true
+      }
+    }
   }),
 
   on(StepperActions.removeAllPackage, (state) => {
@@ -290,7 +299,7 @@ export const stepperReducer = createReducer(
       ...state,
       step2State: {
         ...state.step2State,
-        packages: ensureEmptyPackageAdded([],state.order),
+        packages: ensureEmptyPackageAdded([], state.order),
         remainingProducts,
         isDirty: true
       }
@@ -321,7 +330,7 @@ export const stepperReducer = createReducer(
       ...state,
       step2State: {
         ...state.step2State,
-        packages: ensureEmptyPackageAdded(updatedPackages,state.order),
+        packages: ensureEmptyPackageAdded(updatedPackages, state.order),
         remainingProducts,
         isDirty: true
       }
@@ -400,7 +409,7 @@ export const stepperReducer = createReducer(
     };
   }),
 
-  on(StepperActions.moveUiProductInPackageToPackage, (state, {  sourcePackage,targetPackage,previousIndex }) => {
+  on(StepperActions.moveUiProductInPackageToPackage, (state, { sourcePackage, targetPackage, previousIndex }) => {
 
     if (sourcePackage.id === targetPackage.id) {
       return state;
@@ -446,18 +455,19 @@ export const stepperReducer = createReducer(
     }
 
     return {
-    ...state,
-    step2State: {
-      ...state.step2State,
-      packages: updatedPackages,
-      modifiedPackages: modifiedPackages,
-      isDirty: true
-    }}
+      ...state,
+      step2State: {
+        ...state.step2State,
+        packages: updatedPackages,
+        modifiedPackages: modifiedPackages,
+        isDirty: true
+      }
+    }
   }),
 
 
 
-  on(StepperActions.moveUiProductInSamePackage, (state, { containerId,currentIndex,previousIndex }) => {
+  on(StepperActions.moveUiProductInSamePackage, (state, { containerId, currentIndex, previousIndex }) => {
     const currentPackages = state.step2State.packages;
     const targetPackageIndex = currentPackages.findIndex(pkg =>
       pkg.pallet && pkg.pallet.id === containerId
@@ -1040,21 +1050,21 @@ const consolidateProducts = (products: UiProduct[]): UiProduct[] => {
 };
 
 
-const ensureEmptyPackageAdded = (packages:any[], order:any ): any =>{
+const ensureEmptyPackageAdded = (packages: any[], order: any): any => {
   const emptyPackage = new UiPackage({
     id: Guid(),
-    pallet:null,
-    products:[],
+    pallet: null,
+    products: [],
     order: order,
-    name: `${packages.length + 1 }`,
+    name: `${packages.length + 1}`,
     isSavedInDb: false,
   });
-  if(packages.filter(pkg => pkg.pallet == null || pkg.products.length === 0).length > 0)
+  if (packages.filter(pkg => pkg.pallet == null || pkg.products.length === 0).length > 0)
     return ensurePackgesNamesOrdered(packages);
-  return ensurePackgesNamesOrdered([...packages,emptyPackage]);
+  return ensurePackgesNamesOrdered([...packages, emptyPackage]);
 }
 
 
-const ensurePackgesNamesOrdered = (packages:Partial<UiPackage>[]) => {
-  return packages.map((pkg,index) => ({...pkg, name: `${index + 1}`}))
+const ensurePackgesNamesOrdered = (packages: Partial<UiPackage>[]) => {
+  return packages.map((pkg, index) => ({ ...pkg, name: `${index + 1}` }))
 }

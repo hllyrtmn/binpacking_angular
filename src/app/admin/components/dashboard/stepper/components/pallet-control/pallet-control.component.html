@@ -268,19 +268,14 @@
   </div>
 
   <div class="navigation-controls">
-    <button mat-raised-button class="save-button" (click)="submitForm()">
-      <mat-icon>save</mat-icon>
-      <span>Kaydet</span>
-    </button>
-
     <div class="stepper-controls">
       <button mat-raised-button class="prev-button" matStepperPrevious>
         <mat-icon>arrow_back</mat-icon>
         <span>Geri</span>
       </button>
 
-      <button mat-raised-button class="next-button" matStepperNext>
-        <span>İleri</span>
+      <button mat-raised-button class="next-button" matStepperNext (click)="submitForm()">
+        <span>{{this.isDirtySignal() ? 'Kaydet' : 'ileri'}}</span>
         <mat-icon>arrow_forward</mat-icon>
       </button>
     </div>

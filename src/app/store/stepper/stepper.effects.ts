@@ -262,7 +262,7 @@ export class StepperEffects {
       switchMap(() => this.repositoryService.calculatePackageDetail().pipe(
         tap(console.log),
         map((response) => StepperActions.calculatePackageDetailSuccess({
-          packages:  response.packageDetails,
+          packages: response.packageDetails,
           remainingOrderDetails: response.remainingOrderDetails
         })
         )
@@ -304,7 +304,7 @@ export class StepperEffects {
         StepperActions.removePackage,
 
       ),
-      map(()=> StepperActions.stepperStepUpdated())
+      map(() => StepperActions.stepperStepUpdated())
     )
   )
 
@@ -321,9 +321,8 @@ export class StepperEffects {
         StepperActions.createOrderDetailsSuccess,
         StepperActions.updateOrCreateOrderSuccess,
         StepperActions.calculatePackageDetailSuccess,
-        StepperActions.setUiPackages
-
-
+        StepperActions.setUiPackages,
+        StepperActions.palletControlSubmitSuccess
       ),
       map(() => StepperActions.stepperStepUpdated())
     )
@@ -357,13 +356,16 @@ export class StepperEffects {
     )
   );
 
-  // createPackageDetails$ = createEffect(()=>
-  //   this.actions$.pipe(
-  //     ofType(StepperActions.palletControlSubmit),
-  //     withLatestFrom(this.store.select(selectUiPackages)),
-  //     switchMap(([action,uiPackage])=>this.repositoryService.bulkCreatePackageDetail(uiPackage).pipe(
-  //       map((result)=>StepperActions.palletControlSubmitSuccess(result.package_details)),
-  //       catchError((error) => of(StepperActions.setGlobalError({error:error.message})))
-  //     ))
-  //   ))
+  palletControlSubmit$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(StepperActions.palletControlSubmit),
+      withLatestFrom(this.store.select(selectUiPackages)),
+      switchMap(([action, uiPackages]) =>
+        this.repositoryService.bulkCreatePackageDetail(uiPackages).pipe(
+          map((response) => StepperActions.palletControlSubmitSuccess({ packageDetails: response.package_details })),
+          catchError((error) => of(StepperActions.setGlobalError({ error: error.message })))
+        )
+      )
+    )
+  );
 }
