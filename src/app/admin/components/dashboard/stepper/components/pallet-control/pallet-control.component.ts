@@ -227,22 +227,6 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
     });
   }
 
-  forceSaveStep2(): void {
-    const autoSaveData = {
-      packages: this.uiPackages(),
-      availableProducts: this.remainingProducts(),
-      totalWeight: this.totalWeight(),
-      totalMeter: this.totalMeter(),
-      remainingArea: this.remainingArea(),
-      remainingWeight: this.remainingWeight(),
-    };
-
-    this.store.dispatch(StepperActions.forceSave({
-      stepNumber: 1,
-      data: autoSaveData
-    }));
-  }
-
   packageTotalWeight(pkg: UiPackage): number {
     const palletWeight = Math.floor(pkg.pallet?.weight ?? 0);
     const productsWeight = pkg.products.reduce(
@@ -418,29 +402,6 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
     return Math.floor(remainingVolume / singleProductVolume);
   }
 
-  consolidateProducts(products: UiProduct[]): UiProduct[] {
-    const consolidatedMap = new Map<string, UiProduct>();
-
-    for (const product of products) {
-      const uiProduct = product
-      const mainId = uiProduct.id.split('/')[0];
-
-      const existing = consolidatedMap.get(mainId);
-      if (existing) {
-        existing.count += uiProduct.count;
-      } else {
-        consolidatedMap.set(
-          mainId,
-          new UiProduct({
-            ...uiProduct,
-            id: mainId,
-          })
-        );
-      }
-    }
-
-    return Array.from(consolidatedMap.values());
-  }
 
   // Drag & Drop Event Handlers
   dropProductToPallet(event: CdkDragDrop<UiProduct[]>): void {
@@ -533,7 +494,6 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
       previousIndex: event.previousIndex,
       previousContainerData: event.previousContainer.data
     }))
-
   }
 
   dragStarted(event: CdkDragStart): void {
@@ -620,130 +580,21 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
 
   // Product manipulation methods
   splitProduct(product: UiProduct, splitCount?: number | null): void {
-    // const uiProduct = this.ensureUiProductInstance(product);
-    // const validatedCount = this.validateSplitCount(uiProduct, splitCount);
-
-    // if (validatedCount === null) return;
-
-    // const currentProducts = this.remainingProductsSignal();
-    // const isCustomSplit = splitCount !== Math.floor(product.count / 2);
-
-    // if (isCustomSplit) {
-    //   const firstPart = new UiProduct({
-    //     ...product,
-    //     count: validatedCount,
-    //     id: `${product.id}/1`,
-    //   });
-
-    //   const secondPart = new UiProduct({
-    //     ...product,
-    //     count: product.count - validatedCount,
-    //     id: `${product.id}/2`,
-    //   });
-
-    //   const updatedProducts = currentProducts.filter(p => p !== product);
-    //   updatedProducts.push(firstPart, secondPart);
-    //   this.remainingProductsSignal.set(updatedProducts);
-
-    //   this.toastService.success(
-    //     `${product.name} ${validatedCount} ve ${product.count - validatedCount
-    //     } adet olarak bölündü.`,
-    //     'Başarılı'
-    //   );
-    // } else {
-    //   if (typeof product.split !== 'function') return;
-
-    //   const splitProducts = product.split();
-    //   const updatedProducts = currentProducts.filter(p => p !== product);
-    //   updatedProducts.push(...splitProducts);
-    //   this.remainingProductsSignal.set(updatedProducts);
-
-    //   this.toastService.success(`${product.name} yarıya bölündü.`, 'Başarılı');
-    // }
-
-    // this.store.dispatch(StepperActions.updateAvailableProducts({
-    //   availableProducts: this.remainingProductsSignal()
-    // }));
-
-  }
-
-  private validateSplitCount(
-    product: UiProduct,
-    splitCount?: number | null
-  ): number | null {
-    if (splitCount !== undefined && splitCount !== null) {
-      if (splitCount <= 0 || splitCount >= product.count) {
-        this.toastService.warning(
-          `Geçersiz adet girişi. 1 ile ${product.count - 1
-          } arasında bir değer giriniz.`,
-          'Uyarı'
-        );
-        return null;
-      }
-      return splitCount;
-    }
-
-    if (product.count <= 1) {
-      this.toastService.warning('Bu ürün bölünemez (1 adet)', 'Uyarı');
-      return null;
-    }
-
-    return Math.floor(product.count / 2);
+    this.store.dispatch(StepperActions.splitProduct({product: product,splitCount:splitCount ?? null}))
   }
 
   removeProductFromPackage(pkg: UiPackage, productIndex: number): void {
-    // const currentPackages = this.packagesSignal();
-    // const currentAvailableProducts = this.remainingProductsSignal();
-
-    // const productToRemove = pkg.products[productIndex];
-    // if (!productToRemove) return;
-
-    // const updatedPackageProducts = [...pkg.products];
-    // const removedProduct = updatedPackageProducts.splice(productIndex, 1)[0];
-
-    // const updatedPackage = { ...pkg, products: updatedPackageProducts };
-    // const updatedPackages = currentPackages.map(p =>
-    //   p.id === pkg.id ? updatedPackage : p
-    // ) as UiPackage[];
-
-    // const updatedAvailableProducts = [...currentAvailableProducts, removedProduct];
-
-    // this.packagesSignal.set(updatedPackages);
-    // this.remainingProductsSignal.set(updatedAvailableProducts);
-
-    // this.store.dispatch(StepperActions.updatePackage({ package: updatedPackage }));
-    // this.store.dispatch(StepperActions.updateAvailableProducts({ availableProducts: updatedAvailableProducts }));
-
-    // this.toastService.success(`${removedProduct.name} ürünü çıkarıldı`);
+    this.store.dispatch(StepperActions.removeProductFromPackage({
+      pkg:pkg,
+      productIndex:productIndex
+    }))
   }
 
 
   removeAllPackage(): void {
-    // const currentPackages = this.packagesSignal();
-    // const allProducts: UiProduct[] = [];
 
-    // currentPackages.forEach((pkg) => {
-    //   if (pkg.products?.length > 0) {
-    //     allProducts.push(...this.ensureUiProducts(pkg.products));
-    //   }
-    // });
+    this.store.dispatch(StepperActions.removeAllPackage())
 
-    // const consolidatedProducts = this.consolidateProducts([
-    //   ...this.remainingProductsSignal(),
-    //   ...allProducts
-    // ]);
-
-    // this.packagesSignal.set([]);
-    // this.remainingProductsSignal.set(consolidatedProducts);
-    // this.selectedPallets.set([]);
-
-    // this.store.dispatch(StepperActions.initializeStep2State({
-    //   packages: [],
-    //   remainingProducts: consolidatedProducts
-    // }));
-
-    // this.addNewEmptyPackage();
-    // this.toastService.success('Tüm paletler temizlendi.', 'Başarılı');
   }
 
   removePackage(packageToRemove: any): void {

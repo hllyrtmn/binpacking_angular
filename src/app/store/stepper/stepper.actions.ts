@@ -10,21 +10,36 @@ export const calculatePackageDetail = createAction(
 export const movePalletToPackage = createAction(
   '[Stepper] Move Pallet To Package',
   props<{containerId:string, previousIndex:number, previousContainerData:any}>()
-)
+);
+
+export const splitProduct = createAction(
+  '[Stepper] Split Product',
+  props<{product:UiProduct,splitCount:number|null}>()
+);
 
 export const moveRemainingProductFromPackage = createAction(
   '[Stepper] Move Remaining Product From Package',
   props<{targetPackage:UiPackage,previousIndex:number}>()
-)
+);
+
 export const moveUiProductInSamePackage = createAction(
   '[Stepper] Move Ui Product In Same Package',
   props<{containerId:string,currentIndex:number,previousIndex:number}>()
 );
 
+export const removeProductFromPackage = createAction(
+  '[Stepper] Remove Product From Package',
+  props<{pkg:UiPackage,productIndex:number}>()
+);
+
+export const removeAllPackage = createAction(
+  '[Stepper] Remove All Package'
+);
+
 export const moveUiProductInPackageToPackage = createAction(
   '[Stepper] Move Ui Product In Package To Package',
   props<{sourcePackage:UiPackage,targetPackage:UiPackage,previousIndex:number}>()
-)
+);
 
 export const moveUiProductInSamePackageSuccess = createAction(
   '[Stepper] Move Ui Product In Same Package Success'

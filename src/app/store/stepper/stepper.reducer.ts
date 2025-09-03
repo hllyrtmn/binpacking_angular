@@ -5,6 +5,8 @@ import { update } from 'lodash';
 import { UiPackage } from '../../admin/components/dashboard/stepper/components/ui-models/ui-package.model';
 import { v4 as Guid } from 'uuid';
 import { UiPallet } from '../../admin/components/dashboard/stepper/components/ui-models/ui-pallet.model';
+import { UiProduct } from '../../admin/components/dashboard/stepper/components/ui-models/ui-product.model';
+import { IUiProduct } from '../../admin/components/dashboard/stepper/interfaces/ui-interfaces/ui-product.interface';
 
 export let cloneCount = 1;
 
@@ -194,6 +196,132 @@ export const stepperReducer = createReducer(
     }}
   }),
 
+  on(StepperActions.removeProductFromPackage, (state,{pkg,productIndex}) => {
+    const currentPackages = state.step2State.packages;
+    const currentRemainingProducts = state.step2State.remainingProducts;
+
+    const productToRemove = pkg.products[productIndex];
+    if (!productToRemove) return state;
+
+    const updatedPackageProducts = [...pkg.products];
+    const removedProduct = updatedPackageProducts.splice(productIndex, 1)[0];
+
+    const updatedPackage = { ...pkg, products: updatedPackageProducts };
+    const updatedPackages = currentPackages.map(p =>
+      p.id === pkg.id ? updatedPackage : p
+    ) as UiPackage[];
+
+    const updatedRemainingProducts = [...currentRemainingProducts, removedProduct];
+
+    return {
+    ...state,
+    step2State: {
+      ...state.step2State,
+      packages: [...updatedPackages],
+      remainingProducts: [...updatedRemainingProducts],
+      isDirty: true
+    }}
+  }),
+
+  on(StepperActions.removeAllPackage, (state) => {
+    const allProducts: UiProduct[] = [];
+
+    for (const pkg of state.step2State.packages) {
+      if (pkg.products?.length > 0) {
+        const uiProducts = pkg.products.map((product: any) =>
+          product instanceof UiProduct ? product : new UiProduct(product)
+        );
+        allProducts.push(...uiProducts);
+      }
+    }
+
+    const remainingProducts = consolidateProducts([
+      ...state.step2State.remainingProducts,
+      ...allProducts
+    ]);
+
+    return {
+      ...state,
+      step2State: {
+        ...state.step2State,
+        packages: [],
+        remainingProducts,
+        isDirty: true
+      }
+    };
+  }),
+
+  on(StepperActions.splitProduct, (state, { product, splitCount }) => {
+
+    if (!(product instanceof UiProduct)) {
+      product = new UiProduct(product);
+    }
+
+    if (product.count <= 1) {
+      return state;
+    }
+
+    const currentProducts = state.step2State.remainingProducts;
+    let validatedCount: number;
+    let isCustomSplit = false;
+
+    if (splitCount !== undefined && splitCount !== null) {
+
+      if (splitCount <= 0 || splitCount >= product.count) {
+        return state;
+      }
+      validatedCount = splitCount;
+      isCustomSplit = true;
+    } else {
+
+      validatedCount = Math.floor(product.count / 2);
+      isCustomSplit = false;
+    }
+
+    let remainingProducts: UiProduct[];
+
+    if (isCustomSplit) {
+
+      const firstPart = new UiProduct({
+        ...product,
+        count: validatedCount,
+        id: `${product.id}/1`,
+      });
+
+      const secondPart = new UiProduct({
+        ...product,
+        count: product.count - validatedCount,
+        id: `${product.id}/2`,
+      });
+
+      remainingProducts = currentProducts.filter(p => p.id !== product.id);
+      remainingProducts.push(firstPart, secondPart);
+    } else {
+
+      if (typeof product.split !== 'function') {
+        console.warn('Product does not have split method');
+        return state;
+      }
+
+      const splitProducts = product.split();
+      if (!splitProducts || splitProducts.length === 0) {
+        console.warn('Split method returned invalid result');
+        return state;
+      }
+
+      remainingProducts = currentProducts.filter(p => p.id !== product.id);
+      remainingProducts.push(...splitProducts);
+    }
+
+    return {
+      ...state,
+      step2State: {
+        ...state.step2State,
+        remainingProducts: [...remainingProducts],
+        isDirty: true
+      }
+    };
+  }),
 
   on(StepperActions.moveUiProductInPackageToPackage, (state, {  sourcePackage,targetPackage,previousIndex }) => {
 
@@ -806,5 +934,30 @@ export const stepperReducer = createReducer(
       processedPackages: [...processedPackages],
       isDirty: true
     }
-  }))
+  })),
+
+
 );
+//helper fn
+const consolidateProducts = (products: UiProduct[]): UiProduct[] => {
+  const consolidatedMap = new Map<string, UiProduct>();
+
+  for (const product of products) {
+    const mainId = product.id.split('/')[0];
+    const existing = consolidatedMap.get(mainId);
+
+    if (existing) {
+      existing.count += product.count;
+    } else {
+      consolidatedMap.set(
+        mainId,
+        new UiProduct({
+          ...product,
+          id: mainId,
+        })
+      );
+    }
+  }
+
+  return Array.from(consolidatedMap.values());
+};
