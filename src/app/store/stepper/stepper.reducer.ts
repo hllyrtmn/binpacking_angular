@@ -10,6 +10,7 @@ import { IUiProduct } from '../../admin/components/dashboard/stepper/interfaces/
 
 export let cloneCount = 1;
 
+
 export const stepperReducer = createReducer(
   initialStepperState,
   on(StepperActions.setOrderDetails, (state, { orderDetails }) => ({
@@ -37,7 +38,7 @@ export const stepperReducer = createReducer(
       ...state,
       step2State: {
         ...state.step2State,
-        packages: [...packages],
+        packages: ensureEmptyPackageAdded(packages,state.order),
         originalPackages:[...packages],
         remainingProducts: [...remainingOrderDetails]
       }
@@ -55,8 +56,8 @@ export const stepperReducer = createReducer(
     }
 
     const currentPackages = state.step2State.packages;
-    const updatedPackages = currentPackages.map(pkg =>
-      pkg.id === pkg.id ? { ...pkg, pallet: null, products: [] } : pkg
+    const updatedPackages = currentPackages.map(uiPackage =>
+      uiPackage.id === pkg.id ? { ...pkg, pallet: null, products: [] } : uiPackage
     ) as UiPackage[];
 
     return {
@@ -138,17 +139,18 @@ export const stepperReducer = createReducer(
   })),
 
 
-  on(StepperActions.setUiPackages, (state, {  packages }) => ({
-    ...state,
+  on(StepperActions.setUiPackages, (state, {  packages }) => {
+
+   return { ...state,
     step2State: {
       ...state.step2State,
-      packages: [...packages],
+      packages: ensureEmptyPackageAdded(packages,state.order),
       originalPackages: [...packages],
       isDirty: false
     }
-  })),
+  }}),
 
-  on(StepperActions.moveRemainingProductFromPackage, (state, {  targetPackage,previousIndex }) => {
+  on(StepperActions.moveRemainingProductToPackage, (state, {  targetPackage,previousIndex }) => {
 
     const sourceProducts = [...state.step2State.remainingProducts];
     const targetProducts = [...targetPackage.products];
@@ -175,7 +177,7 @@ export const stepperReducer = createReducer(
     ...state,
     step2State: {
       ...state.step2State,
-      packages: [...updatedPackages],
+      packages: ensureEmptyPackageAdded([...updatedPackages],state.order),
       remainingProducts: [...sourceProducts],
       modifiedPackages: [...modified],
       isDirty: true
@@ -270,7 +272,7 @@ export const stepperReducer = createReducer(
       ...state,
       step2State: {
         ...state.step2State,
-        packages: [],
+        packages: ensureEmptyPackageAdded([],state.order),
         remainingProducts,
         isDirty: true
       }
@@ -301,7 +303,7 @@ export const stepperReducer = createReducer(
       ...state,
       step2State: {
         ...state.step2State,
-        packages: updatedPackages,
+        packages: ensureEmptyPackageAdded(updatedPackages,state.order),
         remainingProducts,
         isDirty: true
       }
@@ -1020,3 +1022,21 @@ const consolidateProducts = (products: UiProduct[]): UiProduct[] => {
 };
 
 
+const ensureEmptyPackageAdded = (packages:any[], order:any ): any =>{
+  const emptyPackage = new UiPackage({
+    id: Guid(),
+    pallet:null,
+    products:[],
+    order: order,
+    name: `${packages.length + 1 }`,
+    isSavedInDb: false,
+  });
+  if(packages.filter(pkg => pkg.pallet == null || pkg.products.length === 0).length > 0)
+    return ensurePackgesNamesOrdered(packages);
+  return ensurePackgesNamesOrdered([...packages,emptyPackage]);
+}
+
+
+const ensurePackgesNamesOrdered = (packages:Partial<UiPackage>[]) => {
+  return packages.map((pkg,index) => ({...pkg, name: `${index + 1}`}))
+}

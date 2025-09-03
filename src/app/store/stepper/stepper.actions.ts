@@ -17,7 +17,7 @@ export const splitProduct = createAction(
   props<{product:UiProduct,splitCount:number|null}>()
 );
 
-export const moveRemainingProductFromPackage = createAction(
+export const moveRemainingProductToPackage = createAction(
   '[Stepper] Move Remaining Product From Package',
   props<{targetPackage:UiPackage,previousIndex:number}>()
 );

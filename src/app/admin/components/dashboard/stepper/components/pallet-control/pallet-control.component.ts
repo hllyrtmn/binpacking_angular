@@ -403,7 +403,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
         return;
       }
     }
-    this.store.dispatch(StepperActions.moveRemainingProductFromPackage({
+    this.store.dispatch(StepperActions.moveRemainingProductToPackage({
       targetPackage: targetPackage,
       previousIndex: event.previousIndex
     }));

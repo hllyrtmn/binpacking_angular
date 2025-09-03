@@ -294,7 +294,7 @@ export class StepperEffects {
         StepperActions.remainingProductMoveProduct,
         StepperActions.moveProductToRemainingProducts,
         StepperActions.moveUiProductInPackageToPackage,
-        StepperActions.moveRemainingProductFromPackage,
+        StepperActions.moveRemainingProductToPackage,
         StepperActions.movePalletToPackage,
         StepperActions.splitProduct,
         StepperActions.removeProductFromPackage,
