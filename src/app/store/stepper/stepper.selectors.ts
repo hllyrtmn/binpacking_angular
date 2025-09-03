@@ -3,6 +3,9 @@ import { StepperState } from './stepper.state';
 import { mapPackageDetailToPackage } from '../../models/mappers/package-detail.mapper';
 import { UiPackage } from '../../admin/components/dashboard/stepper/components/ui-models/ui-package.model';
 import { v4 as Guid } from 'uuid';
+import { OrderDetail } from '../../models/order-detail.interface';
+import { Order } from '../../models/order.interface';
+import { create } from 'lodash';
 
 // Feature selector
 export const selectStepperState = createFeatureSelector<StepperState>('stepper');
@@ -345,6 +348,125 @@ export const selectStep2ProductCount = createSelector(
   selectStep2RemainingProducts,
   (products) => products.length
 );
+
+export const selectTotalWeight = createSelector(
+  selectUiPackages,
+  selectOrder,
+  (packages, order) => {
+    if (packages.length === 0) return 0;
+
+    return packages.reduce((total, pkg) => {
+      const palletWeight = Math.floor(pkg.pallet?.weight ?? 0);
+      const productsWeight = pkg.products.reduce((pTotal: any, product: any) => {
+        let weight = 0;
+        if (order?.weight_type === 'eco') {
+          weight = product.weight_type.eco;
+        } else if (order?.weight_type === 'std') {
+          weight = product.weight_type.std;
+        } else if (order?.weight_type === 'pre') {
+          weight = product.weight_type.pre;
+        }
+        return pTotal + Math.floor(weight * product.count);
+      }, 0);
+      return total + palletWeight + productsWeight;
+    }, 0);
+  }
+);
+
+export const selectRemainingWeight = createSelector(
+  selectOrder,
+  selectTotalWeight,
+  (order, totalWeight) => {
+    if (order) {
+      const trailerWeightLimit = order.truck?.weight_limit ?? 0;
+      return Math.floor(trailerWeightLimit - totalWeight);
+    }
+    return 0;
+  }
+);
+
+export const selectTotalMeter = createSelector(selectUiPackages, (uiPackages) => {
+  const packages = uiPackages
+  return packages.reduce((total, pkg) => {
+    if (pkg.products.length === 0) return total;
+
+    const packageMeter = pkg.products.reduce((pTotal: any, product: any) => {
+      const productDepth = product.dimension?.depth ?? 0;
+      return pTotal + Math.round(Math.floor(product.count * Math.floor(productDepth)));
+    }, 0);
+
+    return total + packageMeter;
+  }, 0) / 1000;
+});
+
+export const selectRemainingArea = createSelector(selectUiPackages, selectOrder, (uiPackages, order) => {
+  const packages = uiPackages;
+  const totalArea = packages.reduce((total, pkg) => {
+    const palletArea = Math.floor(
+      (pkg.pallet?.dimension.width ?? 0) * (pkg.pallet?.dimension.depth ?? 0)
+    );
+    return total + palletArea;
+  }, 0);
+
+  let trailerArea = 0;
+  if (order) {
+    trailerArea = (order.truck?.dimension?.width ?? 0) * (order.truck?.dimension?.depth ?? 0);
+  }
+
+  return Math.floor((trailerArea - totalArea) / 1000000);
+});
+
+function packageTotalWeight(pkg: UiPackage, order: Order): number {
+  const palletWeight = Math.floor(pkg.pallet?.weight ?? 0);
+  const productsWeight = pkg.products.reduce(
+    (total, product) => {
+      if (!order) { return 0; }
+      if (order.weight_type == 'std') {
+        return total + Math.floor(product.weight_type.std * product.count);
+      }
+      else if (order.weight_type == 'eco') {
+        return total + Math.floor(product.weight_type.eco * product.count);
+      }
+      else {
+        return total + Math.floor(product.weight_type.pre * product.count);
+      }
+    }, 0
+  );
+
+  return palletWeight + productsWeight;
+}
+
+export const selectActivePalletWeights = createSelector(selectUiPackages, selectOrder, (uiPackages, order) => {
+  const packages = uiPackages;
+  return packages
+    .filter(pkg => pkg.pallet && pkg.products?.length > 0)
+    .map(pkg => packageTotalWeight(pkg, order));
+});
+
+export const selectHeaviestPalletWeight = createSelector(selectActivePalletWeights, (activePalletWeights) => {
+  const weights = activePalletWeights;
+  return weights.length > 0 ? Math.max(...weights) : 0;
+});
+
+export const selectLightestPalletWeight = createSelector(selectActivePalletWeights, (activePalletWeights) => {
+  const weights = activePalletWeights;
+  return weights.length > 0 ? Math.min(...weights) : 0;
+});
+
+export const selectAveragePalletWeight = createSelector(selectActivePalletWeights, (activePalletWeights) => {
+  const weights = activePalletWeights;
+  if (weights.length === 0) return 0;
+  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+  return Math.round((totalWeight / weights.length) * 100) / 100;
+});
+
+export const selectActivePalletCount = createSelector(selectActivePalletWeights, (activePalletWeights) =>
+  activePalletWeights.length);
+
+export const selectTotalPalletWeight = createSelector(selectActivePalletWeights, (activePalletWeights) =>
+  activePalletWeights.reduce((sum, weight) => sum + weight, 0)
+);
+
 
 // Step3 Migration Selectors (Step2 selectors'ların altına ekle)
 export const selectStep3State = createSelector(
