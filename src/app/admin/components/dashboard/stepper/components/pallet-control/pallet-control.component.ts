@@ -521,45 +521,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   removePackage(packageToRemove: any): void {
-    // const currentPackages = this.packagesSignal();
-    // const packageIndex = currentPackages.findIndex(
-    //   (pkg) => pkg === packageToRemove || (pkg.id && packageToRemove.id && pkg.id === packageToRemove.id)
-    // );
-
-    // if (packageIndex === -1) {
-    //   this.toastService.error('Paket bulunamadı.', 'Hata');
-    //   return;
-    // }
-
-    // const pkg = currentPackages[packageIndex];
-
-    // if (pkg.products?.length > 0) {
-    //   const productsToReturn = this.ensureUiProducts(pkg.products);
-    //   const updatedProducts = [...this.remainingProductsSignal(), ...productsToReturn];
-    //   const consolidatedProducts = this.consolidateProducts(updatedProducts);
-    //   this.remainingProductsSignal.set(consolidatedProducts);
-    // }
-
-    // if (pkg.pallet) {
-    //   const currentSelectedPallets = this.selectedPallets();
-    //   const palletIndex = currentSelectedPallets.findIndex(pallet => pallet === pkg.pallet);
-    //   if (palletIndex !== -1) {
-    //     const updatedSelectedPallets = [...currentSelectedPallets];
-    //     updatedSelectedPallets.splice(palletIndex, 1);
-    //     this.selectedPallets.set(updatedSelectedPallets);
-    //   }
-    // }
-
-    // const updatedPackages = currentPackages.filter((_, index) => index !== packageIndex);
-    // this.packagesSignal.set(updatedPackages);
-
-    // this.store.dispatch(StepperActions.deletePackage({ packageId: pkg.id }));
-
-    // if (this.packagesSignal().length === 0) {
-    //   this.addNewEmptyPackage();
-    // }
-
-    // this.toastService.success('Paket silindi.', 'Başarılı');
+    this.store.dispatch(StepperActions.removePackage({packageToRemove:packageToRemove}))
   }
 
   removePalletFromPackage(packageItem: UiPackage): void {

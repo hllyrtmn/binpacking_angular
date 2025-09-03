@@ -42,6 +42,11 @@ export const removeAllPackage = createAction(
   '[Stepper] Remove All Package'
 );
 
+export const removePackage = createAction(
+  '[Stepper] Remove Package',
+  props<{packageToRemove:any}>()
+);
+
 export const moveUiProductInPackageToPackage = createAction(
   '[Stepper] Move Ui Product In Package To Package',
   props<{sourcePackage:UiPackage,targetPackage:UiPackage,previousIndex:number}>()
