@@ -8,7 +8,7 @@ import {
   ChangeDetectorRef,
   computed
 } from '@angular/core';
-import { FormGroup } from '@angular/forms';
+import { FormControl, FormGroup } from '@angular/forms';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
@@ -27,6 +27,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {
   Observable,
+  Subject,
   Subscription,
 } from 'rxjs';
 import { ToastService } from '../../../../../services/toast.service';
@@ -56,12 +57,14 @@ import { Store } from '@ngrx/store';
 
 import {
   selectOrder, selectStep1OrderDetails, selectStep1IsDirty,
-  selectStep1HasFile, selectStep1FileName
+  selectStep1HasFile, selectStep1FileName,
+  selectAverageOrderDetailHeight
 } from '../../../../../store/stepper/stepper.selectors';
 import { CompanyRelation } from '../../../../../models/company-relation.interface';
 import { Truck } from '../../../../../models/truck.interface';
 import { combineLatest } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { auditTime, debounceTime, distinctUntilChanged, map, takeUntil } from 'rxjs/operators';
+import { debounce } from 'lodash';
 
 @Component({
   selector: 'app-invoice-upload',
@@ -114,8 +117,9 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   public isLoadingSignal = this.store.selectSignal(StepperSelectors.selectIsStepLoading(1));
   public isEditModeSignal = this.store.selectSignal(StepperSelectors.selectIsEditMode);
 
-
-
+  private readonly unitProductHeight = this.store.selectSignal(selectAverageOrderDetailHeight)
+  unitsControl = new FormControl(20);
+  private destroy$ = new Subject<void>();
 
   public step1OrderDetails$ = this.store.select(selectStep1OrderDetails);
   public step1IsDirty$ = this.store.select(selectStep1IsDirty);
@@ -125,7 +129,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   // NgRx Observables
   public isEditMode$ = this.store.select(StepperSelectors.selectIsEditMode);
 
-  private readonly cdr = inject(ChangeDetectorRef);
   // Form and data
   uploadForm!: FormGroup;
   referenceData: ReferenceData = { targetCompanies: [], trucks: [] };
@@ -188,8 +191,29 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
   }
 
 
+  constructor(){
+
+    // ValueChanges subscription'ı
+
+  }
+
   ngOnInit(): void {
     this.initializeComponent();
+
+    const palletHeight = this.orderSignal().max_pallet_height;
+    const unitProductHeight = this.unitProductHeight();
+    const unitProductCount = palletHeight / unitProductHeight;
+    this.unitsControl.setValue(unitProductCount);
+    this.unitsControl.valueChanges.pipe(
+      debounceTime(3000),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(units => {
+      if (units !== null && units !== undefined && units > 0) {
+        const newHeight = units * this.unitProductHeight();
+        this.onMaxPalletHeightChange(newHeight);
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -199,6 +223,8 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       }
     });
     this.autoSaveSubscription?.unsubscribe();
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private initializeComponent(): void {
@@ -271,6 +297,39 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       this.store.dispatch(StepperActions.setOrder({ order: updatedOrder }))
     }
   }
+//////////////////////////////
+
+  // Display units artık FormControl'den gelir
+  displayUnits = computed(() => {
+    return this.unitsControl.value || 1;
+  });
+
+  // Minimum units kontrolü
+  isMinimumUnits = computed(() => this.displayUnits() <= 1);
+
+  // + butonu için
+  onUnitsIncrease(): void {
+    const currentValue = this.unitsControl.value || 1;
+    this.unitsControl.setValue(currentValue + 1);
+  }
+
+  // - butonu için
+  onUnitsDecrease(): void {
+    const currentValue = this.unitsControl.value || 1;
+    if (currentValue > 1) {
+      this.unitsControl.setValue(currentValue - 1);
+    }
+  }
+
+  // Mevcut metod aynı kalır
+  onMaxPalletHeightChange(maxPalletHeight: number): void {
+    let currentOrder = this.orderSignal();
+    if (currentOrder) {
+      const updatedOrder = { ...currentOrder, max_pallet_height: maxPalletHeight };
+      this.store.dispatch(StepperActions.setOrder({ order: updatedOrder }));
+    }
+  }
+//////////////////////////////////////////////////////
 
 
   createOrder(): void {

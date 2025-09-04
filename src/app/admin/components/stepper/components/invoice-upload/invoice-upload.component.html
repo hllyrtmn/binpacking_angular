@@ -147,6 +147,47 @@
           </div>
         </div>
       </div>
+
+      <!-- Maksimum Sıra Adedi -->
+      <div class="dashboard-item">
+        <div class="dashboard-icon">
+          <mat-icon>category</mat-icon>
+        </div>
+        <div class="dashboard-info">
+          <span class="dashboard-label">Maksimum Kat Adedi</span>
+          <div class="dashboard-value-container">
+            <div class="units-input-container">
+              <!-- Azaltma butonu -->
+              <button mat-icon-button
+                      (click)="onUnitsDecrease()"
+                      [disabled]="isMinimumUnits()"
+                      type="button"
+                      class="unit-button">
+                <mat-icon>remove</mat-icon>
+              </button>
+
+              <!-- Input alanı - FormControl'e bağlı -->
+              <mat-form-field class="units-field" appearance="outline">
+                <input matInput
+                      type="number"
+                      [formControl]="unitsControl"
+                      readonly
+                      min="1"
+                      step="1"
+                      placeholder="Kat adedi">
+              </mat-form-field>
+
+              <!-- Artırma butonu -->
+              <button mat-icon-button
+                      (click)="onUnitsIncrease()"
+                      type="button"
+                      class="unit-button">
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
 

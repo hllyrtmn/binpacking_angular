@@ -952,3 +952,31 @@
     gap: 12px;
   }
 }
+
+.units-input-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.units-field {
+  flex: 1;
+  min-width: 100px;
+
+  input {
+    text-align: center;
+  }
+}
+
+.unit-button {
+  min-width: 40px;
+  height: 40px;
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+.dashboard-value-container {
+  width: 100%;
+}

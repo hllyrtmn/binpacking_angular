@@ -2,6 +2,7 @@ import { createFeatureSelector, createSelector } from '@ngrx/store';
 import { StepperState } from './stepper.state';
 import { Order } from '../../models/order.interface';
 import { UiPackage } from '../../admin/components/stepper/components/ui-models/ui-package.model';
+import { toInteger } from 'lodash';
 
 // Feature selector
 export const selectStepperState = createFeatureSelector<StepperState>('stepper');
@@ -275,6 +276,22 @@ export const selectStep1OrderDetails = createSelector(
   selectStep1State,
   (step1State) => step1State.orderDetails
 );
+
+export const selectAverageOrderDetailHeight = createSelector(
+  selectStep1OrderDetails,
+  (orderDetails) => {
+    if (!orderDetails || orderDetails.length === 0) {
+      return 0;
+    }
+
+    const totalHeight = orderDetails.reduce((sum, orderDetail) => {
+      const height = toInteger(orderDetail?.product?.dimension?.height) || 0;
+      return sum + height;
+    }, 0);
+
+    return totalHeight / orderDetails.length;
+  }
+)
 
 export const selectStep1Original = createSelector(
   selectStep1State,
