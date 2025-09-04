@@ -528,6 +528,7 @@ export class PalletControlComponent implements OnInit, AfterViewInit, OnDestroy 
 
 
   submitForm(): void {
-    this.store.dispatch(StepperActions.palletControlSubmit())
+    if (this.isDirtySignal())
+      this.store.dispatch(StepperActions.palletControlSubmit())
   }
 }

@@ -64,6 +64,7 @@ export class StepperEffects {
     { dispatch: false }
   );
 
+  // operasyonun tekrarlanmasi ama hic bir yerde cagirlmiyor.
   retryOperation$ = createEffect(
     () =>
       this.actions$.pipe(
@@ -75,51 +76,10 @@ export class StepperEffects {
     { dispatch: false }
   );
 
-  // Retry Mechanism Effect
-  handleRetryWithLoading$ = createEffect(
-    () =>
-      this.actions$.pipe(
-        ofType(StepperActions.retryOperation),
-        switchMap(({ stepIndex, operation }) => {
-          return of(null).pipe(
-            // İlk önce loading başlat
-            tap(() => {
-              this.store.dispatch(
-                StepperActions.setStepLoading({
-                  stepIndex,
-                  loading: true,
-                  operation: `${operation} (Retry)`,
-                })
-              );
-            }),
-            // 2 saniye bekle (retry delay)
-            switchMap(() => timer(2000)),
-            // Loading'i durdur
-            tap(() => {
-              this.store.dispatch(
-                StepperActions.setStepLoading({
-                  stepIndex,
-                  loading: false,
-                })
-              );
-            }),
-            // Success mesajı
-            tap(() => {
-              this.toastService.success(
-                `Step ${stepIndex + 1} başarıyla yeniden denendi`
-              );
-            })
-          );
-        })
-      ),
-    { dispatch: false }
-  );
-
   enableEditMode$ = createEffect(() =>
     this.actions$.pipe(
       ofType(StepperActions.enableEditMode),
       mergeMap((action) => {
-        this.uiStateManager.setLoading(true);
         return forkJoin({
           order: this.orderService.getById(action.orderId),
           orderDetails: this.orderDetailService.getByOrderId(action.orderId),
@@ -137,11 +97,6 @@ export class StepperEffects {
           })
         );
       }),
-      tap({
-        finalize: () => {
-          this.uiStateManager.setLoading(false);
-        },
-      })
     )
   );
 
@@ -160,9 +115,6 @@ export class StepperEffects {
       this.actions$.pipe(
         ofType(StepperActions.restoreLocalStorageData),
         filter(() => this.localStorageService.hasExistingData()),
-        tap(() => {
-          console.log("getLoacalStorageData$ effect:", this.localStorageService.hasExistingData())
-        }),
         map(() => {
           const data = this.localStorageService.getStepperData();
           return StepperActions.setStepperData({ data: data });

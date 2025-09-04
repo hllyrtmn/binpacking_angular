@@ -39,7 +39,8 @@ export const stepperReducer = createReducer(
         ...state.step2State,
         packages: ensureEmptyPackageAdded(packages, state.order),
         originalPackages: [...packages],
-        remainingProducts: [...remainingOrderDetails]
+        remainingProducts: [...remainingOrderDetails],
+        isDirty: false
       }
     }
   )),
