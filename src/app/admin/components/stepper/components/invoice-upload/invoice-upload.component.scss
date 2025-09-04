@@ -4,8 +4,8 @@
 .logistics-container {
   max-width: 2400px;
   margin: 0 auto;
-  padding: 24px;
-  min-height: 100%;
+  padding: 16px;
+  min-height: 100vh;
   background-color: #f8f9fa;
 }
 
@@ -16,32 +16,37 @@
   display: flex;
   align-items: center;
   margin-bottom: 24px;
+  padding: 8px 0;
 }
 
 .header-icon {
   background-color: #006A6A;
   color: #ffffff;
-  width: 50px;
-  height: 50px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 16px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
 
   mat-icon {
-    font-size: 28px;
-    height: 28px;
-    width: 28px;
+    font-size: 24px;
+    height: 24px;
+    width: 24px;
     color: #ffffff;
   }
 }
 
 .header-titles {
+  min-width: 0;
+  flex: 1;
+
   h1 {
     margin: 0;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 600;
     color: #006A6A;
   }
@@ -50,7 +55,7 @@
 .header-subtitle {
   color: #666666;
   margin: 4px 0 0;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 /* =====================
@@ -68,12 +73,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 48px 24px;
+  padding: 40px 20px;
   text-align: center;
 
   h3 {
     margin: 0 0 12px;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 500;
     color: #006A6A;
   }
@@ -83,12 +88,13 @@
     margin: 0 0 32px;
     color: #666666;
     line-height: 1.5;
+    font-size: 14px;
   }
 }
 
 .empty-icon {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   background-color: rgba(0, 106, 106, 0.1);
   border-radius: 50%;
   display: flex;
@@ -97,9 +103,9 @@
   margin-bottom: 20px;
 
   mat-icon {
-    font-size: 40px;
-    height: 40px;
-    width: 40px;
+    font-size: 35px;
+    height: 35px;
+    width: 35px;
     color: #006A6A;
   }
 }
@@ -112,7 +118,8 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
-  max-width: 480px;
+  max-width: 400px;
+  gap: 16px;
 }
 
 .action-button {
@@ -127,6 +134,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+  font-size: 14px;
 
   &.secondary {
     background-color: #D6BB86 !important;
@@ -152,43 +160,13 @@
   }
 }
 
-.upload-button {
-  background-color: #006A6A !important;
-  color: #ffffff !important;
-  align-self: center;
-
-  mat-icon,
-  span {
-    color: #ffffff !important;
-  }
-
-  &:hover:not([disabled]) {
-    background-color: #004A4A !important;
-  }
-}
-
-.save-button {
-  background-color: #C0A670 !important;
-  color: #ffffff !important;
-  align-self: center;
-
-  mat-icon,
-  span {
-    color: #ffffff !important;
-  }
-
-  &:hover:not([disabled]) {
-    background-color: #bea77a !important;
-  }
-}
-
 .next-button {
   background-color: #006A6A !important;
   color: #ffffff !important;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 16px;
+  padding: 0 20px;
   height: 44px;
   margin-bottom: 70px;
 
@@ -215,13 +193,12 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 12px;
 }
 
 .divider {
   width: 100%;
   text-align: center;
-  margin: 20px 0;
+  margin: 16px 0;
   position: relative;
 
   &::before,
@@ -229,7 +206,7 @@
     content: '';
     position: absolute;
     top: 50%;
-    width: calc(50% - 30px);
+    width: calc(50% - 25px);
     height: 1px;
     background-color: #e0e0e0;
   }
@@ -245,7 +222,7 @@
   span {
     background-color: #ffffff;
     padding: 0 12px;
-    font-size: 14px;
+    font-size: 12px;
     color: #666666;
     position: relative;
     z-index: 1;
@@ -273,7 +250,7 @@
   p {
     margin-top: 16px;
     color: #666666;
-    font-size: 16px;
+    font-size: 14px;
   }
 }
 
@@ -282,9 +259,9 @@
   margin-bottom: 20px;
 
   mat-icon {
-    font-size: 48px;
-    height: 48px;
-    width: 48px;
+    font-size: 40px;
+    height: 40px;
+    width: 40px;
     color: #006A6A;
     animation: drive 2s infinite ease-in-out;
   }
@@ -327,15 +304,15 @@
 }
 
 /* =====================
-   DASHBOARD PANEL
+   DASHBOARD PANEL - RESPONSIVE
 ===================== */
 .details-section {
   margin-bottom: 24px;
 }
 
 .dashboard-panel {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -346,21 +323,25 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   padding: 16px;
   display: flex;
-  align-items: center;
-  flex: 1;
-  min-width: 200px;
+  flex-direction: column;
   border-left: 4px solid #006A6A;
   transition: all 0.3s ease;
+  min-width: 0; /* Flexbox overflow fix */
 
   &:hover {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
 
+  // Renk varyasyonları
   &:nth-child(2) {
     border-left-color: #D6BB86;
 
     .dashboard-icon {
       background-color: #D6BB86;
+    }
+
+    &.has-error {
+      border-left-color: #f44336;
     }
   }
 
@@ -370,6 +351,10 @@
     .dashboard-icon {
       background-color: #004A4A;
     }
+
+    &.has-error {
+      border-left-color: #f44336;
+    }
   }
 
   &:nth-child(4) {
@@ -377,6 +362,10 @@
 
     .dashboard-icon {
       background-color: #8B4513;
+    }
+
+    &.has-error {
+      border-left-color: #f44336;
     }
   }
 
@@ -386,12 +375,22 @@
     .dashboard-icon {
       background-color: #2E8B57;
     }
+
+    &.has-error {
+      border-left-color: #f44336;
+    }
+  }
+
+  // Error state
+  &.has-error {
+    border-left-color: #f44336;
+    background-color: rgba(244, 67, 54, 0.02);
   }
 }
 
 .dashboard-icon {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   background-color: #006A6A;
   color: #ffffff;
   border-radius: 8px;
@@ -400,11 +399,12 @@
   justify-content: center;
   margin-right: 12px;
   flex-shrink: 0;
+  margin-bottom: 12px;
 
   mat-icon {
-    font-size: 22px;
-    height: 22px;
-    width: 22px;
+    font-size: 20px;
+    height: 20px;
+    width: 20px;
     color: #ffffff;
   }
 }
@@ -413,49 +413,65 @@
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-width: 0;
 }
 
 .dashboard-label {
   font-size: 12px;
   color: #666666;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+  font-weight: 500;
+
+  // Required field indicator
+  &::after {
+    content: " *";
+    color: #f44336;
+    font-weight: bold;
+  }
 }
 
 .dashboard-value-container {
   display: flex;
-  align-items: center;
-  min-height: 24px;
+  align-items: flex-start;
+  width: 100%;
 }
 
 .dashboard-value {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: #006A6A;
   line-height: 1.2;
 }
 
+.edit-field input[readonly] {
+  cursor: pointer;
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
 /* =====================
-   FORM FİELD STİLLERİ
+   FORM FİELD STİLLERİ - RESPONSIVE
 ===================== */
 .edit-field {
   width: 100%;
-  min-width: 150px;
+  min-width: 0; /* Overflow fix */
 
   .mat-mdc-form-field-wrapper {
     padding-bottom: 0;
   }
 
   .mat-mdc-form-field-subscript-wrapper {
-    display: none;
+    display: block; /* Error mesajları için */
+    padding-top: 4px;
   }
 
   .mat-mdc-form-field-infix {
-    padding: 8px 0;
-    min-height: 32px;
+    padding: 10px 0;
+    min-height: 40px;
   }
 
   .mat-mdc-text-field-wrapper {
     padding: 0 12px;
+    border-radius: 4px;
   }
 
   .mat-mdc-form-field-outline-start,
@@ -470,20 +486,44 @@
     border-color: #006A6A;
   }
 
+  // Error state
+  &.ng-invalid.ng-touched {
+    .mat-mdc-form-field-outline-start,
+    .mat-mdc-form-field-outline-end {
+      border-color: #f44336 !important;
+    }
+  }
+
   input,
   .mat-mdc-select-value {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 500;
     color: #006A6A;
   }
 
   .mat-mdc-select-arrow {
     color: #006A6A;
   }
+
+  .mat-mdc-form-field-error {
+    font-size: 11px;
+    color: #f44336;
+    line-height: 1.2;
+  }
+
+  .mat-mdc-select-placeholder {
+    color: #999999;
+  }
+
+  &.mat-form-field-invalid {
+    .mat-mdc-select-placeholder {
+      color: #f44336;
+    }
+  }
 }
 
 /* =====================
-   TABLO BAŞLIĞI
+   TABLO BAŞLIĞI VE ALANI
 ===================== */
 .section-header {
   display: flex;
@@ -494,6 +534,8 @@
 
   &.with-action {
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
   }
 }
 
@@ -503,7 +545,7 @@
 
   h2 {
     margin: 0;
-    font-size: 18px;
+    font-size: 16px;
     color: #006A6A;
     font-weight: 600;
   }
@@ -511,9 +553,9 @@
   mat-icon {
     margin-right: 8px;
     color: #006A6A;
-    font-size: 20px;
-    height: 20px;
-    width: 20px;
+    font-size: 18px;
+    height: 18px;
+    width: 18px;
   }
 }
 
@@ -533,12 +575,10 @@
   }
 }
 
-/* =====================
-   TABLO ALANI
-===================== */
 .table-container {
   padding: 0;
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* =====================
@@ -554,27 +594,30 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .summary-metrics {
   display: flex;
-  gap: 24px;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
 .metric {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 
   mat-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
     color: #006A6A;
   }
 
   span {
-    font-size: 14px;
+    font-size: 13px;
     color: #333333;
     font-weight: 500;
   }
@@ -586,6 +629,7 @@
   padding: 4px 12px;
   background-color: rgba(0, 106, 106, 0.1);
   border-radius: 16px;
+  font-size: 12px;
 }
 
 .status-dot {
@@ -609,41 +653,152 @@
 }
 
 /* =====================
-   RESPONSIVE TASARIM
+   RESPONSIVE BREAKPOINTS
 ===================== */
-@media (max-width: 768px) {
+
+/* Tablet - 768px ve üzeri */
+@media (min-width: 768px) {
+  .logistics-container {
+    padding: 24px;
+  }
+
+  .header-icon {
+    width: 50px;
+    height: 50px;
+
+    mat-icon {
+      font-size: 28px;
+      height: 28px;
+      width: 28px;
+    }
+  }
+
+  .header-titles h1 {
+    font-size: 24px;
+  }
+
+  .header-subtitle {
+    font-size: 14px;
+  }
+
   .dashboard-panel {
-    flex-direction: column;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .dashboard-item {
-    min-width: 100%;
+    flex-direction: row;
+    align-items: center;
+    max-width: 100%; /* Row modunda da sınır */
+
+    .dashboard-info {
+      overflow: hidden; /* Row modunda da overflow kontrolü */
+      min-width: 0;
+    }
   }
 
-  .summary-content {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+  .dashboard-icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 0;
+
+    mat-icon {
+      font-size: 22px;
+      height: 22px;
+      width: 22px;
+    }
   }
 
-  .summary-metrics {
-    width: 100%;
-    justify-content: space-between;
+  .dashboard-label {
+    margin-bottom: 4px;
+  }
+
+  .empty-state {
+    padding: 48px 24px;
+
+    h3 {
+      font-size: 20px;
+    }
+
+    p {
+      font-size: 15px;
+    }
+  }
+
+  .empty-icon {
+    width: 80px;
+    height: 80px;
+
+    mat-icon {
+      font-size: 40px;
+      height: 40px;
+      width: 40px;
+    }
   }
 
   .edit-field {
-    min-width: 120px;
+    .mat-mdc-form-field-infix {
+      min-height: 44px;
+    }
+
+    input,
+    .mat-mdc-select-value {
+      font-size: 16px;
+      font-weight: 600;
+    }
   }
 }
 
+/* Desktop - 1024px ve üzeri */
+@media (min-width: 1024px) {
+  .dashboard-panel {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Geniş Ekran - 1200px ve üzeri */
+@media (min-width: 1200px) {
+  .dashboard-panel {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Mobil - 480px ve altı için özel düzenlemeler */
 @media (max-width: 480px) {
+  .logistics-container {
+    padding: 12px;
+  }
+
+  .logistics-header {
+    margin-bottom: 16px;
+  }
+
+  .header-icon {
+    width: 40px;
+    height: 40px;
+    margin-right: 12px;
+
+    mat-icon {
+      font-size: 20px;
+      height: 20px;
+      width: 20px;
+    }
+  }
+
+  .header-titles h1 {
+    font-size: 18px;
+  }
+
+  .header-subtitle {
+    font-size: 12px;
+  }
+
   .dashboard-item {
     padding: 12px;
   }
 
   .dashboard-icon {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     margin-right: 8px;
 
     mat-icon {
@@ -653,180 +808,112 @@
     }
   }
 
-  .dashboard-value {
-    font-size: 16px;
+  .dashboard-label {
+    font-size: 11px;
+  }
+
+  .summary-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .summary-metrics {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .metric span {
+    font-size: 12px;
+  }
+
+  .next-button {
+    padding: 0 16px;
+    font-size: 14px;
+  }
+
+  .action-button {
+    height: 40px;
+    font-size: 14px;
   }
 
   .edit-field {
-    min-width: 100px;
+    .mat-mdc-form-field-infix {
+      min-height: 36px;
+      padding: 8px 0;
+    }
+
+    .mat-mdc-text-field-wrapper {
+      padding: 0 8px;
+    }
+
+    input,
+    .mat-mdc-select-value {
+      font-size: 14px;
+    }
+  }
+
+  .section-header {
+    padding: 12px;
+
+    .header-title h2 {
+      font-size: 14px;
+    }
+
+    .header-title mat-icon {
+      font-size: 16px;
+      height: 16px;
+      width: 16px;
+    }
+  }
+}
+
+/* Çok küçük ekranlar - 360px ve altı */
+@media (max-width: 360px) {
+  .logistics-container {
+    padding: 8px;
+  }
+
+  .dashboard-panel {
+    gap: 12px;
+  }
+
+  .dashboard-item {
+    padding: 10px;
+  }
+
+  .header-titles h1 {
+    font-size: 16px;
+  }
+
+  .metric {
+    gap: 4px;
+
+    mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+    }
+
+    span {
+      font-size: 11px;
+    }
+  }
+
+  .edit-field {
+    .mat-mdc-text-field-wrapper {
+      padding: 0 6px;
+    }
+
+    input,
+    .mat-mdc-select-value {
+      font-size: 13px;
+    }
   }
 }
 
 /* =====================
-   VALIDATION STİLLERİ
+   MAT-SELECT DROPDOWN STİLLERİ
 ===================== */
-
-// Dashboard label'larda zorunlu field (*) işareti
-.dashboard-label {
-  font-size: 12px;
-  color: #666666;
-  margin-bottom: 4px;
-
-  // Zorunlu field için kırmızı * ekle
-  &:has-text("*") {
-    position: relative;
-  }
-}
-
-// Form field error durumları
-.edit-field {
-  width: 100%;
-  min-width: 150px;
-
-  .mat-mdc-form-field-wrapper {
-    padding-bottom: 0;
-  }
-
-  .mat-mdc-form-field-subscript-wrapper {
-    display: none;
-  }
-
-  // Error state için border color
-  &.ng-invalid.ng-touched {
-    .mat-mdc-form-field-outline-start,
-    .mat-mdc-form-field-outline-end {
-      border-color: #f44336 !important;
-    }
-  }
-
-  .mat-mdc-form-field-infix {
-    padding: 8px 0;
-    min-height: 32px;
-  }
-
-  .mat-mdc-text-field-wrapper {
-    padding: 0 12px;
-  }
-
-  .mat-mdc-form-field-outline-start,
-  .mat-mdc-form-field-outline-end {
-    border-width: 1px;
-    border-color: #e0e0e0;
-  }
-
-  .mat-mdc-form-field-outline-thick .mat-mdc-form-field-outline-start,
-  .mat-mdc-form-field-outline-thick .mat-mdc-form-field-outline-end {
-    border-width: 2px;
-    border-color: #006A6A;
-  }
-
-  input,
-  .mat-mdc-select-value {
-    font-size: 16px;
-    font-weight: 600;
-    color: #006A6A;
-  }
-
-  .mat-mdc-select-arrow {
-    color: #006A6A;
-  }
-
-  // Error mesajları için stil
-  .mat-mdc-form-field-error {
-    font-size: 11px;
-    color: #f44336;
-    margin-top: 4px;
-    line-height: 1.2;
-  }
-
-  // Error state'de placeholder color
-  &.mat-form-field-invalid {
-    .mat-mdc-select-placeholder {
-      color: #f44336;
-    }
-  }
-}
-
-// Required field indicator
-.dashboard-label::after {
-  content: " *";
-  color: #f44336;
-  font-weight: bold;
-}
-
-// Error durumda dashboard item'a hafif border ekle
-.dashboard-item {
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  flex: 1;
-  min-width: 200px;
-  border-left: 4px solid #006A6A;
-  transition: all 0.3s ease;
-
-  // Error state için özel border
-  &.has-error {
-    border-left-color: #f44336;
-    background-color: rgba(244, 67, 54, 0.02);
-  }
-
-  &:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  }
-
-  &:nth-child(2) {
-    border-left-color: #D6BB86;
-
-    .dashboard-icon {
-      background-color: #D6BB86;
-    }
-
-    &.has-error {
-      border-left-color: #f44336;
-    }
-  }
-
-  &:nth-child(3) {
-    border-left-color: #004A4A;
-
-    .dashboard-icon {
-      background-color: #004A4A;
-    }
-
-    &.has-error {
-      border-left-color: #f44336;
-    }
-  }
-
-  &:nth-child(4) {
-    border-left-color: #8B4513;
-
-    .dashboard-icon {
-      background-color: #8B4513;
-    }
-
-    &.has-error {
-      border-left-color: #f44336;
-    }
-  }
-
-  &:nth-child(5) {
-    border-left-color: #2E8B57;
-
-    .dashboard-icon {
-      background-color: #2E8B57;
-    }
-
-    &.has-error {
-      border-left-color: #f44336;
-    }
-  }
-}
-
-// Mat-select dropdown için özel stiller
 .mat-mdc-select-panel {
   .mat-mdc-option {
     font-size: 14px;
@@ -841,23 +928,27 @@
   }
 }
 
-// Disabled buton için stil
-.save-button,
-.next-button {
-  &[disabled] {
-    background-color: rgba(0, 106, 106, 0.3) !important;
-    color: rgba(255, 255, 255, 0.5) !important;
-    cursor: not-allowed;
-
-    mat-icon,
-    span {
-      color: rgba(255, 255, 255, 0.5) !important;
-    }
+/* =====================
+   PRINT STİLLERİ
+===================== */
+@media print {
+  .navigation-controls,
+  .action-options {
+    display: none;
   }
-}
 
-// Toast mesajı için custom stil (eğer gerekirse)
-.validation-toast {
-  background-color: #f44336 !important;
-  color: white !important;
+  .logistics-container {
+    padding: 0;
+    max-width: none;
+  }
+
+  .logistics-card {
+    box-shadow: none;
+    border: 1px solid #e0e0e0;
+  }
+
+  .dashboard-panel {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
 }

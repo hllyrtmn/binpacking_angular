@@ -79,7 +79,7 @@
           <span class="dashboard-label">Sipariş Tarihi</span>
           <div class="dashboard-value-container">
             <mat-form-field class="edit-field" appearance="outline">
-              <input matInput [matDatepicker]="picker" [value]="orderSignal()?.date"
+              <input readonly matInput [matDatepicker]="picker" [value]="orderSignal()?.date"
                 (dateChange)="onOrderFieldChange('date', $event.value)" placeholder="Tarih seçin" required />
               <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
               <mat-datepicker #picker></mat-datepicker>
@@ -177,7 +177,6 @@
         </div>
       </div>
 
-      <div class="table-container">
         <app-generic-table [externalData]="orderDetailsSignal()" [externalTotalCount]="orderDetailsSignal().length"
           [displayedColumns]="displayedColumns" [nestedDisplayColumns]="nestedDisplayColumns"
           [parentId]="orderSignal().id" [useParentId]="true" [parentIdFieldName]="'order_id'" [title]="''"
@@ -185,7 +184,6 @@
           (externalDataUpdate)="updateOrderDetail($event)" (externalDataDelete)="deleteOrderDetail($event)"
           [excludeFields]="excludeFields">
         </app-generic-table>
-      </div>
 
       <div class="summary-footer">
         <div class="summary-content">
