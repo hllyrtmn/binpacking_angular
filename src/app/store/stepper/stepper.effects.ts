@@ -64,18 +64,6 @@ export class StepperEffects {
     { dispatch: false }
   );
 
-  // operasyonun tekrarlanmasi ama hic bir yerde cagirlmiyor.
-  retryOperation$ = createEffect(
-    () =>
-      this.actions$.pipe(
-        ofType(StepperActions.retryOperation),
-        tap(({ stepIndex, operation }) => {
-          this.toastService.info(`Step ${stepIndex + 1} yeniden deneniyor...`);
-        })
-      ),
-    { dispatch: false }
-  );
-
   enableEditMode$ = createEffect(() =>
     this.actions$.pipe(
       ofType(StepperActions.enableEditMode),

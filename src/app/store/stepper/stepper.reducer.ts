@@ -40,7 +40,7 @@ export const stepperReducer = createReducer(
         packages: ensureEmptyPackageAdded(packages, state.order),
         originalPackages: [...packages],
         remainingProducts: [...remainingOrderDetails],
-        isDirty: false
+        isDirty: true
       }
     }
   )),
@@ -583,15 +583,6 @@ export const stepperReducer = createReducer(
       ...error,
       timestamp: new Date()
     }
-  })),
-
-  on(StepperActions.retryOperation, (state, { stepIndex }) => ({
-    ...state,
-    retryAttempts: {
-      ...state.retryAttempts,
-      [stepIndex]: (state.retryAttempts[stepIndex] || 0) + 1
-    },
-    globalError: null // Retry'da error'ı temizle
   })),
 
   on(StepperActions.setStepLoading, (state, { stepIndex, loading, operation }) => ({
