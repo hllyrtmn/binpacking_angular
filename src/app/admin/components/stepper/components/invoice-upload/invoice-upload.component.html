@@ -47,24 +47,6 @@
     </div>
   </div>
   }
-  <!-- Loading Indicator -->
-  @if (isLoadingSignal()) {
-  <div class="loading-container">
-    <div class="loading-content">
-      <div class="animated-icon">
-        <mat-icon>local_shipping</mat-icon>
-        <div class="loading-dots">
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-      </div>
-      <p>Sipariş verileri yükleniyor...</p>
-    </div>
-  </div>
-  }
-
-
   <!-- Order Details Dashboard -->
   @if (orderSignal() && !isLoadingSignal()) {
   <div class="details-section">

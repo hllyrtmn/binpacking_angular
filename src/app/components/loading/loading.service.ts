@@ -4,17 +4,36 @@ import { signal } from "@angular/core";
 @Injectable({ providedIn: 'root' })
 export class LoadingService {
     private _loading = signal(false);
+    private _counter = 0;
+
     public loading = this._loading.asReadonly();
 
     constructor() {
     }
 
     loadingOn() {
-        this._loading.set(true);
+        this._counter++;
+        if (this._counter === 1) {
+            this._loading.set(true);
+        }
     }
 
     loadingOff() {
-        this._loading.set(false);
+        if (this._counter > 0) {
+            this._counter--;
+        }
+
+        if (this._counter === 0) {
+            this._loading.set(false);
+        }
     }
 
+    get counter() {
+        return this._counter;
+    }
+
+    forceOff() {
+        this._counter = 0;
+        this._loading.set(false);
+    }
 }

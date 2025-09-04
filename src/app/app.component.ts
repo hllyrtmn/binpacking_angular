@@ -4,13 +4,14 @@ import { AppState } from './store';
 import { Store } from '@ngrx/store';
 import * as UserActions from './store/user/user.actions';
 import * as StepperActions from './store/stepper/stepper.actions';
+import { LoadingComponent } from "./components/loading/loading.component";
 
 
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, LoadingComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
