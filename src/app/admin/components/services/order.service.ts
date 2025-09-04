@@ -18,7 +18,7 @@ export class OrderService extends GenericCrudService<Order> {
 
   updateOrCreate(order: any){
     this.ensureApiUrl();
-    
+
   const formattedOrder = {
     id: order!.id,
     company_relation_id: order!.company_relation?.id,
@@ -26,6 +26,7 @@ export class OrderService extends GenericCrudService<Order> {
     date: order!.date,
     weight_type: order!.weight_type,
     name: order!.name,
+    max_pallet_height: order!.max_pallet_height
   };
     return this.http.post<{order:Order,created:boolean}>(`${this.apiUrl}update-or-create/`,formattedOrder)
   }

@@ -205,7 +205,7 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
     const unitProductCount = palletHeight / unitProductHeight;
     this.unitsControl.setValue(unitProductCount);
     this.unitsControl.valueChanges.pipe(
-      debounceTime(3000),
+      debounceTime(1000),
       distinctUntilChanged(),
       takeUntil(this.destroy$)
     ).subscribe(units => {

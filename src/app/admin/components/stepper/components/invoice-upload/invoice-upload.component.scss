@@ -449,6 +449,107 @@
 }
 
 /* =====================
+   UNITS INPUT CONTAINER
+===================== */
+.units-input-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 8px;
+  padding: 4px;
+  transition: all 0.3s ease;
+  width: 100%;
+
+  &:hover {
+    border-color: #006A6A;
+    background-color: rgba(0, 106, 106, 0.08);
+  }
+}
+
+.units-field {
+  flex: 1;
+  min-width: 60px;
+
+  .mat-mdc-form-field-wrapper {
+    padding-bottom: 0;
+  }
+
+  .mat-mdc-form-field-subscript-wrapper {
+    display: none;
+  }
+
+  .mat-mdc-form-field-infix {
+    padding: 6px 0;
+    min-height: 32px;
+  }
+
+  .mat-mdc-text-field-wrapper {
+    padding: 0 8px;
+    border-radius: 4px;
+    background-color: #ffffff;
+  }
+
+  .mat-mdc-form-field-outline {
+    display: none;
+  }
+
+  input {
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: #006A6A;
+    background-color: transparent;
+
+    &::placeholder {
+      color: #999999;
+      font-weight: 400;
+    }
+  }
+}
+
+.unit-button {
+  min-width: 40px;
+  width: 40px;
+  height: 40px;
+  background-color: #006A6A;
+  color: #ffffff;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: #ffffff;
+    margin: 0 !important;
+  }
+
+  &:hover:not([disabled]) {
+    background-color: #004A4A;
+    transform: scale(1.05);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    background-color: rgba(0, 106, 106, 0.3);
+    color: rgba(255, 255, 255, 0.6);
+    cursor: not-allowed;
+
+    mat-icon {
+      color: rgba(255, 255, 255, 0.6);
+    }
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+/* =====================
    FORM FİELD STİLLERİ - RESPONSIVE
 ===================== */
 .edit-field {
@@ -746,6 +847,41 @@
       font-weight: 600;
     }
   }
+
+  /* Units input responsive - tablet */
+  .units-input-container {
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .units-field {
+    min-width: 70px;
+
+    .mat-mdc-form-field-infix {
+      min-height: 36px;
+      padding: 8px 0;
+    }
+
+    .mat-mdc-text-field-wrapper {
+      padding: 0 10px;
+    }
+
+    input {
+      font-size: 15px;
+    }
+  }
+
+  .unit-button {
+    min-width: 36px;
+    width: 36px;
+    height: 36px;
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
 }
 
 /* Desktop - 1024px ve üzeri */
@@ -758,7 +894,7 @@
 /* Geniş Ekran - 1200px ve üzeri */
 @media (min-width: 1200px) {
   .dashboard-panel {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
   }
 }
 
@@ -865,6 +1001,41 @@
       width: 16px;
     }
   }
+
+  /* Units input responsive - mobile */
+  .units-input-container {
+    gap: 2px;
+    padding: 2px;
+  }
+
+  .units-field {
+    min-width: 50px;
+
+    .mat-mdc-form-field-infix {
+      min-height: 28px;
+      padding: 4px 0;
+    }
+
+    .mat-mdc-text-field-wrapper {
+      padding: 0 6px;
+    }
+
+    input {
+      font-size: 13px;
+    }
+  }
+
+  .unit-button {
+    min-width: 28px;
+    width: 28px;
+    height: 28px;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+  }
 }
 
 /* Çok küçük ekranlar - 360px ve altı */
@@ -909,6 +1080,35 @@
       font-size: 13px;
     }
   }
+
+  /* Units input responsive - very small screens */
+  .units-input-container {
+    gap: 4px;
+  }
+
+  .units-field {
+    min-width: 45px;
+
+    .mat-mdc-text-field-wrapper {
+      padding: 0 6px;
+    }
+
+    input {
+      font-size: 12px;
+    }
+  }
+
+  .unit-button {
+    min-width: 32px;
+    width: 32px;
+    height: 32px;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+  }
 }
 
 /* =====================
@@ -951,32 +1151,4 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
-}
-
-.units-input-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.units-field {
-  flex: 1;
-  min-width: 100px;
-
-  input {
-    text-align: center;
-  }
-}
-
-.unit-button {
-  min-width: 40px;
-  height: 40px;
-
-  &:disabled {
-    opacity: 0.5;
-  }
-}
-
-.dashboard-value-container {
-  width: 100%;
 }
