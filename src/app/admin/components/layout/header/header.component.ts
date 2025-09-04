@@ -7,7 +7,7 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { Store } from '@ngrx/store';
-import { AppState, selectOrderId, selectUser } from '../../../../store';
+import { AppState, selectOrder, selectOrderId, selectUser } from '../../../../store';
 
 @Component({
   selector: 'app-header',
@@ -26,7 +26,7 @@ export class HeaderComponent implements OnInit {
 
   private readonly store = inject(Store<AppState>);
   user$ = this.store.select(selectUser);
-  orderId = this.store.selectSignal(selectOrderId);
+  order = this.store.selectSignal(selectOrderId);
 
   constructor(private router: Router) {
   }
