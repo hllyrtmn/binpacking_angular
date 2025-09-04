@@ -5,9 +5,9 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import {MatDividerModule} from '@angular/material/divider';
+import { MatDividerModule } from '@angular/material/divider';
 import { Store } from '@ngrx/store';
-import { AppState, selectUser } from '../../../../store';
+import { AppState, selectOrderId, selectUser } from '../../../../store';
 
 @Component({
   selector: 'app-header',
@@ -26,21 +26,24 @@ export class HeaderComponent implements OnInit {
 
   private readonly store = inject(Store<AppState>);
   user$ = this.store.select(selectUser);
+  orderId = this.store.selectSignal(selectOrderId);
 
   constructor(private router: Router) {
   }
 
   ngOnInit(): void {
-      this.getProfilePhoto()
+    this.getProfilePhoto()
   }
 
-  getProfilePhoto(){
+  getProfilePhoto() {
     this.user$.subscribe({
-    next: (user) => {
-      if (user) {
-        this.profilePhoto = user.profile_picture || this.profilePhoto;
-        this.companyLogo = user.company?.logo || this.companyLogo;
-      }}});
+      next: (user) => {
+        if (user) {
+          this.profilePhoto = user.profile_picture || this.profilePhoto;
+          this.companyLogo = user.company?.logo || this.companyLogo;
+        }
+      }
+    });
   }
 
   logout() {
@@ -48,4 +51,7 @@ export class HeaderComponent implements OnInit {
     this.router.navigate(['auth/login']);
   }
 
+  clearStorage() {
+    localStorage.clear();
+  }
 }

@@ -837,7 +837,8 @@ form {
 
 .stepper-controls {
   display: flex;
-  gap: 12px;
+  width: 100%; /* Bu satırı ekleyin */
+  justify-content: space-between; /* Bu satırı ekleyin */
 }
 
 .save-button, .next-button {

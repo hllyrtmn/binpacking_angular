@@ -297,7 +297,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       this.store.dispatch(StepperActions.setOrder({ order: updatedOrder }))
     }
   }
-//////////////////////////////
 
   // Display units artık FormControl'den gelir
   displayUnits = computed(() => {
@@ -329,7 +328,6 @@ export class InvoiceUploadComponent implements OnInit, OnDestroy {
       this.store.dispatch(StepperActions.setOrder({ order: updatedOrder }));
     }
   }
-//////////////////////////////////////////////////////
 
 
   createOrder(): void {

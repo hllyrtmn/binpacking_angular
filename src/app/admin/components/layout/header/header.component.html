@@ -11,6 +11,12 @@
 
     <mat-divider></mat-divider>
     <span class="spacer"></span>
+    <div class="debug-order-id">
+      <span>{{orderId()}}</span>
+    </div>
+
+    <mat-divider></mat-divider>
+    <span class="spacer"></span>
 
     <div mat-button [matMenuTriggerFor]="profileMenu" class="profile-menu">
       <img [src]="this.profilePhoto" class="profile-photo" alt="">
@@ -21,5 +27,7 @@
 
 <mat-menu #profileMenu="matMenu">
   <button mat-menu-item [routerLink]="['/profile']">Profil</button>
+  <button mat-menu-item (click)="clearStorage()">sil</button>
   <button mat-menu-item (click)="logout()">Çıkış Yap</button>
+
 </mat-menu>

@@ -427,6 +427,7 @@ export class GenericTableComponent<T> implements OnInit, AfterViewInit {
       });
     } else if( this.externalData && this.externalData.length > 0){
         this.toastService.success('Veri Yüklendi',"Başarılı")
+        this.isLoading = false;
     }
      else {
       // No valid data source

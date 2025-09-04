@@ -131,7 +131,7 @@ export class OrdersComponent implements OnInit {
   loadOrderDetails(orderId: string) {
     this.loadingDetails = true;
 
-    const params = {order_id: orderId.toString() || '', limit:100};
+    const params = {order_id: orderId.toString() || '', limit:8000};
     this.orderDetailService.getAll(params).subscribe({
       next: (response) => {
         // Doğrudan response.results'ı atıyoruz

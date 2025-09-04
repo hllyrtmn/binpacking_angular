@@ -116,9 +116,7 @@
 
     <!-- NEW: Reset to Original Button -->
     <div class="change-actions" *ngIf="hasUnsavedChanges && originalPiecesData.length > 0">
-      <button class="reset-btn"
-              (click)="resetToOriginalData()"
-              title="Tüm değişiklikleri geri al">
+      <button class="reset-btn" (click)="resetToOriginalData()" title="Tüm değişiklikleri geri al">
         <mat-icon>restore</mat-icon>
         Orijinal Veriye Dön
       </button>
@@ -142,18 +140,13 @@
   <!-- Enhanced Controls Container -->
   <div class="controls-container">
     <div class="action-buttons">
-      <button mat-raised-button
-              class="calculate-button"
-              [disabled]="isLoading || processingLock"
-              (click)="calculateBinpacking()">
+      <button mat-raised-button class="calculate-button" [disabled]="isLoading || processingLock"
+        (click)="calculateBinpacking()">
         <mat-icon>play_arrow</mat-icon>
         {{ isLoading ? 'İşlem Devam Ediyor...' : 'Optimizasyonu Çalıştır' }}
       </button>
 
-      <button mat-raised-button
-              class="export-button"
-              [disabled]="!hasResults"
-              (click)="openInNewTab()">
+      <button mat-raised-button class="export-button" [disabled]="!hasResults" (click)="openInNewTab()">
         <div class="new-tab-icon">
           <div class="new-tab-square"></div>
           <div class="new-tab-arrow"></div>
@@ -162,11 +155,8 @@
       </button>
 
       <!-- NEW: Enhanced Save Button -->
-      <button mat-raised-button
-              class="save-button"
-              [disabled]="!hasResults"
-              [class.has-changes]="hasUnsavedChanges"
-              (click)="saveResults()">
+      <button mat-raised-button class="save-button" [disabled]="!hasResults" [class.has-changes]="hasUnsavedChanges"
+        (click)="saveResults()">
         <mat-icon>{{ hasUnsavedChanges ? 'save_alt' : 'download' }}</mat-icon>
         {{ hasUnsavedChanges ? 'Değişikliklerle Kaydet' : 'Sonuçları Kaydet' }}
       </button>
@@ -174,34 +164,26 @@
 
     <!-- Enhanced View Controls -->
     <div class="view-controls" *ngIf="hasResults && showVisualization">
-      <button class="view-button"
-              [class.active]="currentViewType === 'front'"
-              [disabled]="isLoading"
-              (click)="threeJSComponent.setView('front')">
+      <button class="view-button" [class.active]="currentViewType === 'front'" [disabled]="isLoading"
+        (click)="threeJSComponent.setView('front')">
         <mat-icon>view_agenda</mat-icon>
         <span>Ön</span>
       </button>
 
-      <button class="view-button"
-              [class.active]="currentViewType === 'side'"
-              [disabled]="isLoading"
-              (click)="threeJSComponent.setView('side')">
+      <button class="view-button" [class.active]="currentViewType === 'side'" [disabled]="isLoading"
+        (click)="threeJSComponent.setView('side')">
         <mat-icon>view_sidebar</mat-icon>
         <span>Yan</span>
       </button>
 
-      <button class="view-button"
-              [class.active]="currentViewType === 'top'"
-              [disabled]="isLoading"
-              (click)="threeJSComponent.setView('top')">
+      <button class="view-button" [class.active]="currentViewType === 'top'" [disabled]="isLoading"
+        (click)="threeJSComponent.setView('top')">
         <mat-icon>view_comfy</mat-icon>
         <span>Üst</span>
       </button>
 
-      <button class="view-button"
-              [class.active]="currentViewType === 'isometric'"
-              [disabled]="isLoading"
-              (click)="threeJSComponent.setView('isometric')">
+      <button class="view-button" [class.active]="currentViewType === 'isometric'" [disabled]="isLoading"
+        (click)="threeJSComponent.setView('isometric')">
         <mat-icon>view_in_ar</mat-icon>
         <span>3D</span>
       </button>
@@ -243,17 +225,10 @@
     </div>
 
     <!-- ENHANCED: ThreeJS Truck Visualization Component with NEW dataChanged event -->
-    <app-threejs-truck-visualization
-      *ngIf="hasResults && showVisualization && !hasThreeJSError"
-      #threeJSComponent
-      [piecesData]="piecesData"
-      [truckDimension]="truckDimension"
-      [showHelp]="true"
-      (packageSelected)="onPackageSelected($event)"
-      (viewChanged)="onViewChanged($event)"
-      (dataChanged)="onDataChanged($event)"
-      (error)="onThreeJSError($event)"
-      (ready)="onThreeJSReady()">
+    <app-threejs-truck-visualization *ngIf="hasResults && showVisualization && !hasThreeJSError" #threeJSComponent
+      [piecesData]="piecesData" [truckDimension]="truckDimension" [showHelp]="true"
+      (packageSelected)="onPackageSelected($event)" (viewChanged)="onViewChanged($event)"
+      (dataChanged)="onDataChanged($event)" (error)="onThreeJSError($event)" (ready)="onThreeJSReady()">
     </app-threejs-truck-visualization>
 
     <!-- Enhanced Three.js Error Display -->
@@ -261,10 +236,9 @@
       <div class="error-content">
         <mat-icon class="error-icon">error_outline</mat-icon>
         <h3>3D Görselleştirme Hatası</h3>
-        <p>3D görselleştirme yüklenirken bir sorun oluştu. Lütfen sayfayı yenileyin veya tarayıcınızın WebGL desteğini kontrol edin.</p>
-        <button mat-raised-button
-                color="primary"
-                (click)="hasThreeJSError = false; showVisualization = true">
+        <p>3D görselleştirme yüklenirken bir sorun oluştu. Lütfen sayfayı yenileyin veya tarayıcınızın WebGL desteğini
+          kontrol edin.</p>
+        <button mat-raised-button color="primary" (click)="hasThreeJSError = false; showVisualization = true">
           <mat-icon>refresh</mat-icon>
           Tekrar Dene
         </button>
@@ -374,16 +348,14 @@
   </div>
 
   <!-- Enhanced Recent Changes Panel -->
-  <div class="recent-changes-panel"
-       *ngIf="dataChangeHistory.length > 0 && hasResults">
+  <div class="recent-changes-panel" *ngIf="dataChangeHistory.length > 0 && hasResults">
     <div class="changes-header">
       <mat-icon>history</mat-icon>
       <span>Son Değişiklikler</span>
       <div class="changes-count">{{ dataChangeHistory.slice(-10).length }}/{{ dataChangeHistory.length }}</div>
     </div>
     <div class="changes-list">
-      <div class="change-entry"
-           *ngFor="let change of dataChangeHistory.slice(-10).reverse(); trackBy: trackByFileId">
+      <div class="change-entry" *ngFor="let change of dataChangeHistory.slice(-10).reverse(); trackBy: trackByFileId">
         <div class="change-type-icon">
           {{ formatChangeType(change.type).split(' ')[0] }}
         </div>
@@ -413,16 +385,12 @@
       <div class="file-count">{{ reportFiles.length }}</div>
     </div>
     <div class="report-files-list">
-      <div class="report-file-item"
-           *ngFor="let file of reportFiles; trackBy: trackByFileId">
+      <div class="report-file-item" *ngFor="let file of reportFiles; trackBy: trackByFileId">
         <div class="file-icon" [class]="'file-type-' + getFileIcon(file.file_type)">
           <mat-icon>{{ getFileIcon(file.file_type) }}</mat-icon>
         </div>
         <div class="file-info">
-          <a class="file-link"
-             [href]="file.file"
-             [download]="file.name"
-             target="_blank">
+          <a class="file-link" [href]="file.file" [download]="file.name" target="_blank">
             <span class="file-name">{{ file.name }}</span>
             <span class="file-size" *ngIf="file.file_size">
               {{ formatFileSize(file.file_size) }}
@@ -475,30 +443,15 @@
   </div>
 
   <!-- Enhanced Navigation Controls -->
-  <div class="navigation-controls">
-    <button mat-button
-            class="previous-button"
-            matStepperPrevious>
-      <mat-icon>arrow_back</mat-icon>
-      Önceki Adım
-    </button>
-
-    <div class="finish-actions">
-      <!-- NEW: Enhanced Save with Change Indicator -->
-      <button mat-button
-              class="save-button"
-              [disabled]="!hasResults"
-              [class.has-changes]="hasUnsavedChanges"
-              (click)="forceSaveStep3()">
-        <mat-icon>{{ hasUnsavedChanges ? 'save_alt' : 'save' }}</mat-icon>
-        {{ hasUnsavedChanges ? 'Değişiklikleri Kaydet' : 'Kaydet' }}
-        <span class="change-indicator" *ngIf="hasUnsavedChanges">●</span>
+    <div class="navigation-controls">
+    <div class="stepper-controls">
+      <button mat-raised-button class="prev-button" matStepperPrevious>
+        <mat-icon>arrow_back</mat-icon>
+        <span>Geri</span>
       </button>
 
-      <button mat-raised-button
-              class="finish-button"
-              [disabled]="!hasResults && hasUnsavedChanges"
-              (click)="completeShipment()">
+      <button mat-raised-button class="next-button" [disabled]="!hasResults && hasUnsavedChanges"
+        (click)="completeShipment()">
         <mat-icon>check_circle</mat-icon>
         Sevkiyatı Tamamla
         <span class="completion-meta" *ngIf="dataChangeHistory.length > 0">

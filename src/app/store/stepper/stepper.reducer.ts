@@ -145,7 +145,9 @@ export const stepperReducer = createReducer(
       orderDetails: [...orderDetails],
       originalOrderDetails: [...orderDetails],
       added: [],
-      isDirty: state.step1State.modified.length > 0 || state.step1State.deleted.length > 0,
+      deleted: [],
+      modified: [],
+      isDirty: false,
     }
   })),
 

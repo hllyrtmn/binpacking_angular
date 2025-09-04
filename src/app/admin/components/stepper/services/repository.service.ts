@@ -44,7 +44,7 @@ export class RepositoryService {
 
   getPackageDetails(order_id: string = this.getOrderId()): Observable<{ packages: any[], remainingProducts: any[] }> {
     return this.http
-      .get<any>(`${this.api.getApiUrl()}/logistics/package-details/?orderId=${order_id}&limit=100`)
+      .get<any>(`${this.api.getApiUrl()}/logistics/package-details/?order_id=${order_id}&limit=100`)
       .pipe(map((response) => ({
         packages: mapPackageDetailToPackage(response.results),
         remainingProducts: mapOrderDetailsToUiProductsSafe(response.remaining_order_details)
